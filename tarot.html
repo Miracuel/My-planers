@@ -187,6 +187,10 @@ select,input[type=text],input[type=number]{background:var(--panel2);border:1px s
   <div class="card-panel">
     <select id="spread-type">
       <option value="three">Trekort — Dåtid · Nutid · Framtid</option>
+      <option value="week">Veckan framåt — ett kort per dag</option>
+      <option value="mbs">Sinne · Kropp · Själ</option>
+      <option value="sit">Situation · Hinder · Råd</option>
+      <option value="rel">Relationen — Du · Partnern · Relationen</option>
       <option value="celtic">Keltiska korset — 10 kort</option>
       <option value="custom">Eget antal kort</option>
     </select>
@@ -197,8 +201,10 @@ select,input[type=text],input[type=number]{background:var(--panel2);border:1px s
       <input type="text" id="spread-q" placeholder="Din fråga (valfritt)">
     </div>
     <div id="spread-positions" style="margin-top:10px"></div>
+    <div class="toggle-line" id="week-save-row" style="display:none;justify-content:flex-start"><input type="checkbox" id="chk-week-cal" checked> Spara varje kort på sin dag i kalendern</div>
     <div class="btn-row" style="margin-top:12px">
       <button class="btn" id="spread-save">Spara läggning</button>
+      <button class="btn ghost" id="spread-draw-all">✦ Dra alla</button>
       <button class="btn ghost" id="spread-reset">Rensa</button>
     </div>
   </div>
@@ -518,17 +524,32 @@ document.getElementById('day-close').onclick=()=>{closeSheets();renderToday();};
 // ── Läggningar ────────────────────────────────────────
 const SPREAD_DEFS={
   three:{name:'Trekort',pos:['Dåtid','Nutid','Framtid']},
+  week:{name:'Veckan framåt',pos:null},
+  mbs:{name:'Sinne · Kropp · Själ',pos:['Sinne','Kropp','Själ']},
+  sit:{name:'Situation · Hinder · Råd',pos:['Situationen','Hindret','Rådet']},
+  rel:{name:'Relationen',pos:['Du','Partnern','Relationen']},
   celtic:{name:'Keltiska korset',pos:['Nuläget','Utmaningen','Grunden','Det förflutna','Möjligheten','Nära framtid','Du själv','Omgivningen','Hopp & rädslor','Utfallet']}
 };
 let temp={type:'three',positions:[]};
 function resetTemp(){
   const t=document.getElementById('spread-type').value;
-  let pos;
+  let positions;
   if(t==='custom'){
     const n=Math.min(10,Math.max(1,+document.getElementById('custom-count').value||3));
-    pos=Array.from({length:n},(_,i)=>'Kort '+(i+1));
-  }else pos=SPREAD_DEFS[t].pos;
-  temp={type:t,positions:pos.map(p=>({pos:p,c:null,r:0}))};
+    positions=Array.from({length:n},(_,i)=>({pos:'Kort '+(i+1),c:null,r:0}));
+  }else if(t==='week'){
+    positions=[];
+    for(let i=0;i<7;i++){
+      const d=new Date(todayD);d.setDate(d.getDate()+i);
+      let lbl=d.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'numeric'});
+      lbl=lbl.charAt(0).toUpperCase()+lbl.slice(1);
+      positions.push({pos:lbl,date:toISO(d),c:null,r:0});
+    }
+  }else{
+    positions=SPREAD_DEFS[t].pos.map(p=>({pos:p,c:null,r:0}));
+  }
+  temp={type:t,positions};
+  document.getElementById('week-save-row').style.display=t==='week'?'flex':'none';
   renderTempPositions();
 }
 function renderTempPositions(){
@@ -557,14 +578,22 @@ document.getElementById('spread-type').onchange=()=>{
 };
 document.getElementById('custom-count').onchange=resetTemp;
 document.getElementById('spread-reset').onclick=resetTemp;
+document.getElementById('spread-draw-all').onclick=()=>{
+  temp.positions.forEach(p=>{if(p.c===null){const{c,r}=drawRandom();p.c=c;p.r=r;}});
+  renderTempPositions();
+};
 document.getElementById('spread-save').onclick=()=>{
   if(temp.positions.some(p=>p.c===null)){alert('Fyll alla positioner först.');return;}
   state.spreads.unshift({
     id:Date.now(),date:todayKey,type:temp.type,
     q:document.getElementById('spread-q').value.trim(),
-    cards:temp.positions.map(p=>({pos:p.pos,c:p.c,r:p.r})),
+    cards:temp.positions.map(p=>{const o={pos:p.pos,c:p.c,r:p.r};if(p.date)o.date=p.date;return o;}),
     note:'',hit:null
   });
+  if(temp.type==='week'&&document.getElementById('chk-week-cal').checked){
+    temp.positions.forEach(p=>addDraw(p.date,p.c,p.r));
+    renderCal();renderToday();
+  }
   save();
   document.getElementById('spread-q').value='';
   resetTemp();renderSpreadList();
