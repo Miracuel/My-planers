@@ -120,6 +120,25 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:12px;border:0.5
 <body>
 <div class="app">
 
+<div class="overlay hidden" id="sync-overlay">
+  <div class="settings-box">
+    <h2>&#9881; Synk via GitHub</h2>
+    <p>Appen läser och sparar <code>data.json</code> i ett <strong>privat</strong> GitHub-repo, så att hela teamet ser samma semester och deadlines. Token sparas bara lokalt på den här enheten — aldrig i koden.</p>
+    <label>GitHub-användarnamn (ägare av data-repot)</label>
+    <input type="text" id="gh-owner" placeholder="miracuel">
+    <label>Namn på data-repot (privat)</label>
+    <input type="text" id="gh-repo" placeholder="jobb-data">
+    <label>Fine-grained token</label>
+    <input type="password" id="gh-token" placeholder="github_pat_…">
+    <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+    <div id="gh-status" style="display:none;margin-bottom:10px;font-size:12px;padding:8px 12px;border-radius:8px"></div>
+    <div class="settings-row">
+      <button class="btn-primary" id="gh-save">Spara &amp; synka</button>
+      <button class="btn-secondary" id="gh-close">Stäng</button>
+    </div>
+  </div>
+</div>
+
 <div class="top-bar">
   <h1>&#128197; Jobbplanering</h1>
   <label><input type="checkbox" id="chk-hol" checked> Röda dagar</label>
@@ -135,6 +154,9 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:12px;border:0.5
   <button class="gear-btn" id="export-btn">&#128190; Säkerhetskopiera</button>
   <button class="gear-btn" id="import-btn">Importera</button>
   <input type="file" id="import-file" accept=".json" style="display:none">
+  <span id="sync-badge" class="sp-badge offline">Lokal</span>
+  <button class="gear-btn" id="sync-btn" title="Hämta senaste">&#10227; Synka</button>
+  <button class="gear-btn" id="sync-settings" title="Synkinställningar">&#9881;</button>
 </div>
 
 <div class="main-row">
@@ -245,6 +267,67 @@ let currentYear=2026,currentView='cal',vacations=[],deadlines=[];
 const STORE='jobbplanering_v1';
 function saveData(){try{localStorage.setItem(STORE,JSON.stringify({vacations,deadlines}));}catch(e){}}
 function loadData(){try{const s=localStorage.getItem(STORE);if(s){const d=JSON.parse(s);if(Array.isArray(d.vacations))vacations=d.vacations;if(Array.isArray(d.deadlines))deadlines=d.deadlines;}}catch(e){}}
+
+// ── GitHub-synk ────────────────────────────────────────
+const SYNC_KEY='jobbsync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+
+function setBadge(state,msg){
+  const b=document.getElementById('sync-badge');
+  b.textContent=msg;
+  b.className='sp-badge'+(state==='ok'?'':' offline');
+}
+
+async function ghGet(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    const data=await ghGet();
+    if(data){
+      if(Array.isArray(data.vacations))vacations=data.vacations;
+      if(Array.isArray(data.deadlines))deadlines=data.deadlines;
+      saveData();renderAll();
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  const content=b64enc(JSON.stringify({vacations,deadlines,updated:new Date().toISOString()}));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Uppdatering via appen',content,...(sync.sha?{sha:sync.sha}:{})})});
+  let r=await doPut();
+  if(r.status===409||r.status===422){
+    try{await ghGet();}catch(e){}
+    r=await doPut();
+  }
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  const j=await r.json();
+  if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+
+function persist(){
+  saveData();
+  if(syncOn())ghPush().catch(()=>{});
+}
 
 const toISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const isWE=d=>d.getDay()===0||d.getDay()===6;
@@ -431,7 +514,7 @@ function renderLists(){
       const i=vacations.indexOf(v);const from=new Date(v.from),to=new Date(v.to);
       return'<div class="list-item"><div class="li-dot" style="background:'+SEM_COLORS[i%SEM_COLORS.length]+'"></div><span class="li-name">'+v.name+'</span><span class="li-dates">'+from.toLocaleDateString('sv-SE',{month:'short',day:'numeric'})+'–'+to.toLocaleDateString('sv-SE',{month:'short',day:'numeric'})+'</span><span class="li-del" data-i="'+i+'" title="Ta bort">&times;</span></div>';
     }).join('');
-    semEl.querySelectorAll('.li-del').forEach(e=>{e.onclick=()=>{vacations.splice(+e.dataset.i,1);saveData();renderAll();};});
+    semEl.querySelectorAll('.li-del').forEach(e=>{e.onclick=()=>{vacations.splice(+e.dataset.i,1);persist();renderAll();};});
   }
   // Deadline list
   const dlEl=document.getElementById('dl-list');
@@ -446,7 +529,7 @@ function renderLists(){
       const origIdx=deadlines.indexOf(dl);
       dlEl.innerHTML+='<div class="list-item"><span class="li-name">'+dl.name+'</span><span class="li-dates">'+d.toLocaleDateString('sv-SE',{month:'short',day:'numeric'})+'</span>'+badge+'<span class="li-del" data-i="'+origIdx+'" title="Ta bort">&times;</span></div>';
     });
-    dlEl.querySelectorAll('.li-del').forEach(e=>{e.onclick=()=>{deadlines.splice(+e.dataset.i,1);saveData();renderAll();};});
+    dlEl.querySelectorAll('.li-del').forEach(e=>{e.onclick=()=>{deadlines.splice(+e.dataset.i,1);persist();renderAll();};});
   }
 }
 
@@ -462,7 +545,7 @@ document.getElementById('sem-add').onclick=()=>{
   if(!name||!from||!to||from>to)return;
   vacations.push({name,from,to});
   ['sem-name','sem-from','sem-to'].forEach(id=>document.getElementById(id).value='');
-  saveData();renderAll();
+  persist();renderAll();
 };
 
 document.getElementById('dl-add').onclick=()=>{
@@ -471,7 +554,7 @@ document.getElementById('dl-add').onclick=()=>{
   if(!dt||!nm)return;
   deadlines.push({name:nm,date:dt});
   ['dl-date','dl-name'].forEach(id=>document.getElementById(id).value='');
-  saveData();renderAll();
+  persist();renderAll();
 };
 
 // ── Säkerhetskopiering ─────────────────────────────────
@@ -494,7 +577,7 @@ document.getElementById('import-file').onchange=e=>{
       if(d&&(Array.isArray(d.vacations)||Array.isArray(d.deadlines))){
         if(Array.isArray(d.vacations))vacations=d.vacations;
         if(Array.isArray(d.deadlines))deadlines=d.deadlines;
-        saveData();renderAll();
+        persist();renderAll();
       }else alert('Filen verkar inte vara en giltig säkerhetskopia.');
     }catch(err){alert('Kunde inte läsa filen.');}
   };
@@ -522,8 +605,43 @@ wCanvas.addEventListener('mousemove',wheelInfo);
 wCanvas.addEventListener('click',wheelInfo);
 
 // ── Init ───────────────────────────────────────────────────────────
+function setGhStatus(msg,type){
+  const el=document.getElementById('gh-status');
+  el.style.display='block';
+  el.style.background=type==='ok'?'#EAF3DE':type==='err'?'#FEF0F0':'#E6F1FB';
+  el.style.color=type==='ok'?'#3B6D11':type==='err'?'#A32D2D':'#185FA5';
+  el.textContent=msg;
+}
+document.getElementById('sync-settings').onclick=()=>{
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('sync-overlay').classList.remove('hidden');
+};
+document.getElementById('gh-close').onclick=()=>document.getElementById('sync-overlay').classList.add('hidden');
+document.getElementById('sync-overlay').onclick=e=>{if(e.target.id==='sync-overlay')document.getElementById('sync-overlay').classList.add('hidden');};
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  setGhStatus('Testar anslutning…','info');
+  try{
+    const data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar teamets data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din lokala data…','ok');await ghPush();}
+    setTimeout(()=>document.getElementById('sync-overlay').classList.add('hidden'),1200);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera användarnamn, reponamn och att token har Contents-behörighet.','err');}
+};
+document.getElementById('sync-btn').onclick=()=>ghPull();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+
+loadSync();
 loadData();
 renderAll();
+if(syncOn())ghPull();
 </script>
 </body>
 </html>
