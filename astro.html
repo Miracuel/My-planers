@@ -58,13 +58,22 @@ canvas{display:block;margin:0 auto;max-width:100%;height:auto}
 
 .tr-date{font-family:Georgia,serif;color:var(--star);font-size:13px;margin:12px 0 2px}
 .tr-date:first-child{margin-top:0}
+.seg{display:flex;gap:6px;margin-bottom:12px}
+.seg button{flex:1;padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit}
+.seg button.active{border-color:var(--star);color:var(--star)}
+.area-card{margin-bottom:10px}
+.area-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
+.area-head b{font-family:Georgia,serif;font-weight:400;font-size:15px;color:var(--silver)}
+.area-body{font-size:12px;color:var(--muted);line-height:1.65}
+.balance{height:9px;background:#3A2226;border-radius:5px;overflow:hidden;margin:10px 0 8px}
+.balance div{height:100%;background:linear-gradient(90deg,#5E8C61,#7FAE8B);border-radius:5px}
 
 .chart-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
 .chart-bar select{flex:1}
 .gear{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--silver);font-size:16px;cursor:pointer;flex-shrink:0}
 
 .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(18,14,38,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
-.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 1px 8px;cursor:pointer;font-family:inherit}
 .nav button.active{color:var(--star)}
 .nav button span{display:block;font-size:15px;margin-bottom:1px}
 .view{display:none}
@@ -131,13 +140,38 @@ canvas{display:block;margin:0 auto;max-width:100%;height:auto}
   <div class="section-title">Kommande 6 månader</div>
   <div class="card-panel" id="transits-up"></div>
 </div>
+
+<!-- HOROSKOP -->
+<div class="view" id="view-horo">
+  <div class="seg" id="horo-seg">
+    <button data-s="day" class="active">Idag</button>
+    <button data-s="week">Vecka</button>
+    <button data-s="month">Månad</button>
+    <button data-s="year">År</button>
+  </div>
+  <div id="horo-list"></div>
+</div>
+
+<!-- RELATION -->
+<div class="view" id="view-rel">
+  <div class="seg" id="rel-seg">
+    <button data-r="partner" class="active">Partner</button>
+    <button data-r="friend">Vän</button>
+    <button data-r="colleague">Kollega</button>
+  </div>
+  <label>Person A</label><select id="rel-a"></select>
+  <label>Person B</label><select id="rel-b"></select>
+  <div id="rel-result" style="margin-top:12px"></div>
+</div>
 </div>
 
 <div class="nav">
   <button class="active" data-v="chart"><span>✶</span>Karta</button>
-  <button data-v="place"><span>☉</span>Placeringar</button>
+  <button data-v="place"><span>☉</span>Planeter</button>
   <button data-v="asp"><span>△</span>Aspekter</button>
   <button data-v="trans"><span>☄</span>Transiter</button>
+  <button data-v="horo"><span>☼</span>Horoskop</button>
+  <button data-v="rel"><span>⚭</span>Relation</button>
 </div>
 
 <!-- Sheets -->
@@ -498,8 +532,10 @@ function renderAll(){
     document.getElementById('aspects').innerHTML=empty;
     document.getElementById('transits-now').innerHTML=empty;
     document.getElementById('transits-up').innerHTML=empty;
+    document.getElementById('horo-list').innerHTML=empty;
     const cv=document.getElementById('wheel');
     cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+    renderRel();
     return;
   }
   const C=computeChart(ch);
@@ -530,6 +566,8 @@ function renderAll(){
       cap(A1[2])+' och '+A2[2]+' '+a.def.txt+'.</div>';
   }).join(''):'<div class="empty-msg">Inga större aspekter hittades</div>';
   renderTransits();
+  renderHoro();
+  renderRel();
 }
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 
@@ -599,6 +637,227 @@ function renderTransits(){
   }).join(''):'<div class="empty-msg">Inga exakta transiter de kommande sex månaderna.</div>';
 }
 document.getElementById('trans-date').onchange=renderTransits;
+
+// ══ Horoskop per livsområde ══
+const NATAL_TARGETS=PKEYS.concat(['asc','mc']);
+const TARGET_NAME={asc:['Ascendenten','↑','dig själv, din kropp och din riktning'],mc:['MC','⟂','din karriär och offentliga roll']};
+const tInfo=k=>PLANETS[k]||TARGET_NAME[k];
+const natLon=(C,k)=>k==='asc'?C.ASC:k==='mc'?C.MC:C.lons[k];
+const GOODP={venus:1,jupiter:1,sun:1},HARDP={saturn:1,pluto:1};
+const HOUSE_THEME={sun:'ljus och fokus',mercury:'tankar och samtal',venus:'värme och njutning',mars:'energi och driv',jupiter:'växt och möjligheter',saturn:'struktur och allvar',uranus:'förändringsvind',neptune:'dröm och känslighet',pluto:'djup omvandling'};
+const AREAS={
+ love:{title:'Kärlek & relationer',np:{venus:3,moon:2,mars:1,sun:1,neptune:1,pluto:1,asc:1},hs:{5:3,7:3,8:1,4:1},tb:{venus:2,moon:1,neptune:1}},
+ career:{title:'Karriär & arbete',np:{sun:2,saturn:2,mars:2,mercury:1,jupiter:1,mc:3},hs:{10:3,6:2,2:1},tb:{saturn:1,jupiter:1,mars:1}},
+ money:{title:'Ekonomi',np:{venus:2,jupiter:2,saturn:1,pluto:1},hs:{2:3,8:2,10:1},tb:{jupiter:2,venus:1,saturn:1}},
+ health:{title:'Hälsa & energi',np:{mars:2,sun:2,moon:1,saturn:1,asc:3},hs:{1:3,6:3,12:1},tb:{mars:2,sun:1}},
+ soul:{title:'Själ & utveckling',np:{neptune:2,jupiter:2,moon:1,pluto:2,mercury:1,asc:1},hs:{9:2,12:3,4:1,3:1},tb:{neptune:2,jupiter:1,pluto:1}}};
+const AREA_TXT={
+ love:{good:['det öppnar för värme, flirt och fördjupad närhet','hjärtat mjuknar och det blir lättare att mötas på riktigt'],hard:['relationer kan skava — gamla mönster vill bli sedda och lösas','känslorna går på djupet; tala hellre än att dra dig undan'],neu:['kärlekslivet får en nytändning — riktningen sätter du själv','något väsentligt i nära relationer byter fas']},
+ career:{good:['medvind i arbetet — ta plats och visa vad du kan','rätt läge att förhandla, söka nytt eller sjösätta planer'],hard:['tålamod krävs med chefer, strukturer och deadlines — bygg långsiktigt','yrkesrollen prövas; det som håller blir starkare'],neu:['en ny yrkescykel tar form — så frön medvetet','arbetslivet omkalibreras i det tysta']},
+ money:{good:['ekonomin gynnas — bra läge för avtal, köp och förhandling','flöden öppnar sig; våga be om det du är värd'],hard:['se över utgifter och avtal — impulsköp straffar sig nu','ekonomiska strukturer testas; budget är din vän'],neu:['en ny ekonomisk fas inleds — lägg grunden lugnt','pengafrågor kräver din medvetna blick']},
+ health:{good:['energin flödar — perfekt för träning och nya rutiner','kroppen svarar snabbt och tacksamt på det du ger den'],hard:['lyssna på kroppens signaler — vila är produktivt nu','stressen kan ta ut sin rätt; sänk tempot medvetet'],neu:['din energi byter växel — känn efter vad kroppen ber om','rutinerna vill förnyas; testa varsamt']},
+ soul:{good:['intuitionen är stark — lita på de tysta vinkarna','inre arbete bär frukt och meningen klarnar'],hard:['gamla sanningar löses upp — låt det få ta tid','själen städar; släpp det som tynger'],neu:['en inre förvandling pågår — ge den utrymme','drömmar och symboler talar; lyssna']}};
+function aspTone(def,tk){
+  if(def.a===0)return GOODP[tk]?'good':HARDP[tk]?'hard':'neu';
+  return def.tone;
+}
+function scanPerfections(C,tset,days){
+  const start=dnumNoon(new Date().toISOString().slice(0,10));
+  const res=[];
+  let prev=positions(start).lons;
+  for(let day=1;day<=days;day++){
+    const cur=positions(start+day).lons;
+    tset.forEach(tk=>{
+      NATAL_TARGETS.forEach(nk=>{
+        const nl=natLon(C,nk);
+        ASPECTS.forEach(def=>{
+          const f=x=>{let v=rev(x-nl)-def.a;if(v>180)v-=360;if(v<-180)v+=360;return v;};
+          const f0=f(prev[tk]),f1=f(cur[tk]);
+          if(Math.abs(f0)<1.5&&Math.abs(f1)<1.5&&f0*f1<=0&&!(f0===0&&f1===0)){
+            res.push({tk,nk,def,when:new Date(Date.now()+day*86400000)});
+          }
+        });
+      });
+    });
+    prev=cur;
+  }
+  const seen={};
+  return res.filter(r=>{const k=r.tk+r.nk+r.def.a;if(seen[k])return false;seen[k]=1;return true;});
+}
+function activeAspects(C,tset,orbF){
+  const d=dnumNoon(new Date().toISOString().slice(0,10));
+  const now=positions(d).lons;
+  const res=[];
+  tset.forEach(tk=>{
+    NATAL_TARGETS.forEach(nk=>{
+      const nl=natLon(C,nk);
+      let diff=Math.abs(rev(now[tk]-nl));if(diff>180)diff=360-diff;
+      ASPECTS.forEach(def=>{
+        if(Math.abs(diff-def.a)<=orbF(tk))res.push({tk,nk,def,when:null});
+      });
+    });
+  });
+  return res;
+}
+let horoScope='day';
+const SCOPES={day:{days:1},week:{days:7},month:{days:30},year:{days:365}};
+function horoEvents(C,scope){
+  const FAST=['sun','mercury','venus','mars'];
+  const SLOW=['jupiter','saturn','uranus','neptune','pluto'];
+  let evs;
+  if(scope==='day')evs=activeAspects(C,FAST.concat(SLOW),tk=>FAST.includes(tk)?1.5:2);
+  else if(scope==='week')evs=scanPerfections(C,FAST.concat(SLOW),7);
+  else if(scope==='month')evs=scanPerfections(C,['venus','mars'].concat(SLOW),30);
+  else evs=scanPerfections(C,SLOW,365);
+  const mid=dnumNoon(new Date().toISOString().slice(0,10))+Math.floor(SCOPES[scope].days/2);
+  const hp=positions(mid).lons;
+  const hset=(scope==='day'||scope==='week')?['sun','venus','mars']:scope==='month'?['venus','mars','jupiter','saturn']:['jupiter','saturn','uranus'];
+  const hevs=hset.map(tk=>({tk,house:C.houseOf(hp[tk]),houseEvent:true}));
+  return {evs,hevs};
+}
+function renderHoro(){
+  const ch=active();
+  const el=document.getElementById('horo-list');
+  if(!ch){el.innerHTML='<div class="empty-msg">Skapa en karta med +-knappen överst</div>';return;}
+  const C=computeChart(ch);
+  const r=horoEvents(C,horoScope);
+  const whenWord={day:'idag',week:'den här veckan',month:'den här månaden',year:'i år'}[horoScope];
+  let html='';
+  Object.keys(AREAS).forEach((ak,ai)=>{
+    const A=AREAS[ak];
+    const scored=[];
+    r.evs.forEach(e=>{
+      const s=(A.np[e.nk]||0)+(A.tb[e.tk]||0);
+      if((A.np[e.nk]||0)>0)scored.push({e,s,tone:aspTone(e.def,e.tk)});
+    });
+    r.hevs.forEach(e=>{
+      if((A.hs[e.house]||0)>0)scored.push({e,s:(A.hs[e.house]||0)+(A.tb[e.tk]||0)*0.5,tone:GOODP[e.tk]?'good':HARDP[e.tk]?'hard':'neu'});
+    });
+    scored.sort((a,b)=>b.s-a.s);
+    const picks=scored.slice(0,2);
+    let net=0;picks.forEach(p=>net+=p.tone==='good'?1:p.tone==='hard'?-1:0);
+    const tag=!picks.length?['neu','Stilla']:net>0?['good','Medvind']:net<0?['hard','Utmanande']:['neu','Rörligt'];
+    let body;
+    if(!picks.length){
+      body='Inga starka stjärnsignaler '+whenWord+' — vardagen styr, och det är också ett svar.';
+    }else{
+      body=picks.map((p,pi)=>{
+        const e=p.e;
+        if(e.houseEvent){
+          const T=PLANETS[e.tk];
+          return cap(T[0])+' rör sig genom ditt '+e.house+':e hus '+whenWord+' och riktar '+HOUSE_THEME[e.tk]+' mot '+HOUSES_TXT[e.house-1]+'.';
+        }
+        const T=tInfo(e.tk),N=tInfo(e.nk);
+        const lib=AREA_TXT[ak][p.tone];
+        const phrase=lib[(ai+pi)%lib.length];
+        const whenTxt=e.when?' (exakt '+e.when.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+')':'';
+        return T[0]+' '+e.def.n+' din natala '+N[0]+whenTxt+' — '+phrase+'.';
+      }).join(' ');
+    }
+    html+='<div class="card-panel area-card"><div class="area-head"><b>'+A.title+'</b><span class="tag '+tag[0]+'">'+tag[1]+'</span></div><div class="area-body">'+body+'</div></div>';
+  });
+  el.innerHTML=html;
+}
+document.addEventListener('click',function(ev){
+  const b=ev.target.closest('#horo-seg button');
+  if(!b)return;
+  document.querySelectorAll('#horo-seg button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');horoScope=b.dataset.s;renderHoro();
+});
+
+// ══ Synastri (jämförelse) ══
+const REL={
+ partner:{label:'Partner',boost:{venus:3,moon:3,mars:2,sun:2,pluto:2,neptune:1,asc:2,jupiter:1,saturn:1}},
+ friend:{label:'Vän',boost:{sun:2,moon:2,mercury:3,venus:2,jupiter:3,mars:1,asc:1}},
+ colleague:{label:'Kollega',boost:{mercury:3,mars:2,saturn:3,sun:2,jupiter:2,mc:3,moon:1}}};
+const SYN_DOM={sun:'vilja och identitet',moon:'känslor och trygghetsbehov',mercury:'sätt att tänka och prata',venus:'kärleksspråk och värderingar',mars:'tempo, drivkraft och passion',jupiter:'glädje och generositet',saturn:'allvar, krav och varaktighet',uranus:'frihetsbehov och infall',neptune:'drömmar och idealisering',pluto:'intensitet och djup',asc:'framtoning och utstrålning',mc:'mål och riktning'};
+const SP={};
+function spd(a,b,o){SP[[a,b].sort().join('|')]=o;}
+spd('sun','moon',{good:'En klassisk själsfrände-signatur — den enas vilja och den andras känslor förstår varandra instinktivt.',hard:'Vilja och känsla drar åt olika håll — den ena agerar när den andra känner; att mötas kräver översättning.',neu:'Vilja och känsla flätas samman — ett band som känns ödesmättat.'});
+spd('venus','mars',{good:'Stark attraktion och komplementär energi — gnistan är naturlig och ömsesidig.',hard:'Het attraktion med kort stubin — passionen och irritationen delar källa.',neu:'Magnetisk laddning — kemin är omedelbar.'});
+spd('moon','moon',{good:'Era känsloliv talar samma språk; hemkänsla uppstår snabbt.',hard:'Olika trygghetsbehov — den ena söker närhet när den andra behöver utrymme.',neu:'Känslomässig spegling — ni känner igen er i varandra.'});
+spd('mercury','mercury',{good:'Samtalen flödar — ni fattar varandras tankebanor halvvägs in i meningen.',hard:'Ni tänker i olika system; missförstånd löses med tålamod, inte volym.',neu:'Två tankevärldar möts och färgar varandra.'});
+spd('venus','saturn',{good:'Trogen, stabil tillgivenhet — kärlek som håller över tid.',hard:'Kärlek möter krav — kan kännas kyligt ibland, men ger varaktighet om båda väljer det.',neu:'Allvar och ömhet binds samman — ett vuxet band.'});
+spd('moon','saturn',{good:'Trygghet genom pålitlighet; känslorna får vuxna, hållbara ramar.',hard:'Den enas allvar kan tynga den andras känslor — varsamhet och bekräftelse behövs.',neu:'Känslor möter ansvar — relationen mognar er.'});
+spd('sun','saturn',{good:'Ni bygger något bestående; ansvar och respekt delas naturligt.',hard:'Auktoritet möter vilja — respekt måste förtjänas åt båda håll.',neu:'En läromästardynamik — krävande men utvecklande.'});
+spd('mars','mars',{good:'Synkad handlingskraft — ni får saker gjorda tillsammans.',hard:'Två viljor i samma ring — tävla med varandra, inte mot.',neu:'Energierna triggar varandra — kanalisera det medvetet.'});
+spd('venus','pluto',{good:'Magnetisk, djup dragning — en kärlek som förvandlar er båda.',hard:'Intensiv dragning med ägandebehov i kulisserna — ärlighet är nyckeln.',neu:'Passionen går på djupet — ytligt blir det aldrig.'});
+spd('sun','jupiter',{good:'Generositet och glädje förstärks — ni gör varandra större.',hard:'Lätt att lova för mycket ihop — entusiasmen behöver en budget.',neu:'Tillsammans växer ni — optimismen smittar.'});
+spd('venus','neptune',{good:'Romantisk förtrollning — vackert, så länge ni också ser människan bakom drömmen.',hard:'Idealisering kan skymma sikten — håll fötterna på jorden.',neu:'En drömsk, poetisk ton vilar över bandet.'});
+spd('moon','venus',{good:'Ömhet och omsorg flödar naturligt — ni får varandra att må bra.',hard:'Olika sätt att visa kärlek — lär er varandras språk.',neu:'Mjukhet möter mjukhet — ett vänligt band.'});
+spd('mercury','mars',{good:'Snabba, raka samtal — ni vässar varandras tankar.',hard:'Orden kan bli vassa — tänk en sekund extra innan ni svarar.',neu:'Debattglädje — håll den lekfull.'});
+spd('saturn','saturn',{good:'Samma syn på ansvar — en pålitlig grund.',hard:'Två regelböcker som krockar — förhandla strukturen.',neu:'Ni bygger långsamt och stabilt ihop.'});
+function synTone(def,a,b){
+  if(def.a!==0)return def.tone;
+  if(['venus','jupiter','sun','moon'].some(k=>k===a||k===b))return 'good';
+  if(['saturn','pluto'].some(k=>k===a||k===b))return 'hard';
+  return 'neu';
+}
+function synAspects(CA,CB){
+  const res=[];
+  NATAL_TARGETS.forEach(a=>{NATAL_TARGETS.forEach(b=>{
+    const la=natLon(CA,a),lb=natLon(CB,b);
+    let diff=Math.abs(rev(la-lb));if(diff>180)diff=360-diff;
+    ASPECTS.forEach(def=>{
+      const orb=def.a===0?7:def.a===180?6:(def.a===90||def.a===120)?5:3.5;
+      if(Math.abs(diff-def.a)<=orb)res.push({a,b,def,orb:Math.abs(diff-def.a),orbMax:orb});
+    });
+  });});
+  return res;
+}
+let relA=null,relB=null,relType='partner';
+function synText(p,nA,nB){
+  const key=[p.a,p.b].sort().join('|');
+  const lbl=tInfo(p.a)[1]+' '+tInfo(p.a)[0]+' ('+nA+') '+p.def.n+' '+tInfo(p.b)[1]+' '+tInfo(p.b)[0]+' ('+nB+')';
+  let body;
+  if(SP[key]&&SP[key][p.tone])body=SP[key][p.tone];
+  else{
+    const tp=p.tone==='good'?'— det flyter lätt, och ni lyfter varandra här.':p.tone==='hard'?'— här kan det gnissla; medvetenhet gör friktionen till bränsle.':'— ni smälter samman på den här punkten, på gott och ont.';
+    body=nA+'s '+SYN_DOM[p.a]+' möter '+nB+'s '+SYN_DOM[p.b]+' '+tp;
+  }
+  return '<b>'+lbl+'</b><br>'+body;
+}
+function renderRel(){
+  const selA=document.getElementById('rel-a'),selB=document.getElementById('rel-b');
+  const opts=state.charts.map(ch=>'<option value="'+ch.id+'">'+esc(ch.name)+'</option>').join('');
+  selA.innerHTML=opts;selB.innerHTML=opts;
+  const res=document.getElementById('rel-result');
+  if(state.charts.length<2){res.innerHTML='<div class="empty-msg">Lägg till minst två kartor (med +-knappen överst) för att kunna jämföra.</div>';return;}
+  if(!relA||!state.charts.find(ch=>ch.id===relA))relA=state.activeId||state.charts[0].id;
+  if(!relB||relB===relA||!state.charts.find(ch=>ch.id===relB))relB=state.charts.find(ch=>ch.id!==relA).id;
+  selA.value=relA;selB.value=relB;
+  const chA=state.charts.find(ch=>ch.id===relA),chB=state.charts.find(ch=>ch.id===relB);
+  const nA=esc(chA.name),nB=esc(chB.name);
+  const CA=computeChart(chA),CB=computeChart(chB);
+  const all=synAspects(CA,CB);
+  const boost=REL[relType].boost;
+  all.forEach(p=>{
+    const w=(boost[p.a]||0.5)+(boost[p.b]||0.5);
+    p.score=w*(1+(p.orbMax-p.orb)/p.orbMax);
+    p.tone=synTone(p.def,p.a,p.b);
+  });
+  const sig=all.filter(p=>p.score>=3);
+  let g=0,h=0;
+  sig.forEach(p=>{if(p.tone==='good')g+=p.score;else if(p.tone==='hard')h+=p.score;else{g+=p.score*0.5;h+=p.score*0.5;}});
+  const gp=Math.round(g/(g+h||1)*100);
+  const verdict=gp>=65?'En kombination med mycket flyt — ni gör tillvaron lätt för varandra.':gp>=45?'En dynamisk mix av flyt och friktion — levande och utvecklande.':'En utmanande kombination — den kräver arbete, men slipar er båda.';
+  const goods=sig.filter(p=>p.tone!=='hard').sort((a,b)=>b.score-a.score).slice(0,4);
+  const hards=sig.filter(p=>p.tone==='hard').sort((a,b)=>b.score-a.score).slice(0,4);
+  res.innerHTML=
+   '<div class="card-panel"><div class="area-head"><b>'+nA+' + '+nB+'</b><span class="tag '+(gp>=65?'good':gp>=45?'neu':'hard')+'">'+gp+'% harmoni</span></div>'+
+   '<div class="balance"><div style="width:'+gp+'%"></div></div>'+
+   '<div class="area-body">'+verdict+'<br>'+goods.length+' styrkor · '+hards.length+' utmaningar, viktat för '+REL[relType].label.toLowerCase()+'relation.</div></div>'+
+   '<div class="section-title">Styrkor</div><div class="card-panel">'+(goods.length?goods.map(p=>'<div class="asp-row">'+synText(p,nA,nB)+'</div>').join(''):'<div class="empty-msg">Inga tydliga styrkor med den här viktningen</div>')+'</div>'+
+   '<div class="section-title">Utmaningar</div><div class="card-panel">'+(hards.length?hards.map(p=>'<div class="asp-row">'+synText(p,nA,nB)+'</div>').join(''):'<div class="empty-msg">Inga större friktioner — ovanligt smidigt!</div>')+'</div>';
+}
+document.getElementById('rel-a').onchange=e=>{relA=+e.target.value;if(relB===relA){const o=state.charts.find(ch=>ch.id!==relA);if(o)relB=o.id;}renderRel();};
+document.getElementById('rel-b').onchange=e=>{relB=+e.target.value;renderRel();};
+document.addEventListener('click',function(ev){
+  const b=ev.target.closest('#rel-seg button');
+  if(!b)return;
+  document.querySelectorAll('#rel-seg button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');relType=b.dataset.r;renderRel();
+});
 
 // ══ Formulär & orter ══
 const bg=document.getElementById('sheet-bg');
