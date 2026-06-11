@@ -114,6 +114,12 @@ select,input[type=text],input[type=number]{background:var(--panel2);border:1px s
 .lib-item.open .lib-detail{display:block}
 .lib-detail b{color:var(--ink);font-weight:500}
 
+/* Reflektion & lokal tolkning */
+.ref-q{font-size:11px;color:var(--gold);margin:2px 0 6px;line-height:1.45}
+.month-flex{display:flex;gap:12px;align-items:flex-start}
+.local-box{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.local-box .ai-lbl{font-family:Georgia,serif;color:var(--gold);font-size:12px;display:block;margin-bottom:4px}
+
 /* Bottom nav */
 .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(13,16,32,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
 .nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
@@ -158,8 +164,10 @@ select,input[type=text],input[type=number]{background:var(--panel2);border:1px s
       <div class="toggle-line"><input type="checkbox" id="chk-rev" checked> Använd omvända kort</div>
     </div>
   </div>
+  <div class="section-title">Månadens kort</div>
+  <div class="card-panel" id="month-panel"></div>
   <div class="section-title">Dagens dragningar</div>
-  <div class="card-panel"><div id="today-list"></div><div id="today-ai"></div><button class="btn" id="btn-ai-today" style="width:100%;margin-top:10px">✨ AI-tolkning av dagen</button></div>
+  <div class="card-panel"><div id="today-list"></div><div id="today-local"></div><div id="today-ai"></div><div class="btn-row" style="margin-top:10px"><button class="btn" id="btn-local-today">☽ Tolkning</button><button class="btn" id="btn-ai-today">✨ AI-tolkning</button></div></div>
   <div class="foot">
     <button id="export-btn">Säkerhetskopiera</button>
     <button id="import-btn">Importera</button>
@@ -183,7 +191,16 @@ select,input[type=text],input[type=number]{background:var(--panel2);border:1px s
 
 <!-- LÄGGNINGAR -->
 <div class="view" id="view-spread">
-  <div class="section-title" style="margin-top:0">Ny läggning</div>
+  <div class="section-title" style="margin-top:0">Ja eller nej?</div>
+  <div class="card-panel">
+    <input type="text" id="yn-q" placeholder="Din fråga…">
+    <div id="yn-result"></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn" id="yn-draw">✦ Dra ett kort</button>
+      <button class="btn ghost" id="yn-save" style="display:none">Spara läggningen</button>
+    </div>
+  </div>
+  <div class="section-title">Ny läggning</div>
   <div class="card-panel">
     <select id="spread-type">
       <option value="three">Trekort — Dåtid · Nutid · Framtid</option>
@@ -263,8 +280,9 @@ select,input[type=text],input[type=number]{background:var(--panel2);border:1px s
     <button class="btn" id="day-draw">✦ Dra kort</button>
     <button class="btn" id="day-log">Logga kort</button>
   </div>
+  <div id="day-local"></div>
   <div id="day-ai"></div>
-  <button class="btn" id="day-ai-btn" style="width:100%;margin-top:10px">✨ AI-tolkning</button>
+  <div class="btn-row" style="margin-top:10px"><button class="btn" id="day-local-btn">☽ Tolkning</button><button class="btn" id="day-ai-btn">✨ AI-tolkning</button></div>
   <button class="sheet-close" id="day-close">Klar</button>
 </div>
 
@@ -272,8 +290,9 @@ select,input[type=text],input[type=number]{background:var(--panel2);border:1px s
   <h3 id="sd-title"></h3>
   <div style="font-size:12px;color:var(--muted)" id="sd-q"></div>
   <div id="sd-cards" style="margin-top:8px"></div>
+  <div id="sd-local"></div>
   <div id="sd-ai"></div>
-  <button class="btn" id="sd-ai-btn" style="width:100%;margin-top:10px">✨ AI-tolkning</button>
+  <div class="btn-row" style="margin-top:10px"><button class="btn" id="sd-local-btn">☽ Tolkning</button><button class="btn" id="sd-ai-btn">✨ AI-tolkning</button></div>
   <div style="margin-top:10px">
     <textarea id="sd-note" rows="3" placeholder="Tolkning och tankar…" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:13px;padding:8px;font-family:inherit"></textarea>
   </div>
@@ -339,9 +358,101 @@ const IMGS=["/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhc
 const SUIT_COLOR={major:'var(--c-major)',b:'var(--c-b)',s:'var(--c-s)',st:'var(--c-st)',m:'var(--c-m)'};
 const SUIT_NAME={major:'Stora arkanan',b:'Bägare — känslor',s:'Svärd — tanke',st:'Stavar — handling',m:'Mynt — materia'};
 
+// ── Reflektionsfrågor ─────────────────────────────────
+const MAJOR_REF=[
+'Var i ditt liv längtar du efter att våga ta ett första steg?',
+'Vilka förmågor har du redan som du inte använder fullt ut?',
+'Vad försöker din intuition säga dig just nu?',
+'Hur tar du hand om dig själv — och vad behöver mer näring?',
+'Var behöver du mer struktur — och var håller du för hårt?',
+'Vilka traditioner bär du med dig, och vilka vill du ompröva?',
+'Vilket val står du inför, och vad säger hjärtat?',
+'Vart är du på väg — och håller du själv i tyglarna?',
+'När visade du senast mjuk styrka i stället för kraft?',
+'Vad skulle du upptäcka om du gav dig själv mer stillhet?',
+'Vilken cykel i ditt liv håller på att vända?',
+'Var behöver balansen återställas — mot andra eller mot dig själv?',
+'Vad händer om du betraktar situationen upp och ner?',
+'Vad är redo att avslutas, så att något nytt får plats?',
+'Var i din vardag söker du en bättre blandning?',
+'Vad håller dig bundet som du egentligen kunde släppa?',
+'Vilken sanning har du undvikit att se?',
+'Vad ger dig hopp just nu, även i det lilla?',
+'Vad känns oklart just nu — och vågar du vila i ovissheten ett tag?',
+'Vad får dig att känna dig levande och varm?',
+'Vilket inre kall är det dags att svara på?',
+'Vad i ditt liv är på väg att fullbordas — och hur vill du fira det?'];
+const SUIT_DOMAIN={b:'dina känslor och relationer',s:'dina tankar och beslut',st:'din energi och dina projekt',m:'din vardag, kropp och ekonomi'};
+const RANK_REF=[
+'Vilken ny början visar sig inom {D}?',
+'Vad behöver vägas eller mötas inom {D}?',
+'Hur kan du växa tillsammans med andra när det gäller {D}?',
+'Vad behöver få vila eller stabiliseras inom {D}?',
+'Vilken friktion inom {D} bär på en lärdom?',
+'Var finns harmonin — eller längtan efter den — inom {D}?',
+'Vilket vägval eller vilken omprövning väntar inom {D}?',
+'Vad kräver tålamod och fokus inom {D} just nu?',
+'Vad har du redan uppnått inom {D} — och tillåter du dig att känna det?',
+'Vad håller på att fullbordas inom {D}?',
+'Vilken ny nyfikenhet eller vilket budskap rör sig inom {D}?',
+'Vart vill din drivkraft föra dig inom {D}?',
+'Hur kan du vårda och fördjupa {D}?',
+'Var kan du ta tryggt ledarskap över {D}?'];
+function refQuestion(i){
+  if(i<22)return MAJOR_REF[i];
+  const si=Math.floor((i-22)/14),rank=(i-22)%14;
+  const sk=Object.keys(SUITS)[si];
+  return RANK_REF[rank].replace('{D}',SUIT_DOMAIN[sk]);
+}
+
+// ── Lokal tolkning (utan AI) ──────────────────────────
+const SUIT_FOCUS={b:'känslornas område',s:'tankarnas och sanningens område',st:'handlingens och energins område',m:'det praktiska och kroppsnära'};
+function kwList(s){return s.toLowerCase().split(', ');}
+function joinKw(a){return a.length>1?a.slice(0,-1).join(', ')+' och '+a[a.length-1]:a[0];}
+function cardSentence(c,r,idx){
+  const card=CARDS[c];
+  const kw=joinKw(kwList(r?card.rm:card.m));
+  const up=['{N} talar om {K}.','{N} lyfter fram {K}.','{N} bär på teman som {K}.','{N} öppnar för {K}.'];
+  const rev=['{N} kommer omvänt och pekar mot {K} — möt det med varsamhet.','Omvända {N} viskar om {K}; var snäll mot dig själv här.','{N} ligger omvänt och ber dig se {K} utan att döma.'];
+  const arr=r?rev:up;
+  return arr[idx%arr.length].replace('{N}',card.n).replace('{K}',kw);
+}
+function localDayReading(key){
+  const list=state.draws[key]||[];
+  const out=[];
+  out.push(list.length===1?'Ett kort — ett tydligt budskap.':list.length+' kort vävs samman denna dag.');
+  list.forEach((d,i)=>out.push(cardSentence(d.c,d.r,i)));
+  const suits={};list.forEach(d=>{const a=CARDS[d.c].a;suits[a]=(suits[a]||0)+1;});
+  if((suits.major||0)>=2){out.push('Flera kort ur stora arkanan antyder att livet rör sig i större drag just nu.');}
+  else{
+    const dom=Object.entries(suits).filter(e=>e[0]!=='major'&&e[1]>=2).sort((a,b)=>b[1]-a[1])[0];
+    if(dom)out.push('Tyngdpunkten ligger i '+SUIT_FOCUS[dom[0]]+'.');
+  }
+  const revN=list.filter(d=>d.r).length;
+  if(list.length>1&&revN===list.length)out.push('Att alla kort är omvända antyder att energin just nu rör sig inåt.');
+  out.push('Att bära med sig: '+refQuestion(list[0].c));
+  return out.join(' ');
+}
+function localSpreadReading(s){
+  const out=[];
+  if(s.q)out.push('Kring frågan \u201d'+s.q+'\u201d:');
+  const verbs=['pekar mot','handlar om','bär med sig','kretsar kring','vilar i'];
+  s.cards.forEach((c,i)=>{
+    const card=CARDS[c.c];
+    out.push(c.pos+': '+card.n+(c.r?' (omvänt)':'')+' '+verbs[i%verbs.length]+' '+joinKw(kwList(c.r?card.rm:card.m))+'.');
+  });
+  out.push('Lägg märke till hur korten talar med varandra — och börja där det känns mest sant. '+refQuestion(s.cards[0].c));
+  return out.join(' ');
+}
+function localBox(t){return '<div class="local-box"><span class="ai-lbl">☽ Tolkning</span>'+esc(t)+'</div>';}
+function quickReading(c,r){
+  const kw=joinKw(kwList(r?CARDS[c].rm:CARDS[c].m));
+  return r?'Månadens kort kommer omvänt och vänder blicken inåt: '+kw+'. Gå varsamt fram och ge saker tid.':'Månadens tema kretsar kring '+kw+'. Låt det få färga dina val denna månad.';
+}
+
 // ── State ─────────────────────────────────────────────
 const KEY='tarot_v1';
-let state={draws:{},spreads:[],rev:true,aiDay:{}};
+let state={draws:{},spreads:[],rev:true,aiDay:{},months:{}};
 try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 const todayD=new Date();todayD.setHours(0,0,0,0);
@@ -439,7 +550,8 @@ function renderDraws(elId,key){
     return '<div class="entry">'+cardHtml(d.c,d.r,true)+
     '<div class="entry-info"><div class="entry-name">'+esc(card.n)+(d.r?'<span class="rv">⟲ omvänt</span>':'')+'</div>'+
     '<div class="entry-meaning">'+esc(d.r?card.rm:card.m)+'</div>'+
-    '<textarea rows="2" placeholder="Anteckning…" data-i="'+i+'" class="note-in">'+esc(d.note||'')+'</textarea>'+
+    '<div class="ref-q">☽ '+esc(refQuestion(d.c))+'</div>'+
+    '<textarea rows="2" placeholder="Skriv i din dagbok…" data-i="'+i+'" class="note-in">'+esc(d.note||'')+'</textarea>'+
     '<div class="entry-actions"><span style="font-size:11px;color:var(--muted)">Stämde?</span>'+
     '<button class="hit-btn'+(d.hit===1?' on-yes':'')+'" data-i="'+i+'" data-h="1">✓</button>'+
     '<button class="hit-btn'+(d.hit===0?' on-no':'')+'" data-i="'+i+'" data-h="0">✗</button>'+
@@ -464,12 +576,13 @@ function renderToday(){
   document.getElementById('chk-rev').checked=!!state.rev;
   renderDraws('today-list',todayKey);
   renderDayAi('today-ai',todayKey);
+  renderMonth();
 }
 document.getElementById('chk-rev').onchange=e=>{state.rev=e.target.checked;save();};
 document.getElementById('btn-draw').onclick=()=>{
   const{c,r}=drawRandom();
   document.getElementById('draw-slot').innerHTML=cardHtml(c,r,false,true)+
-    '<div class="meaning" style="margin-top:8px"><b>'+esc(CARDS[c].n)+(r?' (omvänt)':'')+'</b><br>'+esc(r?CARDS[c].rm:CARDS[c].m)+'</div>';
+    '<div class="meaning" style="margin-top:8px"><b>'+esc(CARDS[c].n)+(r?' (omvänt)':'')+'</b><br>'+esc(r?CARDS[c].rm:CARDS[c].m)+'<br><span style="color:var(--gold)">☽ '+esc(refQuestion(c))+'</span></div>';
   addDraw(todayKey,c,r);
   renderDraws('today-list',todayKey);renderCal();
 };
@@ -510,6 +623,7 @@ function openDay(k){
   document.getElementById('day-title').textContent=fmtDate(k);
   renderDraws('day-list',k);
   renderDayAi('day-ai',k);
+  document.getElementById('day-local').innerHTML='';
   openSheet('day-sheet');
 }
 document.getElementById('day-draw').onclick=()=>{
@@ -523,6 +637,7 @@ document.getElementById('day-close').onclick=()=>{closeSheets();renderToday();};
 
 // ── Läggningar ────────────────────────────────────────
 const SPREAD_DEFS={
+  yesno:{name:'Ja eller nej',pos:['Svaret']},
   three:{name:'Trekort',pos:['Dåtid','Nutid','Framtid']},
   week:{name:'Veckan framåt',pos:null},
   mbs:{name:'Sinne · Kropp · Själ',pos:['Sinne','Kropp','Själ']},
@@ -622,6 +737,7 @@ function openSpreadDetail(id){
   }).join('');
   document.getElementById('sd-note').value=s.note||'';
   document.getElementById('sd-ai').innerHTML=s.ai?aiBox(s.ai):'';
+  document.getElementById('sd-local').innerHTML='';
   document.getElementById('sd-yes').className='hit-btn'+(s.hit===1?' on-yes':'');
   document.getElementById('sd-no').className='hit-btn'+(s.hit===0?' on-no':'');
   openSheet('sd-sheet');
@@ -635,6 +751,46 @@ document.getElementById('sd-del').onclick=()=>{
   save();closeSheets();renderSpreadList();
 };
 document.getElementById('sd-close').onclick=()=>{closeSheets();renderSpreadList();};
+
+// ── Ja eller nej ──────────────────────────────────────
+const MAJOR_YN='jjkjjkjjjkjkknjnnjkjjj';
+const SUIT_YN={b:'jjjknjknjjjjjj',s:'jknknjnnnnkkkk',st:'jkjjnjkjknjjjj',m:'jkjknjkjjjjkjj'};
+function ynVerdict(c,r){
+  let v;
+  if(c<22)v=MAJOR_YN[c];
+  else{const si=Math.floor((c-22)/14),rank=(c-22)%14;v=SUIT_YN[Object.keys(SUITS)[si]][rank];}
+  if(r)v=v==='j'?'k':'n';
+  return v;
+}
+const YN_LABEL={j:'JA',k:'KANSKE',n:'NEJ'};
+const YN_COLOR={j:'#8FCF9A',k:'var(--gold)',n:'#E09AA2'};
+let ynCur=null;
+document.getElementById('yn-draw').onclick=()=>{
+  const{c,r}=drawRandom();
+  ynCur={c,r};
+  const v=ynVerdict(c,r);
+  const card=CARDS[c];
+  document.getElementById('yn-result').innerHTML='<div class="month-flex" style="margin-top:10px">'+cardHtml(c,r,true,true)+
+    '<div style="flex:1;min-width:0"><div style="font-family:Georgia,serif;font-size:24px;letter-spacing:.05em;color:'+YN_COLOR[v]+'">'+YN_LABEL[v]+'</div>'+
+    '<div class="entry-name" style="margin-top:2px">'+esc(card.n)+(r?'<span class="rv">⟲ omvänt</span>':'')+'</div>'+
+    '<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:3px">'+esc(r?card.rm:card.m)+(v==='k'?' — svaret är inte givet ännu; lyssna inåt.':'')+'</div></div></div>';
+  document.getElementById('yn-save').style.display='';
+};
+document.getElementById('yn-save').onclick=()=>{
+  if(!ynCur)return;
+  const v=ynVerdict(ynCur.c,ynCur.r);
+  state.spreads.unshift({
+    id:Date.now(),date:todayKey,type:'yesno',
+    q:document.getElementById('yn-q').value.trim(),
+    cards:[{pos:'Svaret',c:ynCur.c,r:ynCur.r}],
+    note:'Svar: '+YN_LABEL[v],hit:null
+  });
+  save();renderSpreadList();
+  document.getElementById('yn-save').style.display='none';
+  document.getElementById('yn-result').innerHTML='';
+  document.getElementById('yn-q').value='';
+  ynCur=null;
+};
 
 // ── Statistik ─────────────────────────────────────────
 function allDrawInstances(){
@@ -684,7 +840,7 @@ function renderLib(q){
     if(q&&!card.n.toLowerCase().includes(q))return;
     if(card.a!==last){last=card.a;html+='<div class="lib-group">'+SUIT_NAME[card.a]+'</div>';}
     html+='<div class="lib-item" data-i="'+i+'"><div class="lib-name">'+(IMGS[i]?'<img class="lib-thumb" loading="lazy" src="data:image/jpeg;base64,'+IMGS[i]+'">':'<i style="background:'+SUIT_COLOR[card.a]+'"></i>')+(card.num?card.num+' · ':'')+esc(card.n)+'</div>'+
-    '<div class="lib-detail"><b>Rättvänt:</b> '+esc(card.m)+'<br><b>Omvänt:</b> '+esc(card.rm)+'</div></div>';
+    '<div class="lib-detail"><b>Rättvänt:</b> '+esc(card.m)+'<br><b>Omvänt:</b> '+esc(card.rm)+'<br><b>Reflektion:</b> '+esc(refQuestion(i))+'</div></div>';
   });
   el.innerHTML=html||'<div class="empty-msg">Inget kort matchar</div>';
   el.querySelectorAll('.lib-item').forEach(it=>{it.onclick=()=>it.classList.toggle('open');});
@@ -701,7 +857,7 @@ document.getElementById('import-btn').onclick=()=>document.getElementById('impor
 document.getElementById('import-file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.draws){state=Object.assign({draws:{},spreads:[],rev:true,aiDay:{}},d);save();renderAll();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.draws){state=Object.assign({draws:{},spreads:[],rev:true,aiDay:{},months:{}},d);save();renderAll();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
   r.readAsText(f);
 };
 
@@ -761,6 +917,43 @@ document.getElementById('ai-set-btn').onclick=()=>{document.getElementById('ai-k
 document.getElementById('ai-key-save').onclick=()=>{const v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
 document.getElementById('ai-key-clear').onclick=()=>{localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
 document.getElementById('ai-close').onclick=closeSheets;
+
+// ── Månadens kort ─────────────────────────────────────
+function ymNow(){return todayKey.slice(0,7);}
+function renderMonth(){
+  const el=document.getElementById('month-panel');
+  if(!state.months)state.months={};
+  const mc=state.months[ymNow()];
+  if(!mc){
+    el.innerHTML='<div class="empty-msg" style="text-align:left;padding:0 0 10px">Dra ett kort som tema för '+MN[todayD.getMonth()].toLowerCase()+'.</div><button class="btn" style="width:100%" id="month-draw">✦ Dra månadens kort</button>';
+    document.getElementById('month-draw').onclick=()=>{const{c,r}=drawRandom();state.months[ymNow()]={c,r};save();renderMonth();};
+    return;
+  }
+  const card=CARDS[mc.c];
+  el.innerHTML='<div class="month-flex">'+cardHtml(mc.c,mc.r,true)+
+    '<div style="flex:1;min-width:0"><div class="entry-name">'+esc(card.n)+(mc.r?'<span class="rv">⟲ omvänt</span>':'')+'</div>'+
+    '<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:3px">'+esc(quickReading(mc.c,mc.r))+'</div>'+
+    '<div class="ref-q" style="margin-top:7px">☽ '+esc(refQuestion(mc.c))+'</div>'+
+    '<button class="btn ghost" id="month-redraw" style="margin-top:2px">⟲ Dra om</button></div></div>';
+  document.getElementById('month-redraw').onclick=()=>{
+    if(!confirm('Dra om månadens kort?'))return;
+    const{c,r}=drawRandom();state.months[ymNow()]={c,r};save();renderMonth();
+  };
+}
+
+// ── Lokala tolkningsknappar ───────────────────────────
+document.getElementById('btn-local-today').onclick=()=>{
+  if(!(state.draws[todayKey]||[]).length){alert('Dra eller logga minst ett kort först.');return;}
+  document.getElementById('today-local').innerHTML=localBox(localDayReading(todayKey));
+};
+document.getElementById('day-local-btn').onclick=()=>{
+  if(!(state.draws[dayKey]||[]).length){alert('Dra eller logga minst ett kort först.');return;}
+  document.getElementById('day-local').innerHTML=localBox(localDayReading(dayKey));
+};
+document.getElementById('sd-local-btn').onclick=()=>{
+  const s=state.spreads.find(x=>x.id===sdId);if(!s)return;
+  document.getElementById('sd-local').innerHTML=localBox(localSpreadReading(s));
+};
 
 // ── Nav ───────────────────────────────────────────────
 document.querySelectorAll('.nav button').forEach(b=>{
