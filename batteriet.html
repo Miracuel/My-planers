@@ -18,6 +18,7 @@
   --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
   --clay:#C2A38B;--sun:#D9C27E;
   --green:#7A8B6F;--yellow:#C7B06A;--red:#C08A7E;
+  --navbg:rgba(238,241,235,.95);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
@@ -111,7 +112,7 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .edit-item span{flex:1}
 .edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
 
-.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(238,241,235,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
 .nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
 .nav button.active{color:var(--moss);font-weight:600}
 .nav button span{display:block;font-size:15px;margin-bottom:1px}
@@ -131,10 +132,25 @@ input[type=range]{accent-color:var(--moss);padding:0}
 .foot{display:flex;gap:8px;justify-content:center;margin-top:16px}
 .foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --green:#8FA383;--yellow:#C2AC6B;--red:#C08A7E;--navbg:rgba(34,37,31,.95);
+}
+html[data-theme=dark] .batt-pct{text-shadow:none}
+html[data-theme=dark] .chip.drain:active{background:#4A3833}
+html[data-theme=dark] .log-row .d.neg{color:#D49C8C}
+html[data-theme=dark] .warn-banner{background:#3A2D29;border-color:#5C443D;color:#E2C2B7}
+html[data-theme=dark] .care-banner{color:#DCE3D3}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
 </style>
 </head>
 <body>
 <div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
 <h1 class="brand">🌿 Batteriet</h1>
 
 <!-- IDAG -->
@@ -151,7 +167,14 @@ input[type=range]{accent-color:var(--moss);padding:0}
         <button class="btn ghost checkin-btn" id="open-checkin">Morgonkoll</button>
       </div>
     </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn ghost" id="open-evening">Kvällskoll 🌙</button>
+      <button class="btn ghost" id="open-plan">Planera imorgon</button>
+    </div>
   </div>
+
+  <div class="section-title" id="plan-title" style="display:none">Planerat idag</div>
+  <div class="card-panel" id="plan-today" style="display:none"></div>
 
   <div class="section-title">Det som drar energi</div>
   <div class="card-panel">
@@ -162,6 +185,12 @@ input[type=range]{accent-color:var(--moss);padding:0}
   <div class="card-panel">
     <div class="chips" id="charge-chips"></div>
   </div>
+
+  <div class="section-title">Morgonrutin <button class="btn ghost" id="edit-ram" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel check-list" id="ram-list"></div>
+
+  <div class="section-title">Kvällsrutin <button class="btn ghost" id="edit-rpm" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel check-list" id="rpm-list"></div>
 
   <div class="section-title">Dagens logg</div>
   <div class="card-panel"><div id="day-log"></div></div>
@@ -271,6 +300,7 @@ input[type=range]{accent-color:var(--moss);padding:0}
 <div class="sheet" id="checkin-sheet">
   <h3>Morgonkoll</h3>
   <div class="soft">Ingen prestation — bara en ärlig känsla. Det räcker.</div>
+  <div class="soft" id="ci-note" style="display:none;margin-top:6px;font-style:italic"></div>
   <label>Hur sov du?</label>
   <div class="dotpick" id="ci-sleep"></div>
   <label>Stressnivå just nu</label>
@@ -307,6 +337,32 @@ input[type=range]{accent-color:var(--moss);padding:0}
   <button class="sheet-close" id="list-done">Klar</button>
 </div>
 
+<div class="sheet" id="evening-sheet">
+  <h3>Kvällskoll</h3>
+  <div class="soft">Dagen rundas av — inget betyg, bara en mjuk landning.</div>
+  <label>Hur blev dagen?</label>
+  <div class="dotpick" id="ev-day"></div>
+  <label>Var landar batteriet ikväll? <span id="ev-batt-val">70</span>%</label>
+  <input type="range" id="ev-batt" min="0" max="100" step="5" value="70">
+  <div class="soft" id="ev-carry" style="margin-top:6px"></div>
+  <label>En snäll rad till dig själv (frivilligt)</label>
+  <textarea id="ev-note" rows="2" placeholder="T.ex. jag gjorde så gott jag kunde idag."></textarea>
+  <button class="sheet-close" id="ev-save">God natt 🌙</button>
+</div>
+
+<div class="sheet" id="plan-sheet">
+  <h3>Planera imorgon</h3>
+  <div class="soft">Tryck på det du redan vet händer imorgon — så slipper huvudet hålla det.</div>
+  <label>Drar energi</label>
+  <div class="chips" id="plan-drains"></div>
+  <label>Laddar</label>
+  <div class="chips" id="plan-charges"></div>
+  <label>Imorgon</label>
+  <div id="plan-list"></div>
+  <div class="soft" id="plan-sum" style="margin-top:8px"></div>
+  <button class="sheet-close" id="plan-done">Klar</button>
+</div>
+
 <script>
 // ── State ─────────────────────────────────────────────
 const KEY='batteriet_v1';
@@ -316,7 +372,10 @@ let state={
   charges:[['Tystnad',10],['Promenad',15],['Specialintresse',20],['Powernap',15],['Musik i lurar',10],['Djur & natur',10]],
   warnsigns:['Kort stubin','Ljud och ljus gör ont','Vill bara isolera mig','Glömmer äta eller dricka','Allt känns omöjligt','Kan inte börja på något'],
   calmplan:['Hörlurar — brus eller tystnad','Dimma ljuset','Ett glas vatten','Tyngdtäcke eller filt','20 minuter helt utan krav','Säg till någon: jag behöver paus'],
-  tasks:[],dump:[],focusMin:15
+  tasks:[],dump:[],focusMin:15,
+  routinesAm:['Ett glas vatten','Medicin','Något litet att äta','Kolla dagens 1–3'],
+  routinesPm:['Skärmen bort en stund','Lägg fram till imorgon','Medicin','Kvällskoll 🌙'],
+  plans:{},theme:'auto'
 };
 try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -325,8 +384,16 @@ const toISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+St
 const todayKey=()=>toISO(new Date());
 function day(){
   const k=todayKey();
-  if(!state.days[k])state.days[k]={val:70,start:null,checkin:null,log:[],warns:[],calm:[]};
-  return state.days[k];
+  if(!state.days[k]){
+    let v=70;
+    const yd=new Date();yd.setDate(yd.getDate()-1);
+    const prev=state.days[toISO(yd)];
+    if(prev&&typeof prev.val==='number')v=clamp(Math.round(prev.val+(100-prev.val)*0.45));
+    state.days[k]={val:v,start:null,checkin:null,log:[],warns:[],calm:[],ram:[],rpm:[],evening:null};
+  }
+  const d=state.days[k];
+  d.ram=d.ram||[];d.rpm=d.rpm||[];d.warns=d.warns||[];d.calm=d.calm||[];d.log=d.log||[];
+  return d;
 }
 const clamp=v=>Math.max(0,Math.min(100,v));
 
@@ -354,6 +421,7 @@ function renderBattery(){
   document.getElementById('zone-title').textContent=ZONES[z][0];
   document.getElementById('zone-text').textContent=ZONES[z][1];
   document.getElementById('open-checkin').textContent=d.checkin?'Morgonkoll ✓':'Morgonkoll';
+  document.getElementById('open-evening').textContent=d.evening?'Kvällskoll ✓':'Kvällskoll 🌙';
 }
 function addLog(label,delta){
   const d=day();
@@ -392,15 +460,21 @@ document.getElementById('adj-save').onclick=()=>{day().val=+document.getElementB
 
 // ── Morgonkoll ────────────────────────────────────────
 let ci={sleep:3,stress:3,sensory:3};
-function dotpick(id,field){
+let ev={dayRating:3};
+function dotpick(id,obj,field){
   const el=document.getElementById(id);
-  el.innerHTML=[1,2,3,4,5].map(n=>'<button data-n="'+n+'"'+(ci[field]===n?' class="sel"':'')+'>'+n+'</button>').join('');
-  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{ci[field]=+b.dataset.n;dotpick(id,field);};});
+  el.innerHTML=[1,2,3,4,5].map(n=>'<button data-n="'+n+'"'+(obj[field]===n?' class="sel"':'')+'>'+n+'</button>').join('');
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{obj[field]=+b.dataset.n;dotpick(id,obj,field);};});
 }
 document.getElementById('open-checkin').onclick=()=>{
   const d=day();
   ci=d.checkin?Object.assign({},d.checkin):{sleep:3,stress:3,sensory:3};
-  dotpick('ci-sleep','sleep');dotpick('ci-stress','stress');dotpick('ci-sensory','sensory');
+  dotpick('ci-sleep',ci,'sleep');dotpick('ci-stress',ci,'stress');dotpick('ci-sensory',ci,'sensory');
+  const y=new Date();y.setDate(y.getDate()-1);
+  const prev=state.days[toISO(y)];
+  const note=document.getElementById('ci-note');
+  if(prev&&prev.evening&&prev.evening.note){note.textContent='Igår skrev du till dig själv: ”'+prev.evening.note+'”';note.style.display='block';}
+  else note.style.display='none';
   document.getElementById('ci-batt').value=d.start!==null?d.start:d.val;
   document.getElementById('ci-batt-val').textContent=document.getElementById('ci-batt').value;
   openSheet('checkin-sheet');
@@ -618,7 +692,7 @@ document.getElementById('list-add').onclick=()=>{
   state[listTarget].push(v);save();
   document.getElementById('list-in').value='';renderListEditor();
 };
-document.getElementById('list-done').onclick=()=>{closeSheets();renderCalmList();renderWarnList();};
+document.getElementById('list-done').onclick=()=>{closeSheets();renderCalmList();renderWarnList();renderRoutines();};
 document.getElementById('edit-calm').onclick=()=>openListEditor('calmplan','Min lugn-plan');
 document.getElementById('edit-warn').onclick=()=>openListEditor('warnsigns','Mina varningstecken');
 
@@ -657,13 +731,14 @@ function renderPattern(){
   // Snitt
   const last7=days.slice(7).map(o=>o.d).filter(Boolean);
   const avg=(f)=>{const v=last7.map(f).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
-  const aB=avg(d=>d.val),aSl=avg(d=>d.checkin&&d.checkin.sleep),aSt=avg(d=>d.checkin&&d.checkin.stress),aSe=avg(d=>d.checkin&&d.checkin.sensory);
+  const aB=avg(d=>d.val),aSl=avg(d=>d.checkin?d.checkin.sleep:null),aSt=avg(d=>d.checkin?d.checkin.stress:null),aSe=avg(d=>d.checkin?d.checkin.sensory:null),aDy=avg(d=>d.evening?d.evening.dayRating:null);
   const dots=n=>n==null?'–':'●'.repeat(Math.round(n))+'○'.repeat(5-Math.round(n));
   document.getElementById('avgs').innerHTML=
     '<div class="avg-row"><span>Batteri</span><b>'+(aB!=null?Math.round(aB)+'%':'–')+'</b></div>'+
     '<div class="avg-row"><span>Sömn</span><span class="dots5">'+dots(aSl)+'</span></div>'+
     '<div class="avg-row"><span>Stress</span><span class="dots5">'+dots(aSt)+'</span></div>'+
-    '<div class="avg-row"><span>Sensorisk belastning</span><span class="dots5">'+dots(aSe)+'</span></div>';
+    '<div class="avg-row"><span>Sensorisk belastning</span><span class="dots5">'+dots(aSe)+'</span></div>'+
+    '<div class="avg-row"><span>Hur dagarna kändes</span><span class="dots5">'+dots(aDy)+'</span></div>';
   document.getElementById('care-banner').style.display=(aB!=null&&aB<40&&aSt!=null&&aSt>=4)?'block':'none';
   // Toppar 30 dagar
   const cnt={};
@@ -699,6 +774,98 @@ document.getElementById('import-file').onchange=e=>{
   r.readAsText(f);
 };
 
+// ── Kvällskoll ────────────────────────────────────
+const carryFrom=v=>clamp(Math.round(v+(100-v)*0.45));
+function evCarryTxt(){
+  const v=+document.getElementById('ev-batt').value;
+  document.getElementById('ev-batt-val').textContent=v;
+  document.getElementById('ev-carry').textContent='Sömnen laddar — imorgon vaknar batteriet runt '+carryFrom(v)+' %.';
+}
+document.getElementById('open-evening').onclick=()=>{
+  const d=day();
+  ev=d.evening?{dayRating:d.evening.dayRating}:{dayRating:3};
+  dotpick('ev-day',ev,'dayRating');
+  document.getElementById('ev-note').value=d.evening&&d.evening.note?d.evening.note:'';
+  document.getElementById('ev-batt').value=d.val;
+  evCarryTxt();
+  openSheet('evening-sheet');
+};
+document.getElementById('ev-batt').oninput=evCarryTxt;
+document.getElementById('ev-save').onclick=()=>{
+  const d=day();
+  d.val=+document.getElementById('ev-batt').value;
+  d.evening={dayRating:ev.dayRating,note:document.getElementById('ev-note').value.trim()};
+  save();closeSheets();renderToday();
+};
+
+// ── Planera imorgon ───────────────────────────────
+const tomorrowKeyFn=()=>{const d=new Date();d.setDate(d.getDate()+1);return toISO(d);};
+function planList(){state.plans=state.plans||{};const k=tomorrowKeyFn();if(!state.plans[k])state.plans[k]=[];return state.plans[k];}
+function renderPlanSheet(){
+  const list=planList();
+  const pd=document.getElementById('plan-drains');
+  pd.innerHTML=state.drains.map((a,i)=>'<button class="chip drain" data-i="'+i+'">'+esc(a[0])+'<small>−'+a[1]+'</small></button>').join('');
+  pd.querySelectorAll('.chip').forEach(ch=>{ch.onclick=()=>{const a=state.drains[+ch.dataset.i];list.push({label:a[0],delta:-a[1],done:false});save();renderPlanSheet();};});
+  const pc=document.getElementById('plan-charges');
+  pc.innerHTML=state.charges.map((a,i)=>'<button class="chip charge" data-i="'+i+'">'+esc(a[0])+'<small>+'+a[1]+'</small></button>').join('');
+  pc.querySelectorAll('.chip').forEach(ch=>{ch.onclick=()=>{const a=state.charges[+ch.dataset.i];list.push({label:a[0],delta:a[1],done:false});save();renderPlanSheet();};});
+  const el=document.getElementById('plan-list');
+  el.innerHTML=list.map((p,i)=>'<div class="edit-item"><span>'+esc(p.label)+' ('+(p.delta>0?'+':'')+p.delta+')</span><button data-i="'+i+'">×</button></div>').join('')||'<div class="empty-msg">Inget planerat ännu</div>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{list.splice(+b.dataset.i,1);save();renderPlanSheet();};});
+  const sum=list.reduce((a,p)=>a+p.delta,0);
+  document.getElementById('plan-sum').textContent=!list.length?'':
+    sum<0?'Netto '+sum+' — imorgon drar. Lägg in något som laddar, eller sänk ribban redan nu. 🌿'
+    :'Netto +'+sum+' — imorgon ser snäll ut.';
+}
+document.getElementById('open-plan').onclick=()=>{renderPlanSheet();openSheet('plan-sheet');};
+document.getElementById('plan-done').onclick=closeSheets;
+function renderPlanToday(){
+  state.plans=state.plans||{};
+  const list=state.plans[todayKey()]||[];
+  const t=document.getElementById('plan-title'),c=document.getElementById('plan-today');
+  if(!list.length){t.style.display='none';c.style.display='none';return;}
+  t.style.display='block';c.style.display='block';
+  c.innerHTML=list.map((p,i)=>'<div class="dump-item"><span>'+esc(p.label)+' '+(p.delta>0?'+':'')+p.delta+'</span>'+(p.done?'<span style="color:var(--moss);font-size:12px">✓ loggat</span>':'<button data-a="log" data-i="'+i+'">Hände — logga</button><button data-a="del" data-i="'+i+'">×</button>')+'</div>').join('');
+  c.querySelectorAll('button').forEach(b=>{b.onclick=()=>{
+    const i=+b.dataset.i,p=list[i];
+    if(b.dataset.a==='log'){p.done=true;addLog(p.label,p.delta);}
+    else{list.splice(i,1);save();renderPlanToday();}
+  };});
+}
+(function(){state.plans=state.plans||{};const t=todayKey();Object.keys(state.plans).forEach(k=>{if(k<t)delete state.plans[k];});})();
+
+// ── Rutiner ───────────────────────────────────────
+function renderRoutine(elId,arrName,fld){
+  const d=day();const el=document.getElementById(elId);
+  el.innerHTML=state[arrName].map((it,i)=>'<div class="step'+(d[fld].includes(i)?' done':'')+'"><input type="checkbox" data-i="'+i+'"'+(d[fld].includes(i)?' checked':'')+'><span>'+esc(it)+'</span></div>').join('')||'<div class="empty-msg">Lägg till små steg via Ändra</div>';
+  el.querySelectorAll('input').forEach(cb=>{cb.onchange=()=>{
+    const i=+cb.dataset.i;
+    if(cb.checked)d[fld].push(i);else d[fld]=d[fld].filter(x=>x!==i);
+    save();renderRoutine(elId,arrName,fld);
+  };});
+}
+function renderRoutines(){renderRoutine('ram-list','routinesAm','ram');renderRoutine('rpm-list','routinesPm','rpm');}
+document.getElementById('edit-ram').onclick=()=>openListEditor('routinesAm','Morgonrutin');
+document.getElementById('edit-rpm').onclick=()=>openListEditor('routinesPm','Kvällsrutin');
+
+// ── Tema ──────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto';
+  const h=new Date().getHours();
+  const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  const b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();
+}
+document.getElementById('theme-btn').onclick=()=>{
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
 // ── Nav ───────────────────────────────────────────────
 document.querySelectorAll('.nav button').forEach(b=>{
   b.onclick=()=>{
@@ -711,12 +878,14 @@ document.querySelectorAll('.nav button').forEach(b=>{
   };
 });
 
-function renderToday(){renderBattery();renderChips();renderLog();}
+function renderToday(){renderBattery();renderChips();renderLog();renderPlanToday();renderRoutines();}
 renderToday();
 renderTasks();
 renderDump();
 renderGround();
 document.getElementById('ring-time').textContent=fmtT((state.focusMin||15)*60);
+applyTheme();
+setInterval(applyTheme,60000);
 </script>
 </body>
 </html>
