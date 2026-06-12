@@ -122,7 +122,8 @@ body.desktop .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 
   <div class="foot">
     Centralen · alla appar samlade<br>
-    Lägg till nya appar i listan längst upp i koden
+    Nya .html-filer i repot dyker upp av sig själva under "Nya appar"<br>
+    Ge dem namn, färg och sektion i APPS-listan i koden
   </div>
 
 </div>
@@ -137,17 +138,33 @@ body.desktop .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
    ============================================================ */
 const GITHUB_URL = "";
 
+/* Filer i repot som INTE ska visas som appar (index.html göms alltid) */
+const GOM = [];
+
 /* ============================================================
-   MINA APPAR
-   Varje app kan ha en mobilversion och/eller en desktopversion:
+   ★★★  HÄR LÄGGER DU TILL NYA APPAR  ★★★
 
-     mobil:   "appen.html"           ← fil för mobilversionen
-     desktop: "appen-desktop.html"   ← fil för desktopversionen
+   Kopiera mallen nedan, klistra in den SIST i listan
+   (före den avslutande klammern ]) och ändra raderna:
 
-   Ange den ena eller båda. Finns bara den ena versionen öppnas
-   den i båda lägena, och kortet visar t.ex. "endast mobil".
-   Färgerna (bg, line, ink, muted, accent, iconbg) hämtas från
-   respektive apps egen palett så kortet ser ut som appen.
+   {
+     id:"minapp",                     ← unikt kortnamn, små bokstäver
+     namn:"Min app", ikon:"⭐",
+     desc:"Kort beskrivning",
+     sektion:"Vardag",                ← befintlig eller ny sektion
+     mobil:"minapp.html",             ← fil för mobilversionen
+     desktop:"minapp-desktop.html",   ← fil för desktopversionen (frivillig)
+     farger:{bg:"#FFFFFF", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#5B7BA6", iconbg:"#E2E9F2"}
+   },
+
+   BRA ATT VETA:
+   · Nya .html-filer du laddar upp i repot dyker upp HELT AV
+     SIG SJÄLVA under sektionen "Nya appar" — men först när du
+     lägger in dem här i listan får de egen färg, ikon och sektion.
+   · Filer som heter namn-desktop.html paras automatiskt ihop
+     med namn.html som dess desktopversion.
+   · Ange mobil och/eller desktop. Finns bara den ena versionen
+     öppnas den i båda lägena och kortet visar t.ex. "endast mobil".
    ============================================================ */
 const APPS = [
   {
@@ -313,7 +330,72 @@ function rita(){
   });
 }
 
+// ----- Automatisk synk: nya .html-filer i repot dyker upp av sig själva -----
+function snyggtNamn(fil){
+  const n = fil.replace(/\.html$/,"").replace(/-desktop$/,"").replace(/[-_]+/g," ").trim();
+  return n.charAt(0).toUpperCase() + n.slice(1);
+}
+
+function laggTillFranRepo(filer){
+  const STANDARD = {bg:"#FFFFFF", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#3A3633", iconbg:"#FAF7F2"};
+  const kanda = new Set(["index.html", ...GOM]);
+  APPS.forEach(a => { if(a.mobil) kanda.add(a.mobil); if(a.desktop) kanda.add(a.desktop); });
+
+  const nya = filer.filter(f => !kanda.has(f));
+  if(nya.length === 0) return false;
+
+  // 1) namn-desktop.html paras ihop med namn.html om den redan finns i listan
+  const rest = [];
+  nya.forEach(f => {
+    if(f.endsWith("-desktop.html")){
+      const bas = f.replace("-desktop.html", ".html");
+      const agare = APPS.find(a => a.mobil === bas);
+      if(agare && !agare.desktop){ agare.desktop = f; return; }
+    }
+    rest.push(f);
+  });
+
+  // 2) resten blir egna kort under "Nya appar"
+  const tillagda = new Set();
+  rest.forEach(f => {
+    const bas = f.endsWith("-desktop.html") ? f.replace("-desktop.html", ".html") : f;
+    if(tillagda.has(bas)) return;
+    tillagda.add(bas);
+    const app = {
+      id:"repo-" + bas, namn:snyggtNamn(bas), ikon:"📄",
+      desc:"Ny i repot", sektion:"Nya appar", farger:STANDARD
+    };
+    if(rest.includes(bas)) app.mobil = bas;
+    const dt = bas.replace(".html", "-desktop.html");
+    if(rest.includes(dt)) app.desktop = dt;
+    APPS.push(app);
+  });
+  return true;
+}
+
+async function synkaMedRepo(){
+  // lista repots filer via GitHubs öppna API (fungerar för publika repon)
+  let anv, repo;
+  if(GITHUB_URL){
+    const m = GITHUB_URL.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if(m){ anv = m[1]; repo = m[2].replace(/\.git$/, ""); }
+  } else if(location.hostname.endsWith(".github.io")){
+    anv = location.hostname.split(".")[0];
+    const delar = location.pathname.split("/").filter(Boolean);
+    repo = delar.length ? delar[0] : anv + ".github.io";
+  }
+  if(!anv || !repo) return;
+  try{
+    const svar = await fetch("https://api.github.com/repos/" + anv + "/" + repo + "/contents/");
+    if(!svar.ok) return;
+    const inneh = await svar.json();
+    const filer = inneh.filter(p => p.type === "file" && p.name.endsWith(".html")).map(p => p.name);
+    if(laggTillFranRepo(filer)) rita();
+  }catch(e){ /* offline eller privat repo – då visas bara listan i koden */ }
+}
+
 rita();
+synkaMedRepo();
 </script>
 </body>
 </html>
