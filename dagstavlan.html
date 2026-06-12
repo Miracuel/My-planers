@@ -78,6 +78,11 @@ input,select{background:var(--panel2);border:1px solid var(--line);border-radius
 .act.tag-latent .at{color:#9A7B2A}
 .act.tag-rest{border-color:#8E7CC3;background:#EAE4F3}
 .act.tag-rest .at{color:#6E5A99}
+.act.skip{opacity:.65;background:#F2E0DD;border-color:#D9938A}
+.act.skip .ax{text-decoration:line-through;color:#9C5249}
+.act.skip .adone{border-color:#C0655B;background:#C0655B;color:#fff}
+.wpill.skip{opacity:.6;background:#F2E0DD}
+.wpill.skip span{text-decoration:line-through;color:#9C5249}
 .next-card .nc-count{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--teal);line-height:1.1;margin:2px 0}
 .next-card.freecard{border-color:var(--free)}
 .next-card.freecard .nc-label,.next-card.freecard .nc-count{color:var(--free)}
@@ -357,6 +362,7 @@ input,select{background:var(--panel2);border:1px solid var(--line);border-radius
   <div class="dur-row" id="as-dur"></div>
   <div class="btn-row" style="margin-top:14px">
     <button class="btn" id="as-done" style="display:none">✓ Klart</button>
+    <button class="btn" id="as-skip" style="display:none">✗ Ej gjord</button>
     <button class="btn danger" id="as-del" style="display:none">Ta bort</button>
   </div>
   <button class="sheet-close" id="as-save">Spara</button>
@@ -530,8 +536,8 @@ function renderDay(){
     const mh=state.set.compact?26:34;
     const h=a.dur?Math.max(mh,a.dur*PX):mh;
     const tlbl=a.dur?a.t+'–'+min2hm(m+a.dur):a.t;
-    const tcls=a.tag==='latent'?' tag-latent':a.tag==='rest'?' tag-rest':'';
-    html+='<div class="act'+(a.done?' done':'')+tcls+'" data-id="'+a.id+'" style="top:'+y+'px;height:'+h+'px"><span class="at">'+tlbl+'</span><span>'+(a.emoji||'')+'</span><span class="ax">'+esc(a.txt)+'</span><button class="adone" data-id="'+a.id+'">'+(a.done?'✓':'')+'</button></div>';
+    const tcls=(a.tag==='latent'?' tag-latent':a.tag==='rest'?' tag-rest':'')+(a.skip?' skip':'');
+    html+='<div class="act'+(a.done?' done':'')+tcls+'" data-id="'+a.id+'" style="top:'+y+'px;height:'+h+'px"><span class="at">'+tlbl+'</span><span>'+(a.emoji||'')+'</span><span class="ax">'+esc(a.txt)+'</span><button class="adone" data-id="'+a.id+'">'+(a.done?'✓':a.skip?'✗':'')+'</button></div>';
   });
   if(isToday&&nowMin>=startMin&&nowMin<=endMin){
     html+='<div class="nowline" data-t="'+pad(now.getHours())+':'+pad(now.getMinutes())+'" style="top:'+((nowMin-startMin)*PX+10)+'px"></div>';
@@ -541,7 +547,10 @@ function renderDay(){
   document.querySelectorAll('.adone').forEach(b=>{b.onclick=e=>{
     e.stopPropagation();
     const a=items(viewDate).find(x=>x.id===+b.dataset.id);
-    a.done=!a.done;save();renderDay();
+    if(a.done){a.done=false;a.skip=true;}
+    else if(a.skip){a.skip=false;}
+    else{a.done=true;}
+    save();renderDay();
   };});
   document.querySelectorAll('.act').forEach(el=>{el.onclick=()=>openAct(+el.dataset.id);});
   renderNext(isToday,nowMin,list);
@@ -561,8 +570,8 @@ function renderNext(isToday,nowMin,list){
   const slot=document.getElementById('next-slot');
   ncTarget=null;
   if(!isToday){slot.innerHTML='';return;}
-  const ongoing=list.find(a=>!a.done&&a.dur&&hm2min(a.t)<=nowMin&&nowMin<hm2min(a.t)+a.dur);
-  const next=list.find(a=>!a.done&&hm2min(a.t)>nowMin);
+  const ongoing=list.find(a=>!a.done&&!a.skip&&a.dur&&hm2min(a.t)<=nowMin&&nowMin<hm2min(a.t)+a.dur);
+  const next=list.find(a=>!a.done&&!a.skip&&hm2min(a.t)>nowMin);
   if(!ongoing&&!next){slot.innerHTML='';return;}
   const base=new Date();base.setHours(0,0,0,0);
   let label,main,mins,free=false,cheer='';
@@ -685,6 +694,9 @@ function openAct(id){
   const db=document.getElementById('as-done');
   db.style.display=a?'block':'none';
   if(a)db.textContent=a.done?'Ångra klar':'✓ Klart';
+  const sb=document.getElementById('as-skip');
+  sb.style.display=a?'block':'none';
+  if(a)sb.textContent=a.skip?'Ångra ej gjord':'✗ Ej gjord';
   openSheet('act-sheet');
 }
 document.getElementById('add-act').onclick=()=>openAct(null);
@@ -1006,7 +1018,8 @@ function renderCalGrid(){
     const k=toISO(cur);
     const its=state.days[k]||[];
     const done=its.filter(a=>a.done).length;
-    const open=its.length-done;
+    const skipped=its.filter(a=>a.skip).length;
+    const open=its.length-done-skipped;
     let mini='';
     for(let j=0;j<Math.min(done,3);j++)mini+='<i></i>';
     if(open>0)mini+='<i class="open"></i>';
@@ -1156,7 +1169,7 @@ function renderWeek(){
   grid.style.gridTemplateColumns='repeat('+days.length+',1fr)';
   grid.innerHTML=days.map(o=>{
     const its=(state.days[o.k]||[]).slice().sort((a,b)=>a.t.localeCompare(b.t));
-    const pills=its.map(a=>'<div class="wpill'+(a.done?' done':'')+'" data-k="'+o.k+'" data-id="'+a.id+'"><b>'+a.t+(a.dur?'–'+min2hm(hm2min(a.t)+a.dur):'')+'</b><span>'+(a.emoji?a.emoji+' ':'')+esc(a.txt)+'</span></div>').join('');
+    const pills=its.map(a=>'<div class="wpill'+(a.done?' done':'')+(a.skip?' skip':'')+'" data-k="'+o.k+'" data-id="'+a.id+'"><b>'+a.t+(a.dur?'–'+min2hm(hm2min(a.t)+a.dur):'')+'</b><span>'+(a.emoji?a.emoji+' ':'')+esc(a.txt)+'</span></div>').join('');
     return '<div class="wcol'+(o.k===tk?' todaycol':'')+'"><div class="whead" data-k="'+o.k+'">'+o.abbr+'<small>'+o.num+'</small></div>'+pills+'<button class="wadd" data-k="'+o.k+'">＋</button></div>';
   }).join('');
   grid.querySelectorAll('.wadd,.whead').forEach(el=>{el.onclick=()=>{viewDate=el.dataset.k;openAct(null);};});
@@ -1177,7 +1190,12 @@ document.getElementById('wk-next').onclick=()=>{wkOffset++;renderWeek();};
 document.getElementById('as-done').onclick=()=>{
   if(!editId)return;
   const a=items(viewDate).find(x=>x.id===editId);
-  if(a){a.done=!a.done;save();closeSheets();renderDay();renderWeek();}
+  if(a){a.done=!a.done;if(a.done)a.skip=false;save();closeSheets();renderDay();renderWeek();}
+};
+document.getElementById('as-skip').onclick=()=>{
+  if(!editId)return;
+  const a=items(viewDate).find(x=>x.id===editId);
+  if(a){a.skip=!a.skip;if(a.skip)a.done=false;save();closeSheets();renderDay();renderWeek();}
 };
 
 // ── Aktivitetssignal ──────────────────────────────────
@@ -1187,7 +1205,7 @@ function checkActSignal(){
   const n=new Date();
   const hm=pad(n.getHours())+':'+pad(n.getMinutes());
   items(toISO(n)).forEach(a=>{
-    if(a.t===hm&&!a.done&&!signaled[a.id]){
+    if(a.t===hm&&!a.done&&!a.skip&&!signaled[a.id]){
       signaled[a.id]=true;
       beep(2);
       if(navigator.vibrate)navigator.vibrate([200,100,200]);

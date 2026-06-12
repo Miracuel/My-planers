@@ -22,16 +22,41 @@ body{
   padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   min-height:100vh;
 }
-.app{max-width:480px;margin:0 auto;padding:22px 14px 44px}
+.app{max-width:480px;margin:0 auto;padding:22px 14px 44px;transition:max-width .2s ease}
 
 /* Sidhuvud */
-.head{margin-bottom:20px;padding-top:4px}
+.head{margin-bottom:14px;padding-top:4px}
 .greet{font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;letter-spacing:.01em}
 .datum{font-size:11px;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+.head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.gh-btn{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;margin-top:4px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;text-decoration:none;
+}
+.gh-btn:active{background:var(--line)}
+.gh-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.gh-btn svg{width:19px;height:19px;display:block}
+.gh-btn[hidden]{display:none}
+
+/* Lägesväljare: mobil / desktop */
+.mode{display:flex;border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px;width:max-content;margin-top:14px}
+.mode button{
+  border:none;background:none;font-family:inherit;
+  font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-soft);padding:7px 14px;border-radius:999px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:background .12s,color .12s;
+}
+.mode button.on{background:var(--ink);color:#fff}
+.mode button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
 /* Sektioner */
 .sec-title{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin:18px 2px 10px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Desktopläge: bredare central och fler kolumner */
+body.desktop .app{max-width:860px}
+body.desktop .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 
 /* Appkort – varje kort målas i sin egen apps färgvärld via CSS-variabler */
 .tile{
@@ -57,6 +82,7 @@ body{
 }
 .tile .namn{font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:400;color:var(--t-accent,var(--ink))}
 .tile .desc{font-size:11px;line-height:1.45;color:var(--t-muted,var(--ink-soft))}
+.tile .endast{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--t-muted,var(--ink-soft));margin-top:auto;opacity:.85}
 .tile .senast{
   position:absolute;top:10px;right:11px;
   font-size:9px;letter-spacing:.06em;text-transform:uppercase;
@@ -69,7 +95,7 @@ body{
 .foot{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:26px;opacity:.85;line-height:1.6}
 
 @media (prefers-reduced-motion: reduce){
-  .tile{transition:none}
+  .tile,.app,.mode button{transition:none}
 }
 </style>
 </head>
@@ -77,8 +103,19 @@ body{
 <div class="app">
 
   <div class="head">
-    <div class="greet" id="greet">God dag</div>
-    <div class="datum" id="datum"></div>
+    <div class="head-row">
+      <div>
+        <div class="greet" id="greet">God dag</div>
+        <div class="datum" id="datum"></div>
+      </div>
+      <a class="gh-btn" id="gh-link" href="#" target="_blank" rel="noopener" aria-label="Öppna på GitHub" hidden>
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      </a>
+    </div>
+    <div class="mode" role="group" aria-label="Välj läge">
+      <button id="btn-mobil" type="button">📱 Mobil</button>
+      <button id="btn-desktop" type="button">🖥️ Desktop</button>
+    </div>
   </div>
 
   <div id="sektioner"></div>
@@ -92,63 +129,98 @@ body{
 
 <script>
 /* ============================================================
+   GITHUB-LÄNK
+   Klistra in adressen till ditt repo här, t.ex.
+   "https://github.com/dittnamn/mina-appar"
+   Lämnar du den tom listar Centralen ut adressen själv
+   när sidan körs på GitHub Pages.
+   ============================================================ */
+const GITHUB_URL = "";
+
+/* ============================================================
    MINA APPAR
-   Lägg till en ny app genom att kopiera ett block nedan.
-   Färgerna (bg, line, ink, muted, accent, iconbg) hämtas
-   från respektive apps egen palett så kortet ser ut som appen.
+   Varje app kan ha en mobilversion och/eller en desktopversion:
+
+     mobil:   "appen.html"           ← fil för mobilversionen
+     desktop: "appen-desktop.html"   ← fil för desktopversionen
+
+   Ange den ena eller båda. Finns bara den ena versionen öppnas
+   den i båda lägena, och kortet visar t.ex. "endast mobil".
+   Färgerna (bg, line, ink, muted, accent, iconbg) hämtas från
+   respektive apps egen palett så kortet ser ut som appen.
    ============================================================ */
 const APPS = [
   {
-    id:"planering", fil:"index.html",
+    id:"planering",
     namn:"Min planering", ikon:"🗓️",
     desc:"Kalender, cykel, träning & medicin",
     sektion:"Vardag",
+    mobil:"planering.html",
     farger:{bg:"#FFFFFF", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#C96A6A", iconbg:"#F5E3E3"}
   },
   {
-    id:"batteriet", fil:"batteriet.html",
+    id:"batteriet",
     namn:"Batteriet", ikon:"🔋",
     desc:"Energi & återhämtning",
     sektion:"Vardag",
+    mobil:"batteriet.html",
     farger:{bg:"#F7F8F4", line:"#D8DECF", ink:"#3C4237", muted:"#7E8676", accent:"#7A8B6F", iconbg:"#DBE3D3"}
   },
   {
-    id:"dagstavlan", fil:"dagstavlan.html",
+    id:"dagstavlan",
     namn:"Dagstavlan", ikon:"☀️",
     desc:"Dagens schema & rutiner",
     sektion:"Vardag",
+    mobil:"dagstavlan.html",
     farger:{bg:"#F7F8F4", line:"#D8DECF", ink:"#3C4237", muted:"#7E8676", accent:"#C9655A", iconbg:"#E7EBE2"}
   },
   {
-    id:"jobb", fil:"jobb.html",
+    id:"jobb",
     namn:"Jobbplanering", ikon:"💼",
     desc:"Planering för arbetet",
     sektion:"Vardag",
+    mobil:"jobb.html",
     farger:{bg:"#FFFFFF", line:"#E2E2DE", ink:"#3A3633", muted:"#8A847C", accent:"#5B7BA6", iconbg:"#E2E9F2"}
   },
   {
-    id:"manen", fil:"manen.html",
+    id:"manen",
     namn:"Månen", ikon:"🌙",
     desc:"Månfaser & månkalender",
     sektion:"Himlen & korten",
+    mobil:"manen.html",
     farger:{bg:"#131A2B", line:"#283452", ink:"#E2E8F2", muted:"#8B96AD", accent:"#9FB8D8", iconbg:"#1B2438"}
   },
   {
-    id:"astro", fil:"astro.html",
+    id:"astro",
     namn:"Stjärnkartan", ikon:"✨",
     desc:"Astrologi & stjärnhimmel",
     sektion:"Himlen & korten",
+    mobil:"astro.html",
     farger:{bg:"#1B1635", line:"#332B5C", ink:"#E9E5F2", muted:"#948DB3", accent:"#D6C478", iconbg:"#241D45"}
   },
   {
-    id:"tarot", fil:"tarot.html",
+    id:"tarot",
     namn:"Tarotdagboken", ikon:"🃏",
     desc:"Dagens kort & dagbok",
     sektion:"Himlen & korten",
+    mobil:"tarot.html",
     farger:{bg:"#171C30", line:"#2A3052", ink:"#EAE4D2", muted:"#8E89A6", accent:"#D4AF37", iconbg:"#1E2440"}
   },
 ];
 /* ============================================================ */
+
+// GitHub-knappen: använd inställd adress, annars gissa utifrån GitHub Pages-domänen
+(function(){
+  const el = document.getElementById("gh-link");
+  let url = GITHUB_URL;
+  if(!url && location.hostname.endsWith(".github.io")){
+    const anv = location.hostname.split(".")[0];
+    const delar = location.pathname.split("/").filter(Boolean);
+    const repo = delar.length ? delar[0] : anv + ".github.io";
+    url = "https://github.com/" + anv + "/" + repo;
+  }
+  if(url){ el.href = url; el.hidden = false; }
+})();
 
 // Hälsning efter tid på dygnet
 (function(){
@@ -166,13 +238,43 @@ const APPS = [
   document.getElementById("datum").textContent = str.charAt(0).toUpperCase() + str.slice(1);
 })();
 
-// Rita upp sektioner och appkort
-(function(){
+// Aktuellt läge: sparat val, annars gissning utifrån skärmbredd
+function startLage(){
+  const sparat = localStorage.getItem("centralen-lage");
+  if(sparat === "mobil" || sparat === "desktop") return sparat;
+  return window.matchMedia("(min-width: 700px)").matches ? "desktop" : "mobil";
+}
+let lage = startLage();
+
+const btnMobil = document.getElementById("btn-mobil");
+const btnDesktop = document.getElementById("btn-desktop");
+
+btnMobil.addEventListener("click", () => byt("mobil"));
+btnDesktop.addEventListener("click", () => byt("desktop"));
+
+function byt(nytt){
+  lage = nytt;
+  try{ localStorage.setItem("centralen-lage", nytt); }catch(e){}
+  rita();
+}
+
+// Rita upp sektioner och appkort utifrån aktuellt läge
+function rita(){
+  document.body.classList.toggle("desktop", lage === "desktop");
+  btnMobil.classList.toggle("on", lage === "mobil");
+  btnDesktop.classList.toggle("on", lage === "desktop");
+
   const senast = localStorage.getItem("centralen-senast");
   const wrap = document.getElementById("sektioner");
+  wrap.innerHTML = "";
+
+  const annat = lage === "mobil" ? "desktop" : "mobil";
   const sektioner = [...new Set(APPS.map(a => a.sektion))];
 
   sektioner.forEach(s => {
+    const appar = APPS.filter(a => a.sektion === s && (a.mobil || a.desktop));
+    if(appar.length === 0) return;
+
     const t = document.createElement("div");
     t.className = "sec-title";
     t.textContent = s;
@@ -181,10 +283,13 @@ const APPS = [
     const grid = document.createElement("div");
     grid.className = "grid";
 
-    APPS.filter(a => a.sektion === s).forEach(a => {
+    appar.forEach(a => {
+      const fil = a[lage] || a[annat];   // saknas versionen för läget öppnas den andra
+      const fallback = !a[lage];
+
       const el = document.createElement("a");
       el.className = "tile";
-      el.href = a.fil;
+      el.href = fil;
       const f = a.farger;
       el.style.setProperty("--t-bg", f.bg);
       el.style.setProperty("--t-line", f.line);
@@ -196,7 +301,8 @@ const APPS = [
         (senast === a.id ? '<span class="senast">Senast</span>' : '') +
         '<span class="ikon">' + a.ikon + '</span>' +
         '<span class="namn">' + a.namn + '</span>' +
-        '<span class="desc">' + a.desc + '</span>';
+        '<span class="desc">' + a.desc + '</span>' +
+        (fallback ? '<span class="endast">' + (a.mobil ? "📱 endast mobil" : "🖥️ endast desktop") + '</span>' : '');
       el.addEventListener("click", () => {
         try{ localStorage.setItem("centralen-senast", a.id); }catch(e){}
       });
@@ -205,7 +311,9 @@ const APPS = [
 
     wrap.appendChild(grid);
   });
-})();
+}
+
+rita();
 </script>
 </body>
 </html>
