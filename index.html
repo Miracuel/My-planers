@@ -50,6 +50,14 @@ body{
 }
 .mode button.on{background:var(--ink);color:#fff}
 .mode button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.sync-pill{
+  border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+  font-family:inherit;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  padding:10px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;
+}
+.sync-pill.ok{background:#E4EDE4;border-color:#CBDCCB;color:#4F7A52}
+.sync-pill.err{background:#F5E3E3;border-color:#E8C9C9;color:#A04545}
+.sync-pill:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
 /* Infobar i redigeringsläge */
 .edit-bar{
@@ -154,6 +162,19 @@ body.edit .tile{cursor:pointer}
 .kn.primar{background:var(--ink);border-color:var(--ink);color:#fff}
 .kn.fara{color:#A04545;border-color:#E8C9C9;background:#FBF1F1}
 .kn[hidden]{display:none}
+.hint{font-size:11px;color:var(--ink-soft);line-height:1.5;margin-top:6px}
+#gh-status{margin:0 0 12px;font-size:12px;padding:9px 12px;border-radius:10px;line-height:1.45}
+#gh-status.ok{background:#E4EDE4;color:#4F7A52}
+#gh-status.err{background:#F5E3E3;color:#A04545}
+#gh-status.info{background:#E2E9F2;color:#46618A}
+#gh-status[hidden]{display:none}
+.set-row{display:flex;gap:8px}
+.set-row .kn{flex:1}
+.foot button{
+  font-size:11px;color:var(--ink-soft);background:none;border:none;cursor:pointer;
+  padding:2px 6px;font-family:inherit;
+  text-decoration:underline;text-underline-offset:3px;
+}
 
 /* Sidfot */
 .foot{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:26px;opacity:.85;line-height:1.6}
@@ -184,9 +205,10 @@ body.edit .tile{cursor:pointer}
       <div class="mode">
         <button id="btn-edit" type="button">✎ Redigera</button>
       </div>
+      <button class="sync-pill" id="sync-badge" type="button">Lokal</button>
     </div>
     <div class="edit-bar" id="edit-bar" hidden>
-      <span>Tryck på ett kort för att ändra det. Ändringarna sparas i den här webbläsaren — kopiera koden och klistra in över APPS-listan i index.html för att spara dem överallt.</span>
+      <span>Tryck på ett kort för att ändra det. Med GitHub-synk på (knappen här ovanför) följer ändringarna med mellan dina enheter — eller kopiera koden och klistra in över APPS-listan i index.html för att baka in dem permanent.</span>
       <button id="btn-kod" type="button">Kopiera som kod</button>
     </div>
   </div>
@@ -195,8 +217,8 @@ body.edit .tile{cursor:pointer}
 
   <div class="foot">
     Centralen · alla appar samlade<br>
-    Nya .html-filer i repot dyker upp av sig själva<br>
-    Tryck ✎ Redigera för att ändra namn, färg &amp; sektion direkt här
+    Nya .html-filer i repot dyker upp av sig själva · ändringar sparas lokalt, och i ditt privata GitHub-repo om synk är på<br>
+    <button id="open-settings" type="button">Inställningar</button>
   </div>
 
 </div>
@@ -238,6 +260,40 @@ body.edit .tile{cursor:pointer}
   </div>
 </div>
 
+<!-- Synk & inställningar -->
+<div class="skal" id="skal-set" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="set-titel">
+    <h2 id="set-titel">Synk &amp; inställningar</h2>
+    <div class="fil-info">Centralen läser och sparar <b>centralen.json</b> i ett privat GitHub-repo — samma data-repo som Appkollen och jobbplaneringen funkar fint, filerna krockar inte. Token sparas bara lokalt på den här enheten.</div>
+    <div class="falt">
+      <label for="gh-owner">GitHub-användarnamn</label>
+      <input id="gh-owner" type="text" autocomplete="off" placeholder="Ägare av repot">
+    </div>
+    <div class="falt">
+      <label for="gh-repo">Data-repo (privat)</label>
+      <input id="gh-repo" type="text" autocomplete="off" placeholder="Namn på data-repot">
+    </div>
+    <div class="falt">
+      <label for="gh-token">Token</label>
+      <input id="gh-token" type="password" autocomplete="off" placeholder="Fine-grained token, github_pat_…">
+      <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+    </div>
+    <div id="gh-status" hidden></div>
+    <button class="kn primar" id="gh-save" type="button" style="width:100%">Spara &amp; synka</button>
+    <div class="falt" style="margin-top:14px">
+      <label>Data</label>
+      <div class="set-row">
+        <button class="kn" id="set-export" type="button">Exportera</button>
+        <button class="kn" id="set-import" type="button">Importera</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+    <div class="sheet-knappar">
+      <button class="kn" id="set-done" type="button">Klar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    GITHUB-LÄNK
@@ -257,12 +313,12 @@ const GOM = [];
    Enklaste sättet att ändra namn, ikon, beskrivning, sektion
    och färg är direkt i Centralen: tryck ✎ Redigera och sedan
    på ett kort. Knappen "Kopiera som kod" ger dig sedan hela
-   listan färdig att klistra in här (ersätt allt från
-   "const APPS = [" till "];") så gäller ändringarna på alla
-   enheter.
+   listan färdig att klistra in här — ersätt då hela APPS-listan
+   nedan, från startraden till dess avslutande ]; — så gäller
+   ändringarna på alla enheter.
 
    Vill du hellre skriva för hand: kopiera mallen nedan och
-   klistra in den SIST i listan, före den avslutande ];
+   klistra in den SIST i listan, före den avslutande klammern.
 
    {
      id:"minapp",                     ← unikt kortnamn, små bokstäver
@@ -305,13 +361,13 @@ const APPS = [
     desc:"Dagens schema & rutiner",
     sektion:"Vardag",
     mobil:"dagstavlan.html",
-    farger:{bg:"#F7F8F4", line:"#D8DECF", ink:"#3C4237", muted:"#7E8676", accent:"#C9655A", iconbg:"#E7EBE2"}
+    farger:{bg:"#FFFFFF", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#C96A6A", iconbg:"#F5E3E3"}
   },
   {
     id:"jobb",
     namn:"Jobbplanering", ikon:"💼",
     desc:"Planering för arbetet",
-    sektion:"Vardag",
+    sektion:"Jobb",
     mobil:"jobb.html",
     farger:{bg:"#FFFFFF", line:"#E2E2DE", ink:"#3A3633", muted:"#8A847C", accent:"#5B7BA6", iconbg:"#E2E9F2"}
   },
@@ -319,7 +375,7 @@ const APPS = [
     id:"manen",
     namn:"Månen", ikon:"🌙",
     desc:"Månfaser & månkalender",
-    sektion:"Himlen & korten",
+    sektion:"Magiappar",
     mobil:"manen.html",
     farger:{bg:"#131A2B", line:"#283452", ink:"#E2E8F2", muted:"#8B96AD", accent:"#9FB8D8", iconbg:"#1B2438"}
   },
@@ -327,7 +383,7 @@ const APPS = [
     id:"astro",
     namn:"Stjärnkartan", ikon:"✨",
     desc:"Astrologi & stjärnhimmel",
-    sektion:"Himlen & korten",
+    sektion:"Magiappar",
     mobil:"astro.html",
     farger:{bg:"#1B1635", line:"#332B5C", ink:"#E9E5F2", muted:"#948DB3", accent:"#D6C478", iconbg:"#241D45"}
   },
@@ -335,9 +391,49 @@ const APPS = [
     id:"tarot",
     namn:"Tarotdagboken", ikon:"🃏",
     desc:"Dagens kort & dagbok",
-    sektion:"Himlen & korten",
+    sektion:"Magiappar",
     mobil:"tarot.html",
     farger:{bg:"#171C30", line:"#2A3052", ink:"#EAE4D2", muted:"#8E89A6", accent:"#D4AF37", iconbg:"#1E2440"}
+  },
+  {
+    id:"arshjulet",
+    namn:"Årshjulet", ikon:"🔮",
+    desc:"Sabbatkalendern",
+    sektion:"Magiappar",
+    mobil:"arshjulet.html",
+    farger:{bg:"#171C30", line:"#2A3052", ink:"#EAE4D2", muted:"#8E89A6", accent:"#D4AF37", iconbg:"#1E2440"}
+  },
+  {
+    id:"budgeten",
+    namn:"Budgeten", ikon:"💰",
+    desc:"Ny i repot",
+    sektion:"Vardag",
+    mobil:"budgeten.html",
+    farger:{bg:"#F7F8F4", line:"#D8DECF", ink:"#3C4237", muted:"#7E8676", accent:"#7A8B6F", iconbg:"#DBE3D3"}
+  },
+  {
+    id:"grimoire",
+    namn:"Grimoire", ikon:"🌟",
+    desc:"Griomire app",
+    sektion:"Magiappar",
+    mobil:"grimoire.html",
+    farger:{bg:"#1B1635", line:"#332B5C", ink:"#E9E5F2", muted:"#948DB3", accent:"#D6C478", iconbg:"#241D45"}
+  },
+  {
+    id:"jeeves",
+    namn:"Jeeves", ikon:"🎩",
+    desc:"Jobbcoach/assistent",
+    sektion:"Jobb",
+    mobil:"jeeves.html",
+    farger:{bg:"#FCF6F1", line:"#EADFD2", ink:"#4A3F38", muted:"#9A8A7C", accent:"#C9655A", iconbg:"#F4E3DC"}
+  },
+  {
+    id:"stadlugn",
+    namn:"Städhjälp", ikon:"🧹",
+    desc:"Städ-app",
+    sektion:"Vardag",
+    mobil:"stadlugn.html",
+    farger:{bg:"#FBF7EC", line:"#EDE3C8", ink:"#4A4232", muted:"#9C8F72", accent:"#C7A23F", iconbg:"#F7EDD8"}
   },
 ];
 /* ============================================================ */
@@ -601,6 +697,7 @@ function sparaEditor(){
     farger: valdFarger
   };
   sparaAndringar();
+  pushaSnart();
   rita();
   stangEditor();
 }
@@ -609,6 +706,7 @@ function aterstallEditor(){
   if(editorId && ANDRINGAR[editorId]){
     delete ANDRINGAR[editorId];
     sparaAndringar();
+    pushaSnart();
     rita();
   }
   stangEditor();
@@ -622,7 +720,12 @@ document.getElementById("btn-aterstall").addEventListener("click", aterstallEdit
 });
 document.getElementById("in-sektion-ny").addEventListener("input", byggSektionChips);
 skal.addEventListener("click", (e) => { if(e.target === skal) stangEditor(); });
-document.addEventListener("keydown", (e) => { if(e.key === "Escape" && !skal.hidden) stangEditor(); });
+document.addEventListener("keydown", (e) => {
+  if(e.key !== "Escape") return;
+  if(!skal.hidden) stangEditor();
+  const ss = document.getElementById("skal-set");
+  if(!ss.hidden) ss.hidden = true;
+});
 
 // ----- Exportera listan som kod -----
 function somKod(){
@@ -669,6 +772,154 @@ function fallbackKopiera(text, klar){
   document.body.removeChild(ta);
 }
 document.getElementById("btn-kod").addEventListener("click", kopieraKod);
+
+// ----- Synk via GitHub (samma mönster som Appkollen) -----
+// Ändringarna du gör i ✎-läget sparas som centralen.json i ett
+// privat data-repo, så de följer med mellan dina enheter.
+const SYNC_KEY = "centralensync_v1";
+let synk = {owner:"", repo:"", token:"", sha:null};
+function loadSynk(){
+  try{
+    const s = localStorage.getItem(SYNC_KEY);
+    if(s){ const d = JSON.parse(s); synk.owner = d.owner || ""; synk.repo = d.repo || ""; synk.token = d.token || ""; }
+  }catch(e){}
+}
+function saveSynk(){
+  try{ localStorage.setItem(SYNC_KEY, JSON.stringify({owner:synk.owner, repo:synk.repo, token:synk.token})); }catch(e){}
+}
+const synkPa = () => !!(synk.owner && synk.repo && synk.token);
+const ghDataUrl = () => "https://api.github.com/repos/" + synk.owner + "/" + synk.repo + "/contents/centralen.json";
+const ghAuthHeaders = () => ({"Authorization":"Bearer " + synk.token, "Accept":"application/vnd.github+json"});
+const b64enc = s => btoa(unescape(encodeURIComponent(s)));
+const b64dec = s => decodeURIComponent(escape(atob(s.replace(/\s/g,""))));
+
+function setBadge(st, msg){
+  const b = document.getElementById("sync-badge");
+  b.textContent = msg;
+  b.className = "sync-pill" + (st === "ok" ? " ok" : st === "err" ? " err" : "");
+}
+
+async function ghGet(){
+  const r = await fetch(ghDataUrl(), {headers:ghAuthHeaders(), cache:"no-store"});
+  if(r.status === 404){ synk.sha = null; return null; }
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  synk.sha = j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+
+async function ghPull(){
+  if(!synkPa()) return;
+  try{
+    setBadge("load","Hämtar…");
+    const data = await ghGet();
+    if(data && data.andringar && typeof data.andringar === "object"){
+      ANDRINGAR = data.andringar;
+      sparaAndringar();
+      rita();
+    }
+    setBadge("ok","Synkad");
+  }catch(e){ setBadge("err","Synkfel"); }
+}
+
+async function ghPush(){
+  if(!synkPa()) return;
+  setBadge("load","Sparar…");
+  const content = b64enc(JSON.stringify({andringar:ANDRINGAR, updated:new Date().toISOString()}));
+  const doPut = () => fetch(ghDataUrl(), {
+    method:"PUT",
+    headers:Object.assign({"Content-Type":"application/json"}, ghAuthHeaders()),
+    body:JSON.stringify(Object.assign({message:"Uppdatering via Centralen", content:content}, synk.sha ? {sha:synk.sha} : {}))
+  });
+  let r = await doPut();
+  if(r.status === 409 || r.status === 422){
+    try{ await ghGet(); }catch(e){}
+    r = await doPut();
+  }
+  if(!r.ok){ setBadge("err","Synkfel"); throw new Error("HTTP " + r.status); }
+  const j = await r.json();
+  if(j.content && j.content.sha) synk.sha = j.content.sha;
+  setBadge("ok","Synkad");
+}
+
+let pushTimer = null;
+function pushaSnart(){
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { if(synkPa()) ghPush().catch(()=>{}); }, 1200);
+}
+
+// Inställningspanelen
+const skalSet = document.getElementById("skal-set");
+function setGhStatus(msg, typ){
+  const el = document.getElementById("gh-status");
+  el.hidden = false;
+  el.className = typ;
+  el.textContent = msg;
+}
+function oppnaInstallningar(){
+  document.getElementById("gh-owner").value = synk.owner;
+  document.getElementById("gh-repo").value = synk.repo;
+  document.getElementById("gh-token").value = synk.token;
+  document.getElementById("gh-status").hidden = true;
+  skalSet.hidden = false;
+}
+function stangInstallningar(){ skalSet.hidden = true; }
+
+document.getElementById("open-settings").addEventListener("click", oppnaInstallningar);
+document.getElementById("sync-badge").addEventListener("click", () => { if(synkPa()) ghPull(); else oppnaInstallningar(); });
+document.getElementById("set-done").addEventListener("click", stangInstallningar);
+skalSet.addEventListener("click", (e) => { if(e.target === skalSet) stangInstallningar(); });
+
+document.getElementById("gh-save").addEventListener("click", async () => {
+  synk.owner = v("gh-owner");
+  synk.repo = v("gh-repo");
+  synk.token = v("gh-token");
+  if(!synkPa()){ setGhStatus("Fyll i alla tre fälten.","err"); return; }
+  saveSynk();
+  setGhStatus("Testar anslutning…","info");
+  try{
+    const data = await ghGet();
+    if(data){ setGhStatus("✓ Ansluten! Hämtar dina ändringar…","ok"); await ghPull(); }
+    else{ setGhStatus("✓ Ansluten! Repot saknar centralen.json — laddar upp dina lokala ändringar…","ok"); await ghPush(); }
+    setTimeout(() => { document.getElementById("gh-status").hidden = true; }, 1500);
+  }catch(e){
+    setGhStatus("Fel: " + e.message + ". Kontrollera användarnamn, reponamn och att token har Contents-behörighet.","err");
+  }
+});
+
+// Export / import av ändringarna
+function exportData(){
+  const blob = new Blob([JSON.stringify({andringar:ANDRINGAR, exported:new Date().toISOString()}, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "centralen-backup-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+}
+document.getElementById("set-export").addEventListener("click", exportData);
+document.getElementById("set-import").addEventListener("click", () => document.getElementById("import-file").click());
+document.getElementById("import-file").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const data = JSON.parse(r.result);
+      if(data && data.andringar && typeof data.andringar === "object"){
+        ANDRINGAR = data.andringar;
+        sparaAndringar();
+        rita();
+        if(synkPa()) ghPush().catch(()=>{});
+        stangInstallningar();
+      } else {
+        alert("Filen verkar inte vara en giltig säkerhetskopia.");
+      }
+    }catch(err){ alert("Kunde inte läsa filen."); }
+  };
+  r.readAsText(f);
+});
+
+// Hämta senaste när fliken får fokus igen
+document.addEventListener("visibilitychange", () => { if(!document.hidden && synkPa()) ghPull(); });
 
 // ----- Automatisk synk: nya .html-filer i repot dyker upp av sig själva -----
 function snyggtNamn(fil){
@@ -734,8 +985,11 @@ async function synkaMedRepo(){
   }catch(e){ /* offline eller privat repo – då visas bara listan i koden */ }
 }
 
+loadSynk();
 rita();
 synkaMedRepo();
+if(synkPa()) ghPull();
+else setBadge("off","Lokal");
 </script>
 </body>
 </html>
