@@ -46,7 +46,9 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .hero-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .hero-num{font-family:Georgia,serif;font-size:46px;font-weight:400;line-height:1.15;margin-top:2px}
 .hero-num.neg{color:var(--rose)}
-.hero-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.hero-sub{font-size:13px;color:var(--ink);margin-top:7px}
+.hero-sub b{font-weight:600}
+.pay-note{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.5}
 .pace-chip{display:inline-block;background:var(--sea-soft);color:var(--sea);border-radius:10px;padding:4px 11px;font-size:12px;font-weight:600;margin-top:9px}
 .pace-chip.calm{background:var(--rose-soft);color:var(--rose)}
 .tbar{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:13px}
@@ -182,6 +184,7 @@ html[data-theme=dark] .setup-banner{color:#C4D6E0}
       <div class="hero-label">Kvar att använda</div>
       <div class="hero-num num" id="hero-num">0 kr</div>
       <div class="hero-sub" id="hero-sub"></div>
+      <div class="pay-note" id="pay-note" style="display:none"></div>
       <div class="pace-chip num" id="pace-chip"></div>
     </div>
     <div class="tbar"><i id="tbar-fill"></i></div>
@@ -306,7 +309,7 @@ html[data-theme=dark] .setup-banner{color:#C4D6E0}
   <h3>Inställningar</h3>
   <label>Lönedag (1–28)</label>
   <input type="number" inputmode="numeric" id="set-payday" min="1" max="28">
-  <div class="soft" style="margin-top:4px">Perioden går från lönedag till lönedag. 1–28 funkar i alla månader.</div>
+  <div class="soft" style="margin-top:4px">Perioden går från lönedag till lönedag. 1–28 funkar i alla månader. Hamnar dagen på en lördag eller söndag räknar appen med utbetalning fredagen innan.</div>
   <label>Inkomst per månad (kr, efter skatt)</label>
   <input type="number" inputmode="numeric" id="set-inc" placeholder="0">
   <label>Sparande per månad (kr, frivilligt)</label>
@@ -324,7 +327,7 @@ html[data-theme=dark] .setup-banner{color:#C4D6E0}
 <div class="sheet" id="sheet-info">
   <h3>Så räknar appen</h3>
   <ul class="info-list">
-    <li>Perioden går från din lönedag till nästa lönedag.</li>
+    <li>Perioden går från din lönedag till nästa. Infaller lönedagen på en lördag eller söndag betalas lönen ut fredagen innan — appen räknar med det automatiskt, även i nerräkningen.</li>
     <li>Rörligt utrymme = inkomst − fasta utgifter − sparande.</li>
     <li>Kvar att använda = rörligt utrymme − köp du loggat den här perioden.</li>
     <li>Kr/dag = kvar, delat på dagarna som är kvar (idag inräknad).</li>
@@ -363,15 +366,25 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 // ── Hjälpare ──────────────────────────────────────────
 const MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+const WD=['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+function ord(n){const r=n%10;return n+(((r===1||r===2)&&(n<3||n>20))?':a':':e');}
 const DAY=86400000;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function fmt(n){return Math.round(n).toLocaleString('sv-SE')+' kr';}
 function mid(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function dLabel(d){return d.getDate()+' '+MON[d.getMonth()];}
-function pStart(d){let y=d.getFullYear(),m=d.getMonth();if(d.getDate()<state.payday){m--;if(m<0){m=11;y--;}}return new Date(y,m,state.payday);}
-function period(){const t=mid(new Date());const s=pStart(t);const e=new Date(s.getFullYear(),s.getMonth()+1,state.payday);
-  return {s,e,daysTotal:Math.round((e-s)/DAY),daysLeft:Math.max(1,Math.round((e-t)/DAY)),dayNo:Math.round((t-s)/DAY)+1};}
+function paydate(y,m){ // faktisk utbetalningsdag: lör/sön → fredagen innan
+  const nom=new Date(y,m,state.payday),wd=nom.getDay();
+  if(wd===6)return new Date(y,m,state.payday-1);
+  if(wd===0)return new Date(y,m,state.payday-2);
+  return nom;}
+function payInfo(d){ // senaste utbetalning <= d, samt nästa (e) och dess nominella datum
+  let y=d.getFullYear(),m=d.getMonth()+1;
+  while(paydate(y,m)>d)m--;
+  return {s:paydate(y,m),e:paydate(y,m+1),nomE:new Date(y,m+1,state.payday)};}
+function period(){const t=mid(new Date());const i=payInfo(t);
+  return {s:i.s,e:i.e,nomE:i.nomE,t:t,daysTotal:Math.round((i.e-i.s)/DAY),daysLeft:Math.max(1,Math.round((i.e-t)/DAY)),dayNo:Math.round((t-i.s)/DAY)+1};}
 function cat(id){return state.cats.find(c=>c.id===id)||{id:'ovr',e:'📦',n:'Annat',bud:0};}
 function buysIn(s,e){const a=toISO(s),b=toISO(e);return state.buys.filter(x=>x.d>=a&&x.d<b);}
 function fixedSum(){return state.fixed.reduce((t,f)=>t+(+f.a||0),0);}
@@ -395,7 +408,14 @@ function renderHome(){
   document.getElementById('setup-banner').style.display=((+state.inc||0)<=0&&!state.fixed.length)?'block':'none';
   const hn=document.getElementById('hero-num');
   hn.textContent=fmt(k);hn.classList.toggle('neg',k<0);
-  document.getElementById('hero-sub').textContent='till lönen '+dLabel(p.e)+' · '+p.daysLeft+(p.daysLeft===1?' dag kvar':' dagar kvar');
+  const hs=document.getElementById('hero-sub');
+  if(p.t.getTime()===p.s.getTime())hs.innerHTML='💸 <b>Lön idag</b> — ny period, nytt utrymme';
+  else if(p.daysLeft===1)hs.innerHTML='💸 Lön <b>imorgon</b> · '+WD[p.e.getDay()]+' '+dLabel(p.e);
+  else hs.innerHTML='💸 Lön om <b>'+p.daysLeft+' dagar</b> · '+WD[p.e.getDay()]+' '+dLabel(p.e);
+  const pn=document.getElementById('pay-note');
+  if(p.e.getTime()!==p.nomE.getTime()){pn.style.display='block';
+    pn.textContent='Den '+ord(state.payday)+' är '+(p.nomE.getDay()===6?'en lördag':'en söndag')+' — lönen betalas ut fredagen innan.';}
+  else pn.style.display='none';
   const pc=document.getElementById('pace-chip');
   if(spc<=0){pc.style.display='none';}
   else{pc.style.display='inline-block';
@@ -565,7 +585,7 @@ function renderMonth(){
   // tidigare perioder
   let html='',e=p.s;
   for(let i=0;i<6;i++){
-    const s=pStart(new Date(e.getTime()-DAY));
+    const s=payInfo(new Date(e.getTime()-DAY)).s;
     const sum=buysIn(s,e).reduce((t,b)=>t+(+b.a||0),0);
     if(sum>0)html+='<div class="mrow"><span class="lbl">'+dLabel(s)+' – '+dLabel(new Date(e-DAY))+'</span><b class="num">'+fmt(sum)+'</b></div>';
     e=s;
