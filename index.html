@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Centralen">
+<meta name="theme-color" content="#FAF7F2">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Centralen","short_name":"Centralen","display":"standalone","background_color":"%23FAF7F2","theme_color":"%23FAF7F2","start_url":"."}'>
+<title>Centralen</title>
+<style>
+:root{
+  --paper:#FAF7F2; --ink:#3A3633; --ink-soft:#8A847C; --line:#E5DFD5;
+  --card:#FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--paper);color:var(--ink);
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  min-height:100vh;
+}
+.app{max-width:480px;margin:0 auto;padding:22px 14px 44px}
+
+/* Sidhuvud */
+.head{margin-bottom:20px;padding-top:4px}
+.greet{font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;letter-spacing:.01em}
+.datum{font-size:11px;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+
+/* Sektioner */
+.sec-title{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin:18px 2px 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Appkort – varje kort målas i sin egen apps färgvärld via CSS-variabler */
+.tile{
+  display:flex;flex-direction:column;gap:8px;
+  background:var(--t-bg,var(--card));
+  border:1px solid var(--t-line,var(--line));
+  border-radius:16px;padding:14px 13px 13px;
+  text-decoration:none;color:var(--t-ink,var(--ink));
+  position:relative;min-height:118px;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.tile:active{transform:scale(.97)}
+@media(hover:hover){
+  .tile:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(58,54,51,.08)}
+}
+.tile:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.tile .ikon{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--t-iconbg,var(--paper));
+  border:1px solid var(--t-line,var(--line));
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;line-height:1;
+}
+.tile .namn{font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:400;color:var(--t-accent,var(--ink))}
+.tile .desc{font-size:11px;line-height:1.45;color:var(--t-muted,var(--ink-soft))}
+.tile .senast{
+  position:absolute;top:10px;right:11px;
+  font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--t-muted,var(--ink-soft));
+  border:1px solid var(--t-line,var(--line));
+  border-radius:8px;padding:2px 7px;
+}
+
+/* Sidfot */
+.foot{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:26px;opacity:.85;line-height:1.6}
+
+@media (prefers-reduced-motion: reduce){
+  .tile{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="head">
+    <div class="greet" id="greet">God dag</div>
+    <div class="datum" id="datum"></div>
+  </div>
+
+  <div id="sektioner"></div>
+
+  <div class="foot">
+    Centralen · alla appar samlade<br>
+    Lägg till nya appar i listan längst upp i koden
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   MINA APPAR
+   Lägg till en ny app genom att kopiera ett block nedan.
+   Färgerna (bg, line, ink, muted, accent, iconbg) hämtas
+   från respektive apps egen palett så kortet ser ut som appen.
+   ============================================================ */
+const APPS = [
+  {
+    id:"planering", fil:"index.html",
+    namn:"Min planering", ikon:"🗓️",
+    desc:"Kalender, cykel, träning & medicin",
+    sektion:"Vardag",
+    farger:{bg:"#FFFFFF", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#C96A6A", iconbg:"#F5E3E3"}
+  },
+  {
+    id:"batteriet", fil:"batteriet.html",
+    namn:"Batteriet", ikon:"🔋",
+    desc:"Energi & återhämtning",
+    sektion:"Vardag",
+    farger:{bg:"#F7F8F4", line:"#D8DECF", ink:"#3C4237", muted:"#7E8676", accent:"#7A8B6F", iconbg:"#DBE3D3"}
+  },
+  {
+    id:"dagstavlan", fil:"dagstavlan.html",
+    namn:"Dagstavlan", ikon:"☀️",
+    desc:"Dagens schema & rutiner",
+    sektion:"Vardag",
+    farger:{bg:"#F7F8F4", line:"#D8DECF", ink:"#3C4237", muted:"#7E8676", accent:"#C9655A", iconbg:"#E7EBE2"}
+  },
+  {
+    id:"jobb", fil:"jobb.html",
+    namn:"Jobbplanering", ikon:"💼",
+    desc:"Planering för arbetet",
+    sektion:"Vardag",
+    farger:{bg:"#FFFFFF", line:"#E2E2DE", ink:"#3A3633", muted:"#8A847C", accent:"#5B7BA6", iconbg:"#E2E9F2"}
+  },
+  {
+    id:"manen", fil:"manen.html",
+    namn:"Månen", ikon:"🌙",
+    desc:"Månfaser & månkalender",
+    sektion:"Himlen & korten",
+    farger:{bg:"#131A2B", line:"#283452", ink:"#E2E8F2", muted:"#8B96AD", accent:"#9FB8D8", iconbg:"#1B2438"}
+  },
+  {
+    id:"astro", fil:"astro.html",
+    namn:"Stjärnkartan", ikon:"✨",
+    desc:"Astrologi & stjärnhimmel",
+    sektion:"Himlen & korten",
+    farger:{bg:"#1B1635", line:"#332B5C", ink:"#E9E5F2", muted:"#948DB3", accent:"#D6C478", iconbg:"#241D45"}
+  },
+  {
+    id:"tarot", fil:"tarot.html",
+    namn:"Tarotdagboken", ikon:"🃏",
+    desc:"Dagens kort & dagbok",
+    sektion:"Himlen & korten",
+    farger:{bg:"#171C30", line:"#2A3052", ink:"#EAE4D2", muted:"#8E89A6", accent:"#D4AF37", iconbg:"#1E2440"}
+  },
+];
+/* ============================================================ */
+
+// Hälsning efter tid på dygnet
+(function(){
+  const h = new Date().getHours();
+  let g = "God dag";
+  if(h < 5) g = "God natt";
+  else if(h < 10) g = "God morgon";
+  else if(h < 12) g = "God förmiddag";
+  else if(h < 18) g = "God eftermiddag";
+  else g = "God kväll";
+  document.getElementById("greet").textContent = g;
+
+  const d = new Date();
+  const str = d.toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long"});
+  document.getElementById("datum").textContent = str.charAt(0).toUpperCase() + str.slice(1);
+})();
+
+// Rita upp sektioner och appkort
+(function(){
+  const senast = localStorage.getItem("centralen-senast");
+  const wrap = document.getElementById("sektioner");
+  const sektioner = [...new Set(APPS.map(a => a.sektion))];
+
+  sektioner.forEach(s => {
+    const t = document.createElement("div");
+    t.className = "sec-title";
+    t.textContent = s;
+    wrap.appendChild(t);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+
+    APPS.filter(a => a.sektion === s).forEach(a => {
+      const el = document.createElement("a");
+      el.className = "tile";
+      el.href = a.fil;
+      const f = a.farger;
+      el.style.setProperty("--t-bg", f.bg);
+      el.style.setProperty("--t-line", f.line);
+      el.style.setProperty("--t-ink", f.ink);
+      el.style.setProperty("--t-muted", f.muted);
+      el.style.setProperty("--t-accent", f.accent);
+      el.style.setProperty("--t-iconbg", f.iconbg);
+      el.innerHTML =
+        (senast === a.id ? '<span class="senast">Senast</span>' : '') +
+        '<span class="ikon">' + a.ikon + '</span>' +
+        '<span class="namn">' + a.namn + '</span>' +
+        '<span class="desc">' + a.desc + '</span>';
+      el.addEventListener("click", () => {
+        try{ localStorage.setItem("centralen-senast", a.id); }catch(e){}
+      });
+      grid.appendChild(el);
+    });
+
+    wrap.appendChild(grid);
+  });
+})();
+</script>
+</body>
+</html>
