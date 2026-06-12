@@ -85,6 +85,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .changed-txt{margin-left:auto;font-size:11px;color:var(--ink-soft);white-space:nowrap}
 .add-card{width:100%;border:1.5px dashed var(--line);background:transparent;border-radius:16px;padding:13px;color:var(--ink-soft);font-size:14px;cursor:pointer;font-family:inherit;margin-bottom:10px}
 .add-card:active{background:#fff}
+/* Sortering + checklista */
+.sort-row{display:flex;gap:5px;justify-content:flex-end;margin-bottom:8px;align-items:center}
+.sort-row span{font-size:11px;color:var(--ink-soft);margin-right:2px}
+.check-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:9px}
+.chk-mini{font-size:10px;font-weight:500;padding:3px 8px;border-radius:8px;border:1px solid var(--line);color:var(--ink-soft);background:#fff}
+.chk-mini.on{background:var(--pagar-soft);border-color:var(--pagar-soft);color:var(--pagar-text)}
+.chk-list{display:flex;flex-direction:column}
+label.chk-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;text-transform:none;letter-spacing:0;color:var(--ink);margin:0;cursor:pointer}
+label.chk-item:last-child{border-bottom:none}
+.chk-item input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--pagar);flex-shrink:0}
 
 /* Footer */
 .foot{display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap}
@@ -187,6 +197,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div id="idea-list"></div>
 </div>
 
+<div class="sort-row"><span>Sortering</span><button class="fchip" id="sort-added">Tillagd ordning</button><button class="fchip" id="sort-az">A–Ö</button></div>
+
 <div id="cards"></div>
 <button class="add-card" id="add-app">+ Lägg till app</button>
 
@@ -207,6 +219,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <button class="chip chip-ch" id="a-changed" style="width:100%"><span class="bead"></span><span id="a-changed-txt">Markera ändrad idag</span></button>
   <label>Inkastad i</label>
   <div class="chips" id="a-ais"></div>
+  <label>Checklista</label>
+  <div class="chk-list">
+    <label class="chk-item"><input type="checkbox" id="c-mobil"> Mobilversion finns</label>
+    <label class="chk-item"><input type="checkbox" id="c-desktop"> Desktopversion finns</label>
+    <label class="chk-item"><input type="checkbox" id="c-token"> Synktoken inlagd</label>
+  </div>
   <label>Ny punkt</label>
   <div class="new-row">
     <input type="text" id="a-new" placeholder="T.ex. mörkt läge, fixa veckonummer...">
@@ -271,7 +289,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <script>
 // ── Data ───────────────────────────────────────────────
 const STORE='appkollen_v1';
-let state={ais:['ChatGPT','Claude'],apps:[],ideas:[],nextIdeaNo:1,seeded:false};
+let state={ais:['ChatGPT','Claude'],apps:[],ideas:[],nextIdeaNo:1,sort:'added',seeded:false};
 function saveData(){try{localStorage.setItem(STORE,JSON.stringify(state));}catch(e){}}
 function loadData(){try{const s=localStorage.getItem(STORE);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}}
 
@@ -286,7 +304,7 @@ function fixCounter(){let mx=0;state.ideas.forEach(i=>{if(i.no>mx)mx=i.no;});if(
 function seed(){
   if(state.seeded)return;
   const s=[['Min planering','index.html'],['Dagstavlan','dagstavlan.html'],['Jobbplanering','jobb.html'],['Batteriet','batteriet.html'],['Månen','manen.html'],['Stjärnkartan','astro.html'],['Tarotdagboken','tarot.html'],['Appkollen','appkollen.html']];
-  state.apps=s.map((a,i)=>({id:uid()+i,name:a[0],file:a[1],color:COLORS[i%COLORS.length],changed:null,sync:{},items:[],note:''}));
+  state.apps=s.map((a,i)=>({id:uid()+i,name:a[0],file:a[1],color:COLORS[i%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{}}));
   state.seeded=true;saveData();
 }
 
@@ -330,6 +348,7 @@ async function ghPull(){
       if(Array.isArray(data.ideas))state.ideas=data.ideas;
       if(Array.isArray(data.ais))state.ais=data.ais;
       if(data.nextIdeaNo)state.nextIdeaNo=data.nextIdeaNo;
+      if(data.sort)state.sort=data.sort;
       state.seeded=true;
       fixCounter();saveData();renderAll();
     }
@@ -340,7 +359,7 @@ async function ghPull(){
 async function ghPush(){
   if(!syncOn())return;
   setBadge('load','Sparar…');
-  const content=b64enc(JSON.stringify({ais:state.ais,apps:state.apps,ideas:state.ideas,nextIdeaNo:state.nextIdeaNo,updated:new Date().toISOString()}));
+  const content=b64enc(JSON.stringify({ais:state.ais,apps:state.apps,ideas:state.ideas,nextIdeaNo:state.nextIdeaNo,sort:state.sort,updated:new Date().toISOString()}));
   const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Uppdatering via Appkollen',content,...(sync.sha?{sha:sync.sha}:{})})});
   let r=await doPut();
   if(r.status===409||r.status===422){
@@ -398,7 +417,10 @@ function renderIdeas(){
 }
 
 function renderCards(){
-  document.getElementById('cards').innerHTML=state.apps.map(a=>{
+  const list=state.sort==='az'?state.apps.slice().sort((x,y)=>String(x.name).localeCompare(String(y.name),'sv',{sensitivity:'base'})):state.apps;
+  document.getElementById('sort-added').classList.toggle('sel',state.sort!=='az');
+  document.getElementById('sort-az').classList.toggle('sel',state.sort==='az');
+  document.getElementById('cards').innerHTML=list.map(a=>{
     let cIde=0,cForb=0,cBugg=0,cPagar=0,cKlar=0;
     a.items.forEach(it=>{
       if(it.st==='klar'){cKlar++;return;}
@@ -412,6 +434,11 @@ function renderCards(){
     if(cPagar)pills+='<span class="pill pagar">'+cPagar+' pågår</span>';
     if(cKlar)pills+='<span class="pill klar">'+cKlar+' klar'+(cKlar===1?'':'a')+'</span>';
     const pillsHtml=pills?'<div class="pills">'+pills+'</div>':'<div class="no-items">Inga punkter än</div>';
+    const C=a.chk||{};
+    const chkHtml='<div class="check-row">'+
+      '<span class="chk-mini'+(C.mobil?' on':'')+'">'+(C.mobil?'\u2713 ':'')+'Mobil</span>'+
+      '<span class="chk-mini'+(C.desktop?' on':'')+'">'+(C.desktop?'\u2713 ':'')+'Desktop</span>'+
+      '<span class="chk-mini'+(C.token?' on':'')+'">'+(C.token?'\u2713 ':'')+'Synktoken</span></div>';
     const aiHtml=state.ais.length?'<div class="ai-row">'+state.ais.map(ai=>{
       const st=aiStatus(a,ai);
       if(st==='ok')return'<span class="ai-mini ok">'+esc(ai)+' · '+fmt(a.sync[ai])+'</span>';
@@ -421,7 +448,7 @@ function renderCards(){
     return'<button class="card" data-id="'+a.id+'">'+
       '<div class="card-top"><i class="adot" style="background:'+a.color+'"></i>'+
       '<div class="card-name">'+esc(a.name)+(a.file?'<small>'+esc(a.file)+'</small>':'')+'</div>'+
-      '<span class="chev">›</span></div>'+pillsHtml+aiHtml+'</button>';
+      '<span class="chev">›</span></div>'+pillsHtml+chkHtml+aiHtml+'</button>';
   }).join('');
 }
 
@@ -484,6 +511,10 @@ function syncAppSheet(){
   renderItems(a);
   const ids=['a-note','a-name','a-file'],vals=[a.note||'',a.name,a.file||''];
   ids.forEach((id,i)=>{const el=document.getElementById(id);if(document.activeElement!==el)el.value=vals[i];});
+  const C=a.chk||{};
+  document.getElementById('c-mobil').checked=!!C.mobil;
+  document.getElementById('c-desktop').checked=!!C.desktop;
+  document.getElementById('c-token').checked=!!C.token;
   document.getElementById('a-colors').innerHTML=COLORS.map(c=>'<button class="cdot'+(a.color===c?' sel':'')+'" style="background:'+c+'" data-c="'+c+'"></button>').join('');
 }
 function renderItems(a){
@@ -554,6 +585,11 @@ document.getElementById('a-colors').onclick=e=>{
   const a=appById(curId);if(!a)return;
   a.color=b.dataset.c;persist();syncAppSheet();renderCards();
 };
+document.getElementById('sort-added').onclick=()=>{state.sort='added';persist();renderCards();};
+document.getElementById('sort-az').onclick=()=>{state.sort='az';persist();renderCards();};
+[['c-mobil','mobil'],['c-desktop','desktop'],['c-token','token']].forEach(([id,k])=>{
+  document.getElementById(id).onchange=e=>{const a=appById(curId);if(!a)return;if(!a.chk)a.chk={};a.chk[k]=e.target.checked;persist();renderCards();};
+});
 document.getElementById('a-del').onclick=()=>{
   const a=appById(curId);if(!a)return;
   if(!confirm('Ta bort "'+a.name+'" och alla dess punkter?'))return;
@@ -571,7 +607,7 @@ document.getElementById('add-app').onclick=()=>{
 document.getElementById('n-create').onclick=()=>{
   const name=document.getElementById('n-name').value.trim();
   if(!name){document.getElementById('n-name').focus();return;}
-  const app={id:uid(),name:name,file:document.getElementById('n-file').value.trim(),color:COLORS[state.apps.length%COLORS.length],changed:null,sync:{},items:[],note:''};
+  const app={id:uid(),name:name,file:document.getElementById('n-file').value.trim(),color:COLORS[state.apps.length%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{}};
   state.apps.push(app);persist();
   newSheet.classList.remove('open');
   renderAll();openApp(app.id);
@@ -639,7 +675,7 @@ document.getElementById('import-file').onchange=e=>{
     try{
       const data=JSON.parse(r.result);
       if(data&&Array.isArray(data.apps)){
-        state=Object.assign({ais:['ChatGPT','Claude'],apps:[],ideas:[],nextIdeaNo:1,seeded:true},data);
+        state=Object.assign({ais:['ChatGPT','Claude'],apps:[],ideas:[],nextIdeaNo:1,sort:'added',seeded:true},data);
         fixCounter();persist();closeSheets();
       }
       else alert('Filen verkar inte vara en giltig säkerhetskopia.');
