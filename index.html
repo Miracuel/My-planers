@@ -39,8 +39,9 @@ body{
 .gh-btn svg{width:19px;height:19px;display:block}
 .gh-btn[hidden]{display:none}
 
-/* Lägesväljare: mobil / desktop */
-.mode{display:flex;border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px;width:max-content;margin-top:14px}
+/* Verktygsrad: lägesväljare + redigering */
+.toolrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.mode{display:flex;border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px;width:max-content}
 .mode button{
   border:none;background:none;font-family:inherit;
   font-size:11px;letter-spacing:.07em;text-transform:uppercase;
@@ -49,6 +50,20 @@ body{
 }
 .mode button.on{background:var(--ink);color:#fff}
 .mode button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* Infobar i redigeringsläge */
+.edit-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;margin-top:12px;
+  font-size:11.5px;color:var(--ink-soft);line-height:1.45;
+}
+.edit-bar[hidden]{display:none}
+.edit-bar button{
+  border:1px solid var(--ink);background:var(--ink);color:#fff;
+  border-radius:999px;padding:8px 13px;font-size:11px;font-family:inherit;
+  cursor:pointer;white-space:nowrap;letter-spacing:.04em;flex-shrink:0;
+}
 
 /* Sektioner */
 .sec-title{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin:18px 2px 10px}
@@ -83,13 +98,62 @@ body.desktop .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 .tile .namn{font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:400;color:var(--t-accent,var(--ink))}
 .tile .desc{font-size:11px;line-height:1.45;color:var(--t-muted,var(--ink-soft))}
 .tile .endast{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--t-muted,var(--ink-soft));margin-top:auto;opacity:.85}
-.tile .senast{
+.tile .hage{
   position:absolute;top:10px;right:11px;
   font-size:9px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--t-muted,var(--ink-soft));
   border:1px solid var(--t-line,var(--line));
   border-radius:8px;padding:2px 7px;
 }
+body.edit .tile{cursor:pointer}
+
+/* Redigeringspanel */
+.skal{
+  position:fixed;inset:0;background:rgba(58,54,51,.35);
+  display:flex;align-items:flex-end;justify-content:center;z-index:50;
+}
+.skal[hidden]{display:none}
+.sheet{
+  background:var(--paper);border:1px solid var(--line);border-bottom:none;
+  border-radius:20px 20px 0 0;width:100%;max-width:480px;
+  max-height:88vh;overflow-y:auto;
+  padding:18px 16px calc(20px + env(safe-area-inset-bottom));
+}
+.sheet h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:20px;margin-bottom:2px}
+.fil-info{font-size:11px;color:var(--ink-soft);margin-bottom:12px}
+.preview-wrap{margin-bottom:14px}
+.preview-wrap .tile{max-width:220px;cursor:default}
+.falt{margin-bottom:12px}
+.falt label{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.falt input{
+  width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;
+  font-size:14px;background:#fff;outline:none;font-family:inherit;color:var(--ink);
+}
+.falt input:focus{border-color:var(--ink)}
+.rad2{display:grid;grid-template-columns:1fr 86px;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{
+  border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+  font-family:inherit;font-size:12px;padding:7px 12px;border-radius:999px;cursor:pointer;
+}
+.chips button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.teman{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tema{
+  border:1.5px solid var(--line);border-radius:12px;padding:7px 6px;background:#fff;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:inherit;
+}
+.tema .prov{width:100%;height:28px;border-radius:8px;position:relative;border:1px solid transparent}
+.tema .prov i{position:absolute;left:7px;top:7px;width:13px;height:13px;border-radius:50%}
+.tema span{font-size:10px;color:var(--ink-soft)}
+.tema.on{border-color:var(--ink)}
+.sheet-knappar{display:flex;gap:8px;margin-top:16px}
+.kn{
+  flex:1;border-radius:12px;padding:12px 8px;font-size:14px;font-family:inherit;
+  cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);
+}
+.kn.primar{background:var(--ink);border-color:var(--ink);color:#fff}
+.kn.fara{color:#A04545;border-color:#E8C9C9;background:#FBF1F1}
+.kn[hidden]{display:none}
 
 /* Sidfot */
 .foot{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:26px;opacity:.85;line-height:1.6}
@@ -112,9 +176,18 @@ body.desktop .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       </a>
     </div>
-    <div class="mode" role="group" aria-label="Välj läge">
-      <button id="btn-mobil" type="button">📱 Mobil</button>
-      <button id="btn-desktop" type="button">🖥️ Desktop</button>
+    <div class="toolrow">
+      <div class="mode" role="group" aria-label="Välj läge">
+        <button id="btn-mobil" type="button">📱 Mobil</button>
+        <button id="btn-desktop" type="button">🖥️ Desktop</button>
+      </div>
+      <div class="mode">
+        <button id="btn-edit" type="button">✎ Redigera</button>
+      </div>
+    </div>
+    <div class="edit-bar" id="edit-bar" hidden>
+      <span>Tryck på ett kort för att ändra det. Ändringarna sparas i den här webbläsaren — kopiera koden och klistra in över APPS-listan i index.html för att spara dem överallt.</span>
+      <button id="btn-kod" type="button">Kopiera som kod</button>
     </div>
   </div>
 
@@ -122,10 +195,47 @@ body.desktop .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 
   <div class="foot">
     Centralen · alla appar samlade<br>
-    Nya .html-filer i repot dyker upp av sig själva under "Nya appar"<br>
-    Ge dem namn, färg och sektion i APPS-listan i koden
+    Nya .html-filer i repot dyker upp av sig själva<br>
+    Tryck ✎ Redigera för att ändra namn, färg &amp; sektion direkt här
   </div>
 
+</div>
+
+<!-- Redigeringspanel -->
+<div class="skal" id="skal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-titel">
+    <h2 id="sheet-titel">Redigera app</h2>
+    <div class="fil-info" id="fil-info"></div>
+    <div class="preview-wrap" id="preview-wrap"></div>
+    <div class="falt rad2">
+      <div>
+        <label for="in-namn">Namn</label>
+        <input id="in-namn" type="text" maxlength="40" autocomplete="off">
+      </div>
+      <div>
+        <label for="in-ikon">Ikon</label>
+        <input id="in-ikon" type="text" maxlength="8" autocomplete="off">
+      </div>
+    </div>
+    <div class="falt">
+      <label for="in-desc">Beskrivning</label>
+      <input id="in-desc" type="text" maxlength="60" autocomplete="off">
+    </div>
+    <div class="falt">
+      <label>Sektion</label>
+      <div class="chips" id="sektion-chips"></div>
+      <input id="in-sektion-ny" type="text" placeholder="…eller skriv en ny sektion" style="margin-top:8px" maxlength="30" autocomplete="off">
+    </div>
+    <div class="falt">
+      <label>Färgtema</label>
+      <div class="teman" id="teman"></div>
+    </div>
+    <div class="sheet-knappar">
+      <button class="kn" id="btn-avbryt" type="button">Avbryt</button>
+      <button class="kn fara" id="btn-aterstall" type="button">Återställ</button>
+      <button class="kn primar" id="btn-spara" type="button">Spara</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -142,10 +252,17 @@ const GITHUB_URL = "";
 const GOM = [];
 
 /* ============================================================
-   ★★★  HÄR LÄGGER DU TILL NYA APPAR  ★★★
+   ★★★  HÄR LIGGER DINA APPAR  ★★★
 
-   Kopiera mallen nedan, klistra in den SIST i listan
-   (före den avslutande klammern ]) och ändra raderna:
+   Enklaste sättet att ändra namn, ikon, beskrivning, sektion
+   och färg är direkt i Centralen: tryck ✎ Redigera och sedan
+   på ett kort. Knappen "Kopiera som kod" ger dig sedan hela
+   listan färdig att klistra in här (ersätt allt från
+   "const APPS = [" till "];") så gäller ändringarna på alla
+   enheter.
+
+   Vill du hellre skriva för hand: kopiera mallen nedan och
+   klistra in den SIST i listan, före den avslutande ];
 
    {
      id:"minapp",                     ← unikt kortnamn, små bokstäver
@@ -159,8 +276,7 @@ const GOM = [];
 
    BRA ATT VETA:
    · Nya .html-filer du laddar upp i repot dyker upp HELT AV
-     SIG SJÄLVA under sektionen "Nya appar" — men först när du
-     lägger in dem här i listan får de egen färg, ikon och sektion.
+     SIG SJÄLVA under sektionen "Nya appar".
    · Filer som heter namn-desktop.html paras automatiskt ihop
      med namn.html som dess desktopversion.
    · Ange mobil och/eller desktop. Finns bara den ena versionen
@@ -226,6 +342,34 @@ const APPS = [
 ];
 /* ============================================================ */
 
+/* Färgteman att välja bland i redigeringspanelen */
+const TEMAN = [
+  {namn:"Papper",   farger:{bg:"#FFFFFF", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#C96A6A", iconbg:"#F5E3E3"}},
+  {namn:"Salvia",   farger:{bg:"#F7F8F4", line:"#D8DECF", ink:"#3C4237", muted:"#7E8676", accent:"#7A8B6F", iconbg:"#DBE3D3"}},
+  {namn:"Terrakotta",farger:{bg:"#FCF6F1", line:"#EADFD2", ink:"#4A3F38", muted:"#9A8A7C", accent:"#C9655A", iconbg:"#F4E3DC"}},
+  {namn:"Himmel",   farger:{bg:"#F4F7FA", line:"#DCE4EE", ink:"#36404D", muted:"#7E8BA0", accent:"#5B7BA6", iconbg:"#E2E9F2"}},
+  {namn:"Solgul",   farger:{bg:"#FBF7EC", line:"#EDE3C8", ink:"#4A4232", muted:"#9C8F72", accent:"#C7A23F", iconbg:"#F7EDD8"}},
+  {namn:"Natt",     farger:{bg:"#131A2B", line:"#283452", ink:"#E2E8F2", muted:"#8B96AD", accent:"#9FB8D8", iconbg:"#1B2438"}},
+  {namn:"Stjärnnatt",farger:{bg:"#1B1635", line:"#332B5C", ink:"#E9E5F2", muted:"#948DB3", accent:"#D6C478", iconbg:"#241D45"}},
+  {namn:"Midnattsguld",farger:{bg:"#171C30", line:"#2A3052", ink:"#EAE4D2", muted:"#8E89A6", accent:"#D4AF37", iconbg:"#1E2440"}},
+];
+
+/* Ändringar gjorda i redigeringsläget (sparas i webbläsaren) */
+let ANDRINGAR = {};
+try{ ANDRINGAR = JSON.parse(localStorage.getItem("centralen-andringar") || "{}"); }catch(e){ ANDRINGAR = {}; }
+function sparaAndringar(){
+  try{ localStorage.setItem("centralen-andringar", JSON.stringify(ANDRINGAR)); }catch(e){}
+}
+function medAndringar(a){
+  const o = ANDRINGAR[a.id];
+  if(!o) return a;
+  return Object.assign({}, a, o, {farger: Object.assign({}, a.farger, o.farger || {})});
+}
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
 // GitHub-knappen: använd inställd adress, annars gissa utifrån GitHub Pages-domänen
 (function(){
   const el = document.getElementById("gh-link");
@@ -262,12 +406,18 @@ function startLage(){
   return window.matchMedia("(min-width: 700px)").matches ? "desktop" : "mobil";
 }
 let lage = startLage();
+let redigerar = false;
 
 const btnMobil = document.getElementById("btn-mobil");
 const btnDesktop = document.getElementById("btn-desktop");
+const btnEdit = document.getElementById("btn-edit");
 
 btnMobil.addEventListener("click", () => byt("mobil"));
 btnDesktop.addEventListener("click", () => byt("desktop"));
+btnEdit.addEventListener("click", () => {
+  redigerar = !redigerar;
+  rita();
+});
 
 function byt(nytt){
   lage = nytt;
@@ -275,21 +425,48 @@ function byt(nytt){
   rita();
 }
 
+// Bygg ett appkort
+function byggTile(a, val){
+  const el = document.createElement(val.lank ? "a" : "div");
+  el.className = "tile";
+  if(val.lank) el.href = val.fil;
+  const f = a.farger;
+  el.style.setProperty("--t-bg", f.bg);
+  el.style.setProperty("--t-line", f.line);
+  el.style.setProperty("--t-ink", f.ink);
+  el.style.setProperty("--t-muted", f.muted);
+  el.style.setProperty("--t-accent", f.accent);
+  el.style.setProperty("--t-iconbg", f.iconbg);
+  const hage = val.penna ? '<span class="hage">✎</span>'
+             : val.senast ? '<span class="hage">Senast</span>' : '';
+  el.innerHTML =
+    hage +
+    '<span class="ikon">' + esc(a.ikon) + '</span>' +
+    '<span class="namn">' + esc(a.namn) + '</span>' +
+    '<span class="desc">' + esc(a.desc) + '</span>' +
+    (val.fallback ? '<span class="endast">' + (a.mobil ? "📱 endast mobil" : "🖥️ endast desktop") + '</span>' : '');
+  return el;
+}
+
 // Rita upp sektioner och appkort utifrån aktuellt läge
 function rita(){
   document.body.classList.toggle("desktop", lage === "desktop");
+  document.body.classList.toggle("edit", redigerar);
   btnMobil.classList.toggle("on", lage === "mobil");
   btnDesktop.classList.toggle("on", lage === "desktop");
+  btnEdit.classList.toggle("on", redigerar);
+  document.getElementById("edit-bar").hidden = !redigerar;
 
   const senast = localStorage.getItem("centralen-senast");
   const wrap = document.getElementById("sektioner");
   wrap.innerHTML = "";
 
   const annat = lage === "mobil" ? "desktop" : "mobil";
-  const sektioner = [...new Set(APPS.map(a => a.sektion))];
+  const alla = APPS.map(medAndringar);
+  const sektioner = [...new Set(alla.map(a => a.sektion))];
 
   sektioner.forEach(s => {
-    const appar = APPS.filter(a => a.sektion === s && (a.mobil || a.desktop));
+    const appar = alla.filter(a => a.sektion === s && (a.mobil || a.desktop));
     if(appar.length === 0) return;
 
     const t = document.createElement("div");
@@ -302,26 +479,19 @@ function rita(){
 
     appar.forEach(a => {
       const fil = a[lage] || a[annat];   // saknas versionen för läget öppnas den andra
-      const fallback = !a[lage];
-
-      const el = document.createElement("a");
-      el.className = "tile";
-      el.href = fil;
-      const f = a.farger;
-      el.style.setProperty("--t-bg", f.bg);
-      el.style.setProperty("--t-line", f.line);
-      el.style.setProperty("--t-ink", f.ink);
-      el.style.setProperty("--t-muted", f.muted);
-      el.style.setProperty("--t-accent", f.accent);
-      el.style.setProperty("--t-iconbg", f.iconbg);
-      el.innerHTML =
-        (senast === a.id ? '<span class="senast">Senast</span>' : '') +
-        '<span class="ikon">' + a.ikon + '</span>' +
-        '<span class="namn">' + a.namn + '</span>' +
-        '<span class="desc">' + a.desc + '</span>' +
-        (fallback ? '<span class="endast">' + (a.mobil ? "📱 endast mobil" : "🖥️ endast desktop") + '</span>' : '');
-      el.addEventListener("click", () => {
-        try{ localStorage.setItem("centralen-senast", a.id); }catch(e){}
+      const el = byggTile(a, {
+        lank:true, fil:fil,
+        fallback: !a[lage],
+        senast: senast === a.id && !redigerar,
+        penna: redigerar
+      });
+      el.addEventListener("click", (e) => {
+        if(redigerar){
+          e.preventDefault();
+          oppnaEditor(a.id);
+          return;
+        }
+        try{ localStorage.setItem("centralen-senast", a.id); }catch(err){}
       });
       grid.appendChild(el);
     });
@@ -329,6 +499,176 @@ function rita(){
     wrap.appendChild(grid);
   });
 }
+
+// ----- Redigeringspanelen -----
+const skal = document.getElementById("skal");
+let editorId = null;
+let valdFarger = null;
+let valdSektion = "";
+
+function v(id){ return document.getElementById(id).value.trim(); }
+
+function oppnaEditor(id){
+  const bas = APPS.find(x => x.id === id);
+  if(!bas) return;
+  editorId = id;
+  const a = medAndringar(bas);
+
+  document.getElementById("in-namn").value = a.namn;
+  document.getElementById("in-ikon").value = a.ikon;
+  document.getElementById("in-desc").value = a.desc;
+  document.getElementById("in-sektion-ny").value = "";
+  valdSektion = a.sektion;
+  valdFarger = Object.assign({}, a.farger);
+
+  const filer = [a.mobil, a.desktop].filter(Boolean).join(" · ");
+  document.getElementById("fil-info").textContent = filer || "—";
+
+  document.getElementById("btn-aterstall").hidden = !ANDRINGAR[id];
+
+  byggSektionChips();
+  byggTeman();
+  uppdateraPreview();
+  skal.hidden = false;
+}
+
+function stangEditor(){
+  skal.hidden = true;
+  editorId = null;
+}
+
+function byggSektionChips(){
+  const holder = document.getElementById("sektion-chips");
+  holder.innerHTML = "";
+  const sektioner = [...new Set(APPS.map(medAndringar).map(a => a.sektion))];
+  sektioner.forEach(s => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = s;
+    b.classList.toggle("on", s === valdSektion && !v("in-sektion-ny"));
+    b.addEventListener("click", () => {
+      valdSektion = s;
+      document.getElementById("in-sektion-ny").value = "";
+      byggSektionChips();
+    });
+    holder.appendChild(b);
+  });
+}
+
+function byggTeman(){
+  const holder = document.getElementById("teman");
+  holder.innerHTML = "";
+  TEMAN.forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tema";
+    b.classList.toggle("on", valdFarger && t.farger.bg === valdFarger.bg && t.farger.accent === valdFarger.accent);
+    b.innerHTML =
+      '<span class="prov" style="background:' + t.farger.bg + ';border-color:' + t.farger.line + '">' +
+      '<i style="background:' + t.farger.accent + '"></i></span>' +
+      '<span>' + t.namn + '</span>';
+    b.addEventListener("click", () => {
+      valdFarger = Object.assign({}, t.farger);
+      byggTeman();
+      uppdateraPreview();
+    });
+    holder.appendChild(b);
+  });
+}
+
+function uppdateraPreview(){
+  const bas = APPS.find(x => x.id === editorId) || {};
+  const a = {
+    namn: v("in-namn") || "Namnlös",
+    ikon: v("in-ikon") || "📄",
+    desc: v("in-desc"),
+    mobil: bas.mobil, desktop: bas.desktop,
+    farger: valdFarger
+  };
+  const holder = document.getElementById("preview-wrap");
+  holder.innerHTML = "";
+  holder.appendChild(byggTile(a, {lank:false}));
+}
+
+function sparaEditor(){
+  if(!editorId) return;
+  const ny = v("in-sektion-ny");
+  ANDRINGAR[editorId] = {
+    namn: v("in-namn") || "Namnlös",
+    ikon: v("in-ikon") || "📄",
+    desc: v("in-desc"),
+    sektion: ny || valdSektion || "Övrigt",
+    farger: valdFarger
+  };
+  sparaAndringar();
+  rita();
+  stangEditor();
+}
+
+function aterstallEditor(){
+  if(editorId && ANDRINGAR[editorId]){
+    delete ANDRINGAR[editorId];
+    sparaAndringar();
+    rita();
+  }
+  stangEditor();
+}
+
+document.getElementById("btn-spara").addEventListener("click", sparaEditor);
+document.getElementById("btn-avbryt").addEventListener("click", stangEditor);
+document.getElementById("btn-aterstall").addEventListener("click", aterstallEditor);
+["in-namn","in-ikon","in-desc"].forEach(id => {
+  document.getElementById(id).addEventListener("input", uppdateraPreview);
+});
+document.getElementById("in-sektion-ny").addEventListener("input", byggSektionChips);
+skal.addEventListener("click", (e) => { if(e.target === skal) stangEditor(); });
+document.addEventListener("keydown", (e) => { if(e.key === "Escape" && !skal.hidden) stangEditor(); });
+
+// ----- Exportera listan som kod -----
+function somKod(){
+  const s = JSON.stringify;
+  const rad = (a) => {
+    const id = a.id.replace(/^repo-/, "").replace(/\.html$/, "");
+    let r  = "  {\n";
+    r += "    id:" + s(id) + ",\n";
+    r += "    namn:" + s(a.namn) + ", ikon:" + s(a.ikon) + ",\n";
+    r += "    desc:" + s(a.desc) + ",\n";
+    r += "    sektion:" + s(a.sektion) + ",\n";
+    if(a.mobil)   r += "    mobil:" + s(a.mobil) + ",\n";
+    if(a.desktop) r += "    desktop:" + s(a.desktop) + ",\n";
+    const f = a.farger;
+    r += "    farger:{bg:" + s(f.bg) + ", line:" + s(f.line) + ", ink:" + s(f.ink) +
+         ", muted:" + s(f.muted) + ", accent:" + s(f.accent) + ", iconbg:" + s(f.iconbg) + "}\n";
+    r += "  }";
+    return r;
+  };
+  return "const APPS = [\n" + APPS.map(medAndringar).map(rad).join(",\n") + ",\n];";
+}
+
+function kopieraKod(){
+  const kod = somKod();
+  const btn = document.getElementById("btn-kod");
+  const klar = () => {
+    btn.textContent = "Kopierat ✓";
+    setTimeout(() => { btn.textContent = "Kopiera som kod"; }, 1600);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(kod).then(klar).catch(() => fallbackKopiera(kod, klar));
+  } else {
+    fallbackKopiera(kod, klar);
+  }
+}
+function fallbackKopiera(text, klar){
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand("copy"); klar(); }catch(e){}
+  document.body.removeChild(ta);
+}
+document.getElementById("btn-kod").addEventListener("click", kopieraKod);
 
 // ----- Automatisk synk: nya .html-filer i repot dyker upp av sig själva -----
 function snyggtNamn(fil){
