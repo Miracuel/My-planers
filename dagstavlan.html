@@ -63,6 +63,9 @@ input,select{background:var(--panel2);border:1px solid var(--line);border-radius
 .qd.on.busy{background:var(--day)}
 .qd.on.free{background:var(--free)}
 .qd.on.night{background:var(--night)}
+.qd.on.sleep{background:#2F3331}
+.qd.on.latent{background:#C9A24B}
+.qd.on.rest{background:#8E7CC3}
 .qd.off{background:var(--off)}
 .act{position:absolute;left:78px;right:8px;background:var(--teal-soft);border:1.5px solid var(--teal);border-radius:12px;padding:5px 10px;font-size:14px;overflow:hidden;cursor:pointer;display:flex;align-items:center;gap:7px}
 .act .at{font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:var(--teal)}
@@ -71,6 +74,20 @@ input,select{background:var(--panel2);border:1px solid var(--line);border-radius
 .act.done{opacity:.45}
 .act.done .ax{text-decoration:line-through}
 .act.done .adone{background:var(--teal)}
+.act.tag-latent{border-color:#C9A24B;background:#F3EAD2}
+.act.tag-latent .at{color:#9A7B2A}
+.act.tag-rest{border-color:#8E7CC3;background:#EAE4F3}
+.act.tag-rest .at{color:#6E5A99}
+.next-card .nc-count{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--teal);line-height:1.1;margin:2px 0}
+.next-card.freecard{border-color:var(--free)}
+.next-card.freecard .nc-label,.next-card.freecard .nc-count{color:var(--free)}
+.next-card .nc-cheer{font-size:13px;background:var(--panel2);border-radius:10px;padding:8px 11px;margin-top:8px;line-height:1.45}
+.saldo{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:11px 14px;margin-bottom:10px}
+.saldo .s-top{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
+.saldo .s-bar{height:9px;background:var(--panel2);border-radius:5px;margin:7px 0 6px;overflow:hidden;display:flex}
+.saldo .s-bar i{height:100%;display:block}
+.saldo .s-tags{font-size:11px;color:var(--muted);font-weight:600}
+.saldo .s-warn{font-size:12px;font-weight:700;margin-top:5px}
 .nowline{position:absolute;left:42px;right:0;border-top:2.5px solid var(--day);z-index:5}
 .nowline::before{content:attr(data-t);position:absolute;left:-38px;top:-11px;background:var(--day);color:#fff;font-size:11px;font-weight:700;border-radius:8px;padding:2px 5px}
 .tools{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
@@ -213,6 +230,7 @@ input,select{background:var(--panel2);border:1px solid var(--line);border-radius
   </div>
 
   <div id="next-slot"></div>
+  <div id="saldo-slot"></div>
 
   <div class="hstrip" id="habit-strip"></div>
 
@@ -227,7 +245,7 @@ input,select{background:var(--panel2);border:1px solid var(--line);border-radius
     <button id="vw-compact">Kompakt vy</button>
   </div>
   <div class="board" id="board"><div class="tl" id="tl"></div></div>
-  <div class="info-txt" style="text-align:center">Hela dygnet 00–24 · ● = en kvart · grön = ledig tid · röd = upptagen · blå = natt · släckt = passerad tid</div>
+  <div class="info-txt" style="text-align:center">● = en kvart · grön = ledig · röd = aktiv · gul = latent · lila = återhämtning · svart = sovtid 22–04 · blå = kväll/morgon · släckt = passerad tid</div>
 </div>
 
 <!-- VECKA -->
@@ -332,6 +350,9 @@ input,select{background:var(--panel2);border:1px solid var(--line);border-radius
   <input type="text" id="as-txt" placeholder="T.ex. Lunch, Möte, Promenad…">
   <label>Bild</label>
   <div class="emoji-row" id="as-emoji"></div>
+  <label>Typ av tid</label>
+  <div class="dur-row" id="as-tag"></div>
+  <div class="info-txt">Latent = upptagen men passiv tid, t.ex. pendling eller väntan. Återhämtning = sådant som fyller på energi.</div>
   <label>Eller hur länge?</label>
   <div class="dur-row" id="as-dur"></div>
   <div class="btn-row" style="margin-top:14px">
@@ -482,7 +503,7 @@ function renderDay(){
   const now=new Date();
   const nowMin=now.getHours()*60+now.getMinutes();
   const list=items(viewDate).slice().sort((a,b)=>a.t.localeCompare(b.t));
-  const isBusy=(m,len)=>list.some(a=>{const s=hm2min(a.t);const e=s+Math.max(a.dur||0,15);return m<e&&m+len>s;});
+  const busyAt=(m,len)=>{const a=list.find(x=>{const s=hm2min(x.t);const e=s+Math.max(x.dur||0,15);return m<e&&m+len>s;});return a?(a.tag||''):null;};
   let html='<div style="height:'+(H+20)+'px;position:relative">';
   for(let m=startMin;m<=endMin;m+=15){
     const y=(m-startMin)*PX+10;
@@ -493,7 +514,13 @@ function renderDay(){
       const cy=y+(dotStep/2)*PX;
       const lit=!isToday||m+dotStep>nowMin;
       const h=Math.floor(m/60);
-      const cls=lit?('on '+(isBusy(m,dotStep)?'busy':(isDayHour(h)?'free':'night'))):'off';html+='<div class="qd '+cls+'" style="top:'+cy+'px"></div>';
+      const bt=busyAt(m,dotStep);
+      let k;
+      if(bt!==null)k=bt==='latent'?'latent':bt==='rest'?'rest':'busy';
+      else if(h>=22||h<4)k='sleep';
+      else if(isDayHour(h))k='free';
+      else k='night';
+      const cls=lit?('on '+k):'off';html+='<div class="qd '+cls+'" style="top:'+cy+'px"></div>';
     }
   }
   list.forEach(a=>{
@@ -503,7 +530,8 @@ function renderDay(){
     const mh=state.set.compact?26:34;
     const h=a.dur?Math.max(mh,a.dur*PX):mh;
     const tlbl=a.dur?a.t+'–'+min2hm(m+a.dur):a.t;
-    html+='<div class="act'+(a.done?' done':'')+'" data-id="'+a.id+'" style="top:'+y+'px;height:'+h+'px"><span class="at">'+tlbl+'</span><span>'+(a.emoji||'')+'</span><span class="ax">'+esc(a.txt)+'</span><button class="adone" data-id="'+a.id+'">'+(a.done?'✓':'')+'</button></div>';
+    const tcls=a.tag==='latent'?' tag-latent':a.tag==='rest'?' tag-rest':'';
+    html+='<div class="act'+(a.done?' done':'')+tcls+'" data-id="'+a.id+'" style="top:'+y+'px;height:'+h+'px"><span class="at">'+tlbl+'</span><span>'+(a.emoji||'')+'</span><span class="ax">'+esc(a.txt)+'</span><button class="adone" data-id="'+a.id+'">'+(a.done?'✓':'')+'</button></div>';
   });
   if(isToday&&nowMin>=startMin&&nowMin<=endMin){
     html+='<div class="nowline" data-t="'+pad(now.getHours())+':'+pad(now.getMinutes())+'" style="top:'+((nowMin-startMin)*PX+10)+'px"></div>';
@@ -517,23 +545,76 @@ function renderDay(){
   };});
   document.querySelectorAll('.act').forEach(el=>{el.onclick=()=>openAct(+el.dataset.id);});
   renderNext(isToday,nowMin,list);
+  renderSaldo();
   renderHabitStrip();
+}
+let ncTarget=null;
+const CHEERS=['💪 Perfekt lucka för en kort promenad!','🔋 Drick ett glas vatten och sträck på dig!','🌿 Fem minuter frisk luft gör underverk.','✨ Gör något litet som känns skönt att få gjort!','🧘 Ta tre djupa andetag och landa lite.','📖 Hinner du några sidor i en bok?','🎵 Sätt på en låt du gillar och ladda om!','🍎 Bra läge för ett mellanmål — fyll på energin!'];
+function pickCheer(next){
+  const map=lastDoneMap();
+  const due=Object.keys(map).filter(n=>{const iv=state.track[n];return iv&&daysSince(map[n].date)>=iv;});
+  if(due.length){const d=map[due[0]];return '✨ Ledig stund — kanske dags för '+(d.emoji?d.emoji+' ':'')+esc(d.txt)+'? Heja dig!';}
+  const seed=hm2min(next.t)+new Date().getDate();
+  return CHEERS[seed%CHEERS.length];
 }
 function renderNext(isToday,nowMin,list){
   const slot=document.getElementById('next-slot');
+  ncTarget=null;
   if(!isToday){slot.innerHTML='';return;}
   const ongoing=list.find(a=>!a.done&&a.dur&&hm2min(a.t)<=nowMin&&nowMin<hm2min(a.t)+a.dur);
   const next=list.find(a=>!a.done&&hm2min(a.t)>nowMin);
-  let label,main,mins;
-  if(ongoing){label='Nu pågår';main=(ongoing.emoji?ongoing.emoji+' ':'')+ongoing.txt;mins=hm2min(ongoing.t)+ongoing.dur-nowMin;}
-  else if(next){label='Härnäst · kl '+next.t+(next.dur?'–'+min2hm(hm2min(next.t)+next.dur):'');main=(next.emoji?next.emoji+' ':'')+next.txt;mins=hm2min(next.t)-nowMin;}
-  else{slot.innerHTML='';return;}
+  if(!ongoing&&!next){slot.innerHTML='';return;}
+  const base=new Date();base.setHours(0,0,0,0);
+  let label,main,mins,free=false,cheer='';
+  if(ongoing){
+    const endM=hm2min(ongoing.t)+ongoing.dur;
+    mins=endM-nowMin;
+    ncTarget=base.getTime()+endM*60000;
+    label='Nu pågår · till kl '+min2hm(endM);
+    main=(ongoing.emoji?ongoing.emoji+' ':'')+ongoing.txt;
+  }else{
+    const sM=hm2min(next.t);
+    mins=sM-nowMin;
+    ncTarget=base.getTime()+sM*60000;
+    free=true;
+    label='Ledig tid · härnäst kl '+next.t+(next.dur?'–'+min2hm(sM+next.dur):'');
+    main=(next.emoji?next.emoji+' ':'')+next.txt;
+    if(mins>=10)cheer=pickCheer(next);
+  }
   const q=Math.ceil(mins/15);
   const shown=Math.min(q,8);
   let dots='';
   for(let i=0;i<shown;i++)dots+='<span class="qdot"></span>';
   if(q>8)dots+='<span class="plus">+'+(q-8)+'</span>';
-  slot.innerHTML='<div class="next-card"><div class="nc-label">'+label+'</div><div class="nc-main">'+esc(main)+'</div><div class="qdots">'+dots+'<span class="expl">'+(ongoing?mins+' min kvar':'om '+mins+' min')+' · ● = en kvart</span></div></div>';
+  slot.innerHTML='<div class="next-card'+(free?' freecard':'')+'"><div class="nc-label">'+label+'</div><div class="nc-count" id="nc-count">–:––</div><div class="nc-main">'+esc(main)+'</div><div class="qdots">'+dots+'<span class="expl">'+(free?'ledig tid kvar':'tid kvar')+' · ● = en kvart</span></div>'+(cheer?'<div class="nc-cheer">'+cheer+'</div>':'')+'</div>';
+  tickCountdown();
+}
+function tickCountdown(){
+  const el=document.getElementById('nc-count');
+  if(!el||ncTarget===null)return;
+  const left=ncTarget-Date.now();
+  if(left<=0){renderDay();return;}
+  const s=Math.floor(left/1000);
+  el.textContent=(s>=3600?Math.floor(s/3600)+':':'')+pad(Math.floor(s/60)%60)+':'+pad(s%60);
+}
+function renderSaldo(){
+  const slot=document.getElementById('saldo-slot');
+  if(!slot)return;
+  const list=items(viewDate);
+  if(!list.length){slot.innerHTML='';return;}
+  const WAKE=1080; // vaken tid 04–22 = 18 h
+  let tot=0;const by={aktiv:0,latent:0,rest:0};
+  list.forEach(a=>{
+    const d=Math.max(a.dur||0,15);tot+=d;
+    by[a.tag==='latent'?'latent':a.tag==='rest'?'rest':'aktiv']+=d;
+  });
+  const pct=Math.min(100,Math.round(tot/WAKE*100));
+  const fmt=m=>m>=60?(Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':'')):m+' min';
+  let warn='',wstyle='';
+  if(pct>=85){warn='⚠️ Väldigt mycket planerat — glöm inte pauser och mat!';wstyle='color:#A8443A';}
+  else if(pct>=60){warn='Ganska fullbokat — planera gärna in återhämtning.';wstyle='color:#9A6B1F';}
+  const seg=(v,c)=>v?'<i style="width:'+(v/WAKE*100)+'%;background:'+c+'"></i>':'';
+  slot.innerHTML='<div class="saldo"><div class="s-top"><span>Tidssaldo</span><span>'+fmt(tot)+' av 18 h vaken tid · '+pct+'%</span></div><div class="s-bar">'+seg(by.aktiv,'var(--day)')+seg(by.latent,'#C9A24B')+seg(by.rest,'#8E7CC3')+'</div><div class="s-tags">⚡ Aktiv '+fmt(by.aktiv)+' · 🚆 Latent '+fmt(by.latent)+' · 🔋 Återhämtning '+fmt(by.rest)+'</div>'+(warn?'<div class="s-warn" style="'+wstyle+'">'+warn+'</div>':'')+'</div>';
 }
 document.getElementById('d-prev').onclick=()=>{const d=new Date(viewDate+'T12:00');d.setDate(d.getDate()-1);viewDate=toISO(d);renderDay();};
 document.getElementById('d-next').onclick=()=>{const d=new Date(viewDate+'T12:00');d.setDate(d.getDate()+1);viewDate=toISO(d);renderDay();};
@@ -541,7 +622,7 @@ document.getElementById('copy-yd').onclick=()=>{
   const d=new Date(viewDate+'T12:00');d.setDate(d.getDate()-1);
   const yd=items(toISO(d));
   if(!yd.length){alert('Gårdagen är tom.');return;}
-  yd.forEach(a=>items(viewDate).push({id:Date.now()+Math.random(),t:a.t,dur:a.dur,txt:a.txt,emoji:a.emoji,done:false}));
+  yd.forEach(a=>items(viewDate).push({id:Date.now()+Math.random(),t:a.t,dur:a.dur,txt:a.txt,emoji:a.emoji,tag:a.tag||'',done:false}));
   save();renderDay();
 };
 
@@ -550,7 +631,12 @@ const bg=document.getElementById('sheet-bg');
 function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
 function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
 bg.onclick=closeSheets;
-let editId=null,selEmoji='',selDur=0;
+let editId=null,selEmoji='',selDur=0,selTag='';
+const TAGS=[['','⚡ Aktiv'],['latent','🚆 Latent'],['rest','🔋 Återhämtning']];
+function renderTagRow(){
+  document.getElementById('as-tag').innerHTML=TAGS.map(([v,l])=>'<button data-t="'+v+'"'+(selTag===v?' class="sel"':'')+'>'+l+'</button>').join('');
+  document.querySelectorAll('#as-tag button').forEach(b=>{b.onclick=()=>{selTag=b.dataset.t;renderTagRow();};});
+}
 function renderEmojiRow(){
   document.getElementById('as-emoji').innerHTML=EMOJIS.map(e=>'<button data-e="'+e+'"'+(selEmoji===e?' class="sel"':'')+'>'+e+'</button>').join('');
   document.querySelectorAll('#as-emoji button').forEach(b=>{b.onclick=()=>{selEmoji=selEmoji===b.dataset.e?'':b.dataset.e;renderEmojiRow();};});
@@ -592,9 +678,9 @@ function openAct(id){
   const n=new Date();
   document.getElementById('as-time').value=a?a.t:pad(n.getHours())+':'+pad(Math.ceil(n.getMinutes()/15)*15%60);
   document.getElementById('as-txt').value=a?a.txt:'';
-  selEmoji=a?(a.emoji||''):'';selDur=a?(a.dur||0):0;
+  selEmoji=a?(a.emoji||''):'';selDur=a?(a.dur||0):0;selTag=a?(a.tag||''):'';
   document.getElementById('as-end').value=(a&&a.dur)?min2hm(hm2min(a.t)+a.dur):'';
-  renderEmojiRow();renderDurRow();renderPresetChips();
+  renderEmojiRow();renderDurRow();renderPresetChips();renderTagRow();
   document.getElementById('as-del').style.display=a?'block':'none';
   const db=document.getElementById('as-done');
   db.style.display=a?'block':'none';
@@ -612,9 +698,9 @@ document.getElementById('as-save').onclick=()=>{
   if(ev){let d=hm2min(ev)-hm2min(t);if(d<=0)d+=1440;selDur=d;}
   if(editId){
     const a=items(viewDate).find(x=>x.id===editId);
-    a.t=t;a.txt=txt;a.emoji=selEmoji;a.dur=selDur;
+    a.t=t;a.txt=txt;a.emoji=selEmoji;a.dur=selDur;a.tag=selTag;
   }else{
-    items(viewDate).push({id:Date.now(),t,txt,emoji:selEmoji,dur:selDur,done:false});
+    items(viewDate).push({id:Date.now(),t,txt,emoji:selEmoji,dur:selDur,tag:selTag,done:false});
   }
   save();closeSheets();renderDay();renderWeek();
 };
@@ -632,7 +718,7 @@ function renderTpl(){
     const i=+b.dataset.i;
     if(b.dataset.a==='use'){
       if(items(viewDate).length&&!confirm('Ersätta dagens aktiviteter med mallen?'))return;
-      state.days[viewDate]=state.templates[i].items.map(a=>({id:Date.now()+Math.random(),t:a.t,txt:a.txt,emoji:a.emoji,dur:a.dur,done:false}));
+      state.days[viewDate]=state.templates[i].items.map(a=>({id:Date.now()+Math.random(),t:a.t,txt:a.txt,emoji:a.emoji,dur:a.dur,tag:a.tag||'',done:false}));
       save();renderDay();closeSheets();
     }else{
       state.templates.splice(i,1);save();renderTpl();
@@ -645,7 +731,7 @@ document.getElementById('tpl-save').onclick=()=>{
   const n=document.getElementById('tpl-name').value.trim();
   if(!n){alert('Ge mallen ett namn.');return;}
   if(!items(viewDate).length){alert('Dagen är tom — lägg till aktiviteter först.');return;}
-  state.templates.push({name:n,items:items(viewDate).map(a=>({t:a.t,txt:a.txt,emoji:a.emoji,dur:a.dur}))});
+  state.templates.push({name:n,items:items(viewDate).map(a=>({t:a.t,txt:a.txt,emoji:a.emoji,dur:a.dur,tag:a.tag||''}))});
   save();document.getElementById('tpl-name').value='';renderTpl();
 };
 
@@ -945,7 +1031,7 @@ function lastDoneMap(){
       if(a.done){
         const n=a.txt.trim().toLowerCase();
         if(!n)return;
-        if(!map[n]||k>map[n].date)map[n]={date:k,txt:a.txt.trim(),emoji:a.emoji||'',dur:a.dur||0};
+        if(!map[n]||k>map[n].date)map[n]={date:k,txt:a.txt.trim(),emoji:a.emoji||'',dur:a.dur||0,tag:a.tag||''};
       }
     });
   });
@@ -1002,7 +1088,7 @@ document.getElementById('tk-add').onclick=()=>{
   let m=Math.ceil((n.getHours()*60+n.getMinutes()+1)/15)*15;
   if(m>=1440)m=1425;
   const t=pad(Math.floor(m/60))+':'+pad(m%60);
-  items(toISO(n)).push({id:Date.now(),t,txt:info.txt,emoji:info.emoji,dur:info.dur,done:false});
+  items(toISO(n)).push({id:Date.now(),t,txt:info.txt,emoji:info.emoji,dur:info.dur,tag:info.tag||'',done:false});
   save();closeSheets();renderTrack();
   if(viewDate===toISO(n))renderDay();
 };
@@ -1166,7 +1252,7 @@ document.querySelectorAll('.nav button').forEach(b=>{
 });
 renderClock();
 renderDay();
-setInterval(renderClock,1000);
+setInterval(()=>{renderClock();tickCountdown();},1000);
 setInterval(()=>{renderDay();checkActSignal();},30000);
 if(state.set.wake)lockOn();
 setTimeout(()=>{
