@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bokhyllan">
+<meta name="theme-color" content="#F2EEE6">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Bokhyllan","short_name":"Bokhyllan","display":"standalone","background_color":"%23F2EEE6","theme_color":"%23F2EEE6","start_url":"."}'>
+<title>Bokhyllan</title>
+<style>
+:root{
+  --bg:#F2EEE6;--panel:#FAF7F1;--panel2:#EAE3D6;--line:#DED5C4;
+  --ink:#3E3730;--muted:#8A7F6E;--accent:#B07A57;--accent-soft:#EADFD2;
+  --blue:#6E8AA3;--green:#7A8B6F;--gold:#C8A24B;
+  --navbg:rgba(242,238,230,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.section-title:first-child{margin-top:0}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.card-panel + .card-panel{margin-top:10px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Läser-kort */
+.now-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.now-streak{font-family:Georgia,serif;font-size:16px}
+.now-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6}
+.goalbar{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden;margin-top:10px}
+.goalbar i{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width .5s ease}
+
+.bookcard{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.bookcard:first-child{border-top:none}
+.spine{width:34px;height:50px;border-radius:3px 6px 6px 3px;flex-shrink:0;box-shadow:inset -3px 0 0 rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.12);position:relative}
+.spine::after{content:'';position:absolute;left:5px;top:5px;bottom:5px;width:1px;background:rgba(255,255,255,.25)}
+.bookmain{flex:1;min-width:0}
+.booktitle{font-family:Georgia,serif;font-size:15px;line-height:1.3}
+.bookauthor{font-size:12px;color:var(--muted);margin-top:1px}
+.progress{height:7px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:9px}
+.progress i{display:block;height:100%;background:var(--blue);border-radius:5px;transition:width .5s ease}
+.progress-txt{font-size:11px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between}
+.update-btn{margin-top:9px;width:100%}
+
+/* Hylla */
+.searchwrap{margin-bottom:10px}
+.shelf-row{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.shelf-row:first-child{border-top:none}
+.shelf-row .spine{width:22px;height:34px}
+.shelf-row .m{flex:1;min-width:0}
+.shelf-row .t{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shelf-row .a{font-size:11px;color:var(--muted)}
+.shelf-row .meta{font-size:11px;color:var(--muted);text-align:right;flex-shrink:0}
+.stars-sm{color:var(--gold);font-size:12px;letter-spacing:1px}
+
+/* Citat */
+.quote{padding:12px 0;border-top:1px solid var(--line)}
+.quote:first-child{border-top:none}
+.quote-text{font-family:Georgia,serif;font-size:14px;line-height:1.6;font-style:italic;color:var(--ink)}
+.quote-text::before{content:'\201D';color:var(--accent);font-size:20px;margin-right:2px}
+.quote-note{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+.quote-meta{font-size:11px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;align-items:center}
+.quote-meta button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+
+/* Mönster */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--panel2);border-radius:14px;padding:12px;text-align:center}
+.stat .v{font-family:Georgia,serif;font-size:24px;color:var(--accent)}
+.stat .l{font-size:11px;color:var(--muted);margin-top:2px}
+.avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.avg-row:first-child{border-top:none}
+.avg-row .bar{flex:1;height:7px;border-radius:5px;background:var(--panel2);margin:0 10px;overflow:hidden}
+.avg-row .bar i{display:block;height:100%;background:var(--accent);border-radius:5px}
+
+/* Stjärnor */
+.stars{display:flex;gap:6px;margin:4px 0 4px}
+.stars button{background:none;border:none;font-size:26px;cursor:pointer;color:var(--line);line-height:1;padding:0}
+.stars button.on{color:var(--gold)}
+
+/* Statuschips */
+.statuschips{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0}
+.statuschip{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.statuschip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Färgval rygg */
+.colorpick{display:flex;gap:9px;margin:4px 0 4px}
+.colorpick button{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.colorpick button.sel{border-color:var(--ink)}
+
+.foot{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+.sync-badge{display:inline-block;font-size:11px;padding:3px 11px;border-radius:11px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.sync-badge.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.sync-badge.err{background:#F4E8E4;color:#A2685B;border-color:#E0C4BB}
+.sync-badge.load{color:var(--muted)}
+.hint{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:6px 9px;line-height:1.6;margin:2px 0 4px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(62,55,48,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;position:sticky;bottom:0;margin-top:14px}
+.mini-add{display:flex;gap:8px;margin-top:8px}
+.mini-add input{flex:1}
+.mini-add button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+.sheet-quote{padding:9px 0;border-top:1px solid var(--line);font-size:13px;display:flex;gap:8px;align-items:flex-start}
+.sheet-quote:first-child{border-top:none}
+.sheet-quote span{flex:1;font-style:italic;font-family:Georgia,serif;line-height:1.5}
+.sheet-quote button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.detail-pages{font-size:13px;color:var(--muted);margin-top:4px}
+.danger{color:#A2685B;text-align:center;width:100%;background:none;border:none;font-size:12px;cursor:pointer;margin-top:14px;text-decoration:underline;text-underline-offset:3px}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#26221C;--panel:#2E2A23;--panel2:#373129;--line:#453E33;
+  --ink:#E8E1D4;--muted:#9D9382;--accent:#C68E69;--accent-soft:#3E3025;
+  --blue:#8AA3BC;--green:#8FA383;--gold:#D4B45F;--navbg:rgba(38,34,28,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">📖 Bokhyllan</h1>
+
+<!-- LÄSER -->
+<div class="view active" id="view-now">
+  <div class="card-panel">
+    <div class="now-head">
+      <div class="now-streak" id="streak-txt"></div>
+      <button class="btn ghost" id="open-goal">Mål</button>
+    </div>
+    <div class="now-sub" id="now-sub"></div>
+    <div id="dailygoal-wrap" style="display:none">
+      <div class="goalbar"><i id="dailygoal-bar"></i></div>
+    </div>
+  </div>
+  <div class="section-title">Just nu</div>
+  <div class="card-panel" id="reading-list"></div>
+</div>
+
+<!-- HYLLA -->
+<div class="view" id="view-shelf">
+  <div class="searchwrap"><input type="text" id="search" placeholder="Sök titel eller författare…"></div>
+  <button class="btn fill" id="add-book" style="width:100%;margin-bottom:6px">+ Lägg till bok</button>
+  <div class="section-title">Läser</div>
+  <div class="card-panel" id="shelf-reading"></div>
+  <div class="section-title">Vill läsa</div>
+  <div class="card-panel" id="shelf-want"></div>
+  <div class="section-title">Läst</div>
+  <div class="card-panel" id="shelf-done"></div>
+  <div class="foot">
+    <button id="sync-open">☁ Synk</button>
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div style="text-align:center;margin-top:6px"><span id="sync-badge" class="sync-badge">Lokal</span></div>
+  <div class="privacy">Allt sparas bara i din enhet. Ingen läsning är för långsam — det här är till för glädjen, inte för pressen. 📖</div>
+</div>
+
+<!-- CITAT -->
+<div class="view" id="view-quotes">
+  <div class="section-title">Sparade citat & anteckningar</div>
+  <div class="card-panel" id="quotes-list"></div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-pattern">
+  <div class="section-title">I år</div>
+  <div class="card-panel" id="goal-card"></div>
+  <div class="section-title">Översikt</div>
+  <div class="card-panel"><div class="stat-grid" id="stats"></div></div>
+  <div class="section-title">Sidor senaste 14 dagarna</div>
+  <div class="card-panel"><canvas id="trend" width="640" height="240"></canvas></div>
+  <div class="section-title">Genrer du läst</div>
+  <div class="card-panel" id="genres"></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="now"><span>📖</span>Läser</button>
+  <button data-v="shelf"><span>📚</span>Hylla</button>
+  <button data-v="quotes"><span>❝</span>Citat</button>
+  <button data-v="pattern"><span>〰</span>Mönster</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="book-sheet">
+  <h3 id="book-sheet-title">Lägg till bok</h3>
+  <label>Titel</label>
+  <input type="text" id="bk-title" placeholder="Bokens titel">
+  <label>Författare</label>
+  <input type="text" id="bk-author" placeholder="Författare">
+  <label>Antal sidor</label>
+  <input type="number" id="bk-pages" placeholder="t.ex. 320" min="1">
+  <label>Genre / etikett (frivilligt)</label>
+  <input type="text" id="bk-genre" placeholder="t.ex. Roman, Fakta, Fantasy">
+  <label>Ryggfärg</label>
+  <div class="colorpick" id="bk-colors"></div>
+  <label>Status</label>
+  <div class="statuschips" id="bk-status"></div>
+  <button class="sheet-close" id="bk-save">Spara</button>
+</div>
+
+<div class="sheet" id="detail-sheet">
+  <h3 id="dt-title"></h3>
+  <div class="soft" id="dt-author"></div>
+
+  <label>Vilken sida är du på?</label>
+  <input type="number" id="dt-page" min="0">
+  <div class="progress" style="margin-top:9px"><i id="dt-bar"></i></div>
+  <div class="detail-pages" id="dt-pages"></div>
+
+  <label>Status</label>
+  <div class="statuschips" id="dt-status"></div>
+
+  <label>Betyg</label>
+  <div class="stars" id="dt-stars"></div>
+
+  <div class="soft" id="dt-dates" style="margin-top:6px"></div>
+
+  <label>Lägg till citat eller anteckning</label>
+  <textarea id="dt-q-text" rows="2" placeholder="Skriv ett citat eller en tanke…"></textarea>
+  <div class="mini-add">
+    <input type="number" id="dt-q-page" placeholder="Sida (frivilligt)">
+    <button id="dt-q-add">+</button>
+  </div>
+  <div id="dt-quotes" style="margin-top:8px"></div>
+
+  <button class="sheet-close" id="dt-done">Klar</button>
+  <button class="danger" id="dt-edit">Redigera uppgifter</button>
+  <button class="danger" id="dt-del">Ta bort bok</button>
+</div>
+
+<div class="sheet" id="goal-sheet">
+  <h3>Läsmål</h3>
+  <div class="soft">Mål är frivilliga och bara för dig. Lämna tomt om du hellre läser utan press.</div>
+  <label>Årsmål — antal böcker i år</label>
+  <input type="number" id="gl-year" min="0" placeholder="t.ex. 12">
+  <label>Dagligt sidmål (frivilligt)</label>
+  <input type="number" id="gl-daily" min="0" placeholder="t.ex. 20">
+  <button class="sheet-close" id="gl-save">Spara</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>☁ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <b>data.json</b> i ett <b>privat</b> GitHub-repo, så att din telefon och dator visar samma bokhylla. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn (ägare av repot)</label>
+  <input type="text" id="gh-owner" placeholder="t.ex. rebecca">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="t.ex. bokhyllan-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div id="gh-status" class="hint" style="display:none"></div>
+  <div class="btn-row" style="margin-top:8px">
+    <button class="btn ghost" id="gh-pull">Hämta nu</button>
+    <button class="btn fill" id="gh-save-sync">Spara &amp; synka</button>
+  </div>
+  <button class="sheet-close" id="sync-close">Stäng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='bokhyllan_v1';
+var SPINES=['#B07A57','#6E8AA3','#7A8B6F','#A36E7E','#C8A24B','#7E739B'];
+var STATUSES=[['want','Vill läsa'],['reading','Läser'],['done','Läst']];
+var state={
+  books:[],
+  quotes:[],
+  goal:0,
+  dailyGoal:0,
+  sessions:{},
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}schedulePush();}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+var clamp=function(v,lo,hi){return Math.max(lo,Math.min(hi,v));};
+
+// ── GitHub-synk (samma mönster som jobbplaneringen) ───
+var SYNC_KEY='bokhyllansync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sync-badge'+(stt==='ok'?' on':stt==='err'?' err':stt==='load'?' load':'');}
+// fält vi synkar (tema hålls lokalt per enhet)
+function payload(){return {books:state.books,quotes:state.quotes,goal:state.goal,dailyGoal:state.dailyGoal,sessions:state.sessions,updated:new Date().toISOString()};}
+function applyRemote(d){
+  if(Array.isArray(d.books))state.books=d.books;
+  if(Array.isArray(d.quotes))state.quotes=d.quotes;
+  if(typeof d.goal==='number')state.goal=d.goal;
+  if(typeof d.dailyGoal==='number')state.dailyGoal=d.dailyGoal;
+  if(d.sessions&&typeof d.sessions==='object')state.sessions=d.sessions;
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(d){
+    if(d)applyRemote(d);
+    setBadge('ok','Synkad');renderAll();
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(payload()));
+  var doPut=function(){var body={message:'Uppdatering via Bokhyllan',content:content};if(sync.sha)body.sha=sync.sha;return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});};
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+var pushTimer=null;
+function schedulePush(){if(!syncOn())return;clearTimeout(pushTimer);setBadge('load','Sparar…');pushTimer=setTimeout(function(){ghPush();},1200);}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Hjälpfunktioner ───────────────────────────────────
+function bookById(id){for(var i=0;i<state.books.length;i++)if(state.books[i].id===id)return state.books[i];return null;}
+function pct(b){if(!b.pages)return 0;return clamp(Math.round((b.page||0)/b.pages*100),0,100);}
+function addPages(n){if(n<=0)return;var k=todayKey();state.sessions[k]=(state.sessions[k]||0)+n;}
+
+function streak(){
+  var s=0;var d=new Date();
+  if(!(state.sessions[toISO(d)]>0))d.setDate(d.getDate()-1);
+  while(state.sessions[toISO(d)]>0){s++;d.setDate(d.getDate()-1);}
+  return s;
+}
+
+// ── Vy: Läser ─────────────────────────────────────────
+function renderNow(){
+  var st=streak();
+  var t=document.getElementById('streak-txt');
+  var sub=document.getElementById('now-sub');
+  if(st>0){t.textContent='Läsrad: '+st+(st===1?' dag 📖':' dagar 📖');}
+  else{t.textContent='Ingen läsrad just nu';}
+  var today=state.sessions[todayKey()]||0;
+  var bits=[];
+  bits.push('Idag: '+today+(today===1?' sida':' sidor'));
+  if(st===0)bits.push('— och det är helt okej. Några sidor räcker.');
+  sub.textContent=bits.join(' ');
+
+  var dgw=document.getElementById('dailygoal-wrap');
+  if(state.dailyGoal>0){
+    dgw.style.display='block';
+    var p=clamp(Math.round(today/state.dailyGoal*100),0,100);
+    document.getElementById('dailygoal-bar').style.width=p+'%';
+    sub.textContent='Idag: '+today+' / '+state.dailyGoal+' sidor'+(today>=state.dailyGoal?' ✓':'');
+  }else{dgw.style.display='none';}
+
+  var reading=state.books.filter(function(b){return b.status==='reading';});
+  var c=document.getElementById('reading-list');
+  if(!reading.length){
+    c.innerHTML='<div class="empty-msg">Inga böcker just nu.<br>Lägg till en bok under Hylla och sätt den till "Läser".</div>';
+    return;
+  }
+  c.innerHTML=reading.map(function(b){
+    var p=pct(b);
+    return '<div class="bookcard" data-id="'+b.id+'">'+
+      '<div class="spine" style="background:'+b.spine+'"></div>'+
+      '<div class="bookmain">'+
+        '<div class="booktitle">'+esc(b.title)+'</div>'+
+        '<div class="bookauthor">'+esc(b.author||'')+'</div>'+
+        '<div class="progress"><i style="width:'+p+'%"></i></div>'+
+        '<div class="progress-txt"><span>Sida '+(b.page||0)+' av '+b.pages+'</span><span>'+p+' %</span></div>'+
+        '<button class="btn ghost update-btn" data-upd="'+b.id+'">Uppdatera sida</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  var cards=c.querySelectorAll('.bookcard');
+  for(var i=0;i<cards.length;i++){(function(el){
+    el.onclick=function(ev){openDetail(el.dataset.id);};
+  })(cards[i]);}
+  var upds=c.querySelectorAll('[data-upd]');
+  for(var j=0;j<upds.length;j++){(function(btn){
+    btn.onclick=function(ev){ev.stopPropagation();openDetail(btn.dataset.upd);};
+  })(upds[j]);}
+}
+
+// ── Vy: Hylla ─────────────────────────────────────────
+function shelfRow(b){
+  var meta='';
+  if(b.status==='done'&&b.rating>0)meta='<div class="stars-sm">'+'★'.repeat(b.rating)+'</div>';
+  else if(b.status==='reading')meta=pct(b)+' %';
+  else if(b.genre)meta=esc(b.genre);
+  return '<div class="shelf-row" data-id="'+b.id+'">'+
+    '<div class="spine" style="background:'+b.spine+'"></div>'+
+    '<div class="m"><div class="t">'+esc(b.title)+'</div><div class="a">'+esc(b.author||'')+'</div></div>'+
+    '<div class="meta">'+meta+'</div>'+
+  '</div>';
+}
+function renderShelf(){
+  var q=(document.getElementById('search').value||'').toLowerCase().trim();
+  function match(b){if(!q)return true;return (b.title||'').toLowerCase().indexOf(q)>=0||(b.author||'').toLowerCase().indexOf(q)>=0;}
+  var groups={reading:'shelf-reading',want:'shelf-want',done:'shelf-done'};
+  Object.keys(groups).forEach(function(st){
+    var list=state.books.filter(function(b){return b.status===st&&match(b);});
+    var c=document.getElementById(groups[st]);
+    if(!list.length){c.innerHTML='<div class="empty-msg">Inga böcker här ännu.</div>';return;}
+    c.innerHTML=list.map(shelfRow).join('');
+    var rows=c.querySelectorAll('.shelf-row');
+    for(var i=0;i<rows.length;i++){(function(el){el.onclick=function(){openDetail(el.dataset.id);};})(rows[i]);}
+  });
+}
+document.getElementById('search').oninput=renderShelf;
+
+// ── Vy: Citat ─────────────────────────────────────────
+function renderQuotes(){
+  var c=document.getElementById('quotes-list');
+  var qs=state.quotes.slice().sort(function(a,b){return b.ts-a.ts;});
+  if(!qs.length){c.innerHTML='<div class="empty-msg">Inga citat ännu.<br>Öppna en bok och spara en rad du vill minnas.</div>';return;}
+  c.innerHTML=qs.map(function(q){
+    var b=bookById(q.bookId);
+    var src=(b?esc(b.title):'Okänd bok')+(q.page?' · s. '+q.page:'');
+    return '<div class="quote">'+
+      '<div class="quote-text">'+esc(q.text)+'</div>'+
+      (q.note?'<div class="quote-note">'+esc(q.note)+'</div>':'')+
+      '<div class="quote-meta"><span>'+src+'</span><button data-q="'+q.id+'">×</button></div>'+
+    '</div>';
+  }).join('');
+  var dels=c.querySelectorAll('[data-q]');
+  for(var i=0;i<dels.length;i++){(function(btn){
+    btn.onclick=function(){state.quotes=state.quotes.filter(function(x){return x.id!==btn.dataset.q;});save();renderQuotes();};
+  })(dels[i]);}
+}
+
+// ── Vy: Mönster ───────────────────────────────────────
+function curYear(){return new Date().getFullYear();}
+function renderPattern(){
+  var yr=curYear();
+  var doneThisYear=state.books.filter(function(b){return b.status==='done'&&b.finished&&b.finished.slice(0,4)==String(yr);});
+  var gc=document.getElementById('goal-card');
+  if(state.goal>0){
+    var p=clamp(Math.round(doneThisYear.length/state.goal*100),0,100);
+    gc.innerHTML='<div class="now-streak">'+doneThisYear.length+' av '+state.goal+' böcker '+yr+'</div>'+
+      '<div class="goalbar" style="margin-top:10px"><i style="width:'+p+'%"></i></div>'+
+      '<div class="soft" style="margin-top:8px">'+(p>=100?'Du nådde målet — vilken fin läsresa. 🌿':'Mjukt framåt, en bok i taget.')+'</div>';
+  }else{
+    gc.innerHTML='<div class="soft">Inget årsmål satt. '+doneThisYear.length+(doneThisYear.length===1?' bok':' böcker')+' läst i år.</div>'+
+      '<button class="btn ghost" id="goal-card-set" style="margin-top:10px">Sätt ett mål</button>';
+    document.getElementById('goal-card-set').onclick=function(){openGoal();};
+  }
+
+  var pagesYear=0;
+  Object.keys(state.sessions).forEach(function(k){if(k.slice(0,4)==String(yr))pagesYear+=state.sessions[k];});
+  var rated=state.books.filter(function(b){return b.status==='done'&&b.rating>0;});
+  var avg=rated.length?(rated.reduce(function(a,b){return a+b.rating;},0)/rated.length).toFixed(1):'–';
+  var st=streak();
+  document.getElementById('stats').innerHTML=
+    '<div class="stat"><div class="v">'+doneThisYear.length+'</div><div class="l">böcker i år</div></div>'+
+    '<div class="stat"><div class="v">'+pagesYear+'</div><div class="l">sidor i år</div></div>'+
+    '<div class="stat"><div class="v">'+avg+'</div><div class="l">snittbetyg</div></div>'+
+    '<div class="stat"><div class="v">'+st+'</div><div class="l">dagars läsrad</div></div>';
+
+  drawTrend();
+
+  var counts={};
+  state.books.filter(function(b){return b.status==='done'&&b.genre;}).forEach(function(b){counts[b.genre]=(counts[b.genre]||0)+1;});
+  var keys=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+  var gv=document.getElementById('genres');
+  if(!keys.length){gv.innerHTML='<div class="empty-msg">Inga lästa böcker med genre ännu.</div>';}
+  else{var mx=counts[keys[0]];gv.innerHTML=keys.map(function(g){var w=Math.round(counts[g]/mx*100);return '<div class="avg-row"><span>'+esc(g)+'</span><span class="bar"><i style="width:'+w+'%"></i></span><span>'+counts[g]+'</span></div>';}).join('');}
+}
+
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function drawTrend(){
+  var cv=document.getElementById('trend');if(!cv||!cv.getContext)return;
+  var ctx=cv.getContext('2d');var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  var days=[];var d=new Date();d.setDate(d.getDate()-13);
+  for(var i=0;i<14;i++){var k=toISO(d);days.push({k:k,v:state.sessions[k]||0});d.setDate(d.getDate()+1);}
+  var mx=Math.max(10,Math.max.apply(null,days.map(function(x){return x.v;})));
+  var pad=24,bw=(W-pad*2)/14,base=H-pad;
+  ctx.strokeStyle=cssVar('--line');ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,base);ctx.lineTo(W-pad,base);ctx.stroke();
+  ctx.fillStyle=cssVar('--accent');
+  for(var j=0;j<14;j++){
+    var h=days[j].v/mx*(base-pad);
+    var x=pad+bw*j+bw*0.18,w=bw*0.64;
+    ctx.fillRect(x,base-h,w,h);
+  }
+  ctx.fillStyle=cssVar('--muted');ctx.font='10px -apple-system,sans-serif';ctx.textAlign='center';
+  ctx.fillText('14 dagar sedan',pad+bw,base+15);
+  ctx.fillText('idag',W-pad-bw*0.5,base+15);
+  ctx.textAlign='left';ctx.fillText('max '+mx+' sidor',pad,16);
+}
+
+// ── Bok-sheet (lägg till / redigera) ──────────────────
+var editingId=null;
+var bkColor=SPINES[0],bkStatus='want';
+function renderColorPick(el,sel,onpick){
+  el.innerHTML=SPINES.map(function(c){return '<button data-c="'+c+'" class="'+(c===sel?'sel':'')+'" style="background:'+c+'"></button>';}).join('');
+  var bs=el.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++){(function(b){b.onclick=function(){onpick(b.dataset.c);};})(bs[i]);}
+}
+function renderStatusPick(el,sel,onpick){
+  el.innerHTML=STATUSES.map(function(s){return '<button class="statuschip'+(s[0]===sel?' sel':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>';}).join('');
+  var bs=el.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++){(function(b){b.onclick=function(){onpick(b.dataset.s);};})(bs[i]);}
+}
+function openBookSheet(id){
+  editingId=id||null;
+  var b=id?bookById(id):null;
+  document.getElementById('book-sheet-title').textContent=id?'Redigera bok':'Lägg till bok';
+  document.getElementById('bk-title').value=b?b.title:'';
+  document.getElementById('bk-author').value=b?(b.author||''):'';
+  document.getElementById('bk-pages').value=b?b.pages:'';
+  document.getElementById('bk-genre').value=b?(b.genre||''):'';
+  bkColor=b?b.spine:SPINES[Math.floor(Math.random()*SPINES.length)];
+  bkStatus=b?b.status:'want';
+  renderColorPick(document.getElementById('bk-colors'),bkColor,function(c){bkColor=c;renderColorPick(document.getElementById('bk-colors'),bkColor,arguments.callee);});
+  renderStatusPick(document.getElementById('bk-status'),bkStatus,function(s){bkStatus=s;renderStatusPick(document.getElementById('bk-status'),bkStatus,arguments.callee);});
+  openSheet('book-sheet');
+}
+document.getElementById('add-book').onclick=function(){openBookSheet(null);};
+document.getElementById('bk-save').onclick=function(){
+  var title=document.getElementById('bk-title').value.trim();
+  var pages=parseInt(document.getElementById('bk-pages').value,10);
+  if(!title){alert('Boken behöver en titel.');return;}
+  if(!pages||pages<1){alert('Ange antal sidor.');return;}
+  var author=document.getElementById('bk-author').value.trim();
+  var genre=document.getElementById('bk-genre').value.trim();
+  if(editingId){
+    var b=bookById(editingId);
+    b.title=title;b.author=author;b.pages=pages;b.genre=genre;b.spine=bkColor;
+    setStatus(b,bkStatus);
+  }else{
+    var nb={id:uid(),title:title,author:author,pages:pages,page:0,genre:genre,spine:bkColor,status:'want',rating:0,started:null,finished:null};
+    setStatus(nb,bkStatus);
+    state.books.push(nb);
+  }
+  save();closeSheets();renderAll();
+};
+
+function setStatus(b,st){
+  if(st==='reading'&&!b.started)b.started=todayKey();
+  if(st==='done'){if(!b.started)b.started=b.started||todayKey();b.finished=b.finished||todayKey();if((b.page||0)<b.pages){addPages(b.pages-(b.page||0));}b.page=b.pages;}
+  if(st!=='done')b.finished=null;
+  b.status=st;
+}
+
+// ── Detalj-sheet ──────────────────────────────────────
+var detailId=null;
+function detailStatusPick(){
+  var b=bookById(detailId);
+  renderStatusPick(document.getElementById('dt-status'),b.status,function(st){
+    var nb=bookById(detailId);setStatus(nb,st);save();
+    document.getElementById('dt-page').value=nb.page||0;
+    refreshDetailProgress();renderDates();renderStars();
+    detailStatusPick();
+  });
+}
+function openDetail(id){
+  detailId=id;var b=bookById(id);if(!b)return;
+  document.getElementById('dt-title').textContent=b.title;
+  document.getElementById('dt-author').textContent=b.author||'';
+  var pageInput=document.getElementById('dt-page');
+  pageInput.max=b.pages;pageInput.value=b.page||0;
+  refreshDetailProgress();
+  detailStatusPick();
+  renderStars();renderDates();renderDetailQuotes();
+  document.getElementById('dt-q-text').value='';document.getElementById('dt-q-page').value='';
+  openSheet('detail-sheet');
+}
+function refreshDetailProgress(){
+  var b=bookById(detailId);var p=pct(b);
+  document.getElementById('dt-bar').style.width=p+'%';
+  document.getElementById('dt-pages').textContent='Sida '+(b.page||0)+' av '+b.pages+' · '+p+' %';
+}
+document.getElementById('dt-page').onchange=function(){
+  var b=bookById(detailId);
+  var v=clamp(parseInt(this.value,10)||0,0,b.pages);this.value=v;
+  var old=b.page||0;
+  if(v>old)addPages(v-old);
+  b.page=v;
+  if(v>=b.pages){setStatus(b,'done');}
+  else if(b.status==='want'&&v>0){setStatus(b,'reading');}
+  save();refreshDetailProgress();renderDates();detailStatusPick();
+};
+function renderStars(){
+  var b=bookById(detailId);var el=document.getElementById('dt-stars');
+  el.innerHTML='';
+  for(var i=1;i<=5;i++){(function(n){
+    var btn=document.createElement('button');btn.textContent='★';
+    if(n<=(b.rating||0))btn.className='on';
+    btn.onclick=function(){b.rating=(b.rating===n?0:n);save();renderStars();};
+    el.appendChild(btn);
+  })(i);}
+}
+function renderDates(){
+  var b=bookById(detailId);var bits=[];
+  if(b.started)bits.push('Påbörjad '+b.started);
+  if(b.finished)bits.push('Läst klar '+b.finished);
+  document.getElementById('dt-dates').textContent=bits.join(' · ');
+}
+function renderDetailQuotes(){
+  var qs=state.quotes.filter(function(q){return q.bookId===detailId;}).sort(function(a,b){return b.ts-a.ts;});
+  var el=document.getElementById('dt-quotes');
+  if(!qs.length){el.innerHTML='';return;}
+  el.innerHTML=qs.map(function(q){return '<div class="sheet-quote"><span>'+esc(q.text)+(q.page?' (s. '+q.page+')':'')+'</span><button data-q="'+q.id+'">×</button></div>';}).join('');
+  var dels=el.querySelectorAll('[data-q]');
+  for(var i=0;i<dels.length;i++){(function(btn){btn.onclick=function(){state.quotes=state.quotes.filter(function(x){return x.id!==btn.dataset.q;});save();renderDetailQuotes();};})(dels[i]);}
+}
+document.getElementById('dt-q-add').onclick=function(){
+  var text=document.getElementById('dt-q-text').value.trim();if(!text)return;
+  var pg=parseInt(document.getElementById('dt-q-page').value,10);
+  state.quotes.push({id:uid(),bookId:detailId,text:text,page:pg>0?pg:null,note:null,ts:Date.now()});
+  document.getElementById('dt-q-text').value='';document.getElementById('dt-q-page').value='';
+  save();renderDetailQuotes();
+};
+document.getElementById('dt-done').onclick=function(){closeSheets();renderAll();};
+document.getElementById('dt-edit').onclick=function(){var id=detailId;closeSheets();openBookSheet(id);};
+document.getElementById('dt-del').onclick=function(){
+  var b=bookById(detailId);if(!b)return;
+  if(!confirm('Ta bort "'+b.title+'" och dess citat?'))return;
+  state.books=state.books.filter(function(x){return x.id!==detailId;});
+  state.quotes=state.quotes.filter(function(x){return x.bookId!==detailId;});
+  save();closeSheets();renderAll();
+};
+
+// ── Mål-sheet ─────────────────────────────────────────
+function openGoal(){
+  document.getElementById('gl-year').value=state.goal||'';
+  document.getElementById('gl-daily').value=state.dailyGoal||'';
+  openSheet('goal-sheet');
+}
+document.getElementById('open-goal').onclick=openGoal;
+document.getElementById('gl-save').onclick=function(){
+  state.goal=Math.max(0,parseInt(document.getElementById('gl-year').value,10)||0);
+  state.dailyGoal=Math.max(0,parseInt(document.getElementById('gl-daily').value,10)||0);
+  save();closeSheets();renderAll();
+};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='bokhyllan-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.books){state=Object.assign(state,d);save();renderAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#26221C':'#F2EEE6';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(document.getElementById('view-pattern').classList.contains('active'))drawTrend();
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+var navbtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navbtns.length;n++){(function(b){
+  b.onclick=function(){
+    for(var i=0;i<navbtns.length;i++)navbtns[i].classList.remove('active');
+    b.classList.add('active');
+    var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='now')renderNow();
+    if(b.dataset.v==='shelf')renderShelf();
+    if(b.dataset.v==='quotes')renderQuotes();
+    if(b.dataset.v==='pattern')renderPattern();
+  };
+})(navbtns[n]);}
+
+function renderAll(){renderNow();renderShelf();renderQuotes();if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();}
+
+// ── Synk-sheet ────────────────────────────────────────
+function ghStatus(msg){var el=document.getElementById('gh-status');el.style.display='block';el.textContent=msg;}
+document.getElementById('sync-open').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('sync-close').onclick=closeSheets;
+document.getElementById('gh-save-sync').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){ghStatus('Fyll i alla tre fälten.');return;}
+  saveSync();ghStatus('Testar anslutning…');
+  ghGet().then(function(d){
+    if(d){ghStatus('✓ Ansluten! Hämtar din bokhylla…');applyRemote(d);renderAll();}
+    else{ghStatus('✓ Ansluten! Repot är tomt — laddar upp din lokala data…');return ghPush();}
+  }).then(function(){setBadge('ok','Synkad');setTimeout(closeSheets,1000);})
+  .catch(function(e){ghStatus('Fel: '+e.message+'. Kontrollera namn och att token har Contents-behörighet.');setBadge('err','Synkfel');});
+};
+document.getElementById('gh-pull').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+loadSync();
+renderAll();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn()){setBadge('ok','Synkad');ghPull();}
+</script>
+</body>
+</html>
