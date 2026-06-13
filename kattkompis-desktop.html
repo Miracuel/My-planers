@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="KattKompis">
+<meta name="theme-color" content="#F4EDE3">
+<link rel="manifest" href='data:application/manifest+json,{"name":"KattKompis","short_name":"KattKompis","display":"standalone","background_color":"%23F4EDE3","theme_color":"%23F4EDE3","start_url":"."}'>
+<title>KattKompis · dator</title>
+<style>
+:root{
+  --bg:#F4EDE3;--panel:#FCF8F2;--panel2:#EFE5D6;--line:#E2D5C2;
+  --ink:#46392D;--muted:#8C7C68;--paw:#C0795A;--paw-soft:#F0DECF;
+  --green:#7FA06B;--yellow:#CDA85E;--red:#C57F6E;
+  --navbg:rgba(244,237,227,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 12px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--paw);background:var(--panel);color:var(--paw);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--paw-soft)}
+.btn.fill{background:var(--paw);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.row2{display:flex;gap:8px}
+.row2>*{flex:1}
+
+/* Cat selector */
+.cat-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;-webkit-overflow-scrolling:touch}
+.cat-tab{flex-shrink:0;border:1.5px solid var(--line);background:var(--panel);border-radius:14px;padding:7px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+.cat-tab.sel{border-color:var(--paw);background:var(--paw-soft)}
+.cat-tab .av{width:22px;height:22px;border-radius:50%;background:var(--panel2) center/cover;display:flex;align-items:center;justify-content:center;font-size:13px}
+.cat-tab.add{color:var(--muted);border-style:dashed}
+
+/* Profile */
+.profile{display:flex;gap:14px;align-items:center}
+.cat-photo{width:84px;height:84px;border-radius:20px;flex-shrink:0;background:var(--panel2) center/cover;display:flex;align-items:center;justify-content:center;font-size:38px;cursor:pointer;border:1px solid var(--line)}
+.cat-meta b{font-family:Georgia,serif;font-weight:400;font-size:19px;display:block}
+.cat-meta .sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.6}
+.facts{margin-top:10px}
+.fact{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.fact:first-child{border-top:none}
+.fact .k{color:var(--muted)}
+.fact .v{text-align:right}
+
+/* Albums */
+.album{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.album .ph{position:relative;aspect-ratio:1;border-radius:12px;background:var(--panel2) center/cover;border:1px solid var(--line)}
+.album .ph button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(0,0,0,.45);color:#fff;font-size:13px;cursor:pointer}
+.album .add{aspect-ratio:1;border-radius:12px;border:1.5px dashed var(--line);background:var(--panel);color:var(--muted);font-size:26px;cursor:pointer}
+
+/* Generic list rows */
+.item{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.item:first-child{border-top:none}
+.item .grow{flex:1;min-width:0}
+.item .grow b{font-weight:600;font-family:inherit;font-size:13px}
+.item .grow .meta{color:var(--muted);font-size:11px;margin-top:2px;line-height:1.5}
+.item time{color:var(--muted);font-size:11px;white-space:nowrap}
+.item .x{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;flex-shrink:0}
+.tag{font-size:10px;padding:2px 7px;border-radius:9px;background:var(--panel2);color:var(--muted);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.tag.due{background:#F4E1DA;color:#9A5747}
+.tag.soon{background:#F4ECD6;color:#8A7234}
+.tag.ok{background:var(--paw-soft);color:#8A5A40}
+.dot3{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.lvl1{background:var(--green)}.lvl2{background:var(--yellow)}.lvl3{background:var(--red)}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{border-color:var(--paw);background:var(--paw-soft)}
+.chip.rm{color:var(--muted)}
+.chip.rm:after{content:' ×';color:var(--muted)}
+
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--paw);background:var(--paw);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+
+/* Toilet quick log */
+.toa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toa-btn{border:1.5px solid var(--line);background:var(--panel);border-radius:14px;padding:12px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink);text-align:center}
+.toa-btn:active{background:var(--paw-soft)}
+.toa-btn span{display:block;font-size:20px;margin-bottom:3px}
+.toa-btn.warn{border-color:#E2C4BB}
+
+/* Budget */
+.bud-big{font-family:Georgia,serif;font-size:30px;color:var(--paw)}
+.bud-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.bud-row:first-child{border-top:none}
+.bar-bg{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden;margin-top:4px}
+.bar-fill{height:100%;background:var(--paw);transition:width .4s}
+.bar-fill.over{background:var(--red)}
+
+/* Weight chart */
+canvas{width:100%;height:auto;display:block}
+
+/* GPS future */
+.future{opacity:.7;text-align:center;font-size:12px;color:var(--muted);line-height:1.7;padding:6px 0}
+.future b{font-family:Georgia,serif;font-weight:400;color:var(--ink);font-size:14px}
+
+/* Sync */
+.sync-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sp-badge{font-size:11px;padding:3px 9px;border-radius:10px;background:var(--paw-soft);color:#8A5A40;font-weight:500}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#F4E1DA;color:#9A5747}
+.hint{font-size:11px;color:var(--muted);background:var(--panel2);padding:6px 9px;border-radius:8px;line-height:1.5;margin-top:6px}
+html[data-theme=dark] .sp-badge{color:#E5C4A8}
+html[data-theme=dark] .sp-badge.err{background:#4A322B;color:#E5B3A3}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--paw);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(70,57,45,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--paw);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.dotpick{display:flex;gap:8px;margin:4px 0 8px}
+.dotpick button{flex:1;padding:9px;border-radius:11px;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit}
+.dotpick button.sel{background:var(--paw);border-color:var(--paw);color:#fff}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#241E18;--panel:#2E2720;--panel2:#372F27;--line:#463C31;
+  --ink:#EBE0D2;--muted:#A89884;--paw:#D49873;--paw-soft:#4A3A2E;
+  --green:#8DA877;--yellow:#C9AE70;--red:#CC8A78;--navbg:rgba(36,30,24,.95);
+}
+html[data-theme=dark] .tag.due{background:#4A322B;color:#E5B3A3}
+html[data-theme=dark] .tag.soon{background:#43391F;color:#D8C087}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+/* ===== DESKTOP ===== */
+h1.brand{display:none}
+.app{margin-left:200px;max-width:1120px;padding:26px 34px 50px}
+.cat-tabs{margin-bottom:10px}
+.nav{position:fixed;top:0;left:0;bottom:0;width:200px;flex-direction:column;border-top:none;border-right:1px solid var(--line);background:var(--panel);padding:16px 12px;gap:4px;max-width:none;margin:0;justify-content:flex-start;backdrop-filter:none;z-index:60}
+.nav::before{content:"\01F431 KattKompis";font-family:Georgia,serif;font-size:18px;color:var(--ink);letter-spacing:.04em;padding:6px 12px 16px;display:block}
+.nav button{flex:0 0 auto;text-align:left;font-size:14px;padding:11px 14px;border-radius:12px;display:flex;align-items:center;gap:10px;color:var(--ink)}
+.nav button span{display:inline;font-size:18px;margin:0}
+.nav button.active{background:var(--paw-soft);color:var(--paw);font-weight:600}
+.view.active{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px;align-items:start}
+.block{min-width:0}
+.block>.section-title:first-child{margin-top:6px}
+.block>.card-panel{margin-bottom:6px}
+.album{grid-template-columns:repeat(5,1fr)}
+.theme-btn{top:18px;right:26px}
+.sheet{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-46%);opacity:0;width:460px;max-width:92vw;border-radius:18px;max-height:86vh;margin:0;transition:transform .2s ease,opacity .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.sheet.open{transform:translate(-50%,-50%);opacity:1}
+.sheet-close{position:static}
+@media(max-width:820px){.view.active{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🐱 KattKompis</h1>
+
+<div class="cat-tabs" id="cat-tabs"></div>
+
+<!-- KATTER -->
+<div class="view active" id="view-cats">
+  <div class="block">
+  <div class="card-panel" id="profile-card"></div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Fotoalbum</div>
+  <div class="card-panel">
+    <div class="album" id="album"></div>
+    <input type="file" id="photo-file" accept="image/*" style="display:none">
+  </div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">GPS-spårning</div>
+  <div class="card-panel">
+    <div class="future"><b>Kommer senare 🛰️</b><br>När katten har ett GPS-halsband visas position, historik och geofence-varning här (om katten lämnar området).</div>
+  </div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Synk mellan enheter</div>
+  <div class="card-panel">
+    <div class="sync-row">
+      <span id="sync-badge" class="sp-badge offline">Lokal</span>
+      <button class="btn ghost" id="sync-btn">↻ Synka nu</button>
+      <button class="btn ghost" id="sync-settings">⚙ Inställningar</button>
+    </div>
+    <div class="soft" style="margin-top:8px">Delar profiler, hälsa, mat, påminnelser och budget mellan dina enheter via ett privat GitHub-repo. Foton stannar lokalt på varje enhet.</div>
+  </div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas bara i din telefon. Foton komprimeras automatiskt.<br>KattKompis ersätter inte veterinär — vid sjukdom, kontakta alltid din veterinär. 🐾</div>
+  </div>
+</div>
+
+<!-- HÄLSA -->
+<div class="view" id="view-health">
+  <div class="block">
+  <div class="section-title" style="margin-top:0">Viktkurva <button class="btn ghost" id="add-weight" style="float:right;margin-top:-4px">+ Väg</button></div>
+  <div class="card-panel">
+    <canvas id="weight-chart" width="640" height="240"></canvas>
+    <div id="weight-list" style="margin-top:6px"></div>
+  </div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Mediciner <button class="btn ghost" id="add-med" style="float:right;margin-top:-4px">+ Lägg till</button></div>
+  <div class="card-panel" id="med-list"></div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Vaccinationer <button class="btn ghost" id="add-vacc" style="float:right;margin-top:-4px">+ Lägg till</button></div>
+  <div class="card-panel" id="vacc-list"></div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Veterinärbesök <button class="btn ghost" id="add-vet" style="float:right;margin-top:-4px">+ Lägg till</button></div>
+  <div class="card-panel" id="vet-list"></div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Allergier</div>
+  <div class="card-panel">
+    <div class="chips" id="allergy-chips"></div>
+    <div class="add-row"><input type="text" id="allergy-in" placeholder="T.ex. kyckling, damm…"><button id="allergy-add">+</button></div>
+  </div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Symtomdagbok <button class="btn ghost" id="add-symptom" style="float:right;margin-top:-4px">+ Logga</button></div>
+  <div class="card-panel" id="symptom-list"></div>
+  </div>
+</div>
+
+<!-- MAT & TOA -->
+<div class="view" id="view-food">
+  <div class="block">
+  <div class="section-title" style="margin-top:0">Foderschema <button class="btn ghost" id="add-feed" style="float:right;margin-top:-4px">+ Tid</button></div>
+  <div class="card-panel" id="feed-list"></div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Specialkost & anteckningar</div>
+  <div class="card-panel">
+    <textarea id="special-diet" rows="3" placeholder="T.ex. njurfoder, blötmat morgon, viktkontroll…"></textarea>
+    <div class="soft" id="special-saved" style="margin-top:6px"></div>
+  </div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Toalettlogg idag</div>
+  <div class="card-panel">
+    <div class="toa-grid">
+      <button class="toa-btn" data-toa="pee"><span>💧</span>Kissat normalt</button>
+      <button class="toa-btn" data-toa="poop"><span>💩</span>Bajsat normalt</button>
+      <button class="toa-btn warn" data-toa="diarrhea"><span>⚠️</span>Diarré</button>
+      <button class="toa-btn warn" data-toa="constipation"><span>🚫</span>Förstoppning</button>
+    </div>
+    <div class="add-row"><input type="text" id="toa-note" placeholder="Anteckning (frivilligt)…"><button id="toa-note-add">+</button></div>
+  </div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Senaste toalettloggar</div>
+  <div class="card-panel" id="toa-list"></div>
+  </div>
+</div>
+
+<!-- PÅMINNELSER -->
+<div class="view" id="view-reminders">
+  <div class="block">
+  <div class="section-title" style="margin-top:0">Att göra <button class="btn ghost" id="add-rem" style="float:right;margin-top:-4px">+ Påminnelse</button></div>
+  <div class="card-panel" id="rem-upcoming"></div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Klart</div>
+  <div class="card-panel" id="rem-done"></div>
+
+  <div class="soft" style="text-align:center;margin-top:12px">Tips: vanliga påminnelser är vaccination, kloklippning, avmaskning, medicin och att beställa kattmat.</div>
+  </div>
+</div>
+
+<!-- BUDGET -->
+<div class="view" id="view-budget">
+  <div class="block">
+  <div class="section-title" style="margin-top:0">Den här månaden</div>
+  <div class="card-panel">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div><div class="soft" id="bud-cat-name"></div><div class="bud-big" id="bud-month">0 kr</div></div>
+      <div style="text-align:right"><div class="soft">På årsbasis</div><div style="font-size:18px;font-weight:600" id="bud-year">0 kr</div></div>
+    </div>
+    <div id="bud-budgetbar" style="margin-top:12px"></div>
+    <button class="btn ghost" id="set-budget" style="margin-top:10px;width:100%">Sätt månadsbudget</button>
+  </div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Per kategori (denna månad)</div>
+  <div class="card-panel" id="bud-categories"></div>
+
+  </div>
+  <div class="block">
+  <div class="section-title">Utgifter <button class="btn ghost" id="add-cost" style="float:right;margin-top:-4px">+ Utgift</button></div>
+  <div class="card-panel" id="cost-list"></div>
+  </div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="cats"><span>🐱</span>Katter</button>
+  <button data-v="health"><span>♥</span>Hälsa</button>
+  <button data-v="food"><span>🍽</span>Mat&amp;Toa</button>
+  <button data-v="reminders"><span>🔔</span>Påminn</button>
+  <button data-v="budget"><span>💰</span>Budget</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="cat-sheet">
+  <h3 id="cat-sheet-title">Ny katt</h3>
+  <label>Namn</label><input type="text" id="c-name" placeholder="Måns">
+  <label>Ras</label><input type="text" id="c-breed" placeholder="Huskatt / Maine Coon…">
+  <label>Födelsedatum</label><input type="date" id="c-birth">
+  <label>Chipnummer</label><input type="text" id="c-chip" placeholder="752…">
+  <label>Försäkring</label><input type="text" id="c-ins" placeholder="Bolag + nr">
+  <label>Veterinär</label><input type="text" id="c-vet" placeholder="Klinik">
+  <label>Veterinärens telefon</label><input type="text" id="c-vetphone" placeholder="08-…">
+  <button class="sheet-close" id="c-save">Spara katt</button>
+  <button class="btn ghost" id="c-delete" style="width:100%;margin-top:8px;display:none">Ta bort den här katten</button>
+</div>
+
+<div class="sheet" id="weight-sheet">
+  <h3>Väg katten</h3>
+  <label>Datum</label><input type="date" id="w-date">
+  <label>Vikt (kg)</label><input type="number" id="w-kg" step="0.01" placeholder="4.20">
+  <button class="sheet-close" id="w-save">Spara vikt</button>
+</div>
+
+<div class="sheet" id="med-sheet">
+  <h3>Medicin</h3>
+  <label>Namn</label><input type="text" id="m-name" placeholder="T.ex. Metacam">
+  <label>Dos & hur ofta</label><input type="text" id="m-dose" placeholder="0,5 ml 1×/dag">
+  <label>Anteckning</label><input type="text" id="m-note" placeholder="Frivilligt">
+  <button class="sheet-close" id="m-save">Spara</button>
+</div>
+
+<div class="sheet" id="vacc-sheet">
+  <h3>Vaccination</h3>
+  <label>Vaccin</label><input type="text" id="va-name" placeholder="T.ex. Trekombi (PRC)">
+  <label>Datum given</label><input type="date" id="va-date">
+  <label>Nästa gång (frivilligt)</label><input type="date" id="va-next">
+  <button class="sheet-close" id="va-save">Spara</button>
+</div>
+
+<div class="sheet" id="vet-sheet">
+  <h3>Veterinärbesök</h3>
+  <label>Datum</label><input type="date" id="vt-date">
+  <label>Anledning</label><input type="text" id="vt-reason" placeholder="Kontroll, vaccination…">
+  <label>Anteckning</label><textarea id="vt-note" rows="2" placeholder="Vad sa veterinären?"></textarea>
+  <label>Kostnad (kr, frivilligt — läggs i budget)</label><input type="number" id="vt-cost" placeholder="0">
+  <button class="sheet-close" id="vt-save">Spara</button>
+</div>
+
+<div class="sheet" id="symptom-sheet">
+  <h3>Logga symtom</h3>
+  <label>Vad märkte du?</label><input type="text" id="sy-text" placeholder="T.ex. äter mindre, slö">
+  <label>Hur allvarligt?</label>
+  <div class="dotpick" id="sy-lvl">
+    <button data-n="1">Lätt</button><button data-n="2">Måttligt</button><button data-n="3">Allvarligt</button>
+  </div>
+  <button class="sheet-close" id="sy-save">Spara</button>
+</div>
+
+<div class="sheet" id="feed-sheet">
+  <h3>Foderschema</h3>
+  <label>Tid</label><input type="time" id="f-time" value="07:00">
+  <label>Foder</label><input type="text" id="f-food" placeholder="Blötmat / torrfoder">
+  <label>Mängd</label><input type="text" id="f-amount" placeholder="T.ex. 1 påse / 40 g">
+  <button class="sheet-close" id="f-save">Spara</button>
+</div>
+
+<div class="sheet" id="rem-sheet">
+  <h3>Påminnelse</h3>
+  <label>Typ</label>
+  <select id="r-type">
+    <option>Vaccination</option><option>Kloklippning</option><option>Avmaskning</option>
+    <option>Medicin</option><option>Beställa kattmat</option><option>Veterinär</option><option>Annat</option>
+  </select>
+  <label>Beskrivning (frivilligt)</label><input type="text" id="r-title" placeholder="Detaljer…">
+  <label>För vilken katt?</label><select id="r-cat"></select>
+  <label>Datum</label><input type="date" id="r-date">
+  <label>Upprepa</label>
+  <select id="r-recur">
+    <option value="none">Ingen</option><option value="weekly">Varje vecka</option>
+    <option value="monthly">Varje månad</option><option value="quarterly">Var 3:e månad</option>
+    <option value="yearly">Varje år</option>
+  </select>
+  <button class="sheet-close" id="r-save">Spara påminnelse</button>
+</div>
+
+<div class="sheet" id="cost-sheet">
+  <h3>Utgift</h3>
+  <label>Kategori</label>
+  <select id="co-cat">
+    <option>Mat</option><option>Sand</option><option>Veterinär</option>
+    <option>Försäkring</option><option>Leksaker</option><option>Övrigt</option>
+  </select>
+  <label>Belopp (kr)</label><input type="number" id="co-amount" placeholder="0">
+  <label>Datum</label><input type="date" id="co-date">
+  <label>Anteckning</label><input type="text" id="co-note" placeholder="Frivilligt">
+  <button class="sheet-close" id="co-save">Spara utgift</button>
+</div>
+
+<div class="sheet" id="budget-sheet">
+  <h3>Månadsbudget</h3>
+  <div class="soft">Sätt en målbudget per månad för vald katt — så ser du budget mot verklig kostnad.</div>
+  <label>Månadsbudget (kr)</label><input type="number" id="bg-amount" placeholder="500">
+  <button class="sheet-close" id="bg-save">Spara budget</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <b>kattkompis-data.json</b> i ett <b>privat</b> GitHub-repo så att dina enheter delar samma data. Token sparas bara lokalt på den här enheten — aldrig i koden. Foton synkas inte, de stannar lokalt.</div>
+  <label>GitHub-användarnamn</label><input type="text" id="gh-owner" placeholder="miracuel">
+  <label>Privat repo-namn</label><input type="text" id="gh-repo" placeholder="katt-data">
+  <label>Fine-grained token</label><input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST detta repo med Contents: Read and write.</div>
+  <div id="gh-status" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:8px;background:var(--panel2);color:var(--muted)"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+const KEY='kattkompis_v1';
+let state={cats:[],selected:null,theme:'auto'};
+try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+let applyingRemote=false;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){alert('Lagringen är full — foton tar mest plats. Ta bort några eller säkerhetskopiera.');}if(syncOn()&&!applyingRemote)pushSoon();}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>toISO(new Date());
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const kr=n=>Math.round(n).toLocaleString('sv-SE')+' kr';
+
+function blankCat(){return{id:uid(),name:'',breed:'',birth:'',chip:'',ins:'',vet:'',vetphone:'',photo:'',
+  weights:[],meds:[],vaccs:[],vetvisits:[],allergies:[],symptoms:[],
+  feed:[],special:'',toilet:[],reminders:[],costs:[],budget:0};}
+function cat(){
+  if(!state.cats.length)return null;
+  let c=state.cats.find(c=>c.id===state.selected);
+  if(!c){c=state.cats[0];state.selected=c.id;}
+  // backfill new fields on older data
+  ['weights','meds','vaccs','vetvisits','allergies','symptoms','feed','toilet','reminders','costs'].forEach(k=>{c[k]=c[k]||[];});
+  if(typeof c.budget!=='number')c.budget=0;
+  return c;
+}
+
+// ── Sheets ────────────────────────────────────────────
+const bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+bg.onclick=closeSheets;
+
+// ── Image compression ─────────────────────────────────
+function readImage(file,cb){
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=800;let w=img.width,h=img.height;
+      if(w>h&&w>max){h=Math.round(h*max/w);w=max;}
+      else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      cb(cv.toDataURL('image/jpeg',0.78));
+    };
+    img.src=r.result;
+  };
+  r.readAsDataURL(file);
+}
+
+// ── Cat tabs + profile ────────────────────────────────
+function renderTabs(){
+  const el=document.getElementById('cat-tabs');
+  let html=state.cats.map(c=>'<button class="cat-tab'+(c.id===state.selected?' sel':'')+'" data-id="'+c.id+'">'+
+    '<span class="av"'+(c.photo?' style="background-image:url('+c.photo+')"':'')+'>'+(c.photo?'':'🐱')+'</span>'+esc(c.name||'Katt')+'</button>').join('');
+  html+='<button class="cat-tab add" id="tab-add">＋ Ny katt</button>';
+  el.innerHTML=html;
+  el.querySelectorAll('.cat-tab[data-id]').forEach(b=>{b.onclick=()=>{state.selected=b.dataset.id;save();renderAll();};});
+  document.getElementById('tab-add').onclick=()=>openCatSheet(null);
+}
+function ageStr(birth){
+  if(!birth)return '';
+  const b=new Date(birth),n=new Date();
+  let m=(n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth());
+  if(n.getDate()<b.getDate())m--;
+  if(m<0)return '';
+  const y=Math.floor(m/12),mo=m%12;
+  return (y?y+' år ':'')+(mo?mo+' mån':(y?'':'0 mån'));
+}
+function renderProfile(){
+  const c=cat();const el=document.getElementById('profile-card');
+  if(!c){el.innerHTML='<div class="empty-msg">Inga katter ännu. Tryck på ＋ Ny katt ovanför för att börja.</div>';return;}
+  const facts=[
+    ['Ras',c.breed],['Chipnummer',c.chip],['Försäkring',c.ins],
+    ['Veterinär',c.vet+(c.vetphone?' · '+c.vetphone:'')]
+  ].filter(f=>f[1]&&f[1].trim());
+  el.innerHTML=
+    '<div class="profile">'+
+      '<div class="cat-photo" id="cat-photo"'+(c.photo?' style="background-image:url('+c.photo+')"':'')+'>'+(c.photo?'':'📷')+'</div>'+
+      '<div class="cat-meta"><b>'+esc(c.name||'Namnlös')+'</b>'+
+        '<div class="sub">'+(ageStr(c.birth)||'Lägg till födelsedatum')+(c.birth?' · född '+esc(c.birth):'')+'</div>'+
+        '<button class="btn ghost" id="edit-cat" style="margin-top:8px">Redigera</button></div>'+
+    '</div>'+
+    (facts.length?'<div class="facts">'+facts.map(f=>'<div class="fact"><span class="k">'+esc(f[0])+'</span><span class="v">'+esc(f[1])+'</span></div>').join('')+'</div>':'');
+  document.getElementById('edit-cat').onclick=()=>openCatSheet(c.id);
+  document.getElementById('cat-photo').onclick=()=>{photoTarget='profile';document.getElementById('photo-file').click();};
+}
+let photoTarget='album';
+function renderAlbum(){
+  const c=cat();const el=document.getElementById('album');
+  if(!c){el.innerHTML='';return;}
+  c.photos=c.photos||[];
+  el.innerHTML=c.photos.map((p,i)=>'<div class="ph" style="background-image:url('+p+')"><button data-i="'+i+'">×</button></div>').join('')+
+    '<button class="add" id="album-add">＋</button>';
+  el.querySelectorAll('.ph button').forEach(b=>{b.onclick=()=>{c.photos.splice(+b.dataset.i,1);save();renderAlbum();};});
+  document.getElementById('album-add').onclick=()=>{photoTarget='album';document.getElementById('photo-file').click();};
+}
+document.getElementById('photo-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const c=cat();if(!c)return;
+  readImage(f,data=>{
+    if(photoTarget==='profile'){c.photo=data;}
+    else{c.photos=c.photos||[];c.photos.push(data);}
+    save();renderTabs();renderProfile();renderAlbum();
+  });
+  e.target.value='';
+};
+
+// ── Cat sheet ─────────────────────────────────────────
+let editingCat=null;
+function openCatSheet(id){
+  editingCat=id;
+  const c=id?state.cats.find(x=>x.id===id):blankCat();
+  document.getElementById('cat-sheet-title').textContent=id?'Redigera katt':'Ny katt';
+  document.getElementById('c-name').value=c.name||'';
+  document.getElementById('c-breed').value=c.breed||'';
+  document.getElementById('c-birth').value=c.birth||'';
+  document.getElementById('c-chip').value=c.chip||'';
+  document.getElementById('c-ins').value=c.ins||'';
+  document.getElementById('c-vet').value=c.vet||'';
+  document.getElementById('c-vetphone').value=c.vetphone||'';
+  document.getElementById('c-delete').style.display=id?'block':'none';
+  openSheet('cat-sheet');
+}
+document.getElementById('c-save').onclick=()=>{
+  const data={
+    name:document.getElementById('c-name').value.trim(),
+    breed:document.getElementById('c-breed').value.trim(),
+    birth:document.getElementById('c-birth').value,
+    chip:document.getElementById('c-chip').value.trim(),
+    ins:document.getElementById('c-ins').value.trim(),
+    vet:document.getElementById('c-vet').value.trim(),
+    vetphone:document.getElementById('c-vetphone').value.trim()
+  };
+  if(!data.name){alert('Ge katten ett namn.');return;}
+  if(editingCat){Object.assign(state.cats.find(x=>x.id===editingCat),data);}
+  else{const nc=blankCat();Object.assign(nc,data);state.cats.push(nc);state.selected=nc.id;}
+  save();closeSheets();renderAll();
+};
+document.getElementById('c-delete').onclick=()=>{
+  if(!editingCat)return;
+  const c=state.cats.find(x=>x.id===editingCat);
+  if(!confirm('Ta bort '+(c?c.name:'katten')+' och all data? Detta går inte att ångra.'))return;
+  state.cats=state.cats.filter(x=>x.id!==editingCat);
+  state.selected=state.cats.length?state.cats[0].id:null;
+  save();closeSheets();renderAll();
+};
+
+// ── Hälsa: vikt ───────────────────────────────────────
+document.getElementById('add-weight').onclick=()=>{
+  if(!cat())return alert('Lägg till en katt först.');
+  document.getElementById('w-date').value=todayKey();
+  document.getElementById('w-kg').value='';
+  openSheet('weight-sheet');
+};
+document.getElementById('w-save').onclick=()=>{
+  const c=cat();const d=document.getElementById('w-date').value;
+  const kg=parseFloat(document.getElementById('w-kg').value.replace(',','.'));
+  if(!d||!kg)return;
+  c.weights.push({date:d,kg:kg});
+  c.weights.sort((a,b)=>a.date<b.date?-1:1);
+  save();closeSheets();renderHealth();
+};
+function renderWeight(){
+  const c=cat();const cv=document.getElementById('weight-chart');const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const list=c?c.weights:[];
+  const cs=getComputedStyle(document.documentElement);
+  const muted=cs.getPropertyValue('--muted').trim(),line=cs.getPropertyValue('--line').trim(),paw=cs.getPropertyValue('--paw').trim();
+  if(!list||list.length<2){
+    ctx.fillStyle=muted;ctx.font='13px -apple-system,sans-serif';ctx.textAlign='center';
+    ctx.fillText(list&&list.length?'Lägg in en till vägning så ritas kurvan':'Inga vägningar ännu',cv.width/2,cv.height/2);
+    document.getElementById('weight-list').innerHTML=list&&list.length?weightRows(c):'';return;
+  }
+  const pad=34,W=cv.width,H=cv.height;
+  const ks=list.map(w=>w.kg);let mn=Math.min.apply(null,ks),mx=Math.max.apply(null,ks);
+  if(mn===mx){mn-=0.5;mx+=0.5;}const rng=mx-mn;
+  const x=i=>pad+(W-pad-12)*(i/(list.length-1));
+  const y=v=>H-pad-(H-pad-14)*((v-mn)/rng);
+  ctx.strokeStyle=line;ctx.lineWidth=1;
+  for(let g=0;g<=2;g++){const yy=14+(H-pad-14)*g/2;ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(W-12,yy);ctx.stroke();}
+  ctx.fillStyle=muted;ctx.font='10px -apple-system,sans-serif';ctx.textAlign='right';
+  ctx.fillText(mx.toFixed(1),pad-4,18);ctx.fillText(mn.toFixed(1),pad-4,H-pad+4);
+  ctx.strokeStyle=paw;ctx.lineWidth=2;ctx.beginPath();
+  list.forEach((w,i)=>{i?ctx.lineTo(x(i),y(w.kg)):ctx.moveTo(x(i),y(w.kg));});ctx.stroke();
+  ctx.fillStyle=paw;list.forEach((w,i)=>{ctx.beginPath();ctx.arc(x(i),y(w.kg),3,0,7);ctx.fill();});
+  document.getElementById('weight-list').innerHTML=weightRows(c);
+}
+function weightRows(c){
+  const last=c.weights.slice(-4).reverse();
+  return last.map((w,idx)=>{
+    const realI=c.weights.indexOf(w);
+    return '<div class="item"><span class="grow"><b>'+w.kg.toFixed(2)+' kg</b></span><time>'+esc(w.date)+'</time>'+
+      '<button class="x" data-wi="'+realI+'">×</button></div>';
+  }).join('')+(c.weights.length>4?'<div class="soft" style="text-align:center;margin-top:4px">+ '+(c.weights.length-4)+' äldre vägningar</div>':'');
+}
+
+// ── Hälsa: mediciner ──────────────────────────────────
+document.getElementById('add-med').onclick=()=>{if(!cat())return alert('Lägg till en katt först.');
+  ['m-name','m-dose','m-note'].forEach(i=>document.getElementById(i).value='');openSheet('med-sheet');};
+document.getElementById('m-save').onclick=()=>{
+  const c=cat();const name=document.getElementById('m-name').value.trim();if(!name)return;
+  c.meds.push({id:uid(),name:name,dose:document.getElementById('m-dose').value.trim(),note:document.getElementById('m-note').value.trim()});
+  save();closeSheets();renderHealth();
+};
+function renderMeds(){
+  const c=cat();const el=document.getElementById('med-list');
+  if(!c||!c.meds.length){el.innerHTML='<div class="empty-msg">Inga mediciner registrerade</div>';return;}
+  el.innerHTML=c.meds.map(m=>'<div class="item"><span class="grow"><b>'+esc(m.name)+'</b><div class="meta">'+esc([m.dose,m.note].filter(Boolean).join(' · ')||'—')+'</div></span><button class="x" data-mid="'+m.id+'">×</button></div>').join('');
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{c.meds=c.meds.filter(m=>m.id!==b.dataset.mid);save();renderMeds();};});
+}
+
+// ── Hälsa: vaccinationer ──────────────────────────────
+document.getElementById('add-vacc').onclick=()=>{if(!cat())return alert('Lägg till en katt först.');
+  document.getElementById('va-name').value='';document.getElementById('va-date').value=todayKey();document.getElementById('va-next').value='';openSheet('vacc-sheet');};
+document.getElementById('va-save').onclick=()=>{
+  const c=cat();const name=document.getElementById('va-name').value.trim();if(!name)return;
+  c.vaccs.push({id:uid(),name:name,date:document.getElementById('va-date').value,next:document.getElementById('va-next').value});
+  c.vaccs.sort((a,b)=>a.date<b.date?1:-1);
+  save();closeSheets();renderHealth();
+};
+function renderVaccs(){
+  const c=cat();const el=document.getElementById('vacc-list');
+  if(!c||!c.vaccs.length){el.innerHTML='<div class="empty-msg">Inga vaccinationer registrerade</div>';return;}
+  el.innerHTML=c.vaccs.map(v=>'<div class="item"><span class="grow"><b>'+esc(v.name)+'</b><div class="meta">Given '+esc(v.date)+(v.next?' · nästa '+esc(v.next):'')+'</div></span>'+
+    (v.next?dueTag(v.next):'')+'<button class="x" data-vi="'+v.id+'">×</button></div>').join('');
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{c.vaccs=c.vaccs.filter(v=>v.id!==b.dataset.vi);save();renderVaccs();};});
+}
+function dueTag(dateStr){
+  const days=Math.ceil((new Date(dateStr)-new Date())/86400000);
+  if(days<0)return '<span class="tag due">Förfallen</span>';
+  if(days<=30)return '<span class="tag soon">'+days+' d</span>';
+  return '<span class="tag ok">OK</span>';
+}
+
+// ── Hälsa: veterinärbesök ─────────────────────────────
+document.getElementById('add-vet').onclick=()=>{if(!cat())return alert('Lägg till en katt först.');
+  document.getElementById('vt-date').value=todayKey();['vt-reason','vt-note','vt-cost'].forEach(i=>document.getElementById(i).value='');openSheet('vet-sheet');};
+document.getElementById('vt-save').onclick=()=>{
+  const c=cat();const reason=document.getElementById('vt-reason').value.trim();const date=document.getElementById('vt-date').value;
+  if(!reason)return;
+  c.vetvisits.push({id:uid(),date:date,reason:reason,note:document.getElementById('vt-note').value.trim()});
+  c.vetvisits.sort((a,b)=>a.date<b.date?1:-1);
+  const cost=parseFloat(document.getElementById('vt-cost').value);
+  if(cost){c.costs.push({id:uid(),cat:'Veterinär',amount:cost,date:date,note:reason});}
+  save();closeSheets();renderHealth();renderBudget();
+};
+function renderVet(){
+  const c=cat();const el=document.getElementById('vet-list');
+  if(!c||!c.vetvisits.length){el.innerHTML='<div class="empty-msg">Inga veterinärbesök registrerade</div>';return;}
+  el.innerHTML=c.vetvisits.map(v=>'<div class="item"><span class="grow"><b>'+esc(v.reason)+'</b><div class="meta">'+esc(v.note||'')+'</div></span><time>'+esc(v.date)+'</time><button class="x" data-vid="'+v.id+'">×</button></div>').join('');
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{c.vetvisits=c.vetvisits.filter(v=>v.id!==b.dataset.vid);save();renderVet();};});
+}
+
+// ── Hälsa: allergier ──────────────────────────────────
+function renderAllergies(){
+  const c=cat();const el=document.getElementById('allergy-chips');
+  if(!c){el.innerHTML='';return;}
+  el.innerHTML=c.allergies.length?c.allergies.map((a,i)=>'<button class="chip rm" data-i="'+i+'">'+esc(a)+'</button>').join(''):'<span class="soft">Inga kända allergier</span>';
+  el.querySelectorAll('.chip').forEach(b=>{b.onclick=()=>{c.allergies.splice(+b.dataset.i,1);save();renderAllergies();};});
+}
+document.getElementById('allergy-add').onclick=()=>{
+  const c=cat();if(!c)return alert('Lägg till en katt först.');
+  const v=document.getElementById('allergy-in').value.trim();if(!v)return;
+  c.allergies.push(v);document.getElementById('allergy-in').value='';save();renderAllergies();
+};
+
+// ── Hälsa: symtom ─────────────────────────────────────
+let syLvl=1;
+document.getElementById('sy-lvl').querySelectorAll('button').forEach(b=>{b.onclick=()=>{
+  syLvl=+b.dataset.n;document.getElementById('sy-lvl').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',+x.dataset.n===syLvl));};});
+document.getElementById('add-symptom').onclick=()=>{if(!cat())return alert('Lägg till en katt först.');
+  syLvl=1;document.getElementById('sy-lvl').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',+x.dataset.n===1));
+  document.getElementById('sy-text').value='';openSheet('symptom-sheet');};
+document.getElementById('sy-save').onclick=()=>{
+  const c=cat();const t=document.getElementById('sy-text').value.trim();if(!t)return;
+  c.symptoms.push({id:uid(),date:todayKey(),text:t,lvl:syLvl});
+  c.symptoms.sort((a,b)=>a.date<b.date?1:-1);
+  save();closeSheets();renderSymptoms();
+};
+function renderSymptoms(){
+  const c=cat();const el=document.getElementById('symptom-list');
+  if(!c||!c.symptoms.length){el.innerHTML='<div class="empty-msg">Inga symtom loggade — vad fint 🐾</div>';return;}
+  el.innerHTML=c.symptoms.slice(0,12).map(s=>'<div class="item"><span class="dot3 lvl'+s.lvl+'"></span><span class="grow"><b>'+esc(s.text)+'</b></span><time>'+esc(s.date)+'</time><button class="x" data-sid="'+s.id+'">×</button></div>').join('');
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{c.symptoms=c.symptoms.filter(s=>s.id!==b.dataset.sid);save();renderSymptoms();};});
+}
+
+// ── Mat: foderschema ──────────────────────────────────
+document.getElementById('add-feed').onclick=()=>{if(!cat())return alert('Lägg till en katt först.');
+  document.getElementById('f-time').value='07:00';document.getElementById('f-food').value='';document.getElementById('f-amount').value='';openSheet('feed-sheet');};
+document.getElementById('f-save').onclick=()=>{
+  const c=cat();const t=document.getElementById('f-time').value;if(!t)return;
+  c.feed.push({id:uid(),time:t,food:document.getElementById('f-food').value.trim(),amount:document.getElementById('f-amount').value.trim()});
+  c.feed.sort((a,b)=>a.time<b.time?-1:1);
+  save();closeSheets();renderFeed();
+};
+function renderFeed(){
+  const c=cat();const el=document.getElementById('feed-list');
+  if(!c||!c.feed.length){el.innerHTML='<div class="empty-msg">Inga matningstider — tryck + Tid</div>';return;}
+  el.innerHTML=c.feed.map(f=>'<div class="item"><time style="font-weight:600;color:var(--paw)">'+esc(f.time)+'</time><span class="grow"><b>'+esc(f.food||'Mat')+'</b><div class="meta">'+esc(f.amount||'')+'</div></span><button class="x" data-fid="'+f.id+'">×</button></div>').join('');
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{c.feed=c.feed.filter(f=>f.id!==b.dataset.fid);save();renderFeed();};});
+}
+const specialEl=document.getElementById('special-diet');
+specialEl.oninput=()=>{const c=cat();if(!c)return;c.special=specialEl.value;save();document.getElementById('special-saved').textContent='Sparat ✓';};
+
+// ── Toalettlogg ───────────────────────────────────────
+const TOA={pee:'Kissat normalt',poop:'Bajsat normalt',diarrhea:'Diarré',constipation:'Förstoppning'};
+document.querySelectorAll('.toa-btn').forEach(b=>{b.onclick=()=>{
+  const c=cat();if(!c)return alert('Lägg till en katt först.');
+  const type=b.dataset.toa;
+  c.toilet.unshift({id:uid(),date:todayKey(),time:new Date().toTimeString().slice(0,5),type:type,note:''});
+  save();renderToilet();
+};});
+document.getElementById('toa-note-add').onclick=()=>{
+  const c=cat();if(!c)return;const v=document.getElementById('toa-note').value.trim();if(!v)return;
+  c.toilet.unshift({id:uid(),date:todayKey(),time:new Date().toTimeString().slice(0,5),type:'note',note:v});
+  document.getElementById('toa-note').value='';save();renderToilet();
+};
+function renderToilet(){
+  const c=cat();const el=document.getElementById('toa-list');
+  if(!c||!c.toilet.length){el.innerHTML='<div class="empty-msg">Inget loggat ännu</div>';return;}
+  el.innerHTML=c.toilet.slice(0,15).map(t=>{
+    const warn=t.type==='diarrhea'||t.type==='constipation';
+    const label=t.type==='note'?t.note:TOA[t.type];
+    return '<div class="item"><span class="dot3 '+(warn?'lvl3':'lvl1')+'"></span><span class="grow"><b>'+esc(label)+'</b><div class="meta">'+esc(t.date)+' '+esc(t.time)+'</div></span><button class="x" data-tid="'+t.id+'">×</button></div>';
+  }).join('');
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{c.toilet=c.toilet.filter(t=>t.id!==b.dataset.tid);save();renderToilet();};});
+}
+
+// ── Påminnelser ───────────────────────────────────────
+function fillRemCats(){
+  const sel=document.getElementById('r-cat');
+  sel.innerHTML=state.cats.map(c=>'<option value="'+c.id+'">'+esc(c.name||'Katt')+'</option>').join('')||'<option value="">(ingen katt)</option>';
+  if(state.selected)sel.value=state.selected;
+}
+document.getElementById('add-rem').onclick=()=>{
+  if(!state.cats.length)return alert('Lägg till en katt först.');
+  fillRemCats();
+  document.getElementById('r-type').value='Vaccination';document.getElementById('r-title').value='';
+  document.getElementById('r-date').value=todayKey();document.getElementById('r-recur').value='none';
+  openSheet('rem-sheet');
+};
+document.getElementById('r-save').onclick=()=>{
+  const cid=document.getElementById('r-cat').value;const c=state.cats.find(x=>x.id===cid)||cat();if(!c)return;
+  c.reminders.push({id:uid(),type:document.getElementById('r-type').value,title:document.getElementById('r-title').value.trim(),
+    date:document.getElementById('r-date').value,recur:document.getElementById('r-recur').value,done:false});
+  save();closeSheets();renderReminders();
+};
+const RECUR={weekly:7,monthly:30,quarterly:91,yearly:365};
+function bumpDate(dateStr,recur){
+  const d=new Date(dateStr);
+  if(recur==='monthly'){d.setMonth(d.getMonth()+1);}
+  else if(recur==='quarterly'){d.setMonth(d.getMonth()+3);}
+  else if(recur==='yearly'){d.setFullYear(d.getFullYear()+1);}
+  else if(recur==='weekly'){d.setDate(d.getDate()+7);}
+  return toISO(d);
+}
+function renderReminders(){
+  const all=[];
+  state.cats.forEach(c=>{(c.reminders||[]).forEach(r=>all.push(Object.assign({catId:c.id,catName:c.name},r)));});
+  const up=document.getElementById('rem-upcoming'),dn=document.getElementById('rem-done');
+  const open=all.filter(r=>!r.done).sort((a,b)=>a.date<b.date?-1:1);
+  const done=all.filter(r=>r.done).sort((a,b)=>a.date<b.date?1:-1).slice(0,10);
+  up.innerHTML=open.length?open.map(r=>remRow(r,false)).join(''):'<div class="empty-msg">Inga påminnelser — allt under kontroll 🐾</div>';
+  dn.innerHTML=done.length?done.map(r=>remRow(r,true)).join(''):'<div class="empty-msg">Inget avklarat ännu</div>';
+  document.querySelectorAll('#rem-upcoming .check,#rem-done .check').forEach(b=>{b.onclick=()=>toggleRem(b.dataset.cid,b.dataset.rid);});
+  document.querySelectorAll('#rem-upcoming .x,#rem-done .x').forEach(b=>{b.onclick=()=>{
+    const c=state.cats.find(x=>x.id===b.dataset.cid);if(c)c.reminders=c.reminders.filter(r=>r.id!==b.dataset.rid);save();renderReminders();};});
+}
+function remRow(r,done){
+  const label=r.type+(r.title?' — '+r.title:'');
+  const recurTxt=r.recur&&r.recur!=='none'?' · upprepas':'';
+  return '<div class="item">'+
+    '<button class="check" data-cid="'+r.catId+'" data-rid="'+r.id+'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;flex-shrink:0">'+(done?'☑':'☐')+'</button>'+
+    '<span class="grow"><b'+(done?' style="text-decoration:line-through;color:var(--muted)"':'')+'>'+esc(label)+'</b>'+
+    '<div class="meta">'+esc(r.catName||'')+' · '+esc(r.date)+recurTxt+'</div></span>'+
+    (done?'':dueTag(r.date))+
+    '<button class="x" data-cid="'+r.catId+'" data-rid="'+r.id+'">×</button></div>';
+}
+function toggleRem(cid,rid){
+  const c=state.cats.find(x=>x.id===cid);if(!c)return;
+  const r=c.reminders.find(r=>r.id===rid);if(!r)return;
+  if(!r.done&&r.recur&&r.recur!=='none'){
+    // completing a recurring reminder: schedule next, keep this in done
+    c.reminders.push({id:uid(),type:r.type,title:r.title,date:bumpDate(r.date,r.recur),recur:r.recur,done:false});
+  }
+  r.done=!r.done;save();renderReminders();
+}
+
+// ── Budget ────────────────────────────────────────────
+const CATS=['Mat','Sand','Veterinär','Försäkring','Leksaker','Övrigt'];
+document.getElementById('add-cost').onclick=()=>{if(!cat())return alert('Lägg till en katt först.');
+  document.getElementById('co-cat').value='Mat';document.getElementById('co-amount').value='';
+  document.getElementById('co-date').value=todayKey();document.getElementById('co-note').value='';openSheet('cost-sheet');};
+document.getElementById('co-save').onclick=()=>{
+  const c=cat();const amt=parseFloat(document.getElementById('co-amount').value);if(!amt)return;
+  c.costs.push({id:uid(),cat:document.getElementById('co-cat').value,amount:amt,
+    date:document.getElementById('co-date').value,note:document.getElementById('co-note').value.trim()});
+  c.costs.sort((a,b)=>a.date<b.date?1:-1);
+  save();closeSheets();renderBudget();
+};
+document.getElementById('set-budget').onclick=()=>{const c=cat();if(!c)return alert('Lägg till en katt först.');
+  document.getElementById('bg-amount').value=c.budget||'';openSheet('budget-sheet');};
+document.getElementById('bg-save').onclick=()=>{const c=cat();if(!c)return;c.budget=parseFloat(document.getElementById('bg-amount').value)||0;save();closeSheets();renderBudget();};
+function renderBudget(){
+  const c=cat();
+  document.getElementById('bud-cat-name').textContent=c?c.name:'';
+  const now=new Date();const ym=toISO(now).slice(0,7);const yr=String(now.getFullYear());
+  const costs=c?c.costs:[];
+  const monthSum=costs.filter(x=>x.date&&x.date.slice(0,7)===ym).reduce((a,x)=>a+x.amount,0);
+  const yearSum=costs.filter(x=>x.date&&x.date.slice(0,4)===yr).reduce((a,x)=>a+x.amount,0);
+  document.getElementById('bud-month').textContent=kr(monthSum);
+  document.getElementById('bud-year').textContent=kr(yearSum);
+  // budget bar
+  const bb=document.getElementById('bud-budgetbar');
+  if(c&&c.budget){
+    const pct=Math.min(100,Math.round(monthSum/c.budget*100));const over=monthSum>c.budget;
+    bb.innerHTML='<div class="soft">'+kr(monthSum)+' av '+kr(c.budget)+(over?' — över budget':'')+'</div>'+
+      '<div class="bar-bg"><div class="bar-fill'+(over?' over':'')+'" style="width:'+pct+'%"></div></div>';
+  }else bb.innerHTML='<div class="soft">Ingen månadsbudget satt än.</div>';
+  // per category
+  const byCat={};CATS.forEach(k=>byCat[k]=0);
+  costs.filter(x=>x.date&&x.date.slice(0,7)===ym).forEach(x=>{byCat[x.cat]=(byCat[x.cat]||0)+x.amount;});
+  const maxCat=Math.max(1,...Object.values(byCat));
+  const cel=document.getElementById('bud-categories');
+  const rows=CATS.filter(k=>byCat[k]>0);
+  cel.innerHTML=rows.length?rows.map(k=>'<div class="bud-row" style="display:block"><div style="display:flex;justify-content:space-between"><span>'+k+'</span><b>'+kr(byCat[k])+'</b></div><div class="bar-bg"><div class="bar-fill" style="width:'+Math.round(byCat[k]/maxCat*100)+'%"></div></div></div>').join(''):'<div class="empty-msg">Inga utgifter den här månaden</div>';
+  // list
+  const lel=document.getElementById('cost-list');
+  if(!costs.length){lel.innerHTML='<div class="empty-msg">Inga utgifter registrerade</div>';return;}
+  lel.innerHTML=costs.slice(0,20).map(x=>'<div class="item"><span class="tag">'+esc(x.cat)+'</span><span class="grow"><b>'+kr(x.amount)+'</b><div class="meta">'+esc(x.note||'')+'</div></span><time>'+esc(x.date)+'</time><button class="x" data-coid="'+x.id+'">×</button></div>').join('');
+  lel.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{c.costs=c.costs.filter(x=>x.id!==b.dataset.coid);save();renderBudget();};});
+}
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='kattkompis-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.cats){state=Object.assign({cats:[],selected:null,theme:'auto'},d);save();renderAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);e.target.value='';
+};
+
+// ── GitHub-synk (likt jobb.html) ──────────────────────
+const SYNC_KEY='kattkompissync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/kattkompis-data.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+function setBadge(stateName,msg){const b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(stateName==='ok'?'':stateName==='err'?' err':' offline');}
+function stripPhotos(st){const c=JSON.parse(JSON.stringify(st));(c.cats||[]).forEach(x=>{delete x.photo;delete x.photos;});return c;}
+async function ghGet(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    const data=await ghGet();
+    if(data&&data.cats){
+      const localPh={};state.cats.forEach(c=>{localPh[c.id]={photo:c.photo,photos:c.photos};});
+      applyingRemote=true;
+      state=Object.assign({cats:[],selected:state.selected,theme:state.theme},data);
+      state.cats.forEach(c=>{if(localPh[c.id]){c.photo=localPh[c.id].photo||'';c.photos=localPh[c.id].photos||[];}});
+      if(!state.cats.some(c=>c.id===state.selected))state.selected=state.cats.length?state.cats[0].id:null;
+      try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+      applyingRemote=false;
+      renderAll();
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  const content=b64enc(JSON.stringify(Object.assign(stripPhotos(state),{updated:new Date().toISOString()})));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign(ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via KattKompis',content:content},sync.sha?{sha:sync.sha}:{}))});
+  let r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+let pushTimer=null;
+function pushSoon(){if(!syncOn())return;clearTimeout(pushTimer);pushTimer=setTimeout(()=>{ghPush().catch(()=>{});},1500);}
+document.getElementById('sync-settings').onclick=()=>{
+  document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  const st=document.getElementById('gh-status');st.style.display='block';
+  if(!syncOn()){st.style.color='#9A5747';st.textContent='Fyll i alla tre fälten.';return;}
+  saveSync();st.style.color='var(--muted)';st.textContent='Testar anslutning…';
+  try{
+    const data=await ghGet();
+    if(data&&data.cats){st.textContent='✓ Ansluten! Hämtar data…';await ghPull();}
+    else{st.textContent='✓ Ansluten! Repot är tomt — laddar upp din data…';await ghPush();}
+    setBadge('ok','Synkad');setTimeout(closeSheets,1200);
+  }catch(e){st.style.color='#9A5747';st.textContent='Fel: '+e.message+'. Kontrollera namn och att token har Contents-behörighet.';}
+};
+document.getElementById('sync-btn').onclick=()=>{if(!syncOn())return alert('Sätt upp synk under ⚙ Inställningar först.');ghPull();};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto';const h=new Date().getHours();
+  const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#241E18':'#F4EDE3';
+  const b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(document.getElementById('view-health').classList.contains('active'))renderWeight();
+}
+document.getElementById('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='health')renderHealth();
+    if(b.dataset.v==='food')renderFood();
+    if(b.dataset.v==='reminders')renderReminders();
+    if(b.dataset.v==='budget')renderBudget();
+  };
+});
+
+// ── Render groups ─────────────────────────────────────
+function renderHealth(){renderWeight();renderMeds();renderVaccs();renderVet();renderAllergies();renderSymptoms();}
+function renderFood(){renderFeed();const c=cat();specialEl.value=c?c.special||'':'';document.getElementById('special-saved').textContent='';renderToilet();}
+function renderAll(){
+  renderTabs();renderProfile();renderAlbum();
+  if(document.getElementById('view-health').classList.contains('active'))renderHealth();
+  if(document.getElementById('view-food').classList.contains('active'))renderFood();
+  if(document.getElementById('view-reminders').classList.contains('active'))renderReminders();
+  if(document.getElementById('view-budget').classList.contains('active'))renderBudget();
+}
+
+renderAll();
+applyTheme();
+setInterval(applyTheme,60000);
+loadSync();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}else setBadge('offline','Lokal');
+</script>
+</body>
+</html>

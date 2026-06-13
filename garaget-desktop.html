@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Garaget">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23EEF1EB'/%3E%3Cpath d='M14 38l3-11c1-3 3-4 6-4h18c3 0 5 1 6 4l3 11v8a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-2H21v2a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2z' fill='none' stroke='%237A8B6F' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='22' cy='40' r='2.6' fill='%237A8B6F'/%3E%3Ccircle cx='42' cy='40' r='2.6' fill='%237A8B6F'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23EEF1EB'/%3E%3Cpath d='M14 38l3-11c1-3 3-4 6-4h18c3 0 5 1 6 4l3 11v8a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-2H21v2a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2z' fill='none' stroke='%237A8B6F' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='22' cy='40' r='2.6' fill='%237A8B6F'/%3E%3Ccircle cx='42' cy='40' r='2.6' fill='%237A8B6F'/%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Garaget","short_name":"Garaget","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<title>Garaget – dator</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--sun:#D9C27E;
+  --green:#7A8B6F;--yellow:#C7B06A;--red:#C08A7E;
+  --navbg:rgba(238,241,235,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.section-title .btn.ghost{float:right;margin-top:-4px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.card-panel + .card-panel{margin-top:10px}
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Hero / Översikt */
+.hero{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0 2px}
+.car-name{font-family:Georgia,serif;font-size:19px}
+.car-reg{font-size:11px;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;border:1px solid var(--line);border-radius:8px;padding:3px 12px;background:var(--panel2)}
+.odo{font-family:Georgia,serif;font-size:40px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:.01em;margin-top:4px}
+.odo small{font-size:12px;color:var(--muted);font-family:-apple-system,sans-serif;display:block;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+/* Statusrader */
+.stat-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line)}
+.stat-row:first-child{border-top:none}
+.stat-ic{width:26px;text-align:center;font-size:17px;flex-shrink:0}
+.stat-main{flex:1}
+.stat-main b{font-size:14px;font-weight:600;display:block}
+.stat-main span{font-size:12px;color:var(--muted)}
+.stat-val{font-size:13px;font-weight:600;text-align:right;white-space:nowrap}
+.stat-val.warn{color:var(--red)}
+.stat-val.soon{color:#A88A3C}
+.stat-val.ok{color:var(--moss)}
+
+/* Poster (service / problem) */
+.entry{padding:11px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:none}
+.entry-top{display:flex;align-items:center;gap:8px}
+.entry-top b{flex:1;font-size:14px;font-weight:600;line-height:1.3}
+.entry-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.entry-note{font-size:13px;margin-top:5px;line-height:1.5;color:var(--ink)}
+.entry-foot{display:flex;align-items:center;gap:8px;margin-top:7px}
+.cost-pill{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.del-x{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;margin-left:auto}
+.edit-x{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+.tag{font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-radius:7px;padding:3px 8px;border:1px solid var(--line);color:var(--muted);background:var(--panel2);white-space:nowrap}
+.tag.lampa{background:#F4E8E4;border-color:#E0C4BB;color:#9A5B4D}
+.tag.skada{background:#F2EAD8;border-color:#E0D2A8;color:#8A7330}
+.tag.problem{background:#EDE6F0;border-color:#D3C2DC;color:#735B7A}
+.tag.lagning{background:var(--moss-soft);border-color:var(--moss-soft);color:#3F4A38}
+
+.status-pill{font-size:11px;border-radius:8px;padding:3px 9px;cursor:pointer;border:1px solid var(--line);background:var(--panel);font-family:inherit}
+.status-pill.open{color:var(--red);border-color:#E0C4BB}
+.status-pill.fixed{color:var(--moss);border-color:var(--moss-soft)}
+
+/* Segment-filter */
+.seg{display:flex;gap:6px;margin-bottom:4px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:11px;padding:8px 4px;font-size:12px;cursor:pointer;font-family:inherit}
+.seg button.active{background:var(--moss);border-color:var(--moss);color:#fff;font-weight:600}
+
+/* Snabb-lampor */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip:active{background:var(--moss-soft)}
+.chip.sel{background:var(--moss);border-color:var(--moss);color:#fff}
+
+/* Progress / staplar */
+.track{height:11px;border-radius:6px;background:var(--panel2);overflow:hidden;margin:9px 0 6px}
+.track i{display:block;height:100%;background:var(--moss);border-radius:6px;transition:width .5s ease}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px solid var(--line)}
+.kv:first-child{border-top:none}
+.kv b{font-weight:600;font-variant-numeric:tabular-nums}
+.bar-row{display:flex;align-items:center;gap:9px;margin:9px 0;font-size:12px}
+.bar-row .lbl{width:96px;color:var(--muted)}
+.bar-row .b{flex:1;height:13px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.bar-row .b i{display:block;height:100%;background:var(--moss);border-radius:5px}
+.bar-row .amt{width:80px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row .btn{flex:1}
+.two{display:flex;gap:8px}
+.two>div{flex:1}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:10px;line-height:1.6}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--moss-soft);color:#3F4A38;font-weight:600;border:none}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#F4E8E4;color:#9A5B4D}
+#gh-status{font-size:12px;padding:8px 12px;border-radius:10px;margin-top:8px;line-height:1.5}
+#gh-status.ok{background:var(--moss-soft);color:#3F4A38}
+#gh-status.err{background:#F4E8E4;color:#9A5B4D}
+#gh-status.info{background:var(--panel2);color:var(--muted)}
+code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--moss);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --green:#8FA383;--yellow:#C2AC6B;--red:#C08A7E;--navbg:rgba(34,37,31,.95);
+}
+html[data-theme=dark] .tag.lampa{background:#3A2D29;border-color:#5C443D;color:#E2C2B7}
+html[data-theme=dark] .tag.skada{background:#39341F;border-color:#574E2E;color:#E0CE92}
+html[data-theme=dark] .tag.problem{background:#332B3A;border-color:#4D4156;color:#CDB9D6}
+html[data-theme=dark] .stat-val.soon{color:#D6BE76}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+/* ── DESKTOP ─────────────────────────────────────────── */
+body{padding-bottom:0}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px 40px}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px 20px;margin:0 -20px 18px;background:var(--navbg);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topbar .brand2{font-family:Georgia,serif;font-size:19px;letter-spacing:.03em;margin-right:auto}
+.tb-btn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:10px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+.tb-btn:hover{background:var(--panel2)}
+.hero-card{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.hero-card .hero-left{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.hero-card .odo{font-size:46px;margin:0}
+.hero-card .hero-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-top:16px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card-h{font-family:Georgia,serif;font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:10px;letter-spacing:.02em}
+.card-h .btn.ghost{margin-left:auto}
+.foot{justify-content:flex-start}
+/* Dialoger som centrerade modaler på desktop */
+.sheet{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-44%);opacity:0;pointer-events:none;
+  width:460px;max-width:94vw;border-radius:18px;max-height:88vh;transition:transform .2s ease,opacity .2s ease}
+.sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand2">🚗 Garaget</div>
+    <span id="sync-badge" class="sp-badge offline">Lokal</span>
+    <button class="tb-btn" id="sync-btn">↻ Synka</button>
+    <button class="tb-btn" id="sync-settings">⚙ Synk</button>
+    <button class="tb-btn" id="export-btn">Säkerhetskopiera</button>
+    <button class="tb-btn" id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+    <button class="tb-btn" id="theme-btn" aria-label="Tema">◐</button>
+  </div>
+
+  <section class="card-panel hero-card">
+    <div class="hero-left">
+      <div class="car-name" id="hero-name">Min bil</div>
+      <div class="car-reg" id="hero-reg">ABC 123</div>
+    </div>
+    <div class="odo" id="hero-odo">0 km<small>mätarställning</small></div>
+    <div class="hero-actions">
+      <button class="btn fill" id="open-km">Uppdatera mätarställning</button>
+      <button class="btn ghost" id="open-car">Bilens uppgifter</button>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card-panel">
+      <div class="card-h">Status</div>
+      <div id="status-card"></div>
+    </section>
+
+    <section class="card-panel">
+      <div class="card-h">Service</div>
+      <div class="section-title" style="margin-top:2px">Nästa service <button class="btn ghost" id="edit-plan">Ändra</button></div>
+      <div id="plan-card"></div>
+      <div class="section-title">Påminnelser</div>
+      <div id="remind-card"></div>
+      <div class="section-title">Servicehistorik <button class="btn ghost" id="add-service">+ Ny</button></div>
+      <div id="service-list"></div>
+    </section>
+
+    <section class="card-panel">
+      <div class="card-h">Problem &amp; skador <button class="btn ghost" id="add-issue">+ Lägg till</button></div>
+      <div class="soft">Snabblogg varningslampa — tryck på lampan som lyser.</div>
+      <div class="chips" id="lamp-chips"></div>
+      <div class="seg" id="issue-seg" style="margin-top:14px">
+        <button class="active" data-f="open">Öppna</button>
+        <button data-f="all">Alla</button>
+        <button data-f="fixed">Åtgärdade</button>
+      </div>
+      <div id="issue-list"></div>
+    </section>
+
+    <section class="card-panel">
+      <div class="card-h">Ekonomi</div>
+      <div class="section-title" style="margin-top:2px">Lån &amp; avbetalning</div>
+      <div id="loan-card"></div>
+      <div class="section-title" id="pay-title" style="display:none">Avbetalningar <button class="btn ghost" id="add-pay">+ Ny</button></div>
+      <div id="pay-list" style="display:none"></div>
+      <div class="section-title">Kostnadssammanställning</div>
+      <div id="cost-card"></div>
+    </section>
+  </div>
+
+  <div class="privacy" style="margin-top:22px;text-align:left">Allt sparas lokalt och kan synkas via ditt privata GitHub-repo så att mobil och dator alltid visar samma bil. 🚗</div>
+</div>
+
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Sheet: Bilens uppgifter -->
+<div class="sheet" id="car-sheet">
+  <h3>Bilens uppgifter</h3>
+  <label>Namn / smeknamn</label>
+  <input type="text" id="c-name" placeholder="T.ex. Volvon">
+  <label>Registreringsnummer</label>
+  <input type="text" id="c-reg" placeholder="ABC 123">
+  <div class="two">
+    <div><label>Modell</label><input type="text" id="c-model" placeholder="V70"></div>
+    <div><label>Årsmodell</label><input type="text" id="c-year" inputmode="numeric" placeholder="2015"></div>
+  </div>
+  <label>Drivmedel</label>
+  <select id="c-fuel">
+    <option>Bensin</option><option>Diesel</option><option>El</option><option>Hybrid</option><option>Laddhybrid</option><option>Etanol</option><option>Gas</option>
+  </select>
+  <button class="sheet-close" id="c-save">Spara</button>
+</div>
+
+<!-- Sheet: Mätarställning -->
+<div class="sheet" id="km-sheet">
+  <h3>Uppdatera mätarställning</h3>
+  <div class="soft">Skriv av siffran på mätaren (i km).</div>
+  <label>Mätarställning (km)</label>
+  <input type="number" id="km-in" inputmode="numeric" placeholder="0">
+  <div class="soft" id="km-hint" style="margin-top:6px"></div>
+  <button class="sheet-close" id="km-save">Spara</button>
+</div>
+
+<!-- Sheet: Nästa service + påminnelser -->
+<div class="sheet" id="plan-sheet">
+  <h3>Service & påminnelser</h3>
+  <label>Nästa service — vid mätarställning (km)</label>
+  <input type="number" id="ns-km" inputmode="numeric" placeholder="T.ex. 180000">
+  <label>…eller senast datum</label>
+  <input type="date" id="ns-date">
+  <label>Notering (frivilligt)</label>
+  <input type="text" id="ns-note" placeholder="T.ex. byt även luftfilter">
+  <label>Besiktning senast</label>
+  <input type="date" id="bes-date">
+  <div class="two">
+    <div><label>Sommardäck på</label><input type="date" id="tire-s"></div>
+    <div><label>Vinterdäck på</label><input type="date" id="tire-w"></div>
+  </div>
+  <button class="sheet-close" id="plan-save">Spara</button>
+</div>
+
+<!-- Sheet: Service -->
+<div class="sheet" id="service-sheet">
+  <h3 id="service-h">Ny service</h3>
+  <label>Datum</label>
+  <input type="date" id="sv-date">
+  <label>Mätarställning (km)</label>
+  <input type="number" id="sv-km" inputmode="numeric" placeholder="0">
+  <label>Vad gjordes?</label>
+  <input type="text" id="sv-what" placeholder="T.ex. oljebyte, service, kamrem">
+  <label>Verkstad (frivilligt)</label>
+  <input type="text" id="sv-where" placeholder="T.ex. Mekonomen">
+  <label>Kostnad (kr)</label>
+  <input type="number" id="sv-cost" inputmode="numeric" placeholder="0">
+  <button class="sheet-close" id="sv-save">Spara</button>
+</div>
+
+<!-- Sheet: Problem / skada / lampa / lagning -->
+<div class="sheet" id="issue-sheet">
+  <h3 id="issue-h">Ny post</h3>
+  <label>Typ</label>
+  <div class="chips" id="issue-types"></div>
+  <label>Rubrik</label>
+  <input type="text" id="is-title" placeholder="T.ex. Motorlampa lyser">
+  <div class="two">
+    <div><label>Datum</label><input type="date" id="is-date"></div>
+    <div><label>Mätarställning</label><input type="number" id="is-km" inputmode="numeric" placeholder="km"></div>
+  </div>
+  <label>Beskrivning (frivilligt)</label>
+  <textarea id="is-note" rows="2" placeholder="Vad märker du? Ljud, känsla, när?"></textarea>
+  <label>Kostnad hittills (kr, frivilligt)</label>
+  <input type="number" id="is-cost" inputmode="numeric" placeholder="0">
+  <button class="sheet-close" id="is-save">Spara</button>
+</div>
+
+<!-- Sheet: Lån -->
+<div class="sheet" id="loan-sheet">
+  <h3>Lån / avbetalning</h3>
+  <label>Långivare</label>
+  <input type="text" id="ln-lender" placeholder="T.ex. Santander, banken">
+  <label>Totalt lånebelopp (kr)</label>
+  <input type="number" id="ln-total" inputmode="numeric" placeholder="0">
+  <div class="two">
+    <div><label>Månadsbetalning (kr)</label><input type="number" id="ln-monthly" inputmode="numeric" placeholder="0"></div>
+    <div><label>Ränta (%)</label><input type="number" id="ln-rate" inputmode="decimal" placeholder="0"></div>
+  </div>
+  <label>Startdatum (frivilligt)</label>
+  <input type="date" id="ln-start">
+  <div class="soft" style="margin-top:8px">Redan betalat tidigare? Lägg in det som en avbetalning efteråt.</div>
+  <button class="sheet-close" id="ln-save">Spara</button>
+  <button class="btn ghost" id="ln-remove" style="width:100%;margin-top:8px">Ta bort lånet</button>
+</div>
+
+<!-- Sheet: Avbetalning -->
+<div class="sheet" id="pay-sheet">
+  <h3>Registrera avbetalning</h3>
+  <label>Datum</label>
+  <input type="date" id="pay-date">
+  <label>Belopp (kr)</label>
+  <input type="number" id="pay-amount" inputmode="numeric" placeholder="0">
+  <label>Notering (frivilligt)</label>
+  <input type="text" id="pay-note" placeholder="T.ex. extra amortering">
+  <button class="sheet-close" id="pay-save">Spara</button>
+</div>
+
+<!-- Sheet: Synk -->
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <code>data.json</code> i ett <b>privat</b> GitHub-repo, så att din mobil och dator alltid visar samma bil. Din token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label>Privat repo-namn</label>
+  <input type="text" id="gh-repo" placeholder="garaget-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:8px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till enbart data-repot, med behörigheten <b>Contents: Read and write</b>.</div>
+  <div id="gh-status" style="display:none"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='garaget_v1';
+var state={
+  car:{name:'Min bil',reg:'',model:'',year:'',fuel:'Bensin',km:0,kmUpd:''},
+  plan:{km:null,date:'',note:'',besiktning:'',tireS:'',tireW:''},
+  service:[],
+  issues:[],
+  loan:null,
+  payments:[],
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+state.car=state.car||{name:'Min bil',reg:'',model:'',year:'',fuel:'Bensin',km:0,kmUpd:''};
+state.plan=state.plan||{km:null,date:'',note:'',besiktning:'',tireS:'',tireW:''};
+state.service=state.service||[];
+state.issues=state.issues||[];
+state.payments=state.payments||[];
+
+var applyingRemote=false,pushTimer=null;
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+  if(!applyingRemote&&typeof syncOn==='function'&&syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},700);}
+}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayKey(){return toISO(new Date());}
+
+// ── Formatering ───────────────────────────────────────
+function nf(n){return (Math.round(Number(n)||0)).toLocaleString('sv-SE');}
+function kr(n){return nf(n)+' kr';}
+function kmTxt(n){return nf(n)+' km';}
+function milTxt(km){var m=(Number(km)||0)/10;return (Math.round(m*10)/10).toLocaleString('sv-SE')+' mil';}
+function fmtDate(iso){
+  if(!iso)return '—';
+  var p=iso.split('-');if(p.length!==3)return iso;
+  var mn=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  return Number(p[2])+' '+mn[Number(p[1])-1]+' '+p[0];
+}
+function daysUntil(iso){
+  if(!iso)return null;
+  var t=new Date(iso+'T00:00:00');var now=new Date();now.setHours(0,0,0,0);
+  return Math.round((t-now)/86400000);
+}
+function dueTxt(iso){
+  var d=daysUntil(iso);if(d===null)return '';
+  if(d<0)return 'för '+Math.abs(d)+' dgr sedan';
+  if(d===0)return 'idag';
+  if(d===1)return 'imorgon';
+  if(d<=60)return 'om '+d+' dgr';
+  var mo=Math.round(d/30);return 'om ca '+mo+' mån';
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Översikt ──────────────────────────────────────────
+function renderHome(){
+  var c=state.car;
+  document.getElementById('hero-name').textContent=c.name||'Min bil';
+  var reg=document.getElementById('hero-reg');
+  if(c.reg){reg.style.display='inline-block';reg.textContent=c.reg;}else{reg.style.display='none';}
+  var sub=[];if(c.model)sub.push(c.model);if(c.year)sub.push(c.year);if(c.fuel)sub.push(c.fuel);
+  document.getElementById('hero-odo').innerHTML=esc(kmTxt(c.km))+'<small>'+(sub.length?esc(sub.join(' · ')):'mätarställning')+'</small>';
+
+  // Status
+  var rows=[];
+  // Nästa service
+  var p=state.plan;
+  if(p.km){
+    var left=p.km-(c.km||0);
+    var cls=left<0?'warn':(left<=200*10?'soon':'ok'); // inom 200 mil = snart
+    var v=left<0?('passerad '+milTxt(Math.abs(left))):('om '+milTxt(left));
+    rows.push(statRow('🔧','Nästa service','vid '+kmTxt(p.km),v,cls));
+  }else if(p.date){
+    var d=daysUntil(p.date);var cls2=d<0?'warn':(d<=30?'soon':'ok');
+    rows.push(statRow('🔧','Nästa service',fmtDate(p.date),dueTxt(p.date),cls2));
+  }else{
+    rows.push(statRow('🔧','Nästa service','inte satt','sätt mål','soon'));
+  }
+  // Besiktning
+  if(p.besiktning){
+    var db=daysUntil(p.besiktning);var clsb=db<0?'warn':(db<=30?'soon':'ok');
+    rows.push(statRow('📋','Besiktning',fmtDate(p.besiktning),dueTxt(p.besiktning),clsb));
+  }
+  // Aktiva lampor / öppna problem
+  var openIssues=state.issues.filter(function(x){return x.status!=='fixed';});
+  var lamps=openIssues.filter(function(x){return x.type==='lampa';}).length;
+  rows.push(statRow('⚠️','Aktiva varningslampor',lamps?'kolla upp':'inga just nu',String(lamps),lamps?'warn':'ok'));
+  var others=openIssues.length-lamps;
+  rows.push(statRow('🛠','Öppna problem & skador',others?'väntar på åtgärd':'allt åtgärdat',String(openIssues.length),openIssues.length?'soon':'ok'));
+  document.getElementById('status-card').innerHTML=rows.join('');
+
+  // Ekonomi mini
+  var econ=document.getElementById('home-econ');if(!econ)return;
+  var html='';
+  if(state.loan){
+    var paid=loanPaid();var tot=Number(state.loan.total)||0;var leftL=Math.max(0,tot-paid);
+    var pct=tot>0?Math.min(100,Math.round(paid/tot*100)):0;
+    html+='<div class="stat-row"><div class="stat-ic">💳</div><div class="stat-main"><b>'+esc(state.loan.lender||'Billån')+'</b><span>'+pct+'% avbetalt</span></div><div class="stat-val">'+esc(kr(leftL))+' kvar</div></div>';
+    html+='<div class="track"><i style="width:'+pct+'%"></i></div>';
+  }else{
+    html+='<div class="stat-row"><div class="stat-ic">💳</div><div class="stat-main"><b>Inget lån registrerat</b><span>Lägg till under Ekonomi vid behov</span></div></div>';
+  }
+  var spent=totalCosts();
+  html+='<div class="kv"><span>Totala kostnader (service & reparationer)</span><b>'+esc(kr(spent))+'</b></div>';
+  econ.innerHTML=html;
+}
+function statRow(ic,title,sub,val,cls){
+  return '<div class="stat-row"><div class="stat-ic">'+ic+'</div><div class="stat-main"><b>'+esc(title)+'</b><span>'+esc(sub)+'</span></div><div class="stat-val '+(cls||'')+'">'+esc(val)+'</div></div>';
+}
+
+// ── Service ───────────────────────────────────────────
+function renderService(){
+  var p=state.plan,c=state.car;
+  var pc=document.getElementById('plan-card');
+  if(p.km||p.date){
+    var html='';
+    if(p.km){
+      var left=p.km-(c.km||0);
+      html+='<div class="kv"><span>Vid mätarställning</span><b>'+esc(kmTxt(p.km))+'</b></div>';
+      html+='<div class="kv"><span>Kvar att köra</span><b>'+(left<0?'passerad ':'')+esc(milTxt(Math.abs(left)))+'</b></div>';
+    }
+    if(p.date)html+='<div class="kv"><span>Senast datum</span><b>'+esc(fmtDate(p.date))+' · '+esc(dueTxt(p.date))+'</b></div>';
+    if(p.note)html+='<div class="entry-note">'+esc(p.note)+'</div>';
+    pc.innerHTML=html;
+  }else{
+    pc.innerHTML='<div class="empty-msg">Ingen service planerad. Tryck Ändra för att sätta ett mål.</div>';
+  }
+
+  var rc=document.getElementById('remind-card');
+  var r=[];
+  r.push(remRow('📋','Besiktning',p.besiktning));
+  r.push(remRow('🛞','Sommardäck monterade',p.tireS));
+  r.push(remRow('❄️','Vinterdäck monterade',p.tireW));
+  rc.innerHTML=r.join('');
+
+  var list=state.service.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+  var el=document.getElementById('service-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Ingen service inlagd ännu. Tryck + Ny.</div>';return;}
+  el.innerHTML=list.map(function(it){
+    var meta=[];if(it.km)meta.push(kmTxt(it.km));if(it.where)meta.push(it.where);meta.push(fmtDate(it.date));
+    return '<div class="entry"><div class="entry-top"><b>'+esc(it.what||'Service')+'</b>'+
+      (it.cost?'<span class="cost-pill">'+esc(kr(it.cost))+'</span>':'')+'</div>'+
+      '<div class="entry-meta">'+esc(meta.join(' · '))+'</div>'+
+      '<div class="entry-foot"><button class="edit-x" data-edit="'+it.id+'">Ändra</button><button class="del-x" data-del="'+it.id+'">×</button></div></div>';
+  }).join('');
+  var b=el.querySelectorAll('[data-del]');for(var i=0;i<b.length;i++)b[i].onclick=function(){delService(this.dataset.del);};
+  var e=el.querySelectorAll('[data-edit]');for(var j=0;j<e.length;j++)e[j].onclick=function(){openService(this.dataset.edit);};
+}
+function remRow(ic,title,iso){
+  var val=iso?(fmtDate(iso)+' · '+dueTxt(iso)):'inte satt';
+  var d=iso?daysUntil(iso):null;var cls=d===null?'':(d<0?'warn':(d<=30?'soon':'ok'));
+  return '<div class="stat-row"><div class="stat-ic">'+ic+'</div><div class="stat-main"><b>'+esc(title)+'</b></div><div class="stat-val '+cls+'">'+esc(val)+'</div></div>';
+}
+
+// ── Problem / skador ──────────────────────────────────
+var LAMPS=['Motorlampa','Oljetryck','Batteri/laddning','Broms','ABS','Däcktryck','Kylvätsketemp','Airbag','Servostyrning','Bränsle'];
+var TYPES=[['lampa','Varningslampa'],['problem','Problem'],['skada','Skada'],['lagning','Lagning']];
+var issueFilter='open';
+var issueEditId=null;
+var issueType='problem';
+
+function renderLampChips(){
+  var el=document.getElementById('lamp-chips');
+  el.innerHTML=LAMPS.map(function(l){return '<button class="chip" data-lamp="'+esc(l)+'">'+esc(l)+'</button>';}).join('');
+  var b=el.querySelectorAll('[data-lamp]');
+  for(var i=0;i<b.length;i++)b[i].onclick=function(){
+    openIssue(null);
+    issueType='lampa';renderTypeChips();
+    document.getElementById('is-title').value='Varningslampa: '+this.dataset.lamp;
+  };
+}
+function renderTypeChips(){
+  var el=document.getElementById('issue-types');
+  el.innerHTML=TYPES.map(function(t){return '<button class="chip'+(issueType===t[0]?' sel':'')+'" data-t="'+t[0]+'">'+esc(t[1])+'</button>';}).join('');
+  var b=el.querySelectorAll('[data-t]');
+  for(var i=0;i<b.length;i++)b[i].onclick=function(){issueType=this.dataset.t;renderTypeChips();};
+}
+function typeLabel(t){for(var i=0;i<TYPES.length;i++)if(TYPES[i][0]===t)return TYPES[i][1];return t;}
+function renderIssues(){
+  var seg=document.querySelectorAll('#issue-seg button');
+  for(var i=0;i<seg.length;i++)seg[i].classList.toggle('active',seg[i].dataset.f===issueFilter);
+  var list=state.issues.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+  if(issueFilter==='open')list=list.filter(function(x){return x.status!=='fixed';});
+  if(issueFilter==='fixed')list=list.filter(function(x){return x.status==='fixed';});
+  var el=document.getElementById('issue-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inget att visa här.</div>';return;}
+  el.innerHTML=list.map(function(it){
+    var meta=[];if(it.km)meta.push(kmTxt(it.km));meta.push(fmtDate(it.date));
+    var fixed=it.status==='fixed';
+    return '<div class="entry"><div class="entry-top">'+
+      '<span class="tag '+it.type+'">'+esc(typeLabel(it.type))+'</span>'+
+      '<b>'+esc(it.title||'(utan rubrik)')+'</b>'+
+      (it.cost?'<span class="cost-pill">'+esc(kr(it.cost))+'</span>':'')+'</div>'+
+      '<div class="entry-meta">'+esc(meta.join(' · '))+'</div>'+
+      (it.note?'<div class="entry-note">'+esc(it.note)+'</div>':'')+
+      '<div class="entry-foot">'+
+      '<button class="status-pill '+(fixed?'fixed':'open')+'" data-toggle="'+it.id+'">'+(fixed?'✓ Åtgärdad':'Öppen — markera klar')+'</button>'+
+      '<button class="edit-x" data-edit="'+it.id+'">Ändra</button>'+
+      '<button class="del-x" data-del="'+it.id+'">×</button></div></div>';
+  }).join('');
+  var tg=el.querySelectorAll('[data-toggle]');for(var a=0;a<tg.length;a++)tg[a].onclick=function(){toggleIssue(this.dataset.toggle);};
+  var ed=el.querySelectorAll('[data-edit]');for(var b2=0;b2<ed.length;b2++)ed[b2].onclick=function(){openIssue(this.dataset.edit);};
+  var dl=el.querySelectorAll('[data-del]');for(var c2=0;c2<dl.length;c2++)dl[c2].onclick=function(){delIssue(this.dataset.del);};
+}
+function toggleIssue(id){
+  for(var i=0;i<state.issues.length;i++)if(state.issues[i].id===id){state.issues[i].status=state.issues[i].status==='fixed'?'open':'fixed';}
+  save();renderIssues();renderHome();
+}
+function delIssue(id){
+  if(!confirm('Ta bort posten?'))return;
+  state.issues=state.issues.filter(function(x){return x.id!==id;});
+  save();renderIssues();renderHome();renderEcon();
+}
+
+// ── Ekonomi ───────────────────────────────────────────
+function loanPaid(){var s=0;for(var i=0;i<state.payments.length;i++)s+=Number(state.payments[i].amount)||0;return s;}
+function totalCosts(){
+  var s=0,i;
+  for(i=0;i<state.service.length;i++)s+=Number(state.service[i].cost)||0;
+  for(i=0;i<state.issues.length;i++)s+=Number(state.issues[i].cost)||0;
+  return s;
+}
+function renderEcon(){
+  var lc=document.getElementById('loan-card');
+  if(state.loan){
+    var l=state.loan;var paid=loanPaid();var tot=Number(l.total)||0;var left=Math.max(0,tot-paid);
+    var pct=tot>0?Math.min(100,Math.round(paid/tot*100)):0;
+    var h='';
+    h+='<div class="entry-top"><b>'+esc(l.lender||'Billån')+'</b><button class="edit-x" id="loan-edit">Ändra</button></div>';
+    h+='<div class="track"><i style="width:'+pct+'%"></i></div>';
+    h+='<div class="kv"><span>Avbetalt</span><b>'+esc(kr(paid))+' av '+esc(kr(tot))+'</b></div>';
+    h+='<div class="kv"><span>Kvar att betala</span><b>'+esc(kr(left))+'</b></div>';
+    if(l.monthly)h+='<div class="kv"><span>Månadsbetalning</span><b>'+esc(kr(l.monthly))+'</b></div>';
+    if(l.rate)h+='<div class="kv"><span>Ränta</span><b>'+esc(String(l.rate))+' %</b></div>';
+    if(l.monthly&&left>0){var mo=Math.ceil(left/(Number(l.monthly)||1));h+='<div class="kv"><span>Klart om (ungefär)</span><b>'+mo+' mån</b></div>';}
+    h+='<button class="btn fill" id="quick-pay" style="width:100%;margin-top:12px">Registrera avbetalning</button>';
+    lc.innerHTML=h;
+    document.getElementById('loan-edit').onclick=function(){openLoan();};
+    document.getElementById('quick-pay').onclick=function(){openPay();};
+    document.getElementById('pay-title').style.display='block';
+    document.getElementById('pay-list').style.display='block';
+    renderPayments();
+  }else{
+    lc.innerHTML='<div class="empty-msg">Inget lån registrerat.</div><button class="btn fill" id="add-loan" style="width:100%;margin-top:6px">Lägg till lån</button>';
+    document.getElementById('add-loan').onclick=function(){openLoan();};
+    document.getElementById('pay-title').style.display='none';
+    document.getElementById('pay-list').style.display='none';
+  }
+
+  // Kostnadssammanställning
+  var svc=0,rep=0,i;
+  for(i=0;i<state.service.length;i++)svc+=Number(state.service[i].cost)||0;
+  for(i=0;i<state.issues.length;i++)rep+=Number(state.issues[i].cost)||0;
+  var tot2=svc+rep;
+  var yr=String(new Date().getFullYear());
+  var yrSum=0;
+  for(i=0;i<state.service.length;i++)if((state.service[i].date||'').slice(0,4)===yr)yrSum+=Number(state.service[i].cost)||0;
+  for(i=0;i<state.issues.length;i++)if((state.issues[i].date||'').slice(0,4)===yr)yrSum+=Number(state.issues[i].cost)||0;
+  var max=Math.max(svc,rep,1);
+  var cc=document.getElementById('cost-card');
+  var ch='';
+  ch+='<div class="bar-row"><div class="lbl">Service</div><div class="b"><i style="width:'+Math.round(svc/max*100)+'%"></i></div><div class="amt">'+esc(nf(svc))+'</div></div>';
+  ch+='<div class="bar-row"><div class="lbl">Reparationer</div><div class="b"><i style="width:'+Math.round(rep/max*100)+'%"></i></div><div class="amt">'+esc(nf(rep))+'</div></div>';
+  ch+='<div class="kv" style="margin-top:6px"><span>Totalt i år ('+yr+')</span><b>'+esc(kr(yrSum))+'</b></div>';
+  ch+='<div class="kv"><span>Totalt sedan start</span><b>'+esc(kr(tot2))+'</b></div>';
+  if(state.loan){ch+='<div class="kv"><span>Avbetalt på lån</span><b>'+esc(kr(loanPaid()))+'</b></div>';}
+  cc.innerHTML=ch;
+}
+function renderPayments(){
+  var list=state.payments.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+  var el=document.getElementById('pay-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga avbetalningar inlagda ännu.</div>';return;}
+  el.innerHTML=list.map(function(it){
+    return '<div class="entry"><div class="entry-top"><b>'+esc(kr(it.amount))+'</b><span class="cost-pill" style="color:var(--muted);font-weight:400">'+esc(fmtDate(it.date))+'</span></div>'+
+      (it.note?'<div class="entry-note">'+esc(it.note)+'</div>':'')+
+      '<div class="entry-foot"><button class="del-x" data-del="'+it.id+'">×</button></div></div>';
+  }).join('');
+  var b=el.querySelectorAll('[data-del]');
+  for(var i=0;i<b.length;i++)b[i].onclick=function(){
+    var id=this.dataset.del;
+    state.payments=state.payments.filter(function(x){return x.id!==id;});
+    save();renderEcon();renderHome();
+  };
+}
+
+// ── Sheet-öppnare ─────────────────────────────────────
+document.getElementById('open-car').onclick=function(){
+  var c=state.car;
+  document.getElementById('c-name').value=c.name||'';
+  document.getElementById('c-reg').value=c.reg||'';
+  document.getElementById('c-model').value=c.model||'';
+  document.getElementById('c-year').value=c.year||'';
+  document.getElementById('c-fuel').value=c.fuel||'Bensin';
+  openSheet('car-sheet');
+};
+document.getElementById('c-save').onclick=function(){
+  state.car.name=document.getElementById('c-name').value.trim()||'Min bil';
+  state.car.reg=document.getElementById('c-reg').value.trim();
+  state.car.model=document.getElementById('c-model').value.trim();
+  state.car.year=document.getElementById('c-year').value.trim();
+  state.car.fuel=document.getElementById('c-fuel').value;
+  save();renderHome();closeSheets();
+};
+
+document.getElementById('open-km').onclick=function(){
+  document.getElementById('km-in').value=state.car.km||'';
+  document.getElementById('km-hint').textContent=state.car.kmUpd?('Senast uppdaterad '+fmtDate(state.car.kmUpd)):'';
+  openSheet('km-sheet');
+};
+document.getElementById('km-save').onclick=function(){
+  var v=parseInt(document.getElementById('km-in').value,10);
+  if(!isNaN(v)&&v>=0){state.car.km=v;state.car.kmUpd=todayKey();save();renderHome();renderService();}
+  closeSheets();
+};
+
+document.getElementById('edit-plan').onclick=function(){
+  var p=state.plan;
+  document.getElementById('ns-km').value=p.km||'';
+  document.getElementById('ns-date').value=p.date||'';
+  document.getElementById('ns-note').value=p.note||'';
+  document.getElementById('bes-date').value=p.besiktning||'';
+  document.getElementById('tire-s').value=p.tireS||'';
+  document.getElementById('tire-w').value=p.tireW||'';
+  openSheet('plan-sheet');
+};
+document.getElementById('plan-save').onclick=function(){
+  var km=parseInt(document.getElementById('ns-km').value,10);
+  state.plan.km=isNaN(km)?null:km;
+  state.plan.date=document.getElementById('ns-date').value;
+  state.plan.note=document.getElementById('ns-note').value.trim();
+  state.plan.besiktning=document.getElementById('bes-date').value;
+  state.plan.tireS=document.getElementById('tire-s').value;
+  state.plan.tireW=document.getElementById('tire-w').value;
+  save();renderService();renderHome();closeSheets();
+};
+
+// Service-sheet
+var serviceEditId=null;
+document.getElementById('add-service').onclick=function(){openService(null);};
+function openService(id){
+  serviceEditId=id;
+  var it=null;
+  if(id)for(var i=0;i<state.service.length;i++)if(state.service[i].id===id)it=state.service[i];
+  document.getElementById('service-h').textContent=it?'Ändra service':'Ny service';
+  document.getElementById('sv-date').value=it?it.date:todayKey();
+  document.getElementById('sv-km').value=it?(it.km||''):(state.car.km||'');
+  document.getElementById('sv-what').value=it?it.what:'';
+  document.getElementById('sv-where').value=it?(it.where||''):'';
+  document.getElementById('sv-cost').value=it?(it.cost||''):'';
+  openSheet('service-sheet');
+}
+document.getElementById('sv-save').onclick=function(){
+  var what=document.getElementById('sv-what').value.trim();
+  if(!what){alert('Skriv vad som gjordes.');return;}
+  var obj={
+    date:document.getElementById('sv-date').value||todayKey(),
+    km:parseInt(document.getElementById('sv-km').value,10)||0,
+    what:what,
+    where:document.getElementById('sv-where').value.trim(),
+    cost:parseInt(document.getElementById('sv-cost').value,10)||0
+  };
+  if(serviceEditId){
+    for(var i=0;i<state.service.length;i++)if(state.service[i].id===serviceEditId)Object.assign(state.service[i],obj);
+  }else{
+    obj.id=uid();state.service.push(obj);
+    // håll mätarställning uppdaterad om service-km är högre
+    if(obj.km>(state.car.km||0)){state.car.km=obj.km;state.car.kmUpd=obj.date;}
+  }
+  save();renderService();renderHome();renderEcon();closeSheets();
+};
+function delService(id){
+  if(!confirm('Ta bort denna service?'))return;
+  state.service=state.service.filter(function(x){return x.id!==id;});
+  save();renderService();renderHome();renderEcon();
+}
+
+// Issue-sheet
+document.getElementById('add-issue').onclick=function(){openIssue(null);};
+function openIssue(id){
+  issueEditId=id;
+  var it=null;
+  if(id)for(var i=0;i<state.issues.length;i++)if(state.issues[i].id===id)it=state.issues[i];
+  issueType=it?it.type:'problem';
+  renderTypeChips();
+  document.getElementById('issue-h').textContent=it?'Ändra post':'Ny post';
+  document.getElementById('is-title').value=it?it.title:'';
+  document.getElementById('is-date').value=it?it.date:todayKey();
+  document.getElementById('is-km').value=it?(it.km||''):(state.car.km||'');
+  document.getElementById('is-note').value=it?(it.note||''):'';
+  document.getElementById('is-cost').value=it?(it.cost||''):'';
+  openSheet('issue-sheet');
+}
+document.getElementById('is-save').onclick=function(){
+  var title=document.getElementById('is-title').value.trim();
+  if(!title){alert('Skriv en rubrik.');return;}
+  var obj={
+    type:issueType,
+    title:title,
+    date:document.getElementById('is-date').value||todayKey(),
+    km:parseInt(document.getElementById('is-km').value,10)||0,
+    note:document.getElementById('is-note').value.trim(),
+    cost:parseInt(document.getElementById('is-cost').value,10)||0
+  };
+  if(issueEditId){
+    for(var i=0;i<state.issues.length;i++)if(state.issues[i].id===issueEditId)Object.assign(state.issues[i],obj);
+  }else{
+    obj.id=uid();obj.status='open';state.issues.push(obj);
+  }
+  save();renderIssues();renderHome();renderEcon();closeSheets();
+};
+
+// Loan-sheet
+document.getElementById('ln-save').onclick=function(){
+  var total=parseInt(document.getElementById('ln-total').value,10)||0;
+  state.loan={
+    lender:document.getElementById('ln-lender').value.trim()||'Billån',
+    total:total,
+    monthly:parseInt(document.getElementById('ln-monthly').value,10)||0,
+    rate:document.getElementById('ln-rate').value.trim(),
+    start:document.getElementById('ln-start').value
+  };
+  save();renderEcon();renderHome();closeSheets();
+};
+document.getElementById('ln-remove').onclick=function(){
+  if(!confirm('Ta bort lånet? Avbetalningarna sparas kvar.'))return;
+  state.loan=null;save();renderEcon();renderHome();closeSheets();
+};
+function openLoan(){
+  var l=state.loan||{};
+  document.getElementById('ln-lender').value=l.lender||'';
+  document.getElementById('ln-total').value=l.total||'';
+  document.getElementById('ln-monthly').value=l.monthly||'';
+  document.getElementById('ln-rate').value=l.rate||'';
+  document.getElementById('ln-start').value=l.start||'';
+  openSheet('loan-sheet');
+}
+
+// Pay-sheet
+document.getElementById('add-pay').onclick=function(){openPay();};
+document.getElementById('pay-save').onclick=function(){
+  var amt=parseInt(document.getElementById('pay-amount').value,10)||0;
+  if(amt<=0){alert('Skriv ett belopp.');return;}
+  state.payments.push({id:uid(),date:document.getElementById('pay-date').value||todayKey(),amount:amt,note:document.getElementById('pay-note').value.trim()});
+  save();renderEcon();renderHome();closeSheets();
+};
+function openPay(){
+  document.getElementById('pay-date').value=todayKey();
+  document.getElementById('pay-amount').value='';
+  document.getElementById('pay-note').value='';
+  openSheet('pay-sheet');
+}
+
+// Filter
+(function(){
+  var seg=document.querySelectorAll('#issue-seg button');
+  for(var i=0;i<seg.length;i++)seg[i].onclick=function(){issueFilter=this.dataset.f;renderIssues();};
+})();
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='garaget-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      if(d&&d.car){state=Object.assign(state,d);save();renderAll();}
+      else alert('Ogiltig fil.');
+    }catch(err){alert('Kunde inte läsa filen.');}
+  };
+  r.readAsText(f);
+};
+
+// ── GitHub-synk (samma mönster som jobb/planering) ────
+var SYNC_KEY='garaget_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' offline');}
+function syncPayload(){return {car:state.car,plan:state.plan,service:state.service,issues:state.issues,loan:state.loan,payments:state.payments,updated:new Date().toISOString()};}
+function applyPayload(d){
+  if(d.car)state.car=Object.assign(state.car,d.car);
+  if(d.plan)state.plan=Object.assign(state.plan,d.plan);
+  if(Array.isArray(d.service))state.service=d.service;
+  if(Array.isArray(d.issues))state.issues=d.issues;
+  if(typeof d.loan!=='undefined')state.loan=d.loan;
+  if(Array.isArray(d.payments))state.payments=d.payments;
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){applyingRemote=true;applyPayload(data);save();applyingRemote=false;renderAll();}
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(syncPayload()));
+  function doPut(){
+    var body={message:'Uppdatering via Garaget',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  });
+}
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.className=type||'info';el.textContent=msg;}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){setGhStatus('✓ Ansluten! Hämtar data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1000);})
+   .catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');});
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+(function(){
+  var nb=document.querySelectorAll('.nav button');
+  for(var i=0;i<nb.length;i++)nb[i].onclick=function(){
+    var all=document.querySelectorAll('.nav button');for(var k=0;k<all.length;k++)all[k].classList.remove('active');
+    this.classList.add('active');
+    var views=document.querySelectorAll('.view');for(var v=0;v<views.length;v++)views[v].classList.remove('active');
+    document.getElementById('view-'+this.dataset.v).classList.add('active');
+    if(this.dataset.v==='service')renderService();
+    if(this.dataset.v==='issues')renderIssues();
+    if(this.dataset.v==='econ')renderEcon();
+    if(this.dataset.v==='home')renderHome();
+  };
+})();
+
+function renderAll(){renderHome();renderService();renderLampChips();renderTypeChips();renderIssues();renderEcon();}
+loadSync();
+renderAll();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn()){setBadge('ok','Synkad');ghPull();}else{setBadge('offline','Lokal');}
+</script>
+</body>
+</html>

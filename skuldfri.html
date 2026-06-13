@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Skuldfri">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237A8B6F'/%3E%3Cpath d='M50 74c-14-9-24-19-24-33a13 13 0 0124-7 13 13 0 0124 7c0 14-10 24-24 33z' fill='%23EEF1EB'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237A8B6F'/%3E%3Cpath d='M50 74c-14-9-24-19-24-33a13 13 0 0124-7 13 13 0 0124 7c0 14-10 24-24 33z' fill='%23EEF1EB'/%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Skuldfri","short_name":"Skuldfri","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<title>Skuldfri</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--sun:#D9C27E;
+  --green:#7A8B6F;--yellow:#C7B06A;--red:#C08A7E;
+  --navbg:rgba(238,241,235,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:13px;color:var(--muted);padding:14px 4px;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Översikt hero */
+.hero{text-align:center;padding:4px 0 2px}
+.hero .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.hero .big{font-family:Georgia,serif;font-size:34px;color:var(--ink);margin:2px 0 2px;font-variant-numeric:tabular-nums}
+.hero .sub{font-size:13px;color:var(--muted)}
+.bar-track{height:16px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin:14px 0 6px}
+.bar-fill{height:100%;background:var(--moss);width:0;transition:width .6s ease;border-radius:10px}
+.bar-legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.zone-msg b{font-family:Georgia,serif;font-weight:400;font-size:16px;display:block;margin-bottom:4px}
+.stat-row{display:flex;gap:8px;margin-top:12px}
+.stat{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.stat .v{font-family:Georgia,serif;font-size:18px;font-variant-numeric:tabular-nums}
+.stat .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.encourage{background:var(--moss-soft);border:1px solid var(--moss);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#3F4A38;margin-top:12px}
+
+/* Skulder list */
+.debt{padding:12px 0;border-top:1px solid var(--line)}
+.debt:first-child{border-top:none}
+.debt-head{display:flex;align-items:baseline;gap:8px}
+.debt-name{font-size:15px;flex:1}
+.debt-bal{font-family:Georgia,serif;font-size:16px;font-variant-numeric:tabular-nums}
+.debt-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.dbar-track{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden;margin:8px 0 2px}
+.dbar-fill{height:100%;background:var(--moss);border-radius:6px}
+.debt-actions{display:flex;gap:8px;margin-top:8px}
+.debt-actions button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:6px 10px;font-size:12px;color:var(--moss);cursor:pointer;font-family:inherit}
+.debt-actions button.del{color:var(--muted)}
+
+/* Plan */
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:none;border-radius:9px;padding:9px 6px;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit}
+.seg button.sel{background:var(--moss);color:#fff;font-weight:500}
+.order-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.order-row:first-child{border-top:none}
+.order-num{width:24px;height:24px;border-radius:50%;background:var(--moss-soft);border:1px solid var(--moss);color:#3F4A38;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:600}
+.order-row .nm{flex:1}
+.order-row .amt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+.compare{display:flex;gap:8px;margin-top:8px}
+.compare .c{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:11px;text-align:center}
+.compare .c.win{border-color:var(--moss);background:var(--moss-soft)}
+.compare .c .ct{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.compare .c .cv{font-family:Georgia,serif;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
+.warn-banner{background:#F4E8E4;border:1px solid #E0C4BB;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#6E4A40;margin-top:12px}
+
+/* Framsteg */
+.milestone{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.milestone:first-child{border-top:none}
+.ms-mark{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;font-size:12px;display:flex;align-items:center;justify-content:center;color:#fff}
+.ms-mark.done{background:var(--moss);border-color:var(--moss)}
+.milestone.done .ms-txt{color:var(--muted)}
+.pay-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.pay-row:first-child{border-top:none}
+.pay-row .pn{flex:1}
+.pay-row .pa{font-variant-numeric:tabular-nums;color:var(--moss);font-weight:600}
+.pay-row time{color:var(--muted);font-size:11px;display:block}
+.pay-row button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row button{border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:10px;padding:0 16px;cursor:pointer;font-size:18px}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.sync-row{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:14px}
+.sync-row .btn{flex:0 0 auto}
+.sync-badge{font-size:11px;padding:5px 11px;border-radius:11px;background:var(--moss-soft);color:#3F4A38;border:1px solid var(--moss);font-weight:500}
+.sync-badge.off{background:var(--panel2);color:var(--muted);border-color:var(--line)}
+.sync-badge.err{background:#F4E8E4;color:#6E4A40;border-color:#E0C4BB}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--moss);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;margin-top:12px}
+.sheet-cancel{width:100%;padding:9px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;cursor:pointer;margin-top:8px;font-family:inherit}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --green:#8FA383;--yellow:#C2AC6B;--red:#C08A7E;--navbg:rgba(34,37,31,.95);
+}
+html[data-theme=dark] .encourage{color:#DCE3D3}
+html[data-theme=dark] .order-num{color:#DCE3D3}
+html[data-theme=dark] .compare .c.win{color:#DCE3D3}
+html[data-theme=dark] .warn-banner{background:#3A2D29;border-color:#5C443D;color:#E2C2B7}
+html[data-theme=dark] .sync-badge.err{background:#3A2D29;border-color:#5C443D;color:#E2C2B7}
+html[data-theme=dark] .sync-badge{color:#DCE3D3}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🌱 Skuldfri</h1>
+
+<!-- ÖVERSIKT -->
+<div class="view active" id="view-today">
+  <div class="card-panel">
+    <div class="hero">
+      <div class="label">Kvar att betala</div>
+      <div class="big" id="hero-total">0 kr</div>
+      <div class="sub" id="hero-sub">Lägg till din första skuld för att börja.</div>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="hero-bar"></div></div>
+    <div class="bar-legend"><span id="hero-paid">0 kr betalt</span><span id="hero-pct">0%</span></div>
+    <div class="stat-row">
+      <div class="stat"><div class="v" id="stat-debts">0</div><div class="k">Skulder</div></div>
+      <div class="stat"><div class="v" id="stat-monthly">0 kr</div><div class="k">Per månad</div></div>
+      <div class="stat"><div class="v" id="stat-date">—</div><div class="k">Skuldfri</div></div>
+    </div>
+  </div>
+
+  <div class="encourage" id="encourage">Varje krona du betalar är ett steg mot frihet. Det här är inte en tävling — det är din väg, i din takt.</div>
+
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="open-pay">Registrera betalning</button>
+    <button class="btn" id="open-add-2">+ Ny skuld</button>
+  </div>
+
+  <div class="sync-row">
+    <span id="sync-badge" class="sync-badge off">Lokal</span>
+    <button class="btn ghost" id="sync-now" style="display:none">⟳ Synka nu</button>
+    <button class="btn ghost" id="sync-open">⚙ Synk</button>
+  </div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas bara i din enhet. Skuldfri är ett vardagsstöd — inte ekonomisk rådgivning.<br>Känns skulderna ohanterliga? Kommunens budget- och skuldrådgivning är gratis och finns för precis det här. Du är värd hjälp. 🌱</div>
+</div>
+
+<!-- SKULDER -->
+<div class="view" id="view-debts">
+  <div class="section-title" style="margin-top:0">Mina skulder <button class="btn ghost" id="open-add" style="float:right;margin-top:-4px">+ Lägg till</button></div>
+  <div class="card-panel"><div id="debt-list"></div></div>
+  <div class="soft" style="margin-top:10px;padding:0 4px">Tips: lägg in startbelopp om du vill se hur långt du redan kommit. Annars räknar appen från dagens saldo.</div>
+</div>
+
+<!-- PLAN -->
+<div class="view" id="view-plan">
+  <div class="section-title" style="margin-top:0">Strategi</div>
+  <div class="card-panel">
+    <div class="seg" id="strat-seg">
+      <button data-s="snowball">Snöboll</button>
+      <button data-s="avalanche">Lavin</button>
+    </div>
+    <div class="soft" id="strat-desc" style="margin-top:8px"></div>
+    <label>Extra varje månad (utöver minimibeloppen)</label>
+    <input type="number" id="extra-in" inputmode="numeric" placeholder="0" min="0" step="100">
+    <div class="soft" style="margin-top:4px">Total månadsbetalning: <b id="plan-monthly">0 kr</b></div>
+  </div>
+
+  <div class="section-title">Betala av i denna ordning</div>
+  <div class="card-panel"><div id="order-list"></div></div>
+
+  <div class="section-title">Din prognos</div>
+  <div class="card-panel">
+    <div class="hero" style="padding:2px 0">
+      <div class="big" id="plan-date">—</div>
+      <div class="sub" id="plan-months"></div>
+    </div>
+    <div class="compare">
+      <div class="c" id="cmp-snow"><div class="ct">Snöboll</div><div class="cv" id="cmp-snow-v">—</div></div>
+      <div class="c" id="cmp-aval"><div class="ct">Lavin</div><div class="cv" id="cmp-aval-v">—</div></div>
+    </div>
+    <div class="soft" style="margin-top:8px">Siffrorna visar uppskattad total ränta tills allt är betalt. Lavin sparar oftast mest pengar; snöboll ger snabbare segrar att fira. Båda är rätt — välj det som håller dig motiverad.</div>
+  </div>
+  <div class="warn-banner" id="plan-warn" style="display:none"></div>
+</div>
+
+<!-- FRAMSTEG -->
+<div class="view" id="view-progress">
+  <div class="section-title" style="margin-top:0">Vägen till noll</div>
+  <div class="card-panel"><canvas id="chart" width="640" height="260" style="width:100%;height:auto"></canvas></div>
+
+  <div class="section-title">Milstolpar</div>
+  <div class="card-panel" id="milestones"></div>
+
+  <div class="section-title">Betalningshistorik</div>
+  <div class="card-panel"><div id="pay-list"></div></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="today"><span>🌱</span>Översikt</button>
+  <button data-v="debts"><span>📋</span>Skulder</button>
+  <button data-v="plan"><span>🎯</span>Plan</button>
+  <button data-v="progress"><span>📈</span>Framsteg</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="debt-sheet">
+  <h3 id="debt-sheet-title">Ny skuld</h3>
+  <div class="soft">Inga siffror är pinsamma här. Vi börjar bara med var du står idag.</div>
+  <label>Namn</label>
+  <input type="text" id="d-name" placeholder="T.ex. Kreditkort, CSN, billån">
+  <label>Saldo idag (kr)</label>
+  <input type="number" id="d-bal" inputmode="numeric" placeholder="0" min="0" step="100">
+  <label>Startbelopp (kr) — frivilligt</label>
+  <input type="number" id="d-orig" inputmode="numeric" placeholder="Samma som saldo om tomt" min="0" step="100">
+  <label>Ränta per år (%)</label>
+  <input type="number" id="d-rate" inputmode="decimal" placeholder="0" min="0" step="0.1">
+  <label>Minimibelopp per månad (kr)</label>
+  <input type="number" id="d-min" inputmode="numeric" placeholder="0" min="0" step="50">
+  <button class="sheet-close" id="d-save">Spara</button>
+  <button class="sheet-cancel" id="d-cancel">Avbryt</button>
+</div>
+
+<div class="sheet" id="pay-sheet">
+  <h3>Registrera betalning</h3>
+  <div class="soft" id="pay-empty" style="display:none">Lägg till en skuld först, så kan du börja registrera betalningar.</div>
+  <div id="pay-form">
+    <label>Vilken skuld?</label>
+    <select id="p-debt"></select>
+    <label>Belopp (kr)</label>
+    <input type="number" id="p-amt" inputmode="numeric" placeholder="0" min="0" step="50">
+    <label>Datum</label>
+    <input type="date" id="p-date">
+    <label>Anteckning — frivilligt</label>
+    <input type="text" id="p-note" placeholder="T.ex. extra inbetalning">
+    <button class="sheet-close" id="p-save">Spara betalning</button>
+  </div>
+  <button class="sheet-cancel" id="p-cancel">Stäng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <b>skuldfri-data.json</b> i ett <b>privat</b> GitHub-repo, så att samma skulder och betalningar finns på alla dina enheter. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn (ägare av data-repot)</label>
+  <input type="text" id="gh-owner" placeholder="miracuel" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="skuldfri-data" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="soft" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till <b>endast</b> data-repot, med <b>Contents: Read and write</b>.</div>
+  <div id="gh-status" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:10px"></div>
+  <button class="sheet-close" id="gh-save">Spara & synka</button>
+  <button class="sheet-cancel" id="gh-disconnect" style="display:none">Koppla från synk</button>
+  <button class="sheet-cancel" id="gh-close">Stäng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='skuldfri_v1';
+var state={debts:[],payments:[],strategy:'snowball',extra:0,theme:'auto'};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var pushTimer=null;
+function save(){
+  saveLocal();
+  if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush();},1200);}
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+// ── Helpers ───────────────────────────────────────────
+function fmtKr(n){return Math.round(n).toLocaleString('sv-SE')+' kr';}
+function fmtKrShort(n){
+  n=Math.round(n);
+  if(Math.abs(n)>=1000000)return (n/1000000).toLocaleString('sv-SE',{maximumFractionDigits:1})+' mkr';
+  if(Math.abs(n)>=10000)return Math.round(n/1000).toLocaleString('sv-SE')+' tkr';
+  return n.toLocaleString('sv-SE')+' kr';
+}
+function pad(n){return n<10?'0'+n:''+n;}
+function todayISO(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function addMonths(date,n){var d=new Date(date.getTime());d.setMonth(d.getMonth()+n);return d;}
+var MONTHS=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+function monthYear(date){return MONTHS[date.getMonth()]+' '+date.getFullYear();}
+
+function totalBalance(){return state.debts.reduce(function(s,d){return s+Math.max(0,d.balance);},0);}
+function totalOriginal(){return state.debts.reduce(function(s,d){return s+Math.max(d.original||d.balance,d.balance);},0);}
+function totalPaid(){return Math.max(0,totalOriginal()-totalBalance());}
+function totalMin(){return state.debts.reduce(function(s,d){return d.balance>0?s+(d.minPayment||0):s;},0);}
+function monthlyBudget(){return totalMin()+(state.extra||0);}
+
+// ── Payoff simulation ─────────────────────────────────
+function simulate(extra,strategy){
+  var ds=state.debts.filter(function(d){return d.balance>0;}).map(function(d){
+    return {bal:d.balance,rate:d.rate||0,min:d.minPayment||0,id:d.id};
+  });
+  if(!ds.length)return {months:0,totalInterest:0,schedule:[],completed:true};
+  var month=0,totalInterest=0,maxMonths=1200;
+  var schedule=[{month:0,bal:ds.reduce(function(s,d){return s+d.bal;},0)}];
+  while(ds.some(function(d){return d.bal>0.5;})&&month<maxMonths){
+    month++;
+    // 1. ränta
+    ds.forEach(function(d){
+      if(d.bal>0){var i=d.bal*(d.rate/100/12);d.bal+=i;totalInterest+=i;}
+    });
+    // 2. betala minimum på alla aktiva, samla pool av extra + frigjort
+    var pool=extra;
+    ds.forEach(function(d){
+      if(d.bal>0){
+        var pay=Math.min(d.min,d.bal);
+        d.bal-=pay;
+        pool+=(d.min-pay);
+      }else{
+        pool+=d.min;
+      }
+    });
+    // 3. rikta poolen mot prioriterad skuld
+    var remaining=ds.filter(function(d){return d.bal>0.5;});
+    remaining.sort(function(a,b){return strategy==='avalanche'?b.rate-a.rate:a.bal-b.bal;});
+    for(var k=0;k<remaining.length&&pool>0.5;k++){
+      var dd=remaining[k];
+      var p=Math.min(pool,dd.bal);
+      dd.bal-=p;pool-=p;
+    }
+    schedule.push({month:month,bal:ds.reduce(function(s,d){return s+Math.max(0,d.bal);},0)});
+  }
+  var completed=!ds.some(function(d){return d.bal>0.5;});
+  return {months:month,totalInterest:totalInterest,schedule:schedule,completed:completed};
+}
+
+// payoff-ordning (vilken skuld blir klar när)
+function payoffOrder(strategy){
+  var ds=state.debts.filter(function(d){return d.balance>0;}).map(function(d){
+    return {bal:d.balance,rate:d.rate||0,min:d.minPayment||0,id:d.id,name:d.name,doneMonth:null};
+  });
+  var extra=state.extra||0,month=0,maxMonths=1200;
+  while(ds.some(function(d){return d.bal>0.5;})&&month<maxMonths){
+    month++;
+    ds.forEach(function(d){if(d.bal>0){d.bal+=d.bal*(d.rate/100/12);}});
+    var pool=extra;
+    ds.forEach(function(d){
+      if(d.bal>0){var pay=Math.min(d.min,d.bal);d.bal-=pay;pool+=(d.min-pay);}else{pool+=d.min;}
+    });
+    var rem=ds.filter(function(d){return d.bal>0.5;});
+    rem.sort(function(a,b){return strategy==='avalanche'?b.rate-a.rate:a.bal-b.bal;});
+    for(var k=0;k<rem.length&&pool>0.5;k++){var dd=rem[k];var p=Math.min(pool,dd.bal);dd.bal-=p;pool-=p;}
+    ds.forEach(function(d){if(d.bal<=0.5&&d.doneMonth===null)d.doneMonth=month;});
+  }
+  ds.sort(function(a,b){
+    if(a.doneMonth===null&&b.doneMonth===null)return 0;
+    if(a.doneMonth===null)return 1;
+    if(b.doneMonth===null)return -1;
+    return a.doneMonth-b.doneMonth;
+  });
+  return ds;
+}
+
+// ── Render: Översikt ──────────────────────────────────
+function renderToday(){
+  var tot=totalBalance(),orig=totalOriginal(),paid=totalPaid();
+  var pct=orig>0?Math.round(paid/orig*100):0;
+  document.getElementById('hero-total').textContent=fmtKr(tot);
+  document.getElementById('hero-bar').style.width=Math.min(100,pct)+'%';
+  document.getElementById('hero-paid').textContent=fmtKr(paid)+' betalt';
+  document.getElementById('hero-pct').textContent=pct+'%';
+  document.getElementById('stat-debts').textContent=state.debts.filter(function(d){return d.balance>0;}).length;
+  document.getElementById('stat-monthly').textContent=fmtKrShort(monthlyBudget());
+
+  var sim=simulate(state.extra||0,state.strategy);
+  var sub=document.getElementById('hero-sub');
+  var dateEl=document.getElementById('stat-date');
+  if(!state.debts.length){
+    sub.textContent='Lägg till din första skuld för att börja.';
+    dateEl.textContent='—';
+  }else if(tot<=0){
+    sub.textContent='Du är skuldfri. Det här är enormt — fira det. 🌱';
+    dateEl.textContent='Klar!';
+  }else if(!sim.completed){
+    sub.textContent='Med nuvarande betalning minskar inte skulden.';
+    dateEl.textContent='—';
+  }else{
+    var d=addMonths(new Date(),sim.months);
+    sub.textContent='Beräknad skuldfri '+monthYear(d)+'.';
+    dateEl.textContent=monthYear(d);
+  }
+
+  var enc=document.getElementById('encourage');
+  if(tot<=0&&state.debts.length){
+    enc.textContent='Du tog dig hela vägen. Det krävde tålamod och mod — var stolt. 🌱';
+  }else if(pct>=75){
+    enc.textContent='Över tre fjärdedelar avbetalt. Mållinjen är nära nu — fortsätt precis som du gör.';
+  }else if(pct>=50){
+    enc.textContent='Halvvägs! Det tyngsta är ofta att börja, och det är redan gjort. Du är på god väg.';
+  }else if(pct>=25){
+    enc.textContent='En fjärdedel borta. Varje inbetalning räknas, även de små.';
+  }else{
+    enc.textContent='Varje krona du betalar är ett steg mot frihet. Det här är inte en tävling — det är din väg, i din takt.';
+  }
+}
+
+// ── Render: Skulder ───────────────────────────────────
+function renderDebts(){
+  var box=document.getElementById('debt-list');
+  if(!state.debts.length){
+    box.innerHTML='<div class="empty-msg">Inga skulder inlagda än.<br>Tryck <b>+ Lägg till</b> för att börja kartlägga.</div>';
+    return;
+  }
+  var html='';
+  state.debts.forEach(function(d){
+    var orig=Math.max(d.original||d.balance,d.balance);
+    var pct=orig>0?Math.round((orig-Math.max(0,d.balance))/orig*100):0;
+    var done=d.balance<=0;
+    html+='<div class="debt">';
+    html+='<div class="debt-head"><div class="debt-name">'+esc(d.name)+(done?' ✓':'')+'</div><div class="debt-bal">'+fmtKr(Math.max(0,d.balance))+'</div></div>';
+    html+='<div class="debt-meta">'+(d.rate||0)+'% ränta · min '+fmtKr(d.minPayment||0)+'/mån'+(orig>d.balance?' · '+pct+'% betalt':'')+'</div>';
+    html+='<div class="dbar-track"><div class="dbar-fill" style="width:'+Math.min(100,pct)+'%"></div></div>';
+    html+='<div class="debt-actions"><button data-pay="'+d.id+'">Betala</button><button data-edit="'+d.id+'">Ändra</button><button class="del" data-del="'+d.id+'">Ta bort</button></div>';
+    html+='</div>';
+  });
+  box.innerHTML=html;
+  box.querySelectorAll('[data-edit]').forEach(function(b){b.onclick=function(){openDebtSheet(b.dataset.edit);};});
+  box.querySelectorAll('[data-pay]').forEach(function(b){b.onclick=function(){openPaySheet(b.dataset.pay);};});
+  box.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){
+    var d=state.debts.find(function(x){return x.id===b.dataset.del;});
+    if(d&&confirm('Ta bort "'+d.name+'"? Betalningar kopplade till skulden tas också bort.')){
+      state.debts=state.debts.filter(function(x){return x.id!==b.dataset.del;});
+      state.payments=state.payments.filter(function(p){return p.debtId!==b.dataset.del;});
+      save();renderAll();
+    }
+  };});
+}
+function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Render: Plan ──────────────────────────────────────
+function renderPlan(){
+  document.querySelectorAll('#strat-seg button').forEach(function(b){
+    b.classList.toggle('sel',b.dataset.s===state.strategy);
+  });
+  document.getElementById('strat-desc').textContent=state.strategy==='snowball'
+    ? 'Snöboll: betala av minsta skulden först. Du får snabba segrar som håller motivationen uppe.'
+    : 'Lavin: betala av skulden med högst ränta först. Du betalar minst i ränta totalt.';
+  document.getElementById('extra-in').value=state.extra||'';
+  document.getElementById('plan-monthly').textContent=fmtKr(monthlyBudget());
+
+  var order=payoffOrder(state.strategy);
+  var ol=document.getElementById('order-list');
+  if(!order.length){
+    ol.innerHTML='<div class="empty-msg">Lägg till skulder för att se din avbetalningsordning.</div>';
+  }else{
+    var oh='';
+    order.forEach(function(d,i){
+      var when=d.doneMonth?monthYear(addMonths(new Date(),d.doneMonth)):'når ej noll';
+      oh+='<div class="order-row"><div class="order-num">'+(i+1)+'</div><div class="nm">'+esc(d.name)+'</div><div class="amt">'+when+'</div></div>';
+    });
+    ol.innerHTML=oh;
+  }
+
+  var sim=simulate(state.extra||0,state.strategy);
+  var pd=document.getElementById('plan-date'),pm=document.getElementById('plan-months');
+  if(!state.debts.filter(function(d){return d.balance>0;}).length){
+    pd.textContent='—';pm.textContent='Inga aktiva skulder.';
+  }else if(!sim.completed){
+    pd.textContent='—';pm.textContent='Betalningen täcker inte räntan — höj minimibeloppen eller lägg till extra.';
+  }else{
+    pd.textContent=monthYear(addMonths(new Date(),sim.months));
+    var yrs=Math.floor(sim.months/12),mos=sim.months%12;
+    var t='';if(yrs)t+=yrs+' år ';if(mos)t+=mos+' mån';
+    pm.textContent='Om '+(t.trim()||'mindre än en månad')+' · ränta totalt '+fmtKr(sim.totalInterest);
+  }
+
+  var snow=simulate(state.extra||0,'snowball'),aval=simulate(state.extra||0,'avalanche');
+  var cs=document.getElementById('cmp-snow'),ca=document.getElementById('cmp-aval');
+  if(snow.completed&&aval.completed){
+    document.getElementById('cmp-snow-v').textContent=fmtKr(snow.totalInterest);
+    document.getElementById('cmp-aval-v').textContent=fmtKr(aval.totalInterest);
+    cs.classList.toggle('win',snow.totalInterest<=aval.totalInterest);
+    ca.classList.toggle('win',aval.totalInterest<snow.totalInterest);
+  }else{
+    document.getElementById('cmp-snow-v').textContent='—';
+    document.getElementById('cmp-aval-v').textContent='—';
+    cs.classList.remove('win');ca.classList.remove('win');
+  }
+
+  var warn=document.getElementById('plan-warn');
+  if(state.debts.filter(function(d){return d.balance>0;}).length&&!sim.completed){
+    warn.style.display='block';
+    warn.textContent='Med dagens minimibelopp och extra växer eller står skulden still. Det betyder inte att du gjort något fel — men det kan vara läge att prata med kommunens kostnadsfria budget- och skuldrådgivning.';
+  }else{warn.style.display='none';}
+}
+
+// ── Render: Framsteg ──────────────────────────────────
+function renderProgress(){
+  drawChart();
+  renderMilestones();
+  renderPayList();
+}
+function renderMilestones(){
+  var box=document.getElementById('milestones');
+  var orig=totalOriginal(),paid=totalPaid();
+  var pct=orig>0?paid/orig*100:0;
+  var firstDone=state.debts.some(function(d){return d.balance<=0&&(d.original||d.balance)>0;});
+  var ms=[
+    {t:'Första betalningen gjord',done:state.payments.length>0},
+    {t:'Första skulden helt avbetald',done:firstDone},
+    {t:'25% av totala skulden borta',done:pct>=25},
+    {t:'Halvvägs — 50% betalt',done:pct>=50},
+    {t:'75% betalt',done:pct>=75},
+    {t:'Skuldfri 🌱',done:orig>0&&totalBalance()<=0}
+  ];
+  var h='';
+  ms.forEach(function(m){
+    h+='<div class="milestone'+(m.done?' done':'')+'"><div class="ms-mark'+(m.done?' done':'')+'">'+(m.done?'✓':'')+'</div><div class="ms-txt">'+m.t+'</div></div>';
+  });
+  box.innerHTML=h;
+}
+function renderPayList(){
+  var box=document.getElementById('pay-list');
+  if(!state.payments.length){
+    box.innerHTML='<div class="empty-msg">Inga betalningar registrerade än.<br>Varje inbetalning du loggar hamnar här.</div>';
+    return;
+  }
+  var sorted=state.payments.slice().sort(function(a,b){return b.date<a.date?-1:1;});
+  var h='';
+  sorted.slice(0,40).forEach(function(p){
+    var d=state.debts.find(function(x){return x.id===p.debtId;});
+    h+='<div class="pay-row"><div class="pn">'+esc(d?d.name:'(borttagen)')+(p.note?' · '+esc(p.note):'')+'<time>'+p.date+'</time></div><div class="pa">'+fmtKr(p.amount)+'</div><button data-delp="'+p.id+'">×</button></div>';
+  });
+  box.innerHTML=h;
+  box.querySelectorAll('[data-delp]').forEach(function(b){b.onclick=function(){
+    var p=state.payments.find(function(x){return x.id===b.dataset.delp;});
+    if(p&&confirm('Ta bort betalningen? Saldot på skulden läggs tillbaka.')){
+      var d=state.debts.find(function(x){return x.id===p.debtId;});
+      if(d)d.balance+=p.amount;
+      state.payments=state.payments.filter(function(x){return x.id!==b.dataset.delp;});
+      save();renderAll();
+    }
+  };});
+}
+function drawChart(){
+  var c=document.getElementById('chart');if(!c)return;
+  var ctx=c.getContext('2d');var W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);
+  var css=getComputedStyle(document.documentElement);
+  var moss=css.getPropertyValue('--moss').trim()||'#7A8B6F';
+  var line=css.getPropertyValue('--line').trim()||'#D8DECF';
+  var muted=css.getPropertyValue('--muted').trim()||'#7E8676';
+  var sim=simulate(state.extra||0,state.strategy);
+  var pad=34,plotW=W-pad*2,plotH=H-pad*2;
+  // axes
+  ctx.strokeStyle=line;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,pad);ctx.lineTo(pad,H-pad);ctx.lineTo(W-pad,H-pad);ctx.stroke();
+  if(!sim.schedule.length||sim.schedule.length<2||!sim.completed){
+    ctx.fillStyle=muted;ctx.font='15px Georgia';ctx.textAlign='center';
+    ctx.fillText(state.debts.length?'Lägg in extra/minimibelopp för en prognos':'Lägg till skulder för att se din kurva',W/2,H/2);
+    return;
+  }
+  var maxBal=sim.schedule[0].bal||1;
+  var n=sim.schedule.length;
+  // fill area
+  ctx.beginPath();
+  sim.schedule.forEach(function(pt,i){
+    var x=pad+(i/(n-1))*plotW;
+    var y=H-pad-(pt.bal/maxBal)*plotH;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  var lastX=pad+plotW;
+  ctx.lineTo(lastX,H-pad);ctx.lineTo(pad,H-pad);ctx.closePath();
+  ctx.fillStyle=hexA(moss,0.14);ctx.fill();
+  // line
+  ctx.beginPath();
+  sim.schedule.forEach(function(pt,i){
+    var x=pad+(i/(n-1))*plotW;
+    var y=H-pad-(pt.bal/maxBal)*plotH;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle=moss;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
+  // labels
+  ctx.fillStyle=muted;ctx.font='11px -apple-system,sans-serif';
+  ctx.textAlign='left';ctx.fillText(fmtKrShort(maxBal),4,pad+4);
+  ctx.fillText('0',pad-14,H-pad+4);
+  ctx.textAlign='center';
+  ctx.fillText('Idag',pad,H-pad+18);
+  ctx.fillText(monthYear(addMonths(new Date(),sim.months)),W-pad,H-pad+18);
+}
+function hexA(hex,a){
+  hex=hex.replace('#','');
+  if(hex.length===3)hex=hex.split('').map(function(x){return x+x;}).join('');
+  var r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+// ── Sheets ────────────────────────────────────────────
+var editingId=null;
+function openSheet(id){document.getElementById('sheet-bg').classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){
+  document.getElementById('sheet-bg').classList.remove('open');
+  document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});
+}
+document.getElementById('sheet-bg').onclick=closeSheets;
+
+function openDebtSheet(id){
+  editingId=id||null;
+  var t=document.getElementById('debt-sheet-title');
+  var d=id?state.debts.find(function(x){return x.id===id;}):null;
+  t.textContent=d?'Ändra skuld':'Ny skuld';
+  document.getElementById('d-name').value=d?d.name:'';
+  document.getElementById('d-bal').value=d?d.balance:'';
+  document.getElementById('d-orig').value=d&&d.original&&d.original!==d.balance?d.original:'';
+  document.getElementById('d-rate').value=d?d.rate:'';
+  document.getElementById('d-min').value=d?d.minPayment:'';
+  openSheet('debt-sheet');
+}
+document.getElementById('open-add').onclick=function(){openDebtSheet(null);};
+document.getElementById('open-add-2').onclick=function(){openDebtSheet(null);};
+document.getElementById('d-cancel').onclick=closeSheets;
+document.getElementById('d-save').onclick=function(){
+  var name=document.getElementById('d-name').value.trim();
+  var bal=parseFloat(document.getElementById('d-bal').value)||0;
+  var orig=parseFloat(document.getElementById('d-orig').value)||0;
+  var rate=parseFloat(document.getElementById('d-rate').value)||0;
+  var min=parseFloat(document.getElementById('d-min').value)||0;
+  if(!name){alert('Ge skulden ett namn.');return;}
+  if(orig&&orig<bal)orig=bal;
+  if(editingId){
+    var d=state.debts.find(function(x){return x.id===editingId;});
+    if(d){d.name=name;d.balance=bal;d.original=orig||d.original||bal;d.rate=rate;d.minPayment=min;}
+  }else{
+    state.debts.push({id:uid(),name:name,balance:bal,original:orig||bal,rate:rate,minPayment:min,createdAt:todayISO()});
+  }
+  save();closeSheets();renderAll();
+};
+
+function openPaySheet(preId){
+  var active=state.debts;
+  var empty=document.getElementById('pay-empty'),form=document.getElementById('pay-form');
+  if(!active.length){empty.style.display='block';form.style.display='none';openSheet('pay-sheet');return;}
+  empty.style.display='none';form.style.display='block';
+  var sel=document.getElementById('p-debt');
+  sel.innerHTML='';
+  active.forEach(function(d){
+    var o=document.createElement('option');o.value=d.id;
+    o.textContent=d.name+' ('+fmtKr(Math.max(0,d.balance))+')';
+    sel.appendChild(o);
+  });
+  if(preId)sel.value=preId;
+  document.getElementById('p-amt').value='';
+  document.getElementById('p-date').value=todayISO();
+  document.getElementById('p-note').value='';
+  openSheet('pay-sheet');
+}
+document.getElementById('open-pay').onclick=function(){openPaySheet(null);};
+document.getElementById('p-cancel').onclick=closeSheets;
+document.getElementById('p-save').onclick=function(){
+  var did=document.getElementById('p-debt').value;
+  var amt=parseFloat(document.getElementById('p-amt').value)||0;
+  var date=document.getElementById('p-date').value||todayISO();
+  var note=document.getElementById('p-note').value.trim();
+  if(amt<=0){alert('Ange ett belopp större än noll.');return;}
+  var d=state.debts.find(function(x){return x.id===did;});
+  if(!d){alert('Välj en skuld.');return;}
+  d.balance=Math.max(0,d.balance-amt);
+  state.payments.push({id:uid(),debtId:did,amount:amt,date:date,note:note});
+  save();closeSheets();renderAll();
+};
+
+// ── Plan controls ─────────────────────────────────────
+document.querySelectorAll('#strat-seg button').forEach(function(b){
+  b.onclick=function(){state.strategy=b.dataset.s;save();renderPlan();if(viewActive('progress'))drawChart();};
+});
+document.getElementById('extra-in').oninput=function(){
+  state.extra=parseFloat(this.value)||0;save();renderPlan();renderToday();
+};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='skuldfri-'+todayISO()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{var d=JSON.parse(r.result);
+      if(d&&Array.isArray(d.debts)){state=Object.assign(state,d);save();renderAll();alert('Importerat.');}
+      else alert('Ogiltig fil.');
+    }catch(err){alert('Kunde inte läsa filen.');}
+  };
+  r.readAsText(f);
+};
+
+// ── Synk via GitHub (likt Appkollen) ──────────────────
+var SYNC_KEY='skuldfrisync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/skuldfri-data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function syncPayload(){return {debts:state.debts,payments:state.payments,strategy:state.strategy,extra:state.extra,updated:new Date().toISOString()};}
+
+function setBadge(st,msg){
+  var b=document.getElementById('sync-badge');if(!b)return;
+  b.textContent=msg;
+  b.className='sync-badge'+(st==='ok'?'':st==='err'?' err':st==='off'?' off':'');
+  var now=document.getElementById('sync-now');
+  if(now)now.style.display=syncOn()?'inline-block':'none';
+}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function applyRemote(data){
+  if(!data)return;
+  if(Array.isArray(data.debts))state.debts=data.debts;
+  if(Array.isArray(data.payments))state.payments=data.payments;
+  if(data.strategy)state.strategy=data.strategy;
+  if(typeof data.extra==='number')state.extra=data.extra;
+  saveLocal();renderAll();
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){applyRemote(data);setBadge('ok','Synkad');})
+    .catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(syncPayload()));
+  function doPut(){
+    var body={message:'Uppdatering via Skuldfri',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){
+    if(j.content&&j.content.sha)sync.sha=j.content.sha;
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--moss-soft)':type==='err'?'#F4E8E4':'var(--panel2)';
+  el.style.color=type==='ok'?'#3F4A38':type==='err'?'#6E4A40':'var(--muted)';
+  el.style.border='1px solid '+(type==='err'?'#E0C4BB':'var(--line)');
+  el.textContent=msg;
+}
+document.getElementById('sync-open').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('gh-disconnect').style.display=syncOn()?'block':'none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-close').onclick=closeSheets;
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){setGhStatus('✓ Ansluten! Hämtar din data…','ok');return applyRemote(data),setBadge('ok','Synkad');}
+    setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din lokala data…','ok');return ghPush();
+  }).then(function(){
+    setBadge('ok','Synkad');
+    setTimeout(closeSheets,1100);
+  }).catch(function(e){
+    setGhStatus('Fel: '+e.message+'. Kontrollera användarnamn, reponamn och att token har Contents-behörighet.','err');
+    setBadge('err','Synkfel');
+  });
+};
+document.getElementById('gh-disconnect').onclick=function(){
+  if(!confirm('Koppla från synk på den här enheten? Din lokala data ligger kvar.'))return;
+  sync={owner:'',repo:'',token:'',sha:null};
+  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  setBadge('off','Lokal');closeSheets();
+};
+document.getElementById('sync-now').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Theme ─────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(viewActive('progress'))drawChart();
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  saveLocal();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+function viewActive(v){return document.getElementById('view-'+v).classList.contains('active');}
+document.querySelectorAll('.nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='plan')renderPlan();
+    if(b.dataset.v==='progress')renderProgress();
+    if(b.dataset.v==='debts')renderDebts();
+    if(b.dataset.v==='today')renderToday();
+  };
+});
+
+function renderAll(){renderToday();renderDebts();renderPlan();if(viewActive('progress'))renderProgress();}
+
+// ── Init ──────────────────────────────────────────────
+loadSync();
+renderToday();
+renderDebts();
+renderPlan();
+applyTheme();
+setBadge(syncOn()?'ok':'off',syncOn()?'Synkad':'Lokal');
+if(syncOn())ghPull();
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>

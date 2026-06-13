@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5f5f3">
+<title>1:1-samtal — Desktop</title>
+<style>
+:root{
+  --bg:#f5f5f3;--panel:#ffffff;--panel2:#f1efe8;--line:#d3d1c7;--line2:#e8e6e0;
+  --ink:#2c2c2a;--muted:#5f5e5a;--faint:#888780;--faint2:#b4b2a9;
+  --accent:#185FA5;--accent-soft:#EAF1F8;--accent-deep:#0C447C;
+  --green:#3B8A4E;--green-bg:#E7F4EA;
+  --yellow:#C0931A;--yellow-bg:#FBF2D8;
+  --red:#C0392B;--red-bg:#F8E6E3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);padding:12px}
+.app{max-width:1400px;margin:0 auto}
+h1{font-family:Georgia,serif;font-weight:400;font-size:18px;color:var(--accent);margin-right:auto;letter-spacing:.02em}
+.gtitle{font-family:Georgia,serif;font-weight:400}
+
+.top-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:9px 14px;background:var(--panel);border-radius:12px;border:0.5px solid var(--line)}
+.vsep{width:0.5px;height:18px;background:var(--line);margin:0 2px}
+.gear-btn{font-size:12px;padding:5px 10px;border-radius:8px;border:0.5px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;transition:background .15s}
+.gear-btn:hover{background:var(--panel2)}
+.sp-badge{font-size:11px;padding:3px 9px;border-radius:10px;background:var(--green-bg);color:#2A6638;font-weight:500}
+.sp-badge.offline{background:var(--panel2);color:var(--faint)}
+
+.grid{display:grid;grid-template-columns:290px minmax(0,1fr) 320px;gap:12px;align-items:start}
+@media(max-width:1100px){.grid{grid-template-columns:260px minmax(0,1fr)}.col-right{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.col-right{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:0.5px solid var(--line);border-radius:12px;padding:14px}
+.panel+.panel{margin-top:12px}
+.panel-title{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.section-sub{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
+
+/* Buttons / inputs */
+.btn{font-size:13px;padding:8px 14px;border-radius:9px;border:0.5px solid var(--accent);background:var(--panel);color:var(--accent);cursor:pointer;font-family:inherit;transition:background .15s}
+.btn:hover{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.fill:hover{background:var(--accent-deep)}
+.btn.full{width:100%}
+.btn.sm{font-size:12px;padding:6px 10px}
+.btn.danger{border-color:#E0B5AE;background:var(--red-bg);color:#7A2A20}
+label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin:12px 0 4px}
+input,textarea,select{font-size:13px;padding:8px 10px;border-radius:8px;border:0.5px solid var(--line);background:var(--panel);color:var(--ink);width:100%;outline:none;font-family:inherit}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:70px}
+.empty-msg{font-size:12px;color:var(--faint2);padding:8px 0}
+
+/* Team list */
+.mrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:background .12s}
+.mrow:hover{background:var(--panel2)}
+.mrow.sel{background:var(--accent-soft)}
+.wl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.wl-dot.green{background:var(--green)}.wl-dot.yellow{background:var(--yellow)}.wl-dot.red{background:var(--red)}.wl-dot.none{background:var(--line)}
+.mrow-body{flex:1;min-width:0}
+.mrow-name{font-size:13px;font-weight:600}
+.mrow-role{font-size:11px;color:var(--faint)}
+.badge{font-size:10px;padding:2px 7px;border-radius:8px;white-space:nowrap;font-weight:500}
+.badge.due{background:var(--red-bg);color:#7A2A20}
+.badge.soon{background:var(--yellow-bg);color:#7A5E10}
+
+/* Center detail */
+.detail-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.detail-head h2{font-family:Georgia,serif;font-weight:400;font-size:20px}
+.detail-head .role{font-size:12px;color:var(--faint)}
+.meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.tag{font-size:11px;padding:2px 9px;border-radius:9px;background:var(--panel2);color:var(--muted)}
+.tag.green{background:var(--green-bg);color:#2A6638}
+.tag.yellow{background:var(--yellow-bg);color:#7A5E10}
+.tag.red{background:var(--red-bg);color:#7A2A20}
+
+.tl-pick{display:flex;gap:10px;margin-top:4px}
+.tl-pick button{flex:1;border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:12px 6px;cursor:pointer;font-family:inherit;font-size:12px;color:var(--muted);text-align:center}
+.tl-pick button .d{width:18px;height:18px;border-radius:50%;margin:0 auto 6px}
+.tl-pick button.green .d{background:var(--green)}.tl-pick button.yellow .d{background:var(--yellow)}.tl-pick button.red .d{background:var(--red)}
+.tl-pick button.sel.green{border-color:var(--green);background:var(--green-bg);color:#2A6638;font-weight:600}
+.tl-pick button.sel.yellow{border-color:var(--yellow);background:var(--yellow-bg);color:#7A5E10;font-weight:600}
+.tl-pick button.sel.red{border-color:var(--red);background:var(--red-bg);color:#7A2A20;font-weight:600}
+.mood-pick{display:flex;gap:10px;margin-top:4px}
+.mood-pick button{flex:1;border:1.5px solid var(--line);background:var(--panel);border-radius:9px;padding:8px;cursor:pointer;font-family:inherit;font-size:12px;color:var(--muted)}
+.mood-pick button.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.line-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid var(--line2);font-size:13px}
+.line-item:first-child{border-top:none}
+.line-item span{flex:1}
+.line-item.done span{text-decoration:line-through;color:var(--faint2)}
+.chk{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--accent);background:var(--panel);cursor:pointer;font-size:11px;color:#fff;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0}
+.chk.done{background:var(--accent)}
+.del-x{background:none;border:none;color:var(--faint2);font-size:16px;cursor:pointer;line-height:1}
+.del-x:hover{color:#E24B4A}
+.add-row{display:flex;gap:7px;margin-top:8px}
+.add-row input{flex:1}
+
+.hist-item{padding:9px 0;border-top:0.5px solid var(--line2);cursor:pointer}
+.hist-item:first-child{border-top:none}
+.hist-item:hover{background:var(--panel2);border-radius:8px;padding-left:6px;padding-right:6px}
+.hist-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.hist-date{font-size:11px;color:var(--faint)}
+.hist-note{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+
+/* Right column */
+.stats{display:flex;gap:8px}
+.stat{flex:1;background:var(--panel2);border-radius:10px;padding:9px 6px;text-align:center}
+.stat b{font-family:Georgia,serif;font-weight:400;font-size:20px;display:block;color:var(--accent)}
+.stat span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.dist-row{display:flex;gap:8px;margin-top:4px}
+.dist{flex:1;border-radius:10px;padding:10px 4px;text-align:center;color:#fff}
+.dist.green{background:var(--green)}.dist.yellow{background:var(--yellow)}.dist.red{background:var(--red)}
+.dist b{font-family:Georgia,serif;font-weight:400;font-size:20px;display:block}
+.dist span{font-size:9px;text-transform:uppercase;letter-spacing:.04em;opacity:.9}
+.mini{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-top:0.5px solid var(--line2);font-size:12px}
+.mini:first-child{border-top:none}
+.mini .who{color:var(--faint);font-size:10px;margin-top:2px}
+.warn-banner{background:var(--red-bg);border:0.5px solid #E0B5AE;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;color:#7A2A20;margin-bottom:10px}
+
+/* Overlay (sync) */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100}
+.overlay.hidden{display:none}
+.settings-box{background:var(--panel);border-radius:14px;border:0.5px solid var(--line);padding:24px 28px;width:520px;max-width:95vw}
+.settings-box h2{font-family:Georgia,serif;font-weight:400;font-size:17px;margin-bottom:4px}
+.settings-box p{font-size:12px;color:var(--faint);margin-bottom:16px;line-height:1.6}
+.settings-box .hint{font-size:11px;color:var(--faint);margin-top:6px;margin-bottom:12px;font-family:monospace;background:var(--panel2);padding:6px 9px;border-radius:6px}
+.settings-row{display:flex;gap:8px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Synk-overlay -->
+<div class="overlay hidden" id="sync-overlay">
+  <div class="settings-box">
+    <h2>&#9881; Teamsynk via GitHub</h2>
+    <p>Appen läser och sparar <code>data.json</code> i ett <strong>privat</strong> GitHub-repo så att hela teamet ser samma medarbetare och samtal. Token sparas bara lokalt på den här enheten — aldrig i koden. Samma repo som mobilappen använder.</p>
+    <label>GitHub-användarnamn (ägare av repot)</label>
+    <input type="text" id="gh-owner" placeholder="miracuel">
+    <label>Namn på data-repot (privat)</label>
+    <input type="text" id="gh-repo" placeholder="samtal-data">
+    <label>Fine-grained token</label>
+    <input type="password" id="gh-token" placeholder="github_pat_…">
+    <div class="hint">github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+    <div id="gh-status" style="display:none;margin-bottom:10px;font-size:12px;padding:8px 12px;border-radius:8px"></div>
+    <div class="settings-row">
+      <button class="btn fill" id="gh-save">Spara &amp; synka</button>
+      <button class="btn" id="gh-close">Stäng</button>
+    </div>
+  </div>
+</div>
+
+<div class="top-bar">
+  <h1>&#128172; 1:1-samtal</h1>
+  <button class="gear-btn" id="export-btn">&#128190; Säkerhetskopiera</button>
+  <button class="gear-btn" id="import-btn">Importera</button>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+  <div class="vsep"></div>
+  <span id="sync-badge" class="sp-badge offline">Lokal</span>
+  <button class="gear-btn" id="sync-btn" title="Hämta senaste">&#10227; Synka</button>
+  <button class="gear-btn" id="sync-settings" title="Synkinställningar">&#9881;</button>
+</div>
+
+<div class="grid">
+  <!-- VÄNSTER: Team -->
+  <div class="col-left">
+    <div class="panel">
+      <div class="panel-title">Teamet <button class="btn sm" id="add-member-btn">+ Ny</button></div>
+      <div id="team-list"></div>
+    </div>
+  </div>
+
+  <!-- MITTEN: Detalj + formulär -->
+  <div class="col-mid">
+    <div class="panel" id="detail-panel">
+      <div id="detail-empty" class="empty-msg">Välj en medarbetare till vänster för att se historik och logga ett nytt samtal.</div>
+      <div id="detail-body" style="display:none">
+        <div class="detail-head">
+          <span class="wl-dot none" id="d-dot"></span>
+          <div style="flex:1">
+            <h2 id="d-name">Namn</h2>
+            <div class="role" id="d-role"></div>
+          </div>
+          <button class="btn sm" id="edit-member-btn">Ändra</button>
+          <button class="btn sm danger" id="del-member-btn">Radera</button>
+        </div>
+        <div class="meta-row" id="d-meta"></div>
+
+        <div class="section-sub" id="form-title">Nytt samtal</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:140px">
+            <label>Datum</label>
+            <input type="date" id="t-date">
+          </div>
+          <div style="flex:1;min-width:140px">
+            <label>Nästa samtal (valfritt)</label>
+            <input type="date" id="t-next">
+          </div>
+        </div>
+        <label>Arbetsbelastning</label>
+        <div class="tl-pick" id="t-workload">
+          <button class="green" data-n="1"><div class="d"></div>Grön — balanserad</button>
+          <button class="yellow" data-n="2"><div class="d"></div>Gul — hög</button>
+          <button class="red" data-n="3"><div class="d"></div>Röd — överbelastad</button>
+        </div>
+        <label>Trivsel (valfritt)</label>
+        <div class="mood-pick" id="t-mood">
+          <button data-n="1">🙂 Bra</button>
+          <button data-n="2">😐 Sådär</button>
+          <button data-n="3">😟 Tungt</button>
+        </div>
+        <label>Anteckningar</label>
+        <textarea id="t-notes" placeholder="Vad pratade ni om? Hur mår hen i jobbet?"></textarea>
+        <label>Att följa upp</label>
+        <div id="t-actions"></div>
+        <div class="add-row">
+          <input type="text" id="t-action-input" placeholder="Ny uppföljningspunkt">
+          <button class="btn" id="t-action-add">Lägg till</button>
+        </div>
+        <div class="settings-row">
+          <button class="btn fill" id="t-save">Spara samtal</button>
+          <button class="btn" id="t-new" style="display:none">Nytt i stället</button>
+          <button class="btn danger" id="t-delete" style="display:none;margin-left:auto">Radera samtal</button>
+        </div>
+
+        <div class="section-sub">Inför nästa samtal</div>
+        <div id="m-agenda"></div>
+        <div class="add-row">
+          <input type="text" id="m-agenda-input" placeholder="Punkt att ta upp nästa gång">
+          <button class="btn" id="m-agenda-add">Lägg till</button>
+        </div>
+
+        <div class="section-sub">Tidigare samtal</div>
+        <div id="m-history"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HÖGER: Översikt -->
+  <div class="col-right">
+    <div class="panel">
+      <div class="panel-title">Översikt</div>
+      <div class="stats">
+        <div class="stat"><b id="st-members">0</b><span>Medarbetare</span></div>
+        <div class="stat"><b id="st-due">0</b><span>Dags för 1:1</span></div>
+        <div class="stat"><b id="st-follow">0</b><span>Att följa upp</span></div>
+      </div>
+      <div class="section-sub">Arbetsbelastning nu</div>
+      <div class="dist-row">
+        <div class="dist green"><b id="d-green">0</b><span>Grön</span></div>
+        <div class="dist yellow"><b id="d-yellow">0</b><span>Gul</span></div>
+        <div class="dist red"><b id="d-red">0</b><span>Röd</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Dags för 1:1</div>
+      <div id="due-list"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Att följa upp</div>
+      <div id="follow-list"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ── State (delas med mobilappen: samma nyckel + samma data.json-form) ──
+var KEY='samtal_v1';
+var state={members:[],talks:[],agenda:{},theme:'auto'};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+state.members=state.members||[];state.talks=state.talks||[];state.agenda=state.agenda||{};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+function fmtDate(iso){if(!iso)return '';var p=iso.split('-');return p[2]+'/'+p[1]+' '+p[0].slice(2);}
+function daysSince(iso){if(!iso)return null;var a=new Date(iso+'T00:00:00');var b=new Date(todayKey()+'T00:00:00');return Math.round((b-a)/86400000);}
+
+var WL={1:['Grön','Balanserad','green'],2:['Gul','Hög men hanterbar','yellow'],3:['Röd','Överbelastad','red']};
+var MOOD={1:'🙂 Bra',2:'😐 Sådär',3:'😟 Tungt'};
+
+function getMember(id){for(var i=0;i<state.members.length;i++)if(state.members[i].id===id)return state.members[i];return null;}
+function talksFor(id){return state.talks.filter(function(t){return t.memberId===id;}).sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:0;});}
+function latestTalk(id){var t=talksFor(id);return t.length?t[0]:null;}
+function agendaFor(id){state.agenda[id]=state.agenda[id]||[];return state.agenda[id];}
+function isDue(m){var lt=latestTalk(m.id);if(!lt)return true;var ds=daysSince(lt.date);return ds!=null&&ds>=(m.cadence||14);}
+
+var selectedId=null;     // vald medarbetare
+var editingTalkId=null;  // null = nytt samtal
+var draft={workload:1,mood:0,actions:[]};
+
+// ── Team-lista ────────────────────────────────────────
+function renderTeam(){
+  var ms=state.members.slice().sort(function(a,b){
+    var la=latestTalk(a.id),lb=latestTalk(b.id);
+    var wa=la?la.workload:0,wb=lb?lb.workload:0;
+    if(wa!==wb)return wb-wa;
+    var da=isDue(a)?1:0,db=isDue(b)?1:0;
+    if(da!==db)return db-da;
+    return a.name.localeCompare(b.name,'sv');
+  });
+  var el=document.getElementById('team-list');
+  if(!ms.length){el.innerHTML='<div class="empty-msg">Inga medarbetare än. Tryck + Ny.</div>';return;}
+  el.innerHTML=ms.map(function(m){
+    var lt=latestTalk(m.id);var cls=lt?WL[lt.workload][2]:'none';
+    var badge='';
+    if(isDue(m))badge='<span class="badge due">Dags</span>';
+    else if(lt){var rem=(m.cadence||14)-daysSince(lt.date);if(rem<=3)badge='<span class="badge soon">Snart</span>';}
+    return '<div class="mrow'+(m.id===selectedId?' sel':'')+'" data-m="'+m.id+'">'+
+      '<span class="wl-dot '+cls+'"></span>'+
+      '<div class="mrow-body"><div class="mrow-name">'+esc(m.name)+'</div>'+
+      (m.role?'<div class="mrow-role">'+esc(m.role)+'</div>':'')+'</div>'+badge+'</div>';
+  }).join('');
+  var rows=el.querySelectorAll('.mrow');
+  for(var i=0;i<rows.length;i++)rows[i].onclick=function(){selectMember(this.dataset.m);};
+}
+
+// ── Detalj + formulär ─────────────────────────────────
+function selectMember(id){
+  selectedId=id;editingTalkId=null;
+  draft={workload:1,mood:0,actions:[]};
+  // dra in öppna agendapunkter som uppföljningsförslag
+  var ag=agendaFor(id).filter(function(a){return !a.done;});
+  if(ag.length)draft.actions=ag.map(function(a){return {text:a.text,done:false};});
+  renderDetail();renderTeam();
+}
+function renderDetail(){
+  var m=selectedId?getMember(selectedId):null;
+  document.getElementById('detail-empty').style.display=m?'none':'block';
+  document.getElementById('detail-body').style.display=m?'block':'none';
+  if(!m)return;
+  var lt=latestTalk(m.id);
+  document.getElementById('d-dot').className='wl-dot '+(lt?WL[lt.workload][2]:'none');
+  document.getElementById('d-name').textContent=m.name;
+  document.getElementById('d-role').textContent=m.role||'';
+  var meta='';
+  if(lt){
+    meta+='<span class="tag '+WL[lt.workload][2]+'">'+WL[lt.workload][0]+'</span>';
+    var ds=daysSince(lt.date);
+    meta+='<span class="tag">Senaste: '+(ds===0?'idag':ds+' d sedan')+'</span>';
+    if(lt.next)meta+='<span class="tag">Planerat nästa: '+fmtDate(lt.next)+'</span>';
+  }else meta+='<span class="tag">Inget samtal loggat än</span>';
+  meta+='<span class="tag">1:1 var '+(m.cadence||14)+':e dag</span>';
+  document.getElementById('d-meta').innerHTML=meta;
+
+  // formulärtillstånd
+  document.getElementById('form-title').textContent=editingTalkId?'Ändra samtal':'Nytt samtal';
+  document.getElementById('t-delete').style.display=editingTalkId?'inline-block':'none';
+  document.getElementById('t-new').style.display=editingTalkId?'inline-block':'none';
+  if(!document.getElementById('t-date').value||!editingTalkId)document.getElementById('t-date').value=draft.date||todayKey();
+  else document.getElementById('t-date').value=draft.date||todayKey();
+  document.getElementById('t-date').value=draft.date||todayKey();
+  document.getElementById('t-next').value=draft.next||'';
+  document.getElementById('t-notes').value=draft.notes||'';
+  pickTL();pickMood();renderActions();
+  renderAgenda();renderHistory();
+}
+function pickTL(){var b=document.querySelectorAll('#t-workload button');for(var i=0;i<b.length;i++)b[i].classList.toggle('sel',+b[i].dataset.n===draft.workload);}
+function pickMood(){var b=document.querySelectorAll('#t-mood button');for(var i=0;i<b.length;i++)b[i].classList.toggle('sel',+b[i].dataset.n===draft.mood);}
+(function(){
+  var tw=document.querySelectorAll('#t-workload button');
+  for(var i=0;i<tw.length;i++)tw[i].onclick=function(){draft.workload=+this.dataset.n;pickTL();};
+  var tm=document.querySelectorAll('#t-mood button');
+  for(var j=0;j<tm.length;j++)tm[j].onclick=function(){var n=+this.dataset.n;draft.mood=draft.mood===n?0:n;pickMood();};
+})();
+function renderActions(){
+  var el=document.getElementById('t-actions');var acts=draft.actions||[];
+  if(!acts.length){el.innerHTML='<div class="empty-msg">Inga punkter än.</div>';return;}
+  el.innerHTML=acts.map(function(a,i){
+    return '<div class="line-item'+(a.done?' done':'')+'" data-i="'+i+'"><div class="chk'+(a.done?' done':'')+'">'+(a.done?'✓':'')+'</div><span>'+esc(a.text)+'</span><button class="del-x">×</button></div>';
+  }).join('');
+  var rows=el.querySelectorAll('.line-item');
+  for(var i=0;i<rows.length;i++){var idx=+rows[i].dataset.i;
+    rows[i].querySelector('.chk').onclick=(function(x){return function(){acts[x].done=!acts[x].done;renderActions();};})(idx);
+    rows[i].querySelector('.del-x').onclick=(function(x){return function(){acts.splice(x,1);renderActions();};})(idx);
+  }
+}
+document.getElementById('t-action-add').onclick=function(){
+  var inp=document.getElementById('t-action-input');var v=inp.value.trim();if(!v)return;
+  draft.actions=draft.actions||[];draft.actions.push({text:v,done:false});inp.value='';renderActions();
+};
+document.getElementById('t-action-input').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('t-action-add').click();});
+
+document.getElementById('t-save').onclick=function(){
+  if(!selectedId)return;
+  var talk={
+    id:editingTalkId||uid(),memberId:selectedId,
+    date:document.getElementById('t-date').value||todayKey(),
+    workload:draft.workload,mood:draft.mood||0,
+    notes:document.getElementById('t-notes').value.trim(),
+    actions:draft.actions||[],next:document.getElementById('t-next').value||''
+  };
+  if(editingTalkId){for(var i=0;i<state.talks.length;i++)if(state.talks[i].id===editingTalkId)state.talks[i]=talk;}
+  else{
+    state.talks.push(talk);
+    var ag=agendaFor(selectedId);var logged=(talk.actions||[]).map(function(a){return a.text;});
+    for(var j=0;j<ag.length;j++)if(logged.indexOf(ag[j].text)>=0)ag[j].done=true;
+  }
+  persist();
+  editingTalkId=null;draft={workload:1,mood:0,actions:[]};
+  refreshAll();
+};
+document.getElementById('t-new').onclick=function(){editingTalkId=null;draft={workload:1,mood:0,actions:[]};renderDetail();};
+document.getElementById('t-delete').onclick=function(){
+  if(!editingTalkId)return;if(!confirm('Radera det här samtalet?'))return;
+  state.talks=state.talks.filter(function(t){return t.id!==editingTalkId;});
+  persist();editingTalkId=null;draft={workload:1,mood:0,actions:[]};refreshAll();
+};
+
+function renderAgenda(){
+  var ag=agendaFor(selectedId);var el=document.getElementById('m-agenda');
+  if(!ag.length){el.innerHTML='<div class="empty-msg">Inga punkter än.</div>';return;}
+  el.innerHTML=ag.map(function(a,i){
+    return '<div class="line-item'+(a.done?' done':'')+'" data-i="'+i+'"><div class="chk'+(a.done?' done':'')+'">'+(a.done?'✓':'')+'</div><span>'+esc(a.text)+'</span><button class="del-x">×</button></div>';
+  }).join('');
+  var rows=el.querySelectorAll('.line-item');
+  for(var i=0;i<rows.length;i++){var idx=+rows[i].dataset.i;
+    rows[i].querySelector('.chk').onclick=(function(x){return function(){ag[x].done=!ag[x].done;persist();renderAgenda();};})(idx);
+    rows[i].querySelector('.del-x').onclick=(function(x){return function(){ag.splice(x,1);persist();renderAgenda();};})(idx);
+  }
+}
+document.getElementById('m-agenda-add').onclick=function(){
+  var inp=document.getElementById('m-agenda-input');var v=inp.value.trim();if(!v)return;
+  agendaFor(selectedId).push({text:v,done:false});inp.value='';persist();renderAgenda();
+};
+document.getElementById('m-agenda-input').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('m-agenda-add').click();});
+
+function renderHistory(){
+  var ts=talksFor(selectedId);var el=document.getElementById('m-history');
+  if(!ts.length){el.innerHTML='<div class="empty-msg">Inga tidigare samtal.</div>';return;}
+  el.innerHTML=ts.map(function(t){
+    var wl=WL[t.workload];var open=(t.actions||[]).filter(function(a){return !a.done;}).length;
+    return '<div class="hist-item" data-id="'+t.id+'"><div class="hist-top"><span class="tag '+wl[2]+'">'+wl[0]+(t.mood?' · '+MOOD[t.mood]:'')+'</span><span class="hist-date">'+fmtDate(t.date)+(open?' · '+open+' att följa upp':'')+' ✎</span></div>'+
+      (t.notes?'<div class="hist-note">'+esc(t.notes)+'</div>':'')+'</div>';
+  }).join('');
+  var rows=el.querySelectorAll('.hist-item');
+  for(var i=0;i<rows.length;i++)rows[i].onclick=function(){loadTalk(this.dataset.id);};
+}
+function loadTalk(id){
+  var orig=null;for(var i=0;i<state.talks.length;i++)if(state.talks[i].id===id)orig=state.talks[i];
+  if(!orig)return;
+  editingTalkId=id;
+  draft=JSON.parse(JSON.stringify(orig));
+  renderDetail();
+  document.getElementById('detail-panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── Höger: översikt ───────────────────────────────────
+function renderOverview(){
+  document.getElementById('st-members').textContent=state.members.length;
+  var due=state.members.filter(isDue);
+  document.getElementById('st-due').textContent=due.length;
+  var follows=[];
+  for(var j=0;j<state.talks.length;j++){var t=state.talks[j];var acts=t.actions||[];for(var k=0;k<acts.length;k++)if(!acts[k].done){var m=getMember(t.memberId);follows.push({talkId:t.id,idx:k,text:acts[k].text,who:m?m.name:'(borttagen)',date:t.date});}}
+  document.getElementById('st-follow').textContent=follows.length;
+
+  var g=0,y=0,rr=0;
+  for(var i=0;i<state.members.length;i++){var lt=latestTalk(state.members[i].id);if(!lt)continue;if(lt.workload===1)g++;else if(lt.workload===2)y++;else rr++;}
+  document.getElementById('d-green').textContent=g;
+  document.getElementById('d-yellow').textContent=y;
+  document.getElementById('d-red').textContent=rr;
+
+  var dl=document.getElementById('due-list');
+  if(!due.length)dl.innerHTML='<div class="empty-msg">Inga inplanerade just nu — fint!</div>';
+  else dl.innerHTML=due.sort(function(a,b){return a.name.localeCompare(b.name,'sv');}).map(function(m){
+    var lt=latestTalk(m.id);var sub=lt?daysSince(lt.date)+' dagar sedan':'aldrig';
+    var cls=lt?WL[lt.workload][2]:'none';
+    return '<div class="mini" data-m="'+m.id+'" style="cursor:pointer"><span class="wl-dot '+cls+'" style="margin-top:2px"></span><div><div>'+esc(m.name)+'</div><div class="who">'+sub+'</div></div></div>';
+  }).join('');
+  var drows=dl.querySelectorAll('.mini[data-m]');
+  for(var d=0;d<drows.length;d++)drows[d].onclick=function(){selectMember(this.dataset.m);};
+
+  var fl=document.getElementById('follow-list');
+  if(!follows.length)fl.innerHTML='<div class="empty-msg">Inga öppna punkter.</div>';
+  else fl.innerHTML=follows.map(function(f){
+    return '<div class="mini" data-talk="'+f.talkId+'" data-idx="'+f.idx+'"><div class="chk"></div><div><span>'+esc(f.text)+'</span><div class="who">'+esc(f.who)+' · '+fmtDate(f.date)+'</div></div></div>';
+  }).join('');
+  var frows=fl.querySelectorAll('.mini[data-talk]');
+  for(var r=0;r<frows.length;r++)frows[r].querySelector('.chk').onclick=(function(row){return function(){
+    var t=null;for(var x=0;x<state.talks.length;x++)if(state.talks[x].id===row.dataset.talk)t=state.talks[x];
+    if(t&&t.actions&&t.actions[+row.dataset.idx]){t.actions[+row.dataset.idx].done=true;persist();refreshAll();}
+  };})(frows[r]);
+
+  var warnHost=document.getElementById('detail-panel');
+  // röd-varning visas överst i översikten via due? Vi lägger den i mittpanelen om ingen vald.
+}
+
+// ── Medarbetare lägg till/ändra (prompt-baserat, enkelt på desktop) ──
+function memberDialog(existing){
+  var name=prompt('Namn:',existing?existing.name:'');
+  if(name===null)return;
+  name=name.trim();if(!name){alert('Namn krävs.');return;}
+  var role=prompt('Roll (valfritt):',existing?(existing.role||''):'');
+  if(role===null)role=existing?(existing.role||''):'';
+  var cadStr=prompt('1:1 hur ofta? (dagar mellan samtal)',existing?String(existing.cadence||14):'14');
+  var cad=Math.max(1,Math.min(120,parseInt(cadStr,10)||14));
+  if(existing){existing.name=name;existing.role=role.trim();existing.cadence=cad;}
+  else{var nm={id:uid(),name:name,role:role.trim(),cadence:cad,created:todayKey()};state.members.push(nm);selectedId=nm.id;}
+  persist();refreshAll();
+}
+document.getElementById('add-member-btn').onclick=function(){memberDialog(null);};
+document.getElementById('edit-member-btn').onclick=function(){var m=getMember(selectedId);if(m)memberDialog(m);};
+document.getElementById('del-member-btn').onclick=function(){
+  var m=getMember(selectedId);if(!m)return;
+  if(!confirm('Radera '+m.name+' och alla dess samtal? Detta går inte att ångra.'))return;
+  state.members=state.members.filter(function(x){return x.id!==selectedId;});
+  state.talks=state.talks.filter(function(t){return t.memberId!==selectedId;});
+  delete state.agenda[selectedId];selectedId=null;persist();refreshAll();
+};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='samtal-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.members&&d.talks){state=Object.assign(state,d);state.agenda=state.agenda||{};persist();refreshAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Teamsynk via GitHub (samma data.json som mobilappen) ──
+var SYNC_KEY='samtalsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':' offline');}
+
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');var data=await ghGet();
+    if(data){if(Array.isArray(data.members))state.members=data.members;if(Array.isArray(data.talks))state.talks=data.talks;if(data.agenda&&typeof data.agenda==='object')state.agenda=data.agenda;
+      if(selectedId&&!getMember(selectedId))selectedId=null;
+      save();refreshAll();}
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({members:state.members,talks:state.talks,agenda:state.agenda,updated:new Date().toISOString()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Samtal (desktop)',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.style.background=type==='ok'?'#EAF3DE':type==='err'?'#FEF0F0':'#E6F1FB';el.style.color=type==='ok'?'#3B6D11':type==='err'?'#A32D2D':'#185FA5';el.textContent=msg;}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('sync-overlay').classList.remove('hidden');
+};
+document.getElementById('gh-close').onclick=function(){document.getElementById('sync-overlay').classList.add('hidden');};
+document.getElementById('sync-overlay').onclick=function(e){if(e.target.id==='sync-overlay')document.getElementById('sync-overlay').classList.add('hidden');};
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();sync.repo=document.getElementById('gh-repo').value.trim();sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{var data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar teamets data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din lokala data…','ok');await ghPush();}
+    setTimeout(function(){document.getElementById('sync-overlay').classList.add('hidden');},1200);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera användarnamn, reponamn och att token har Contents-behörighet.','err');}
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Init ──────────────────────────────────────────────
+function refreshAll(){renderTeam();renderDetail();renderOverview();}
+loadSync();
+refreshAll();
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

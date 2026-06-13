@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Relationshjälp">
+<meta name="theme-color" content="#F6EEEA">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23F6EEEA'/%3E%3Cpath d='M16 25c-7-4.5-10-8.4-10-12a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 3.6-3 7.5-10 12z' fill='%23C98B86'/%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Relationshjälp","short_name":"Relation","display":"standalone","background_color":"%23F6EEEA","theme_color":"%23F6EEEA","start_url":"."}'>
+<title>Relationshjälp</title>
+<style>
+:root{
+  --bg:#F6EEEA;--panel:#FCF6F3;--panel2:#F0E4DE;--line:#E4D2CA;
+  --ink:#4A3B36;--muted:#9A8579;--rose:#C98B86;--rose-soft:#F1DDD8;
+  --green:#8FA383;--yellow:#C7B06A;--red:#C08A7E;
+  --green-soft:#DBE3D3;--yellow-soft:#EEE6CC;--red-soft:#F2DBD5;
+  --navbg:rgba(246,238,234,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 2px}
+.who-line{text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px}
+.who-line b{color:var(--rose);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--rose);background:var(--panel);color:var(--rose);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--rose-soft)}
+.btn.fill{background:var(--rose);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.btn:disabled{opacity:.55;cursor:default}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+textarea{resize:vertical;min-height:74px;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--rose-soft);border-color:var(--rose)}
+
+/* Check-in */
+.mood-row{display:flex;justify-content:space-between;gap:6px;margin-top:6px}
+.mood-row button{flex:1;background:var(--panel2);border:1.5px solid var(--line);border-radius:14px;padding:10px 0;font-size:26px;cursor:pointer;line-height:1}
+.mood-row button.sel{background:var(--rose-soft);border-color:var(--rose);transform:scale(1.04)}
+.ryg{display:flex;gap:8px;margin-top:6px}
+.ryg button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:14px;padding:10px 6px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.ryg button[data-v=green].sel{background:var(--green-soft);border-color:var(--green)}
+.ryg button[data-v=yellow].sel{background:var(--yellow-soft);border-color:var(--yellow)}
+.ryg button[data-v=red].sel{background:var(--red-soft);border-color:var(--red)}
+.batt-mini{display:flex;align-items:center;gap:10px;margin-top:6px}
+.batt-mini .bar{flex:1;height:16px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+.batt-mini .bar i{display:block;height:100%;background:var(--rose);transition:width .4s}
+.batt-mini b{font-size:14px;width:40px;text-align:right;font-variant-numeric:tabular-nums}
+.dotpick{display:flex;gap:8px;margin:4px 0 8px}
+.dotpick button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;color:var(--muted)}
+.dotpick button.sel{background:var(--rose);border-color:var(--rose);color:#fff}
+input[type=range]{accent-color:var(--rose);padding:0}
+
+/* Partner overview */
+.ov-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ov-emoji{font-size:30px}
+.ov-name{font-family:Georgia,serif;font-size:17px}
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.ov-cell{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.ov-cell .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ov-cell .v{font-size:14px;margin-top:2px}
+.ov-msg{background:var(--rose-soft);border:1px solid var(--rose);border-radius:14px;padding:11px 13px;font-size:13px;line-height:1.6;margin-top:10px;font-family:Georgia,serif}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle}
+.dot.green{background:var(--green)}.dot.yellow{background:var(--yellow)}.dot.red{background:var(--red)}
+
+/* Temperature */
+.temp-row{display:flex;gap:8px;margin-top:6px}
+.temp-row button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:14px;padding:12px 6px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit;text-align:center;line-height:1.4}
+.temp-row button small{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.temp-row button[data-v=green].sel{background:var(--green-soft);border-color:var(--green)}
+.temp-row button[data-v=yellow].sel{background:var(--yellow-soft);border-color:var(--yellow)}
+.temp-row button[data-v=red].sel{background:var(--red-soft);border-color:var(--red)}
+
+/* Crisis */
+.crisis-banner{background:var(--red-soft);border:1px solid var(--red);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#6E4A40;margin:12px 0;display:none}
+.crisis-banner.show{display:block}
+.crisis-banner button{margin-top:8px}
+
+/* Goals */
+.goal{padding:11px 0;border-top:1px solid var(--line)}
+.goal:first-child{border-top:none}
+.goal-head{display:flex;align-items:center;gap:9px}
+.goal-emoji{font-size:20px}
+.goal-title{flex:1;font-size:14px}
+.goal-cnt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.goal-bar{height:9px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin:8px 0 6px}
+.goal-bar i{display:block;height:100%;background:var(--rose);transition:width .4s}
+.goal-acts{display:flex;gap:6px}
+.goal-acts button{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:5px 10px;font-size:12px;color:var(--rose);cursor:pointer;font-family:inherit}
+.goal-acts .del{color:var(--muted);margin-left:auto}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--rose);background:var(--rose);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+
+/* Level */
+.level-card{display:flex;align-items:center;gap:12px}
+.level-badge{font-size:34px}
+.level-info{flex:1}
+.level-name{font-family:Georgia,serif;font-size:17px}
+.level-bar{height:8px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin-top:7px}
+.level-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--rose),var(--yellow))}
+
+/* List rows */
+.row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.row:first-child{border-top:none}
+.row .t{flex:1}
+.row time,.row .meta{color:var(--muted);font-size:11px}
+.row button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.row .fav{font-size:15px}
+
+/* Memory */
+.mem-prompt{background:var(--rose-soft);border:1px solid var(--rose);border-radius:14px;padding:12px 14px;font-family:Georgia,serif;font-size:14px;line-height:1.6;margin-bottom:10px;display:none}
+.mem-prompt.show{display:block}
+.mem{padding:10px 0;border-top:1px solid var(--line)}
+.mem:first-child{border-top:none}
+.mem-top{display:flex;align-items:center;gap:8px}
+.mem-title{flex:1;font-size:14px;font-weight:500}
+.mem-date{font-size:11px;color:var(--muted)}
+.mem-note{font-size:13px;color:var(--muted);line-height:1.5;margin-top:4px}
+.mem-x{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.star{background:none;border:none;cursor:pointer;font-size:15px;color:var(--muted)}
+.star.on{color:var(--yellow)}
+
+/* Tarot */
+.tdeck{display:flex;gap:10px;justify-content:center;margin:6px 0 4px}
+.tcol{flex:1;text-align:center}
+.tcol .pos{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;min-height:24px;display:flex;align-items:center;justify-content:center}
+.tcard{aspect-ratio:2/3;border-radius:12px;background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--rose);box-shadow:inset 0 0 0 3px var(--panel),inset 0 0 0 4px var(--rose-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;cursor:pointer}
+.tcard .cn{font-family:Georgia,serif;font-size:13px;color:var(--rose);line-height:1.25}
+.tcard .ce{font-size:24px;margin-bottom:4px}
+.tcard.back .ce{opacity:.4}
+.tread{margin-top:10px}
+.tread .ti{padding:9px 0;border-top:1px solid var(--line)}
+.tread .ti:first-child{border-top:none}
+.tread .ti b{font-family:Georgia,serif;font-weight:400;color:var(--rose);display:block;font-size:14px}
+.tread .ti .q{font-size:13px;line-height:1.6;margin-top:3px}
+
+/* Wheel */
+.wheel-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.wheel-row:first-child{border-top:none}
+.wheel-row .wn{width:104px;font-size:13px}
+.wheel-row input{flex:1}
+.wheel-row .wv{width:24px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;color:var(--rose)}
+
+/* AI box */
+.ai-box{border:1px solid var(--rose);background:var(--rose-soft);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--rose);font-size:12px;display:block;margin-bottom:4px}
+.qhint{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.7;margin-top:8px}
+.qhint b{font-family:Georgia,serif;font-weight:400}
+
+/* Nav + sheets (suite pattern) */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--rose);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+.sheet-bg{position:fixed;inset:0;background:rgba(74,59,54,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--rose);color:#fff;font-size:14px;cursor:pointer;position:sticky;bottom:0;margin-top:12px}
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:8px;line-height:1.6}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+.sync-line{display:flex;align-items:center;gap:8px}
+.sync-badge{font-size:11px;padding:3px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.sync-badge.ok{background:var(--green-soft);color:var(--ink);border-color:var(--green)}
+.sync-badge.err{background:var(--red-soft);color:var(--ink);border-color:var(--red)}
+.sync-badge.load{background:var(--yellow-soft);color:var(--ink);border-color:var(--yellow)}
+#sync-status{margin-bottom:10px;font-size:12px;padding:8px 11px;border-radius:10px;line-height:1.5}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#251E1C;--panel:#2E2724;--panel2:#372E2A;--line:#473B36;
+  --ink:#EBDED7;--muted:#A89589;--rose:#CF9A93;--rose-soft:#3F302C;
+  --green:#8FA383;--yellow:#C2AC6B;--red:#C08A7E;
+  --green-soft:#33402F;--yellow-soft:#3E3826;--red-soft:#42302C;
+  --navbg:rgba(37,30,28,.95);
+}
+html[data-theme=dark] .ov-msg,html[data-theme=dark] .mem-prompt{color:var(--ink)}
+html[data-theme=dark] .crisis-banner{color:#E2C2B7}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">❤️ Relationshjälp</h1>
+<div class="who-line">Du loggar som <b id="who-name">Jag</b> · <span id="who-switch" style="cursor:pointer;text-decoration:underline;text-underline-offset:3px">byt person</span></div>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <div class="section-title" style="margin-top:0">Daglig check-in</div>
+  <div class="card-panel">
+    <label>Hur mår du idag?</label>
+    <div class="mood-row" id="mood-row"></div>
+    <label>Energi</label>
+    <div class="ryg" id="energy-row"></div>
+    <label>Socialt batteri · <span id="soc-val">60</span>%</label>
+    <div class="batt-mini"><div class="bar"><i id="soc-fill"></i></div><b id="soc-b">60%</b></div>
+    <input type="range" id="soc-range" min="0" max="100" step="5" value="60" style="margin-top:8px">
+    <label>Vad behöver du mest av idag? (kärleksspråk)</label>
+    <div class="chips" id="love-chips"></div>
+    <label>Återhämtning & läge</label>
+    <div class="chips" id="state-chips"></div>
+    <label>Något du vill säga till din partner? (frivilligt)</label>
+    <textarea id="ci-note" placeholder="En rad räcker — t.ex. ”Behöver en lugn kväll, inget fel på dig.”"></textarea>
+    <button class="btn fill" id="ci-save" style="width:100%;margin-top:12px">Spara dagens check-in</button>
+  </div>
+
+  <div class="crisis-banner" id="crisis-banner">
+    Det ser tungt ut idag. Sänk ribban — du behöver inte prestera i relationen just nu.
+    <button class="btn" id="open-crisis" style="width:100%">Öppna mitt krisläge 🚨</button>
+  </div>
+
+  <div class="section-title">Partneröversikt</div>
+  <div class="card-panel" id="partner-ov"></div>
+
+  <div class="section-title">Relationstemperatur idag</div>
+  <div class="card-panel">
+    <div class="soft">Hur känns <i>vi</i> just nu? Båda kan markera var sin.</div>
+    <div class="temp-row" id="temp-row">
+      <button data-v="green">🟢<small>Allt bra</small></button>
+      <button data-v="yellow">🟡<small>Något skaver</small></button>
+      <button data-v="red">🔴<small>Behöver prata</small></button>
+    </div>
+    <div id="temp-status" class="soft" style="margin-top:10px"></div>
+    <div id="temp-help" style="display:none">
+      <div class="qhint" id="temp-q"></div>
+      <button class="btn" id="temp-to-coach" style="width:100%;margin-top:8px">Få hjälp att formulera i Prata →</button>
+    </div>
+  </div>
+
+  <div class="section-title">Synk mellan era enheter</div>
+  <div class="card-panel">
+    <div class="sync-line"><span id="sync-badge" class="sync-badge">Lokal</span><span class="soft" style="flex:1">Dela check-ins, mål, minnen och XP mellan era telefoner och datorn.</span></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn" id="sync-now">↻ Synka nu</button>
+      <button class="btn ghost" id="sync-settings">⚙ Inställningar</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button id="open-people">Namn & profiler</button>
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas bara i din enhet. Dela mellan er via Säkerhetskopiera → Importera.<br>Relationshjälp är ett vardagsstöd — inte parterapi. Vid kris eller våld: ta hjälp av vården, eller ring 112. 💛</div>
+</div>
+
+<!-- PRATA -->
+<div class="view" id="view-talk">
+  <div class="section-title" style="margin-top:0">AI Relationscoach</div>
+  <div class="card-panel">
+    <div class="soft">Skriv hur det känns eller vad som hänt — rått och ärligt. Coachen hjälper dig vidare. Inget skickas till din partner.</div>
+    <textarea id="coach-in" placeholder="T.ex. ”Jag känner mig ignorerad när du inte svarar på mina meddelanden.”"></textarea>
+    <div class="btn-row" style="margin-top:8px;flex-wrap:wrap">
+      <button class="btn" data-mode="reframe">Omformulera snällt</button>
+      <button class="btn" data-mode="conflict">Tolka konflikten</button>
+    </div>
+    <div class="btn-row" style="margin-top:8px;flex-wrap:wrap">
+      <button class="btn" data-mode="compromise">Föreslå kompromiss</button>
+      <button class="btn" data-mode="neuro">Förklara ADHD/autism-krock</button>
+    </div>
+    <div id="coach-out"></div>
+  </div>
+
+  <div class="section-title">Missförståndstolk</div>
+  <div class="card-panel">
+    <div class="soft">Översätt mellan rak/autistisk kommunikation och emotionell tolkning — så slipper ni gissa.</div>
+    <label>Riktning</label>
+    <div class="ryg" id="tr-dir">
+      <button data-v="a2e" class="sel" style="font-size:12px">Rakt → Känslomässig tolkning</button>
+      <button data-v="e2a" style="font-size:12px">Känsla → Tydligt &amp; konkret</button>
+    </div>
+    <textarea id="tr-in" placeholder="Klistra in meningen som blev fel…" style="margin-top:8px"></textarea>
+    <button class="btn fill" id="tr-go" style="width:100%;margin-top:8px">Översätt</button>
+    <div id="tr-out"></div>
+  </div>
+
+  <div class="section-title">Känsloreglering — snabbt</div>
+  <div class="card-panel">
+    <div class="soft">Innan svåra samtal: tre lugna andetag. Tryck och följ cirkeln om du vill.</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px 0">
+      <div id="breath" style="width:110px;height:110px;border-radius:50%;background:var(--rose-soft);border:2px solid var(--rose);transition:transform 4s ease-in-out;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:15px">Redo</div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn" id="breath-go">Andas 4·7·8</button>
+        <button class="btn ghost" id="breath-stop">Stopp</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VI -->
+<div class="view" id="view-us">
+  <div class="section-title" style="margin-top:0">Vår relationsnivå</div>
+  <div class="card-panel">
+    <div class="level-card">
+      <div class="level-badge" id="lvl-badge">🌱</div>
+      <div class="level-info">
+        <div class="level-name" id="lvl-name">Nyförälskad</div>
+        <div class="soft" id="lvl-xp">0 XP</div>
+        <div class="level-bar"><i id="lvl-fill"></i></div>
+        <div class="soft" id="lvl-next" style="margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Gemensamma mål</div>
+  <div class="card-panel">
+    <div id="goal-list"></div>
+    <div class="add-row">
+      <input type="text" id="goal-in" placeholder="T.ex. Promenad tillsammans">
+      <button id="goal-add">+</button>
+    </div>
+    <div class="soft" style="margin-top:6px">Tryck +1 varje gång ni gör det. Når ni målet får ni XP.</div>
+  </div>
+
+  <div class="section-title">Dejtkvällsplanerare</div>
+  <div class="card-panel">
+    <label>Energinivå ikväll</label>
+    <div class="ryg" id="date-energy">
+      <button data-v="low" style="font-size:12px">Låg 🪫</button>
+      <button data-v="mid" class="sel" style="font-size:12px">Mellan</button>
+      <button data-v="high" style="font-size:12px">Hög ⚡</button>
+    </div>
+    <label>Budget</label>
+    <div class="ryg" id="date-budget">
+      <button data-v="0" class="sel" style="font-size:12px">Gratis</button>
+      <button data-v="1" style="font-size:12px">Liten</button>
+      <button data-v="2" style="font-size:12px">Lite mer</button>
+    </div>
+    <label>Intressen (frivilligt)</label>
+    <input type="text" id="date-int" placeholder="T.ex. natur, spel, tarot, mys">
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn" id="date-local">Ge mig idéer</button>
+      <button class="btn fill" id="date-ai">Be AI:n ✨</button>
+    </div>
+    <div id="date-out"></div>
+    <button class="btn ghost" id="date-log" style="width:100%;margin-top:10px;display:none">Vi gjorde en dejt — logga (+25 XP)</button>
+  </div>
+
+  <div class="section-title">Veckomöte</div>
+  <div class="card-panel">
+    <div class="soft">En kort, snäll genomgång. Inga rätt svar.</div>
+    <label>Vad fungerade bra?</label>
+    <textarea id="wm-good"></textarea>
+    <label>Vad var svårt?</label>
+    <textarea id="wm-hard"></textarea>
+    <label>Vad behöver vi mer av?</label>
+    <textarea id="wm-more"></textarea>
+    <label>Vad vill vi göra nästa vecka?</label>
+    <textarea id="wm-next"></textarea>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn fill" id="wm-save">Spara möte (+40 XP)</button>
+      <button class="btn" id="wm-ai">AI-sammanfattning ✨</button>
+    </div>
+    <div id="wm-out"></div>
+    <div id="wm-hist" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- MINNEN -->
+<div class="view" id="view-mem">
+  <div class="mem-prompt" id="mem-prompt"></div>
+  <div class="section-title" style="margin-top:0">Kärleksbank</div>
+  <div class="card-panel">
+    <div class="soft">Spara fina stunder. Här hämtar ni kraft när vardagen skaver.</div>
+    <label>Rubrik</label>
+    <input type="text" id="mem-title" placeholder="T.ex. Skansen i somras">
+    <label>Datum (frivilligt)</label>
+    <input type="date" id="mem-when">
+    <label>Anteckning</label>
+    <textarea id="mem-note" placeholder="Vad var fint? Vad vill ni minnas?"></textarea>
+    <button class="btn fill" id="mem-add" style="width:100%;margin-top:10px">Lägg i kärleksbanken (+15 XP)</button>
+  </div>
+  <div class="section-title">Sparade minnen <span class="soft" id="mem-count"></span></div>
+  <div class="card-panel"><div id="mem-list"></div></div>
+</div>
+
+<!-- SPEGEL (tarot + livshjul) -->
+<div class="view" id="view-mirror">
+  <div class="section-title" style="margin-top:0">Relations-tarot</div>
+  <div class="card-panel">
+    <div class="soft">Dra tre kort tillsammans och låt frågorna öppna ett samtal.</div>
+    <div class="tdeck" id="tdeck"></div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn fill" id="t-draw">Dra tre kort</button>
+      <button class="btn" id="t-ai" style="display:none">Fördjupa med AI ✨</button>
+    </div>
+    <div id="t-read" class="tread"></div>
+    <div id="t-aiout"></div>
+  </div>
+
+  <div class="section-title">Relations-livshjul</div>
+  <div class="card-panel">
+    <div class="soft">Skatta varje område 1–10. Var ärliga var för sig — jämför sen.</div>
+    <div id="wheel-list" style="margin-top:6px"></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn fill" id="wheel-save">Spara skattning (+10 XP)</button>
+      <button class="btn" id="wheel-ai">Förbättringsförslag ✨</button>
+    </div>
+    <div id="wheel-out"></div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<div class="nav">
+  <button class="active" data-v="today"><span>❤️</span>Idag</button>
+  <button data-v="talk"><span>💬</span>Prata</button>
+  <button data-v="us"><span>🤝</span>Vi</button>
+  <button data-v="mem"><span>💕</span>Minnen</button>
+  <button data-v="mirror"><span>🔮</span>Spegel</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="people-sheet">
+  <h3>Namn &amp; profiler</h3>
+  <div class="soft">Ni delar samma app. Var och en loggar sin egen check-in — byt person högst upp.</div>
+  <label>Person 1 — namn</label>
+  <input type="text" id="p-me-name" maxlength="20">
+  <label>Person 1 — emoji</label>
+  <input type="text" id="p-me-emoji" maxlength="2">
+  <label>Person 2 — namn</label>
+  <input type="text" id="p-pa-name" maxlength="20">
+  <label>Person 2 — emoji</label>
+  <input type="text" id="p-pa-emoji" maxlength="2">
+  <button class="sheet-close" id="people-save">Spara</button>
+</div>
+
+<div class="sheet" id="crisis-sheet">
+  <h3>🚨 Mitt krisläge</h3>
+  <div class="soft" id="crisis-who"></div>
+  <div class="section-title">Vad jag brukar behöva <button class="btn ghost" id="ed-needs" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div id="crisis-needs"></div>
+  <div class="section-title">Lugna aktiviteter <button class="btn ghost" id="ed-calm" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div id="crisis-calm"></div>
+  <div class="section-title">Trygghetspersoner <button class="btn ghost" id="ed-contacts" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div id="crisis-contacts"></div>
+  <div class="crisis-banner show" style="margin-top:14px">Om det känns akut farligt — för dig eller någon annan — ring 112. Du är inte ensam, och det finns hjälp. 💛</div>
+  <button class="sheet-close" id="crisis-close">Stäng</button>
+</div>
+
+<div class="sheet" id="list-sheet">
+  <h3 id="list-title">Ändra lista</h3>
+  <div id="list-items"></div>
+  <div class="add-row"><input type="text" id="list-in" placeholder="Lägg till…"><button id="list-add">+</button></div>
+  <button class="sheet-close" id="list-close">Klar</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>☁ Synk via GitHub</h3>
+  <p class="soft" style="margin-bottom:10px">Appen läser och sparar <b style="color:var(--ink)">relationshjalp-data.json</b> i ett <b style="color:var(--ink)">privat</b> GitHub-repo, så att ni båda ser samma data på alla enheter. Token sparas bara lokalt på den här enheten — aldrig i koden eller i säkerhetskopian.</p>
+  <div id="sync-status"></div>
+  <label>GitHub-användarnamn (ägare av repot)</label>
+  <input type="text" id="s-owner" placeholder="t.ex. rebecca" autocomplete="off">
+  <label>Namn på det privata repot</label>
+  <input type="text" id="s-repo" placeholder="t.ex. relation-data" autocomplete="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="s-token" placeholder="github_pat_…" autocomplete="off">
+  <p class="soft" style="margin-top:8px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge den <b style="color:var(--ink)">Contents: Read and write</b> på just det repot. Använd samma uppgifter på din partners enhet och på datorn.</p>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="s-save">Spara &amp; synka</button>
+    <button class="btn ghost" id="s-clear">Koppla från</button>
+  </div>
+  <button class="sheet-close" id="s-close">Stäng</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>✨ AI-funktioner</h3>
+  <p class="soft" style="margin-bottom:10px">AI-svaren görs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt i din enhet och följer inte med i säkerhetskopior. Varje svar kostar några ören från ditt API-saldo.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='relationshjalp_v1';
+var AI_KEY='relationshjalp_ai_key';
+var state={
+  people:{me:{name:'Jag',emoji:'🌿',needs:['Lugn och tystnad','Att få vara nära utan krav','En kram utan ord'],calm:['Hörlurar på','Dimma ljuset','Filt och te','Promenad utan mål'],contacts:['Min partner','En vän jag litar på','Vårdcentral / 1177']},
+         partner:{name:'Partner',emoji:'💛',needs:['Att få veta att det inte är mitt fel','Egentid en stund','Att vi pratar imorgon istället'],calm:['Ligga ner','Lyssna på musik','Egen tid i ett rum','Något att äta'],contacts:['Min partner','En nära vän','1177']}},
+  active:'me',
+  days:{},
+  temp:{},
+  goals:[],
+  xp:0,
+  meetings:[],
+  memories:[],
+  wheel:{},
+  tarot:null,
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var pushTimer=null;
+function save(){saveLocal();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}}
+
+// ── GitHub-synk (samma mönster som jobb-appen / "Appkollen") ──
+var SYNC_KEY='relationshjalp_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/relationshjalp-data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sync-badge'+(st==='ok'?' ok':st==='err'?' err':st==='load'?' load':'');}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){
+      var keepActive=state.active,keepTheme=state.theme;
+      state=Object.assign(state,data);
+      state.active=keepActive;state.theme=keepTheme;
+      saveLocal();renderAll();applyTheme();
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(Object.assign({},state,{updated:new Date().toISOString()})));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json();
+  }).then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var other=function(id){return id==='me'?'partner':'me';};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+
+function ensurePerson(id){
+  var p=state.people[id];
+  p.needs=p.needs||[];p.calm=p.calm||[];p.contacts=p.contacts||[];
+  return p;
+}
+function checkin(id,k){
+  k=k||todayKey();
+  if(!state.days[k])state.days[k]={};
+  if(!state.days[k][id])state.days[k][id]={mood:null,energy:null,social:60,love:[],sstate:[],note:'',saved:false};
+  var c=state.days[k][id];c.love=c.love||[];c.sstate=c.sstate||[];
+  return c;
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var a=document.querySelectorAll('.sheet');for(var i=0;i<a.length;i++)a[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── XP / nivåer ───────────────────────────────────────
+var LEVELS=[[0,'🌱','Nyförälskad'],[150,'🌷','Teamwork'],[400,'🌳','Livspartner'],[800,'⭐','Soulmate']];
+function levelOf(xp){var L=LEVELS[0];for(var i=0;i<LEVELS.length;i++){if(xp>=LEVELS[i][0])L=LEVELS[i];}return L;}
+function addXP(n){state.xp=(state.xp||0)+n;save();renderLevel();}
+function renderLevel(){
+  var xp=state.xp||0,cur=levelOf(xp),idx=LEVELS.indexOf(cur),nx=LEVELS[idx+1];
+  document.getElementById('lvl-badge').textContent=cur[1];
+  document.getElementById('lvl-name').textContent=cur[2];
+  document.getElementById('lvl-xp').textContent=xp+' XP';
+  var fill,info;
+  if(nx){var span=nx[0]-cur[0];fill=Math.round((xp-cur[0])/span*100);info=(nx[0]-xp)+' XP till '+nx[1]+' '+nx[2];}
+  else{fill=100;info='Högsta nivån — ni är ett riktigt team. ⭐';}
+  document.getElementById('lvl-fill').style.width=fill+'%';
+  document.getElementById('lvl-next').textContent=info;
+}
+
+// ── Vem loggar ────────────────────────────────────────
+function renderWho(){
+  ensurePerson('me');ensurePerson('partner');
+  var p=state.people[state.active];
+  document.getElementById('who-name').textContent=p.emoji+' '+p.name;
+}
+document.getElementById('who-switch').onclick=document.getElementById('who-name').onclick=function(){
+  state.active=other(state.active);save();renderWho();renderToday();
+};
+
+// ── Check-in (Idag) ───────────────────────────────────
+var MOODS=['😊','😐','😔','😡','😴'];
+var LOVE=['Närhet','Bekräftelse','Hjälp','Tid tillsammans','Gåvor'];
+var STATES=['Vill prata','Behöver egentid','Överstimulerad','Socialt slut','Allt är bra'];
+function renderCheckin(){
+  var c=checkin(state.active);
+  var mr=document.getElementById('mood-row');
+  mr.innerHTML=MOODS.map(function(m){return '<button data-m="'+m+'" class="'+(c.mood===m?'sel':'')+'">'+m+'</button>';}).join('');
+  Array.prototype.forEach.call(mr.children,function(b){b.onclick=function(){c.mood=b.dataset.m;save();renderCheckin();renderCrisis();};});
+  var er=document.getElementById('energy-row');
+  var EN=[['green','🟢 Grön'],['yellow','🟡 Gul'],['red','🔴 Röd']];
+  er.innerHTML=EN.map(function(e){return '<button data-v="'+e[0]+'" class="'+(c.energy===e[0]?'sel':'')+'">'+e[1]+'</button>';}).join('');
+  Array.prototype.forEach.call(er.children,function(b){b.onclick=function(){c.energy=b.dataset.v;save();renderCheckin();renderCrisis();};});
+  document.getElementById('soc-range').value=c.social;
+  document.getElementById('soc-fill').style.width=c.social+'%';
+  document.getElementById('soc-b').textContent=c.social+'%';
+  document.getElementById('soc-val').textContent=c.social;
+  var lc=document.getElementById('love-chips');
+  lc.innerHTML=LOVE.map(function(l){return '<button class="chip '+(c.love.indexOf(l)>-1?'sel':'')+'" data-l="'+l+'">'+l+'</button>';}).join('');
+  Array.prototype.forEach.call(lc.children,function(b){b.onclick=function(){var l=b.dataset.l,i=c.love.indexOf(l);if(i>-1)c.love.splice(i,1);else c.love.push(l);save();renderCheckin();};});
+  var sc=document.getElementById('state-chips');
+  sc.innerHTML=STATES.map(function(l){return '<button class="chip '+(c.sstate.indexOf(l)>-1?'sel':'')+'" data-l="'+l+'">'+l+'</button>';}).join('');
+  Array.prototype.forEach.call(sc.children,function(b){b.onclick=function(){var l=b.dataset.l,i=c.sstate.indexOf(l);if(i>-1)c.sstate.splice(i,1);else c.sstate.push(l);save();renderCheckin();renderCrisis();};});
+  document.getElementById('ci-note').value=c.note||'';
+  document.getElementById('ci-save').textContent=c.saved?'Uppdatera dagens check-in ✓':'Spara dagens check-in';
+}
+document.getElementById('soc-range').oninput=function(e){var c=checkin(state.active);c.social=+e.target.value;document.getElementById('soc-fill').style.width=c.social+'%';document.getElementById('soc-b').textContent=c.social+'%';document.getElementById('soc-val').textContent=c.social;save();};
+document.getElementById('ci-note').oninput=function(e){checkin(state.active).note=e.target.value;save();};
+document.getElementById('ci-save').onclick=function(){
+  var c=checkin(state.active);
+  if(!c.saved){addXP(10);}
+  c.saved=true;save();renderCheckin();renderOverview();
+};
+
+// ── Krisläge ──────────────────────────────────────────
+function isHeavy(c){return c&&(c.mood==='😔'||c.mood==='😡'||c.energy==='red'||c.sstate.indexOf('Socialt slut')>-1||c.sstate.indexOf('Överstimulerad')>-1);}
+function renderCrisis(){
+  var c=checkin(state.active);
+  document.getElementById('crisis-banner').classList.toggle('show',isHeavy(c));
+}
+function listBlock(arr){
+  if(!arr.length)return '<div class="empty-msg">Inget tillagt än — tryck Ändra.</div>';
+  return arr.map(function(t){return '<div class="row"><span class="t">'+esc(t)+'</span></div>';}).join('');
+}
+function openCrisis(){
+  var p=ensurePerson(state.active);
+  document.getElementById('crisis-who').textContent='För '+p.name+'. Det här plockade '+p.name+' fram i lugnt väder — luta dig mot det nu.';
+  document.getElementById('crisis-needs').innerHTML=listBlock(p.needs);
+  document.getElementById('crisis-calm').innerHTML=listBlock(p.calm);
+  document.getElementById('crisis-contacts').innerHTML=listBlock(p.contacts);
+  openSheet('crisis-sheet');
+}
+document.getElementById('open-crisis').onclick=openCrisis;
+document.getElementById('crisis-close').onclick=closeSheets;
+document.getElementById('ed-needs').onclick=function(){openListEditor('needs','Vad jag brukar behöva');};
+document.getElementById('ed-calm').onclick=function(){openListEditor('calm','Lugna aktiviteter');};
+document.getElementById('ed-contacts').onclick=function(){openListEditor('contacts','Trygghetspersoner');};
+
+// ── Partneröversikt ───────────────────────────────────
+function latestCheckin(id){
+  var keys=Object.keys(state.days).filter(function(k){return state.days[k][id]&&state.days[k][id].saved;}).sort();
+  if(!keys.length)return null;
+  var k=keys[keys.length-1];return {c:state.days[k][id],k:k};
+}
+var ENERGY_TXT={green:'God energi',yellow:'Lite låg',red:'Låg energi'};
+function renderOverview(){
+  var pid=other(state.active),p=ensurePerson(pid),box=document.getElementById('partner-ov');
+  var L=latestCheckin(pid);
+  if(!L){box.innerHTML='<div class="ov-head"><span class="ov-emoji">'+p.emoji+'</span><span class="ov-name">'+esc(p.name)+'</span></div><div class="empty-msg">'+esc(p.name)+' har inte gjort någon check-in än. Byt person högst upp för att logga åt '+esc(p.name)+'.</div>';return;}
+  var c=L.c,today=L.k===todayKey();
+  var grid='<div class="ov-grid">';
+  grid+='<div class="ov-cell"><div class="k">Humör</div><div class="v">'+(c.mood||'–')+'</div></div>';
+  grid+='<div class="ov-cell"><div class="k">Energi</div><div class="v">'+(c.energy?'<span class="dot '+c.energy+'"></span> '+ENERGY_TXT[c.energy]:'–')+'</div></div>';
+  grid+='<div class="ov-cell"><div class="k">Socialt batteri</div><div class="v">'+c.social+'%</div></div>';
+  grid+='<div class="ov-cell"><div class="k">Önskar</div><div class="v">'+(c.sstate.length?esc(c.sstate.join(', ')):'–')+'</div></div>';
+  grid+='</div>';
+  var msg='';
+  var bits=[];
+  if(c.energy==='red')bits.push('låg energi');else if(c.energy==='yellow')bits.push('lite låg energi');
+  if(c.sstate.indexOf('Behöver egentid')>-1)bits.push('önskar egentid');
+  if(c.sstate.indexOf('Socialt slut')>-1)bits.push('är socialt slut');
+  if(c.sstate.indexOf('Vill prata')>-1)bits.push('vill gärna prata');
+  if(c.love.length)bits.push('behöver '+c.love.slice(0,2).join(' och ').toLowerCase());
+  if(bits.length)msg='“'+p.name+' '+bits.join(' och ')+' idag.”';
+  else msg='“'+p.name+' har checkat in'+(today?' idag':' senast '+L.k)+'.”';
+  if(c.note)msg+='\n— '+esc(c.note);
+  box.innerHTML='<div class="ov-head"><span class="ov-emoji">'+p.emoji+'</span><span class="ov-name">'+esc(p.name)+'</span><span class="soft" style="margin-left:auto">'+(today?'idag':L.k)+'</span></div>'+grid+'<div class="ov-msg">'+msg+'</div>';
+}
+
+// ── Relationstemperatur ───────────────────────────────
+var TEMP_Q={
+  yellow:'<b>Något skaver.</b> Försök sätta ord på det innan det växer:<br>• Vad är det jag egentligen reagerar på?<br>• Vad behöver jag — och vad behöver min partner?<br>• När passar det att prata lugnt?',
+  red:'<b>Vi behöver prata om något viktigt.</b> Mjuka frågor att börja med:<br>• ”Jag vill berätta hur jag känner — har du ork nu eller ikväll?”<br>• Vad hände, och vad kände jag då?<br>• Vad önskar jag framåt?'
+};
+function renderTemp(){
+  var k=todayKey();state.temp[k]=state.temp[k]||{};
+  var mine=state.temp[k][state.active],theirs=state.temp[k][other(state.active)];
+  var row=document.getElementById('temp-row');
+  Array.prototype.forEach.call(row.children,function(b){b.classList.toggle('sel',b.dataset.v===mine);b.onclick=function(){state.temp[k][state.active]=b.dataset.v;save();renderTemp();};});
+  var ps=ensurePerson(other(state.active)).name;
+  var st='';
+  if(theirs)st+=ps+' markerade '+({green:'🟢 grönt',yellow:'🟡 gult',red:'🔴 rött'}[theirs])+' idag. ';
+  if(!mine&&!theirs)st='Ingen har markerat idag än.';
+  document.getElementById('temp-status').textContent=st;
+  var help=document.getElementById('temp-help'),worst=[mine,theirs].indexOf('red')>-1?'red':([mine,theirs].indexOf('yellow')>-1?'yellow':null);
+  if(worst){help.style.display='block';document.getElementById('temp-q').innerHTML=TEMP_Q[worst];}
+  else help.style.display='none';
+}
+document.getElementById('temp-to-coach').onclick=function(){go('talk');document.getElementById('coach-in').focus();};
+
+// ── AI ────────────────────────────────────────────────
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function aiCall(prompt,maxTok){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||700,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI</span>'+esc(t)+'</div>';}
+function runAi(btn,outEl,prompt,maxTok){
+  var orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  aiCall(prompt,maxTok).then(function(t){outEl.innerHTML=aiBox(t);}).catch(function(e){if(e.message!=='NOKEY')outEl.innerHTML='<div class="soft" style="margin-top:8px;color:var(--red)">Kunde inte hämta svar: '+esc(e.message)+'</div>';}).then(function(){btn.textContent=orig;btn.disabled=false;});
+}
+document.getElementById('ai-key').value=getAiKey();
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+
+// ── Coach ─────────────────────────────────────────────
+var COACH={
+  reframe:'Du är en varm, trygg relationscoach. Personen skriver hur de känner. Omformulera deras budskap som ett snällt jag-budskap på svenska som går att säga till partnern utan att anklaga. Ge 1–2 varianter, högst 90 ord totalt, inga rubriker.',
+  conflict:'Du är en varm, klok relationscoach. Hjälp personen förstå konflikten på svenska: vad kan ligga bakom hos båda, utan att ta parti. Högst 140 ord, mjuk ton, avsluta med en konkret nästa-steg-fråga.',
+  compromise:'Du är en lösningsfokuserad relationscoach. Föreslå på svenska 2–3 konkreta kompromisser eller överenskommelser utifrån situationen. Punktlista, kort och rimligt, högst 120 ord.',
+  neuro:'Du är en coach med kunskap om ADHD och autism i relationer. Förklara på svenska hur situationen kan bero på neurologiska skillnader snarare än ovilja, och ge båda parter en konkret strategi. Varmt, avdramatiserande, högst 150 ord.'
+};
+Array.prototype.forEach.call(document.querySelectorAll('#view-talk [data-mode]'),function(b){
+  b.onclick=function(){
+    var txt=document.getElementById('coach-in').value.trim();
+    if(!txt){document.getElementById('coach-out').innerHTML='<div class="soft" style="margin-top:8px">Skriv något i rutan först. 💛</div>';return;}
+    runAi(b,document.getElementById('coach-out'),COACH[b.dataset.mode]+'\n\nSituation: '+txt);
+  };
+});
+
+// ── Missförståndstolk ─────────────────────────────────
+var trDir='a2e';
+Array.prototype.forEach.call(document.querySelectorAll('#tr-dir button'),function(b){
+  b.onclick=function(){trDir=b.dataset.v;Array.prototype.forEach.call(document.querySelectorAll('#tr-dir button'),function(x){x.classList.toggle('sel',x===b);});};
+});
+document.getElementById('tr-go').onclick=function(e){
+  var txt=document.getElementById('tr-in').value.trim();
+  if(!txt){document.getElementById('tr-out').innerHTML='<div class="soft" style="margin-top:8px">Klistra in meningen först.</div>';return;}
+  var p=trDir==='a2e'
+    ? 'Översätt på svenska denna raka/sakliga mening till hur den troligen landar känslomässigt hos en partner, och föreslå en mjukare version. Format: ”Kan tolkas som: …” och ”Mjukare: …”. Högst 80 ord.'
+    : 'Översätt på svenska denna känsloladdade mening till ett tydligt, konkret budskap utan dolda förväntningar (bra vid autism/ADHD). Format: ”Det du egentligen vill säga: …” och ”Tydligt: …”. Högst 80 ord.';
+  runAi(e.target,document.getElementById('tr-out'),p+'\n\nMening: '+txt,400);
+};
+
+// ── Andning 4-7-8 ─────────────────────────────────────
+var bt=null;
+function breathStep(){
+  var c=document.getElementById('breath');
+  c.style.transitionDuration='4s';c.style.transform='scale(1.6)';c.textContent='Andas in… 4';
+  bt=setTimeout(function(){c.style.transitionDuration='7s';c.textContent='Håll… 7';
+    bt=setTimeout(function(){c.style.transitionDuration='8s';c.style.transform='scale(1)';c.textContent='Andas ut… 8';
+      bt=setTimeout(breathStep,8000);},7000);},4000);
+}
+document.getElementById('breath-go').onclick=function(){if(bt)clearTimeout(bt);breathStep();};
+document.getElementById('breath-stop').onclick=function(){if(bt)clearTimeout(bt);bt=null;var c=document.getElementById('breath');c.style.transform='scale(1)';c.textContent='Redo';};
+
+// ── Mål ───────────────────────────────────────────────
+function renderGoals(){
+  var el=document.getElementById('goal-list');
+  if(!state.goals.length){el.innerHTML='<div class="empty-msg">Inga mål än. Lägg ett litet, snällt mål.</div>';return;}
+  el.innerHTML=state.goals.map(function(g){
+    var pct=g.target?Math.min(100,Math.round(g.count/g.target*100)):0;
+    return '<div class="goal"><div class="goal-head"><span class="goal-emoji">'+g.emoji+'</span><span class="goal-title">'+esc(g.title)+'</span><span class="goal-cnt">'+g.count+' / '+g.target+'</span></div>'+
+      '<div class="goal-bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="goal-acts"><button data-a="inc" data-id="'+g.id+'">+1</button><button data-a="dec" data-id="'+g.id+'">−1</button><button class="del" data-a="del" data-id="'+g.id+'">Ta bort</button></div></div>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'),function(b){
+    b.onclick=function(){
+      var g=state.goals.filter(function(x){return x.id===b.dataset.id;})[0];if(!g)return;
+      if(b.dataset.a==='inc'){g.count++;addXP(10);if(g.count===g.target)addXP(30);}
+      else if(b.dataset.a==='dec'){g.count=Math.max(0,g.count-1);}
+      else{state.goals=state.goals.filter(function(x){return x.id!==g.id;});}
+      save();renderGoals();
+    };
+  });
+}
+document.getElementById('goal-add').onclick=function(){
+  var v=document.getElementById('goal-in').value.trim();if(!v)return;
+  state.goals.push({id:uid(),title:v,emoji:'🎯',count:0,target:10});
+  document.getElementById('goal-in').value='';save();renderGoals();
+};
+document.getElementById('goal-in').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('goal-add').onclick();});
+
+// ── Dejtplanerare ─────────────────────────────────────
+var dateEnergy='mid',dateBudget='0';
+var DATE_IDEAS={
+  low:['Filmkväll under filten','Tarotkväll – dra ett kort var','Laga något enkelt ihop','Lyssna på en podd tillsammans','Massage 10 min var'],
+  mid:['Promenad + glass','Spelkväll (brädspel eller tv-spel)','Picknick på balkongen','Måla/pyssla tillsammans','Baka något gott'],
+  high:['Utflykt till naturen','Prova en ny restaurang','Dansa i köket – egen spellista','Cykeltur till nytt ställe','Mini-äventyr: ny stadsdel']
+};
+function setSeg(group,v,onset){Array.prototype.forEach.call(document.querySelectorAll('#'+group+' button'),function(b){b.onclick=function(){onset(b.dataset.v);Array.prototype.forEach.call(document.querySelectorAll('#'+group+' button'),function(x){x.classList.toggle('sel',x===b);});};});}
+setSeg('date-energy',null,function(v){dateEnergy=v;});
+setSeg('date-budget',null,function(v){dateBudget=v;});
+document.getElementById('date-local').onclick=function(){
+  var ideas=DATE_IDEAS[dateEnergy].slice();
+  var picks=[];for(var i=0;i<3&&ideas.length;i++){picks.push(ideas.splice(Math.floor(Math.random()*ideas.length),1)[0]);}
+  document.getElementById('date-out').innerHTML='<div class="qhint"><b>Förslag ikväll:</b><br>• '+picks.map(esc).join('<br>• ')+'</div>';
+  document.getElementById('date-log').style.display='block';
+};
+document.getElementById('date-ai').onclick=function(e){
+  var bud=['gratis','liten budget','lite större budget'][+dateBudget];
+  var en={low:'låg energi',mid:'mellan energi',high:'hög energi'}[dateEnergy];
+  var intr=document.getElementById('date-int').value.trim();
+  var p='Du är en varm idéspruta för par. Ge 3 konkreta dejtidéer på svenska anpassade för '+en+' och '+bud+'.'+(intr?' Intressen: '+intr+'.':'')+' Tänk på par där någon kan ha ADHD/autism eller vara trött. Punktlista, en mening per idé, högst 90 ord.';
+  runAi(e.target,document.getElementById('date-out'),p,400);
+  document.getElementById('date-log').style.display='block';
+};
+document.getElementById('date-log').onclick=function(){addXP(25);this.textContent='Loggad 💕 +25 XP';this.disabled=true;var b=this;setTimeout(function(){b.textContent='Vi gjorde en dejt — logga (+25 XP)';b.disabled=false;b.style.display='none';},1600);};
+
+// ── Veckomöte ─────────────────────────────────────────
+function renderMeetings(){
+  var el=document.getElementById('wm-hist');
+  if(!state.meetings.length){el.innerHTML='';return;}
+  el.innerHTML='<div class="section-title" style="font-size:13px">Tidigare möten</div>'+state.meetings.slice().reverse().slice(0,6).map(function(m){
+    return '<div class="row"><span class="t">'+esc(m.good||m.next||'Veckomöte')+'</span><time>'+m.date+'</time><button data-id="'+m.id+'">×</button></div>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'),function(b){b.onclick=function(){state.meetings=state.meetings.filter(function(x){return x.id!==b.dataset.id;});save();renderMeetings();};});
+}
+document.getElementById('wm-save').onclick=function(){
+  var g=document.getElementById('wm-good').value.trim(),h=document.getElementById('wm-hard').value.trim(),
+      m=document.getElementById('wm-more').value.trim(),n=document.getElementById('wm-next').value.trim();
+  if(!g&&!h&&!m&&!n){document.getElementById('wm-out').innerHTML='<div class="soft" style="margin-top:8px">Fyll i minst en ruta.</div>';return;}
+  state.meetings.push({id:uid(),date:todayKey(),good:g,hard:h,more:m,next:n});
+  addXP(40);save();renderMeetings();
+  ['wm-good','wm-hard','wm-more','wm-next'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('wm-out').innerHTML='<div class="soft" style="margin-top:8px">Sparat. +40 XP 💛</div>';
+};
+document.getElementById('wm-ai').onclick=function(e){
+  var recent=state.meetings.slice(-5);
+  if(!recent.length){document.getElementById('wm-out').innerHTML='<div class="soft" style="margin-top:8px">Spara minst ett möte först.</div>';return;}
+  var lines=recent.map(function(m){return '['+m.date+'] Bra: '+(m.good||'-')+' | Svårt: '+(m.hard||'-')+' | Mer av: '+(m.more||'-')+' | Nästa: '+(m.next||'-');}).join('\n');
+  var p='Du är en varm relationscoach. Sammanfatta dessa veckomöten på svenska: lyft framsteg, peka mjukt på återkommande mönster, och ge 2 konkreta förslag. Högst 150 ord, ingen pekpinne.\n\nMöten:\n'+lines;
+  runAi(e.target,document.getElementById('wm-out'),p);
+};
+
+// ── Kärleksbank ───────────────────────────────────────
+function renderMem(){
+  var el=document.getElementById('mem-list');
+  document.getElementById('mem-count').textContent=state.memories.length?'('+state.memories.length+')':'';
+  if(!state.memories.length){el.innerHTML='<div class="empty-msg">Inga minnen sparade än. Börja smått — ett fint ögonblick.</div>';return;}
+  el.innerHTML=state.memories.slice().sort(function(a,b){return (b.fav?1:0)-(a.fav?1:0);}).map(function(m){
+    return '<div class="mem"><div class="mem-top"><span class="mem-title">'+esc(m.title)+'</span>'+(m.when?'<span class="mem-date">'+m.when+'</span>':'')+'<button class="star '+(m.fav?'on':'')+'" data-a="fav" data-id="'+m.id+'">★</button><button class="mem-x" data-a="del" data-id="'+m.id+'">×</button></div>'+(m.note?'<div class="mem-note">'+esc(m.note)+'</div>':'')+'</div>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('button'),function(b){b.onclick=function(){
+    var m=state.memories.filter(function(x){return x.id===b.dataset.id;})[0];if(!m)return;
+    if(b.dataset.a==='fav')m.fav=!m.fav;else state.memories=state.memories.filter(function(x){return x.id!==m.id;});
+    save();renderMem();
+  };});
+}
+document.getElementById('mem-add').onclick=function(){
+  var t=document.getElementById('mem-title').value.trim();if(!t){return;}
+  state.memories.push({id:uid(),title:t,when:document.getElementById('mem-when').value,note:document.getElementById('mem-note').value.trim(),fav:false});
+  addXP(15);save();renderMem();renderMemPrompt();
+  document.getElementById('mem-title').value='';document.getElementById('mem-when').value='';document.getElementById('mem-note').value='';
+};
+function renderMemPrompt(){
+  var el=document.getElementById('mem-prompt');
+  if(state.memories.length<2){el.classList.remove('show');return;}
+  var m=state.memories[Math.floor(Math.random()*state.memories.length)];
+  el.innerHTML='Kommer du ihåg <i>'+esc(m.title)+'</i>'+(m.when?' ('+m.when+')':'')+'? '+(m.note?esc(m.note):'En fin stund värd att minnas.');
+  el.classList.add('show');
+}
+
+// ── Relations-tarot ───────────────────────────────────
+var TAROT=[
+  {e:'🌙',n:'Lyssnandet',q:'Vad behöver vi höra utan att genast svara eller fixa?'},
+  {e:'🔥',n:'Passionen',q:'Vad tänder oss — och hur ger vi det mer plats?'},
+  {e:'🌿',n:'Lugnet',q:'Var hittar vi ro tillsammans utan krav?'},
+  {e:'🪞',n:'Speglingen',q:'Vad i den andra påminner om något jag själv behöver?'},
+  {e:'⚖️',n:'Balansen',q:'Vad bär vi olika mycket av just nu?'},
+  {e:'🌧️',n:'Stormen',q:'Vilket gammalt sår tar plats i konflikten?'},
+  {e:'🕊️',n:'Förlåtelsen',q:'Vad är jag redo att släppa taget om?'},
+  {e:'🔑',n:'Tilliten',q:'Vad skulle få mig att känna mig tryggare?'},
+  {e:'🌱',n:'Växten',q:'Vad i vår relation vill växa om vi vattnar det?'},
+  {e:'🎭',n:'Masken',q:'Vad döljer jag som jag egentligen vill visa?'},
+  {e:'🤲',n:'Givandet',q:'Hur vill den andra bli älskad — på riktigt?'},
+  {e:'🧭',n:'Riktningen',q:'Vart är vi på väg — och vill vi dit båda två?'},
+  {e:'🛌',n:'Vilan',q:'Var behöver någon av oss få landa och ladda?'},
+  {e:'💬',n:'Orden',q:'Vad har vi inte sagt högt än?'},
+  {e:'🌊',n:'Flödet',q:'Vad blir lättare om vi slutar kämpa emot?'},
+  {e:'☀️',n:'Tacksamheten',q:'Vad är jag tacksam för hos dig idag?'}
+];
+var TPOS=['Mer av','Släpp','Fokus i veckan'];
+function renderTarot(){
+  var deck=document.getElementById('tdeck'),read=document.getElementById('t-read');
+  if(!state.tarot){
+    deck.innerHTML=TPOS.map(function(p){return '<div class="tcol"><div class="pos">'+p+'</div><div class="tcard back"><div class="ce">❦</div><div class="cn">Relations-tarot</div></div></div>';}).join('');
+    read.innerHTML='';document.getElementById('t-ai').style.display='none';document.getElementById('t-aiout').innerHTML='';
+    return;
+  }
+  deck.innerHTML=state.tarot.map(function(ci,i){var c=TAROT[ci];return '<div class="tcol"><div class="pos">'+TPOS[i]+'</div><div class="tcard"><div class="ce">'+c.e+'</div><div class="cn">'+c.n+'</div></div></div>';}).join('');
+  read.innerHTML=state.tarot.map(function(ci,i){var c=TAROT[ci];return '<div class="ti"><b>'+TPOS[i]+' · '+c.n+'</b><div class="q">'+c.q+'</div></div>';}).join('');
+  document.getElementById('t-ai').style.display='block';
+}
+document.getElementById('t-draw').onclick=function(){
+  var idx=[],pool=TAROT.map(function(_,i){return i;});
+  for(var i=0;i<3;i++){idx.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);}
+  state.tarot=idx;save();renderTarot();addXP(5);
+  document.getElementById('t-aiout').innerHTML='';
+};
+document.getElementById('t-ai').onclick=function(e){
+  if(!state.tarot)return;
+  var lines=state.tarot.map(function(ci,i){var c=TAROT[ci];return TPOS[i]+': '+c.n+' — '+c.q;}).join('\n');
+  var p='Du är en varm, jordnära tolkare. Väv ihop dessa tre relations-tarotkort till en sammanhängande reflektion på svenska för ett par att prata om. Högst 150 ord, mjuk ton, avsluta med en fråga att ställa varandra.\n\n'+lines;
+  runAi(e.target,document.getElementById('t-aiout'),p);
+};
+
+// ── Livshjul ──────────────────────────────────────────
+var WHEEL_AREAS=['Kommunikation','Intimitet','Tillit','Vardag','Ekonomi','Framtidsplaner'];
+function renderWheel(){
+  state.wheel=state.wheel||{};
+  document.getElementById('wheel-list').innerHTML=WHEEL_AREAS.map(function(a){
+    var v=state.wheel[a]||5;
+    return '<div class="wheel-row"><span class="wn">'+a+'</span><input type="range" min="1" max="10" value="'+v+'" data-a="'+a+'"><span class="wv" id="wv-'+a+'">'+v+'</span></div>';
+  }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#wheel-list input'),function(inp){
+    inp.oninput=function(){state.wheel[inp.dataset.a]=+inp.value;document.getElementById('wv-'+inp.dataset.a).textContent=inp.value;save();};
+  });
+}
+document.getElementById('wheel-save').onclick=function(){addXP(10);document.getElementById('wheel-out').innerHTML='<div class="soft" style="margin-top:8px">Sparat. +10 XP 💛</div>';};
+document.getElementById('wheel-ai').onclick=function(e){
+  var lines=WHEEL_AREAS.map(function(a){return a+': '+(state.wheel[a]||5)+'/10';}).join('\n');
+  var p='Du är en varm relationscoach. Utifrån denna skattning av relationens livshjul, ge på svenska konkreta förbättringsförslag — börja med det lägsta området. Högst 150 ord, snäll ton, punktlista.\n\n'+lines;
+  runAi(e.target,document.getElementById('wheel-out'),p);
+};
+
+// ── Lista-editor (krislistor) ─────────────────────────
+var listField=null;
+function openListEditor(field,title){
+  listField=field;document.getElementById('list-title').textContent=title;renderListEditor();openSheet('list-sheet');
+}
+function renderListEditor(){
+  var arr=ensurePerson(state.active)[listField];
+  document.getElementById('list-items').innerHTML=arr.map(function(t,i){return '<div class="edit-item"><span>'+esc(t)+'</span><button data-i="'+i+'">×</button></div>';}).join('')||'<div class="empty-msg">Tomt — lägg till nedan.</div>';
+  Array.prototype.forEach.call(document.querySelectorAll('#list-items button'),function(b){b.onclick=function(){arr.splice(+b.dataset.i,1);save();renderListEditor();};});
+}
+document.getElementById('list-add').onclick=function(){
+  var inp=document.getElementById('list-in'),v=inp.value.trim();if(!v)return;
+  ensurePerson(state.active)[listField].push(v);inp.value='';save();renderListEditor();
+};
+document.getElementById('list-in').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('list-add').onclick();});
+document.getElementById('list-close').onclick=function(){closeSheets();openCrisis();};
+
+// ── Profiler ──────────────────────────────────────────
+document.getElementById('open-people').onclick=function(){
+  document.getElementById('p-me-name').value=state.people.me.name;
+  document.getElementById('p-me-emoji').value=state.people.me.emoji;
+  document.getElementById('p-pa-name').value=state.people.partner.name;
+  document.getElementById('p-pa-emoji').value=state.people.partner.emoji;
+  openSheet('people-sheet');
+};
+document.getElementById('people-save').onclick=function(){
+  state.people.me.name=document.getElementById('p-me-name').value.trim()||'Jag';
+  state.people.me.emoji=document.getElementById('p-me-emoji').value.trim()||'🌿';
+  state.people.partner.name=document.getElementById('p-pa-name').value.trim()||'Partner';
+  state.people.partner.emoji=document.getElementById('p-pa-emoji').value.trim()||'💛';
+  save();closeSheets();renderWho();renderOverview();renderTemp();
+};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='relationshjalp-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.people){state=Object.assign(state,d);save();renderAll();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Synk-UI ───────────────────────────────────────────
+function setSyncStatus(msg,type){
+  var el=document.getElementById('sync-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'var(--red-soft)':'var(--panel2)';
+  el.style.color='var(--ink)';el.textContent=msg;
+}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('s-owner').value=sync.owner;
+  document.getElementById('s-repo').value=sync.repo;
+  document.getElementById('s-token').value=sync.token;
+  document.getElementById('sync-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('s-close').onclick=closeSheets;
+document.getElementById('s-clear').onclick=function(){
+  sync.owner='';sync.repo='';sync.token='';sync.sha=null;
+  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  document.getElementById('s-owner').value='';document.getElementById('s-repo').value='';document.getElementById('s-token').value='';
+  setBadge('','Lokal');setSyncStatus('Frånkopplad. Datan finns kvar lokalt.','ok');
+};
+document.getElementById('s-save').onclick=function(){
+  sync.owner=document.getElementById('s-owner').value.trim();
+  sync.repo=document.getElementById('s-repo').value.trim();
+  sync.token=document.getElementById('s-token').value.trim();
+  if(!syncOn()){setSyncStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();sync.sha=null;
+  setSyncStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){setSyncStatus('✓ Ansluten! Hämtar er gemensamma data…','ok');return ghPull();}
+    setSyncStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1100);})
+   .catch(function(e){setSyncStatus('Fel: '+e.message+'. Kontrollera användarnamn, reponamn och att token har Contents-behörighet.','err');});
+};
+document.getElementById('sync-now').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto',h=new Date().getHours(),dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#251E1C':'#F6EEEA';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Nav ───────────────────────────────────────────────
+function go(v){
+  Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.toggle('active',x.dataset.v===v);});
+  Array.prototype.forEach.call(document.querySelectorAll('.view'),function(x){x.classList.remove('active');});
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='today'){renderToday();}
+  if(v==='us'){renderLevel();renderGoals();renderMeetings();}
+  if(v==='mem'){renderMem();renderMemPrompt();}
+  if(v==='mirror'){renderTarot();renderWheel();}
+}
+Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(b){b.onclick=function(){go(b.dataset.v);};});
+
+// ── Init ──────────────────────────────────────────────
+function renderToday(){renderCheckin();renderCrisis();renderOverview();renderTemp();}
+function renderAll(){renderWho();renderToday();renderLevel();renderGoals();renderMeetings();renderMem();renderMemPrompt();renderTarot();renderWheel();}
+renderWho();
+renderToday();
+renderLevel();
+applyTheme();
+setInterval(applyTheme,60000);
+loadSync();
+if(syncOn()){setBadge('','Lokal');ghPull();}
+</script>
+</body>
+</html>
