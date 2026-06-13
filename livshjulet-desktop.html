@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Livshjulet — Desktop</title>
+<style>
+
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--sun:#D9C27E;
+  --green:#7A8B6F;--yellow:#C7B06A;--red:#C08A7E;
+  --navbg:rgba(238,241,235,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.sync-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:14px}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--moss-soft);color:var(--moss);font-weight:600;letter-spacing:.04em}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sync-row .btn.ghost{padding:5px 9px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn:disabled{opacity:.5}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+textarea{resize:vertical;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.view{display:none}
+.view.active{display:block}
+
+/* Hjul */
+.wheel-wrap{display:block;text-align:center}
+.wheel-wrap svg{width:100%;max-width:340px;height:auto;display:block;margin:0 auto}
+.wheel-stats{display:flex;justify-content:space-around;margin-top:6px;text-align:center}
+.wheel-stats .big{font-family:Georgia,serif;font-size:26px;color:var(--moss)}
+.wheel-stats .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* Område-rad med poängväljare 1–9 */
+.area-row{padding:11px 0;border-top:1px solid var(--line)}
+.area-row:first-child{border-top:none}
+.area-head{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.area-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.area-name{font-size:13px;flex:1}
+.area-val{font-family:Georgia,serif;font-size:16px;color:var(--moss);min-width:18px;text-align:right}
+.scorepick{display:flex;gap:4px}
+.scorepick button{flex:1;height:30px;border-radius:8px;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;padding:0}
+.scorepick button.sel{background:var(--moss);border-color:var(--moss);color:#fff;font-weight:600}
+
+/* Mål-block */
+.goal-block{padding:10px 0;border-top:1px solid var(--line)}
+.goal-block:first-child{border-top:none}
+.goal-block .gh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.goal-block .gh b{font-size:13px}
+.goal-block textarea{font-size:13px}
+
+/* Drömmar */
+.dream-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.dream-item:first-child{border-top:none}
+.dream-item span{flex:1}
+.dream-item button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row button{border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini-grid label{margin-top:0}
+
+/* År */
+.month-chips{display:flex;flex-wrap:wrap;gap:7px}
+.month-chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit}
+.month-chip.active{background:var(--moss);border-color:var(--moss);color:#fff}
+.month-chip small{display:block;font-size:9px;color:var(--muted);margin-top:1px}
+.month-chip.active small{color:rgba(255,255,255,.85)}
+.bars{display:flex;align-items:flex-end;gap:4px;height:120px;padding-top:6px}
+.bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;height:100%}
+.bars .bar i{width:100%;background:var(--moss-soft);border:1px solid var(--moss);border-radius:4px 4px 0 0;display:block;min-height:2px}
+.bars .bar em{font-size:9px;color:var(--muted);font-style:normal}
+
+/* AI */
+.ai-box{border:1px solid var(--moss-soft);background:linear-gradient(160deg,#F4F7EF,#EAEFE2);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.65;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--moss);font-size:12px;display:block;margin-bottom:5px}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:8px;line-height:1.6}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 1px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--moss);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --green:#8FA383;--yellow:#C2AC6B;--red:#C08A7E;--navbg:rgba(34,37,31,.95);
+}
+html[data-theme=dark] .ai-box{background:linear-gradient(160deg,#2E332B,#272B24)}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+
+/* ── Desktop-överlägg ───────────────────────────────── */
+body{background:var(--bg)}
+.layout{display:flex;min-height:100vh;max-width:1140px;margin:0 auto}
+.sidebar{width:230px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);padding:26px 16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.sidebar h1.brand{text-align:left;font-size:22px;margin:0 0 2px}
+.sidebar .brand-sub{text-align:left;margin-bottom:14px}
+.sidebar .sync-row{flex-direction:column;align-items:stretch;gap:6px;margin-bottom:18px}
+.sidebar .sync-row .btn.ghost{text-align:left;padding:7px 10px}
+.sidebar .sp-badge{align-self:flex-start}
+.nav{position:static;display:flex;flex-direction:column;gap:2px;background:none;border:none;backdrop-filter:none;max-width:none;padding:0;margin:0}
+.nav button{flex:none;text-align:left;font-size:14px;padding:10px 12px;border-radius:11px;display:flex;align-items:center;gap:11px;color:var(--muted)}
+.nav button span{display:inline;font-size:17px;margin:0}
+.nav button.active{background:var(--moss-soft);color:var(--moss)}
+.main{flex:1;padding:30px 36px 64px;min-width:0}
+.section-title{margin-top:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.grid2 .section-title:first-child{margin-top:0}
+#goal-blocks{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+.dreams-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dreams-grid .section-title:nth-child(1),.dreams-grid .section-title:nth-child(2){margin-top:0}
+.wheel-wrap svg{max-width:400px}
+.theme-btn{position:fixed;top:18px;right:18px;right:max(18px,calc(50vw - 552px))}
+.foot{justify-content:flex-start}
+/* Sheets → centrerade dialoger */
+.sheet-bg{align-items:center;justify-content:center}
+.sheet{position:fixed;left:50%;top:50%;right:auto;bottom:auto;transform:translate(-50%,-50%) scale(.96);width:470px;max-width:92vw;border-radius:18px;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;box-shadow:0 24px 70px rgba(0,0,0,.28);max-height:88vh}
+.sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.sheet-close{position:static}
+@media(max-width:760px){.grid2,#goal-blocks,.dreams-grid{grid-template-columns:1fr}.sidebar{width:200px}}
+
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <h1 class="brand">&#10022; Livshjulet</h1>
+  <div class="brand-sub" id="brand-sub">Ditt nul&auml;ge</div>
+  <div class="sync-row">
+    <span id="sync-badge" class="sp-badge offline">Lokal</span>
+    <button class="btn ghost" id="sync-btn" title="H&auml;mta senaste">&#8635; Synka</button>
+    <button class="btn ghost" id="sync-settings" title="Synkinst&auml;llningar">&#9881; Synk</button>
+  </div>
+  <div class="nav">
+    <button class="active" data-v="now"><span>&#9737;</span>Nul&auml;ge</button>
+    <button data-v="goals"><span>&#9678;</span>M&aring;l</button>
+    <button data-v="dreams"><span>&#10022;</span>Dr&ouml;mmar</button>
+    <button data-v="year"><span>&#9716;</span>&Aring;r</button>
+    <button data-v="coach"><span>&#10024;</span>Coach</button>
+  </div>
+</aside>
+<main class="main">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">&#9680;</button>
+
+<!-- NULAGE -->
+<div class="view active" id="view-now">
+  <div class="grid2">
+    <div class="card-panel">
+      <div class="wheel-wrap" id="wheel-now"></div>
+      <div class="wheel-stats">
+        <div><div class="big" id="now-avg">&ndash;</div><div class="lbl">Snitt</div></div>
+        <div><div class="big" id="now-low">&ndash;</div><div class="lbl">L&auml;gst nu</div></div>
+        <div><div class="big" id="now-high">&ndash;</div><div class="lbl">Starkast</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title" style="margin-top:0">Skatta varje omr&aring;de (1&ndash;9)</div>
+      <div class="card-panel" id="now-areas"></div>
+    </div>
+  </div>
+  <div class="card-panel" style="margin-top:18px">
+    <div class="btn-row" style="max-width:320px"><button class="btn fill" id="now-ai">&#10024; Coacha mitt hjul</button></div>
+    <div id="now-ai-box"></div>
+  </div>
+  <div class="foot">
+    <button id="open-name">Projektnamn &amp; &aring;r</button>
+    <button id="export-btn">S&auml;kerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy" style="text-align:left">Allt sparas lokalt och synkas till ditt privata repo. Livshjulet &auml;r ett reflektionsverktyg &mdash; inte v&aring;rd eller terapi.</div>
+</div>
+
+<!-- MAL -->
+<div class="view" id="view-goals">
+  <div class="section-title" style="margin-top:0">M&aring;ls&auml;ttning</div>
+  <div class="card-panel"><div class="soft">T&auml;nk igenom varje omr&aring;de p&aring; hjulet. Skriv en kort mening om hur en <b style="color:var(--ink)">10:a</b> skulle se ut f&ouml;r dig. Det blir din riktning &mdash; och det AI-coachen jobbar mot.</div></div>
+  <div class="card-panel" id="goal-blocks" style="margin-top:14px"></div>
+</div>
+
+<!-- DROMMAR -->
+<div class="view" id="view-dreams">
+  <div class="section-title" style="margin-top:0">Dr&ouml;mmar f&ouml;r &aring;ret</div>
+  <div class="dreams-grid">
+    <div>
+      <div class="section-title">Personliga dr&ouml;mmar</div>
+      <div class="card-panel">
+        <div id="dream-personal"></div>
+        <div class="add-row"><input type="text" id="dp-in" placeholder="L&auml;gg till en dr&ouml;m&hellip;"><button id="dp-add">+</button></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Jobb</div>
+      <div class="card-panel">
+        <div id="dream-work"></div>
+        <div class="add-row"><input type="text" id="dw-in" placeholder="L&auml;gg till&hellip;"><button id="dw-add">+</button></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Platser att bes&ouml;ka</div>
+      <div class="card-panel">
+        <div id="dream-places"></div>
+        <div class="add-row"><input type="text" id="dpl-in" placeholder="L&auml;gg till en plats&hellip;"><button id="dpl-add">+</button></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Konkreta sifferm&aring;l</div>
+      <div class="card-panel">
+        <div class="mini-grid">
+          <div><label>Viktm&aring;l</label><input type="text" id="g-weight" placeholder="t.ex. 68 kg"></div>
+          <div><label>Steg / dag</label><input type="text" id="g-steps" placeholder="t.ex. 8000"></div>
+        </div>
+        <label>Planerat sparande</label><input type="text" id="g-savings" placeholder="t.ex. 2000 kr/m&aring;n">
+      </div>
+    </div>
+  </div>
+  <div class="section-title">Ny&aring;rsl&ouml;ften</div>
+  <div class="card-panel">
+    <div id="dream-res"></div>
+    <div class="add-row"><input type="text" id="dr-in" placeholder="L&auml;gg till l&ouml;fte&hellip;"><button id="dr-add">+</button></div>
+  </div>
+</div>
+
+<!-- AR -->
+<div class="view" id="view-year">
+  <div class="section-title" style="margin-top:0">&Aring;rssp&aring;rning</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Skatta hjulet en g&aring;ng i m&aring;naden och f&ouml;lj hur det r&ouml;r sig &ouml;ver &aring;ret.</div>
+    <div class="month-chips" id="month-chips"></div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card-panel">
+      <div class="wheel-wrap" id="wheel-month"></div>
+      <div style="text-align:center" class="soft" id="month-avg"></div>
+    </div>
+    <div>
+      <div class="section-title" id="month-title" style="margin-top:0">Skatta m&aring;naden</div>
+      <div class="card-panel" id="month-areas"></div>
+    </div>
+  </div>
+  <div class="section-title">Snitt per m&aring;nad</div>
+  <div class="card-panel"><div class="bars" id="year-bars"></div></div>
+</div>
+
+<!-- COACH -->
+<div class="view" id="view-coach">
+  <div class="section-title" style="margin-top:0">AI-coach</div>
+  <div class="grid2">
+    <div class="card-panel">
+      <div class="soft">Coachen l&auml;ser ditt nul&auml;ge, dina m&aring;l och dr&ouml;mmar och ger konkreta, sn&auml;lla steg f&ouml;r att h&ouml;ja po&auml;ngen och n&auml;rma dig dina 10:or.</div>
+      <div class="btn-row" style="margin-top:12px"><button class="btn fill" id="coach-plan">&#10024; Veckoplan mot mina m&aring;l</button></div>
+      <div id="coach-plan-box"></div>
+    </div>
+    <div class="card-panel">
+      <div class="section-title" style="margin-top:0">Fokusera ett omr&aring;de</div>
+      <label>V&auml;lj omr&aring;de</label>
+      <select id="coach-area-sel"></select>
+      <button class="btn fill" id="coach-area" style="margin-top:10px;width:100%">&#10024; 3 steg f&ouml;r att h&ouml;ja detta</button>
+      <div id="coach-area-box"></div>
+    </div>
+  </div>
+  <div class="foot"><button id="open-ai">AI-nyckel</button></div>
+</div>
+</main>
+</div>
+
+<!-- Dialoger -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="name-sheet">
+  <h3>Projektnamn &amp; &aring;r</h3>
+  <label>Namn</label><input type="text" id="proj-name" placeholder="t.ex. Projekt Oscarsson">
+  <label>&Aring;r</label><input type="text" id="proj-year" placeholder="t.ex. 2026">
+  <button class="sheet-close" id="name-done">Klar</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>&#9881; Synk via GitHub</h3>
+  <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">Appen l&auml;ser och sparar <b style="color:var(--ink)">livshjulet-data.json</b> i ett <b style="color:var(--ink)">privat</b> GitHub-repo, s&aring; att telefon och dator delar samma hjul. Token sparas bara lokalt p&aring; den h&auml;r enheten. Senast sparade &auml;ndringen vinner.</p>
+  <label>GitHub-anv&auml;ndarnamn</label><input type="text" id="gh-owner" placeholder="dittnamn" autocomplete="off">
+  <label>Privat repo-namn</label><input type="text" id="gh-repo" placeholder="livshjul-data" autocomplete="off">
+  <label>Fine-grained token (Contents: Read and write)</label><input type="password" id="gh-token" placeholder="github_pat_&hellip;" autocomplete="off">
+  <div id="gh-status" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:10px"></div>
+  <div class="btn-row" style="margin-top:10px"><button class="btn fill" id="gh-save">Spara &amp; synka</button></div>
+  <button class="sheet-close" id="gh-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>&#10024; AI-coach</h3>
+  <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">Coachningen g&ouml;rs av Claude via din egen API-nyckel fr&aring;n Anthropic. Skapa en p&aring; <b style="color:var(--ink)">console.anthropic.com</b> &rarr; API keys. Nyckeln sparas bara lokalt och f&ouml;ljer inte med i s&auml;kerhetskopior.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-&hellip;" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px"><button class="btn" id="ai-key-save">Spara</button><button class="btn ghost" id="ai-key-clear">Rensa nyckel</button></div>
+  <button class="sheet-close" id="ai-close">St&auml;ng</button>
+</div>
+
+<script>
+
+// ── Data ──────────────────────────────────────────────
+var AREAS=[
+  ['halsa','Hälsa & form','#7A8B6F'],
+  ['jobb','Jobb & karriär','#9A8B6A'],
+  ['familj','Familj & vänner','#C2A38B'],
+  ['utveckling','Personlig utveckling','#8E9C7E'],
+  ['kreativitet','Kreativitet','#B79B73'],
+  ['ekonomi','Ekonomi','#7E9484'],
+  ['andlighet','Andlighet','#A99AB0'],
+  ['fritid','Fritid & nöje','#C9B27E'],
+  ['hemmiljo','Hemmiljö','#88A0A0'],
+  ['relationer','Relationer','#C08A8A']
+];
+var MONTHS=['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'];
+
+// ── State ─────────────────────────────────────────────
+var KEY='livshjulet_v1';
+function freshScores(){var o={};AREAS.forEach(function(a){o[a[0]]=5;});return o;}
+function freshGoals(){var o={};AREAS.forEach(function(a){o[a[0]]='';});return o;}
+var state={
+  name:'',year:'',
+  start:freshScores(),
+  goals:freshGoals(),
+  dreams:{personal:[],work:[],places:[],weight:'',steps:'',savings:'',resolutions:[]},
+  months:{},
+  ai:{plan:'',area:{}},
+  curMonth:(new Date()).getMonth(),
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+// säkra struktur
+function normalizeState(){
+  state.start=Object.assign(freshScores(),state.start||{});
+  state.goals=Object.assign(freshGoals(),state.goals||{});
+  state.dreams=Object.assign({personal:[],work:[],places:[],weight:'',steps:'',savings:'',resolutions:[]},state.dreams||{});
+  state.months=state.months||{};
+  state.ai=Object.assign({plan:'',area:{}},state.ai||{});
+}
+normalizeState();
+function writeLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function save(){state.updated=new Date().toISOString();writeLocal();schedulePush();}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+// ── Hjälpare ──────────────────────────────────────────
+function avg(sc){var t=0,n=0;AREAS.forEach(function(a){t+=(sc[a[0]]||0);n++;});return n?t/n:0;}
+function monthScores(m){if(!state.months[m])state.months[m]=freshScores();return state.months[m];}
+function hasMonthData(m){return !!state.months[m];}
+
+// ── Hjul (SVG) ────────────────────────────────────────
+function buildWheel(sc){
+  var CX=170,CY=170,MAXR=104,N=AREAS.length,svg='';
+  // ringar
+  for(var k=1;k<=9;k++){
+    svg+='<circle cx="'+CX+'" cy="'+CY+'" r="'+(k/9*MAXR).toFixed(1)+'" fill="none" stroke="var(--line)" stroke-width="1"/>';
+  }
+  // ekrar + etiketter
+  for(var i=0;i<N;i++){
+    var ang=(-90+i*(360/N))*Math.PI/180;
+    var ox=CX+MAXR*Math.cos(ang), oy=CY+MAXR*Math.sin(ang);
+    svg+='<line x1="'+CX+'" y1="'+CY+'" x2="'+ox.toFixed(1)+'" y2="'+oy.toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>';
+    var lx=CX+(MAXR+16)*Math.cos(ang), ly=CY+(MAXR+16)*Math.sin(ang);
+    var anchor=lx<CX-3?'end':(lx>CX+3?'start':'middle');
+    var dy=ly<CY-3?'-1':(ly>CY+3?'9':'3');
+    svg+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" font-size="8" fill="var(--muted)" text-anchor="'+anchor+'" dy="'+dy+'" font-family="-apple-system,sans-serif">'+esc(AREAS[i][1].toUpperCase())+'</text>';
+  }
+  // poäng-polygon
+  var pts='';
+  for(var j=0;j<N;j++){
+    var a2=(-90+j*(360/N))*Math.PI/180;
+    var r=(sc[AREAS[j][0]]||0)/9*MAXR;
+    pts+=(CX+r*Math.cos(a2)).toFixed(1)+','+(CY+r*Math.sin(a2)).toFixed(1)+' ';
+  }
+  svg+='<polygon points="'+pts.trim()+'" fill="var(--moss)" fill-opacity="0.28" stroke="var(--moss)" stroke-width="2" stroke-linejoin="round"/>';
+  // prickar
+  for(var p=0;p<N;p++){
+    var a3=(-90+p*(360/N))*Math.PI/180;
+    var rr=(sc[AREAS[p][0]]||0)/9*MAXR;
+    svg+='<circle cx="'+(CX+rr*Math.cos(a3)).toFixed(1)+'" cy="'+(CY+rr*Math.sin(a3)).toFixed(1)+'" r="3.2" fill="var(--moss)"/>';
+  }
+  return '<svg viewBox="0 0 340 340" role="img" aria-label="Livshjul">'+svg+'</svg>';
+}
+
+// ── Poängväljare-lista ────────────────────────────────
+function buildAreaList(sc,onset){
+  var html='';
+  AREAS.forEach(function(a){
+    var v=sc[a[0]]||0;
+    var pick='';
+    for(var n=1;n<=9;n++){pick+='<button data-k="'+a[0]+'" data-n="'+n+'" class="'+(v===n?'sel':'')+'">'+n+'</button>';}
+    html+='<div class="area-row"><div class="area-head"><span class="area-dot" style="background:'+a[2]+'"></span><span class="area-name">'+esc(a[1])+'</span><span class="area-val">'+v+'</span></div><div class="scorepick">'+pick+'</div></div>';
+  });
+  return html;
+}
+function wireAreaList(el,sc,after){
+  el.querySelectorAll('.scorepick button').forEach(function(b){
+    b.onclick=function(){sc[b.dataset.k]=+b.dataset.n;save();after();};
+  });
+}
+
+// ── NULÄGE ────────────────────────────────────────────
+function renderNow(){
+  document.getElementById('wheel-now').innerHTML=buildWheel(state.start);
+  var a=avg(state.start);
+  document.getElementById('now-avg').textContent=a?a.toFixed(1):'–';
+  // lägst / högst
+  var low=null,high=null;
+  AREAS.forEach(function(x){var v=state.start[x[0]];if(low===null||v<low.v)low={n:x[1],v:v};if(high===null||v>high.v)high={n:x[1],v:v};});
+  document.getElementById('now-low').textContent=low?low.v:'–';
+  document.getElementById('now-high').textContent=high?high.v:'–';
+  var el=document.getElementById('now-areas');
+  el.innerHTML=buildAreaList(state.start,null);
+  wireAreaList(el,state.start,renderNow);
+}
+
+// ── MÅL ───────────────────────────────────────────────
+function renderGoals(){
+  var el=document.getElementById('goal-blocks'),html='';
+  AREAS.forEach(function(a){
+    html+='<div class="goal-block"><div class="gh"><span class="area-dot" style="background:'+a[2]+'"></span><b>'+esc(a[1])+'</b></div><textarea data-k="'+a[0]+'" rows="2" placeholder="En 10:a betyder att…">'+esc(state.goals[a[0]]||'')+'</textarea></div>';
+  });
+  el.innerHTML=html;
+  el.querySelectorAll('textarea').forEach(function(t){
+    t.oninput=function(){state.goals[t.dataset.k]=t.value;save();};
+  });
+}
+
+// ── DRÖMMAR ───────────────────────────────────────────
+function renderList(elId,arr,inId){
+  var el=document.getElementById(elId);
+  el.innerHTML=arr.length?arr.map(function(v,i){return '<div class="dream-item"><span>'+esc(v)+'</span><button data-i="'+i+'">×</button></div>';}).join(''):'<div class="empty-msg">Inget tillagt än</div>';
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){arr.splice(+b.dataset.i,1);save();renderList(elId,arr,inId);};});
+}
+function wireAdd(btnId,inId,arr,elId){
+  function add(){var v=document.getElementById(inId).value.trim();if(!v)return;arr.push(v);document.getElementById(inId).value='';save();renderList(elId,arr,inId);}
+  document.getElementById(btnId).onclick=add;
+  document.getElementById(inId).addEventListener('keydown',function(e){if(e.key==='Enter')add();});
+}
+function renderDreams(){
+  renderList('dream-personal',state.dreams.personal,'dp-in');
+  renderList('dream-work',state.dreams.work,'dw-in');
+  renderList('dream-places',state.dreams.places,'dpl-in');
+  renderList('dream-res',state.dreams.resolutions,'dr-in');
+  document.getElementById('g-weight').value=state.dreams.weight||'';
+  document.getElementById('g-steps').value=state.dreams.steps||'';
+  document.getElementById('g-savings').value=state.dreams.savings||'';
+}
+
+// ── ÅR ────────────────────────────────────────────────
+function renderYear(){
+  var chips=document.getElementById('month-chips'),html='';
+  MONTHS.forEach(function(m,i){
+    var sc=state.months[i];
+    var sub=sc?avg(sc).toFixed(1):'–';
+    html+='<button class="month-chip'+(i===state.curMonth?' active':'')+'" data-m="'+i+'">'+m.slice(0,3)+'<small>'+sub+'</small></button>';
+  });
+  chips.innerHTML=html;
+  chips.querySelectorAll('.month-chip').forEach(function(b){b.onclick=function(){state.curMonth=+b.dataset.m;save();renderYear();};});
+
+  var sc=monthScores(state.curMonth);
+  document.getElementById('wheel-month').innerHTML=buildWheel(sc);
+  document.getElementById('month-avg').textContent='Snitt '+MONTHS[state.curMonth]+': '+avg(sc).toFixed(1);
+  document.getElementById('month-title').textContent='Skatta '+MONTHS[state.curMonth].toLowerCase();
+  var el=document.getElementById('month-areas');
+  el.innerHTML=buildAreaList(sc,null);
+  wireAreaList(el,sc,renderYear);
+
+  // staplar
+  var bars=document.getElementById('year-bars'),bh='';
+  for(var i=0;i<12;i++){
+    var v=state.months[i]?avg(state.months[i]):0;
+    var h=v?Math.round(v/9*100):0;
+    bh+='<div class="bar"><i style="height:'+h+'%"'+(v?'':' style="height:2px;opacity:.3"')+'></i><em>'+MONTHS[i].slice(0,1)+'</em></div>';
+  }
+  bars.innerHTML=bh;
+}
+
+// ── AI ────────────────────────────────────────────────
+var AI_KEY='livshjulet_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI-coach</span>'+esc(t)+'</div>';}
+
+function contextStr(){
+  var lines=[];
+  if(state.name)lines.push('Projekt: '+state.name+(state.year?' ('+state.year+')':''));
+  lines.push('Nuläge på livshjulet (1–9):');
+  AREAS.forEach(function(a){
+    var g=(state.goals[a[0]]||'').trim();
+    lines.push('- '+a[1]+': '+state.start[a[0]]+(g?'  | mål (10:a): '+g:''));
+  });
+  var d=state.dreams;
+  if(d.personal.length)lines.push('Personliga drömmar: '+d.personal.join(', '));
+  if(d.work.length)lines.push('Jobbdrömmar: '+d.work.join(', '));
+  if(d.places.length)lines.push('Platser att besöka: '+d.places.join(', '));
+  if(d.weight)lines.push('Viktmål: '+d.weight);
+  if(d.steps)lines.push('Steg/dag: '+d.steps);
+  if(d.savings)lines.push('Sparmål: '+d.savings);
+  if(d.resolutions.length)lines.push('Nyårslöften: '+d.resolutions.join(', '));
+  return lines.join('\n');
+}
+
+async function runPlan(){
+  var btn=document.getElementById('coach-plan'),orig=btn.textContent;
+  btn.textContent='✨ Tänker…';btn.disabled=true;
+  try{
+    var prompt='Du är en varm, jordnära och konkret livscoach. Här är en persons livshjul, mål och drömmar:\n\n'+contextStr()+'\n\nSkriv på svenska, max 220 ord, utan rubriker eller emojis. Lyft fram de 2–3 områden med lägst poäng eller störst gap till målet, och ge för varje ett enda litet, konkret steg att ta den här veckan. Var snäll och realistisk – inga listor på 20 punkter, bara det viktigaste. Avsluta med en uppmuntrande mening.';
+    var text=await aiCall(prompt);
+    state.ai.plan=text;save();
+    document.getElementById('coach-plan-box').innerHTML=aiBox(text);
+  }catch(e){if(e.message!=='NOKEY')alert('Något gick fel: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+}
+
+async function runArea(){
+  var sel=document.getElementById('coach-area-sel');
+  var k=sel.value, a=AREAS.filter(function(x){return x[0]===k;})[0];
+  var btn=document.getElementById('coach-area'),orig=btn.textContent;
+  btn.textContent='✨ Tänker…';btn.disabled=true;
+  try{
+    var g=(state.goals[k]||'').trim();
+    var prompt='Du är en varm, jordnära livscoach. Området "'+a[1]+'" har just nu '+state.start[k]+' av 9 på personens livshjul.'+(g?' Personens mål (en 10:a) för området: "'+g+'".':'')+'\n\nÖvrig kontext:\n'+contextStr()+'\n\nGe på svenska exakt 3 konkreta, små steg som höjer just detta område nästa månad. Numrera dem 1–3, en mening var. Avsluta med en kort mening om det första steget att börja med idag. Max 140 ord, inga emojis.';
+    var text=await aiCall(prompt);
+    state.ai.area[k]=text;save();
+    document.getElementById('coach-area-box').innerHTML=aiBox(text);
+  }catch(e){if(e.message!=='NOKEY')alert('Något gick fel: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+}
+
+function renderCoach(){
+  var sel=document.getElementById('coach-area-sel');
+  if(!sel.options.length){sel.innerHTML=AREAS.map(function(a){return '<option value="'+a[0]+'">'+esc(a[1])+'</option>';}).join('');}
+  document.getElementById('coach-plan-box').innerHTML=state.ai.plan?aiBox(state.ai.plan):'';
+  var k=sel.value;
+  document.getElementById('coach-area-box').innerHTML=(state.ai.area&&state.ai.area[k])?aiBox(state.ai.area[k]):'';
+}
+
+// ── GitHub-synk (likt jobb-appen) ─────────────────────
+var SYNC_KEY='livshjulet_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/livshjulet-data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':' offline');}
+
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();
+  sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data&&data.state){
+      var remoteT=data.state.updated||data.updated||'';
+      var localT=state.updated||'';
+      if(!localT||remoteT>localT){
+        state=Object.assign(state,data.state);
+        normalizeState();writeLocal();renderAll();applyName();
+      }
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({state:state,updated:state.updated}));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign(ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Livshjulet',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();
+  if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+var pushTimer=null;
+function schedulePush(){if(!syncOn())return;clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1500);}
+
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--moss-soft)':type==='err'?'#F4E8E4':'var(--panel2)';
+  el.style.color=type==='ok'?'var(--moss)':type==='err'?'#A2685B':'var(--muted)';
+  el.textContent=msg;
+}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-close').onclick=closeSheets;
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data&&data.state){setGhStatus('✓ Ansluten! Hämtar din data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');state.updated=new Date().toISOString();writeLocal();await ghPush();}
+    setTimeout(closeSheets,1200);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents: Read and write.','err');}
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+bg.onclick=closeSheets;
+
+// namn-sheet
+document.getElementById('open-name').onclick=function(){
+  document.getElementById('proj-name').value=state.name||'';
+  document.getElementById('proj-year').value=state.year||'';
+  openSheet('name-sheet');
+};
+document.getElementById('name-done').onclick=function(){
+  state.name=document.getElementById('proj-name').value.trim();
+  state.year=document.getElementById('proj-year').value.trim();
+  save();applyName();closeSheets();
+};
+function applyName(){
+  document.getElementById('brand-sub').textContent=state.name?(state.name+(state.year?' · '+state.year:'')):'Ditt nuläge';
+}
+
+// ai-sheet
+document.getElementById('open-ai').onclick=function(){document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-close').onclick=closeSheets;
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+
+// ── Knappar ───────────────────────────────────────────
+document.getElementById('now-ai').onclick=function(){switchView('coach');runPlan();};
+document.getElementById('coach-plan').onclick=runPlan;
+document.getElementById('coach-area').onclick=runArea;
+document.getElementById('coach-area-sel').onchange=renderCoach;
+
+wireAdd('dp-add','dp-in',state.dreams.personal,'dream-personal');
+wireAdd('dw-add','dw-in',state.dreams.work,'dream-work');
+wireAdd('dpl-add','dpl-in',state.dreams.places,'dream-places');
+wireAdd('dr-add','dr-in',state.dreams.resolutions,'dream-res');
+document.getElementById('g-weight').oninput=function(){state.dreams.weight=this.value;save();};
+document.getElementById('g-steps').oninput=function(){state.dreams.steps=this.value;save();};
+document.getElementById('g-savings').oninput=function(){state.dreams.savings=this.value;save();};
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var u=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=u;a.download='livshjulet-'+(state.year||'backup')+'.json';a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);},500);
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.start){state=Object.assign(state,d);save();renderAll();applyName();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto',h=(new Date()).getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':(state.theme==='dark'?'light':'auto');
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+function switchView(v){
+  document.querySelectorAll('.nav button').forEach(function(x){x.classList.toggle('active',x.dataset.v===v);});
+  document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='year')renderYear();
+  if(v==='coach')renderCoach();
+  if(v==='now')renderNow();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){switchView(b.dataset.v);};});
+
+function renderAll(){renderNow();renderGoals();renderDreams();renderYear();renderCoach();}
+
+// ── Init ──────────────────────────────────────────────
+loadSync();
+renderNow();renderGoals();renderDreams();applyName();applyTheme();
+if(syncOn())ghPull();
+setInterval(applyTheme,60000);
+
+</script>
+</body>
+</html>
