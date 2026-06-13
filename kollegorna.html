@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kollegorna">
+<meta name="theme-color" content="#EDF0F3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234A6B8A'/%3E%3Ccircle cx='38' cy='42' r='13' fill='%23EDF0F3'/%3E%3Ccircle cx='66' cy='46' r='11' fill='%23D9E3EC'/%3E%3Cpath d='M18 80c0-13 9-20 20-20s20 7 20 20z' fill='%23EDF0F3'/%3E%3Cpath d='M50 80c0-11 7-17 16-17s16 6 16 17z' fill='%23D9E3EC'/%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Kollegorna","short_name":"Kollegorna","display":"standalone","background_color":"%23EDF0F3","theme_color":"%23EDF0F3","start_url":"."}'>
+<title>Kollegorna</title>
+<style>
+:root{
+  --bg:#EDF0F3;--panel:#F8F9FB;--panel2:#E5EAF0;--line:#D3DAE3;
+  --ink:#2C333D;--muted:#737E8C;--accent:#4A6B8A;--accent-soft:#D9E3EC;
+  --green:#5E8C6A;--green-soft:#DDEADF;--amber:#B98A4B;--amber-soft:#F2E6D2;--red:#BB6B62;--red-soft:#F1DDD9;
+  --navbg:rgba(237,240,243,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Sök */
+.search{margin-bottom:10px}
+.search input{border-radius:14px;padding:10px 12px}
+
+/* Kollegakort */
+.pcard{display:flex;align-items:center;gap:12px;padding:11px 12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-bottom:8px;cursor:pointer;transition:background .2s}
+.pcard:active{background:var(--panel2)}
+.avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:#fff;font-family:Georgia,serif}
+.pcard-mid{flex:1;min-width:0}
+.pcard-name{font-size:15px;font-weight:600;color:var(--ink)}
+.pcard-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;white-space:nowrap;font-weight:500;letter-spacing:.02em}
+.badge.chef{background:var(--accent-soft);color:var(--accent)}
+.badge.kollega{background:var(--green-soft);color:var(--green)}
+.badge.under{background:var(--amber-soft);color:var(--amber)}
+.badge.annat{background:var(--panel2);color:var(--muted)}
+.badge.extern{background:var(--red-soft);color:var(--red)}
+.pcard-flag{font-size:14px;flex-shrink:0}
+
+/* Team */
+.team-group{margin-bottom:14px}
+.team-head{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.team-head span{font-size:11px;color:var(--muted);font-family:-apple-system,sans-serif}
+.team-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px;cursor:pointer}
+.team-row:first-child{border-top:none}
+.team-row .nm{flex:1;color:var(--ink)}
+.team-row .last{font-size:11px;color:var(--muted);white-space:nowrap}
+.team-row .last.warn{color:var(--amber)}
+
+/* Att göra */
+.todo-sec{margin-bottom:6px}
+.todo-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.todo-row:first-child{border-top:none}
+.todo-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--accent);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:12px;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.todo-check.done{background:var(--accent)}
+.todo-body{flex:1;min-width:0}
+.todo-txt{font-size:13px;color:var(--ink);line-height:1.4}
+.todo-txt.done{text-decoration:line-through;color:var(--muted)}
+.todo-meta{font-size:11px;color:var(--muted);margin-top:2px;cursor:pointer}
+.todo-meta b{color:var(--accent);font-weight:500}
+.todo-due{font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.todo-due.over{color:var(--red)}
+.todo-due.today{color:var(--amber)}
+.todo-due.soon{color:var(--muted)}
+
+/* Detalj-sektioner i person-sheet */
+.ps-hero{display:flex;align-items:center;gap:13px;margin-bottom:6px}
+.ps-hero .avatar{width:52px;height:52px;font-size:20px}
+.ps-hero-mid{flex:1;min-width:0}
+.ps-hero-name{font-family:Georgia,serif;font-size:18px;color:var(--ink)}
+.ps-hero-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.pref-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pref-tag{font-size:12px;padding:5px 10px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+.pref-tag b{color:var(--muted);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-right:5px}
+.detail-block{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
+.detail-block .section-title{margin:0 0 8px}
+.entry{padding:9px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
+.entry:first-child{border-top:none}
+.entry-top{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.entry-date{font-size:11px;color:var(--muted);flex:1}
+.entry-title{font-weight:600;color:var(--ink)}
+.entry-del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;line-height:1}
+.entry-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+.entry-txt{color:var(--ink);white-space:pre-wrap}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 2px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:7px 11px;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.sit.sel{background:var(--accent)}
+
+/* Inline-formulär */
+.inline-form{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
+.inline-form .btn-row{margin-top:8px}
+.add-link{font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0}
+
+/* AI */
+.ai-box{border:1px solid var(--accent-soft);background:linear-gradient(160deg,var(--accent-soft),var(--panel));border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--accent);font-size:12px;display:block;margin-bottom:5px}
+.ai-copy{font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit;margin-top:8px;text-decoration:underline;text-underline-offset:3px}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+.sync-badge{font-size:11px;padding:3px 12px;border-radius:11px;font-weight:500;background:var(--green-soft);color:var(--green)}
+.sync-badge.offline{background:var(--panel2);color:var(--muted)}
+.sync-badge.load{background:var(--accent-soft);color:var(--accent)}
+.sync-badge.err{background:var(--red-soft);color:var(--red)}
+.sync-status{font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px;line-height:1.5;display:none}
+.sync-status.ok{background:var(--green-soft);color:var(--green);display:block}
+.sync-status.err{background:var(--red-soft);color:var(--red);display:block}
+.sync-status.info{background:var(--accent-soft);color:var(--accent);display:block}
+.sync-hint{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:6px 9px;line-height:1.5;margin:-4px 0 4px}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1A1E24;--panel:#232830;--panel2:#2B313A;--line:#3A424D;
+  --ink:#DDE3EA;--muted:#8A93A0;--accent:#7C9BB8;--accent-soft:#2E3A47;
+  --green:#7FA98A;--green-soft:#2C3A30;--amber:#C6A06B;--amber-soft:#3A3327;--red:#C68A82;--red-soft:#3A2D2B;
+  --navbg:rgba(26,30,36,.95);
+}
+html[data-theme=dark] .ai-box{background:linear-gradient(160deg,#2A3340,#222831)}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(44,51,61,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🤝 Kollegorna</h1>
+
+<!-- PERSONER -->
+<div class="view active" id="view-people">
+  <div class="search"><input type="search" id="search" placeholder="Sök namn, roll eller team…"></div>
+  <button class="btn fill" id="add-person" style="width:100%">+ Ny kollega</button>
+  <div id="people-list" style="margin-top:12px"></div>
+  <div style="text-align:center;margin-top:16px"><span class="sync-badge offline" id="sync-badge">Lokal</span></div>
+  <div class="foot">
+    <button id="sync-btn-foot">Synk mellan enheter</button>
+    <button id="ai-set-btn">API-nyckel</button>
+  </div>
+  <div class="foot" style="margin-top:6px">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <button id="sync-now" style="display:none">↻ Synka nu</button>
+  </div>
+  <input type="file" id="import-file" accept="application/json" style="display:none">
+  <div class="privacy">Data sparas lokalt i din enhet. Med synk delas den krypterat via ditt egna privata GitHub-repo.<br>AI-funktioner använder din egen Anthropic-nyckel.</div>
+</div>
+
+<!-- TEAM -->
+<div class="view" id="view-team">
+  <div id="team-list"></div>
+</div>
+
+<!-- ATT GÖRA -->
+<div class="view" id="view-todo">
+  <div id="todo-list"></div>
+</div>
+
+<!-- SKRIV -->
+<div class="view" id="view-write">
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:6px">Få hjälp att formulera ett meddelande som passar personens sätt att kommunicera. Mindre grubbel — tydligare ord.</div>
+    <label>Till vem</label>
+    <select id="w-person"></select>
+    <label>Vad vill du göra</label>
+    <div class="chips" id="w-sit"></div>
+    <label>Kanal</label>
+    <select id="w-channel">
+      <option>Teams-chatt</option><option>Mejl</option><option>Videomöte</option>
+      <option>Spontant / öga mot öga</option><option>Telefon</option>
+    </select>
+    <label>Kort om situationen</label>
+    <textarea id="w-context" rows="3" placeholder="T.ex. Jag behöver flytta vårt möte på torsdag och vill inte trampa någon på tårna."></textarea>
+    <button class="btn fill" id="w-go" style="width:100%;margin-top:12px">Föreslå formulering</button>
+    <div id="w-out"></div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" data-v="people"><span>👤</span>Personer</button>
+  <button data-v="team"><span>👥</span>Team</button>
+  <button data-v="todo"><span>✓</span>Att göra</button>
+  <button data-v="write"><span>✉️</span>Skriv</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="person-sheet">
+  <div id="ps-body"></div>
+  <button class="sheet-close" id="ps-close">Klar</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>✨ AI-funktioner</h3>
+  <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">Sammanfattningar och formuleringsförslag görs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt i din enhet och följer inte med i säkerhetskopior. Varje anrop kostar några ören från ditt API-saldo.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>🔗 Synk mellan enheter</h3>
+  <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">Appen sparar <b style="color:var(--ink)">kollegorna.json</b> i ett <b style="color:var(--ink)">privat</b> GitHub-repo, så att samma data finns på telefon och dator. Token sparas bara lokalt på den här enheten — aldrig i koden eller i säkerhetskopior.</p>
+  <div class="sync-status" id="sync-status"></div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="ditt-användarnamn" autocomplete="off">
+  <label>Privat repo för data</label>
+  <input type="text" id="gh-repo" placeholder="t.ex. mina-appar-data" autocomplete="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="sync-hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="gh-save">Spara &amp; synka</button>
+    <button class="btn ghost" id="gh-clear">Koppla bort</button>
+  </div>
+  <button class="sheet-close" id="sync-close">Stäng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='kollegorna_v1';
+var state={people:[]};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}schedulePush();}
+
+// ── Synk (GitHub, "appkollen"-stil) ───────────────────
+var SYNC_KEY='kollegorna_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+var pushTimer=null,pulling=false;
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/kollegorna.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sync-badge'+(stt?' '+stt:'');}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn()||pulling)return Promise.resolve();
+  pulling=true;setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data&&Array.isArray(data.people)){state.people=data.people;
+      try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+      renderPeople();renderTeam();renderTodo();fillWritePeople();}
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');}).then(function(){pulling=false;});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({people:state.people,updated:new Date().toISOString()}));
+  function body(){var o={message:'Uppdatering via Kollegorna',content:content};if(sync.sha)o.sha=sync.sha;return JSON.stringify(o);}
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:body()});}
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');})
+  .catch(function(e){setBadge('err','Synkfel');});
+}
+function schedulePush(){
+  if(!syncOn())return;
+  if(pushTimer)clearTimeout(pushTimer);
+  pushTimer=setTimeout(function(){pushTimer=null;ghPush();},1200);
+}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayKey(){return toISO(new Date());}
+var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+function fmtDate(iso){if(!iso)return '';var p=iso.split('-');return parseInt(p[2],10)+' '+MON[parseInt(p[1],10)-1];}
+function daysFromToday(iso){if(!iso)return null;var a=new Date(todayKey()),b=new Date(iso);return Math.round((b-a)/86400000);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+// Avatarfärg från namn
+var AV=['#4A6B8A','#5E8C6A','#9A6B8A','#B98A4B','#6B7E8C','#8A6B5E','#5E7C8C','#7A6B9A'];
+function avColor(n){var h=0;n=n||'?';for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return AV[h%AV.length];}
+function initials(n){n=(n||'').trim();if(!n)return '?';var p=n.split(/\s+/);return (p.length>1?p[0][0]+p[p.length-1][0]:p[0].slice(0,2)).toUpperCase();}
+function avatarHTML(p,cls){var bg=avColor(p.name);var c=p.emoji&&p.emoji.trim()?p.emoji.trim():initials(p.name);return '<div class="avatar'+(cls?' '+cls:'')+'" style="background:'+bg+'">'+esc(c)+'</div>';}
+
+var RELS={chef:['Chef','chef'],kollega:['Kollega','kollega'],under:['Underställd','under'],annat:['Annat team','annat'],extern:['Extern','extern']};
+function relBadge(r){var d=RELS[r]||RELS.kollega;return '<span class="badge '+d[1]+'">'+d[0]+'</span>';}
+var STYLE_OPTS=['Kort & rakt','Bakgrund först','Skriftligt helst','Förvarning innan möte','Tid att tänka','Småprat först','Beslut i möte','Beslut i efterhand','Rakt på sak'];
+var SIT_OPTS=['Be om något','Följa upp','Ge feedback','Säga nej / sätta gräns','Boka möte','Tacka','Reda ut missförstånd','Leverera dåliga nyheter'];
+
+function findP(id){return state.people.filter(function(p){return p.id===id;})[0];}
+function lastOneDate(p){if(!p.ones||!p.ones.length)return null;return p.ones.map(function(o){return o.date;}).sort().slice(-1)[0];}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');ui={};}
+bg.onclick=closeSheets;
+
+// ── Personer ──────────────────────────────────────────
+function renderPeople(){
+  var q=(document.getElementById('search').value||'').toLowerCase().trim();
+  var list=state.people.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'','sv');});
+  if(q)list=list.filter(function(p){return ((p.name||'')+' '+(p.role||'')+' '+(p.team||'')).toLowerCase().indexOf(q)>=0;});
+  var el=document.getElementById('people-list');
+  if(!state.people.length){el.innerHTML='<div class="empty-msg">Inga kollegor än.<br>Lägg till den första — bara namn räcker för att börja.</div>';return;}
+  if(!list.length){el.innerHTML='<div class="empty-msg">Ingen matchar sökningen.</div>';return;}
+  el.innerHTML=list.map(function(p){
+    var open=(p.followups||[]).filter(function(f){return !f.done;}).length;
+    var sub=[p.role,p.team].filter(Boolean).join(' · ')||'Ingen roll angiven';
+    var flag=open?'<span class="pcard-flag" title="'+open+' öppna uppföljningar">●</span>':'';
+    return '<div class="pcard" data-id="'+p.id+'">'+avatarHTML(p)+
+      '<div class="pcard-mid"><div class="pcard-name">'+esc(p.name||'Namnlös')+'</div>'+
+      '<div class="pcard-sub">'+esc(sub)+'</div></div>'+relBadge(p.rel)+
+      (flag?'<span style="color:var(--accent);font-size:9px">'+flag+'</span>':'')+'</div>';
+  }).join('');
+  var cards=el.querySelectorAll('.pcard');
+  for(var i=0;i<cards.length;i++)(function(c){c.onclick=function(){openPerson(c.dataset.id,false);};})(cards[i]);
+}
+document.getElementById('search').oninput=renderPeople;
+document.getElementById('add-person').onclick=function(){
+  var p={id:uid(),name:'',role:'',team:'',emoji:'',rel:'kollega',
+    pref:{channel:'',time:'',style:[],note:''},notes:[],ones:[],followups:[],ai:''};
+  state.people.push(p);save();
+  openPerson(p.id,true);
+};
+
+// ── Person-detalj (en sheet, allt inline) ─────────────
+var ui={}; // {pid, editInfo, addNote, addOne, addFollow, sit:[]}
+function openPerson(id,edit){ui={pid:id,editInfo:!!edit};renderPerson();openSheet('person-sheet');}
+function curP(){return findP(ui.pid);}
+
+function renderPerson(){
+  var p=curP();if(!p){closeSheets();return;}
+  var h='';
+  // Hero
+  h+='<div class="ps-hero">'+avatarHTML(p)+'<div class="ps-hero-mid">'+
+     '<div class="ps-hero-name">'+esc(p.name||'Ny kollega')+'</div>'+
+     '<div class="ps-hero-sub">'+esc([p.role,p.team].filter(Boolean).join(' · ')||'—')+'</div></div>'+
+     relBadge(p.rel)+'</div>';
+  h+='<button class="add-link" data-act="editInfo">'+(ui.editInfo?'▾ Dölj redigering':'✎ Redigera uppgifter & kommunikation')+'</button>';
+
+  // Edit-info inline
+  if(ui.editInfo){
+    h+='<div class="inline-form">'+
+      '<label>Namn</label><input id="f-name" value="'+esc(p.name)+'" placeholder="För- och efternamn">'+
+      '<label>Roll</label><input id="f-role" value="'+esc(p.role)+'" placeholder="T.ex. Systemförvaltare">'+
+      '<label>Team</label><input id="f-team" value="'+esc(p.team)+'" placeholder="T.ex. IT-enheten">'+
+      '<label>Emoji (valfritt)</label><input id="f-emoji" value="'+esc(p.emoji)+'" placeholder="Lämna tomt för initialer" maxlength="3">'+
+      '<label>Relation</label><div class="chips" id="f-rel">'+
+        Object.keys(RELS).map(function(k){return '<button class="chip'+(p.rel===k?' sel':'')+'" data-rel="'+k+'">'+RELS[k][0]+'</button>';}).join('')+'</div>'+
+      '<label>Föredragen kanal</label><select id="f-channel">'+
+        ['','Teams-chatt','Mejl','Videomöte','Spontant / öga mot öga','Telefon'].map(function(o){return '<option'+(p.pref.channel===o?' selected':'')+'>'+(o||'— välj —')+'</option>';}).join('')+'</select>'+
+      '<label>Bästa tid</label><input id="f-time" value="'+esc(p.pref.time)+'" placeholder="T.ex. Förmiddagar, ej måndagar">'+
+      '<label>Stil & sätt</label><div class="chips" id="f-style">'+
+        STYLE_OPTS.map(function(o){return '<button class="chip'+(p.pref.style.indexOf(o)>=0?' sel':'')+'" data-style="'+esc(o)+'">'+esc(o)+'</button>';}).join('')+'</div>'+
+      '<label>Övrigt om personen</label><textarea id="f-note" rows="2" placeholder="Sammanhang, gränser, vad som gör samarbetet lättare…">'+esc(p.pref.note)+'</textarea>'+
+      '<div class="btn-row"><button class="btn fill" data-act="saveInfo">Spara</button></div>'+
+    '</div>';
+  } else {
+    // Prefs display
+    var tags=[];
+    if(p.pref.channel)tags.push('<span class="pref-tag"><b>Kanal</b>'+esc(p.pref.channel)+'</span>');
+    if(p.pref.time)tags.push('<span class="pref-tag"><b>Tid</b>'+esc(p.pref.time)+'</span>');
+    (p.pref.style||[]).forEach(function(st){tags.push('<span class="pref-tag">'+esc(st)+'</span>');});
+    if(tags.length||p.pref.note){
+      h+='<div class="pref-grid">'+tags.join('')+'</div>';
+      if(p.pref.note)h+='<div class="soft" style="margin-top:8px">'+esc(p.pref.note)+'</div>';
+    }
+  }
+
+  // AI-sammanfattning
+  h+='<div class="detail-block"><div class="section-title">AI-sammanfattning</div>';
+  h+='<button class="btn ghost" data-act="aiSum" style="width:100%">✨ '+(p.ai?'Uppdatera sammanfattning':'Sammanfatta var ni står')+'</button>';
+  if(p.ai)h+='<div class="ai-box"><span class="ai-lbl">✨ Sammanfattning</span>'+esc(p.ai)+'</div>';
+  h+='</div>';
+
+  // 1:1-loggar
+  h+='<div class="detail-block"><div class="section-title">1:1-loggar<button class="add-link" data-act="addOne">'+(ui.addOne?'Avbryt':'+ Logga')+'</button></div>';
+  if(ui.addOne){
+    h+='<div class="inline-form">'+
+      '<label>Datum</label><input type="date" id="o-date" value="'+todayKey()+'">'+
+      '<label>Det vi pratade om</label><textarea id="o-topics" rows="2" placeholder="Ämnen, frågor, stämning…"></textarea>'+
+      '<label>Vad de tog upp</label><textarea id="o-their" rows="2" placeholder="Deras punkter, behov, signaler…"></textarea>'+
+      '<label>Överenskommet / nästa steg</label><textarea id="o-actions" rows="2" placeholder="Vem gör vad till när"></textarea>'+
+      '<div class="btn-row"><button class="btn fill" data-act="saveOne">Spara logg</button></div></div>';
+  }
+  var ones=(p.ones||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+  h+=ones.length?ones.map(function(o){
+    var parts='';
+    if(o.topics)parts+='<div class="entry-lbl">Pratade om</div><div class="entry-txt">'+esc(o.topics)+'</div>';
+    if(o.their)parts+='<div class="entry-lbl">De tog upp</div><div class="entry-txt">'+esc(o.their)+'</div>';
+    if(o.actions)parts+='<div class="entry-lbl">Nästa steg</div><div class="entry-txt">'+esc(o.actions)+'</div>';
+    return '<div class="entry"><div class="entry-top"><span class="entry-title">1:1</span><span class="entry-date">'+fmtDate(o.date)+'</span><button class="entry-del" data-del="one" data-id="'+o.id+'">×</button></div>'+parts+'</div>';
+  }).join(''):'<div class="empty-msg">Inga 1:1 loggade än.</div>';
+  h+='</div>';
+
+  // Mötesanteckningar
+  h+='<div class="detail-block"><div class="section-title">Mötesanteckningar<button class="add-link" data-act="addNote">'+(ui.addNote?'Avbryt':'+ Anteckna')+'</button></div>';
+  if(ui.addNote){
+    h+='<div class="inline-form">'+
+      '<label>Datum</label><input type="date" id="n-date" value="'+todayKey()+'">'+
+      '<label>Rubrik / sammanhang</label><input id="n-title" placeholder="T.ex. Avstämning projekt X">'+
+      '<label>Anteckning</label><textarea id="n-text" rows="3" placeholder="Vad sades, beslut, intryck…"></textarea>'+
+      '<div class="btn-row"><button class="btn fill" data-act="saveNote">Spara</button></div></div>';
+  }
+  var notes=(p.notes||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+  h+=notes.length?notes.map(function(n){
+    return '<div class="entry"><div class="entry-top"><span class="entry-title">'+esc(n.title||'Anteckning')+'</span><span class="entry-date">'+fmtDate(n.date)+'</span><button class="entry-del" data-del="note" data-id="'+n.id+'">×</button></div><div class="entry-txt">'+esc(n.text)+'</div></div>';
+  }).join(''):'<div class="empty-msg">Inga anteckningar än.</div>';
+  h+='</div>';
+
+  // Uppföljningar
+  h+='<div class="detail-block"><div class="section-title">Uppföljningspåminnelser<button class="add-link" data-act="addFollow">'+(ui.addFollow?'Avbryt':'+ Lägg till')+'</button></div>';
+  if(ui.addFollow){
+    h+='<div class="inline-form">'+
+      '<label>Vad</label><input id="u-text" placeholder="T.ex. Återkoppla om budgeten">'+
+      '<label>Senast</label><input type="date" id="u-due" value="'+todayKey()+'">'+
+      '<div class="btn-row"><button class="btn fill" data-act="saveFollow">Spara</button></div></div>';
+  }
+  var fus=(p.followups||[]).slice().sort(function(a,b){if(a.done!==b.done)return a.done?1:-1;return (a.due||'').localeCompare(b.due||'');});
+  h+=fus.length?fus.map(function(f){
+    var d=daysFromToday(f.due),due=fmtDate(f.due),cl='soon';
+    if(!f.done&&d!=null){if(d<0){cl='over';due='Försenat · '+due;}else if(d===0){cl='today';due='Idag';}}
+    return '<div class="todo-row"><div class="todo-check'+(f.done?' done':'')+'" data-fchk="'+f.id+'">'+(f.done?'✓':'')+'</div>'+
+      '<div class="todo-body"><div class="todo-txt'+(f.done?' done':'')+'">'+esc(f.text)+'</div></div>'+
+      '<span class="todo-due '+cl+'">'+(f.done?'':due)+'</span>'+
+      '<button class="entry-del" data-del="follow" data-id="'+f.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga påminnelser. Lägg till en så slipper du hålla det i huvudet.</div>';
+  h+='</div>';
+
+  // Radera
+  h+='<div class="detail-block"><button class="btn ghost" data-act="delPerson" style="width:100%;color:var(--red);border-color:var(--red-soft)">Ta bort kollega</button></div>';
+
+  document.getElementById('ps-body').innerHTML=h;
+  wirePerson();
+}
+
+function wirePerson(){
+  var body=document.getElementById('ps-body');
+  // chip-väljare
+  var relC=body.querySelectorAll('#f-rel .chip');
+  for(var i=0;i<relC.length;i++)(function(c){c.onclick=function(){var p=curP();p.rel=c.dataset.rel;save();renderPerson();};})(relC[i]);
+  var stC=body.querySelectorAll('#f-style .chip');
+  for(var j=0;j<stC.length;j++)(function(c){c.onclick=function(){c.classList.toggle('sel');};})(stC[j]);
+  // delete-knappar
+  var dels=body.querySelectorAll('.entry-del');
+  for(var k=0;k<dels.length;k++)(function(b){b.onclick=function(e){e.stopPropagation();delEntry(b.dataset.del,b.dataset.id);};})(dels[k]);
+  // followup checkbox
+  var chks=body.querySelectorAll('[data-fchk]');
+  for(var m=0;m<chks.length;m++)(function(c){c.onclick=function(){var p=curP();var f=p.followups.filter(function(x){return x.id===c.dataset.fchk;})[0];if(f){f.done=!f.done;save();renderPerson();}};})(chks[m]);
+  // act-knappar
+  var acts=body.querySelectorAll('[data-act]');
+  for(var n=0;n<acts.length;n++)(function(b){b.onclick=function(){doAct(b.dataset.act,b);};})(acts[n]);
+}
+
+function doAct(a,btn){
+  var p=curP();
+  if(a==='editInfo'){ui.editInfo=!ui.editInfo;renderPerson();}
+  else if(a==='saveInfo'){
+    p.name=document.getElementById('f-name').value.trim();
+    p.role=document.getElementById('f-role').value.trim();
+    p.team=document.getElementById('f-team').value.trim();
+    p.emoji=document.getElementById('f-emoji').value.trim();
+    p.pref.channel=document.getElementById('f-channel').value.replace('— välj —','').trim();
+    p.pref.time=document.getElementById('f-time').value.trim();
+    p.pref.note=document.getElementById('f-note').value.trim();
+    var sel=document.querySelectorAll('#f-style .chip.sel');p.pref.style=[];
+    for(var i=0;i<sel.length;i++)p.pref.style.push(sel[i].dataset.style);
+    save();ui.editInfo=false;renderPerson();renderPeople();fillWritePeople();
+  }
+  else if(a==='addNote'){ui.addNote=!ui.addNote;renderPerson();}
+  else if(a==='saveNote'){
+    var nt=document.getElementById('n-text').value.trim();
+    if(!nt){alert('Skriv en anteckning först.');return;}
+    p.notes.push({id:uid(),date:document.getElementById('n-date').value||todayKey(),title:document.getElementById('n-title').value.trim(),text:nt});
+    save();ui.addNote=false;renderPerson();
+  }
+  else if(a==='addOne'){ui.addOne=!ui.addOne;renderPerson();}
+  else if(a==='saveOne'){
+    var top=document.getElementById('o-topics').value.trim();
+    var thr=document.getElementById('o-their').value.trim();
+    var act=document.getElementById('o-actions').value.trim();
+    if(!top&&!thr&&!act){alert('Fyll i minst ett fält.');return;}
+    p.ones.push({id:uid(),date:document.getElementById('o-date').value||todayKey(),topics:top,their:thr,actions:act});
+    save();ui.addOne=false;renderPerson();renderTeam();
+  }
+  else if(a==='addFollow'){ui.addFollow=!ui.addFollow;renderPerson();}
+  else if(a==='saveFollow'){
+    var tx=document.getElementById('u-text').value.trim();
+    if(!tx){alert('Vad ska följas upp?');return;}
+    p.followups.push({id:uid(),text:tx,due:document.getElementById('u-due').value||todayKey(),done:false});
+    save();ui.addFollow=false;renderPerson();renderPeople();renderTodo();
+  }
+  else if(a==='delPerson'){
+    if(confirm('Ta bort '+(p.name||'denna kollega')+' och allt sparat om hen?')){
+      state.people=state.people.filter(function(x){return x.id!==p.id;});
+      save();closeSheets();renderPeople();renderTeam();renderTodo();fillWritePeople();
+    }
+  }
+  else if(a==='aiSum')runAiSummary(p,btn);
+}
+
+function delEntry(type,id){
+  var p=curP();if(!p)return;
+  if(type==='note')p.notes=p.notes.filter(function(x){return x.id!==id;});
+  else if(type==='one')p.ones=p.ones.filter(function(x){return x.id!==id;});
+  else if(type==='follow')p.followups=p.followups.filter(function(x){return x.id!==id;});
+  save();renderPerson();renderPeople();renderTodo();renderTeam();
+}
+
+// ── Team ──────────────────────────────────────────────
+function renderTeam(){
+  var el=document.getElementById('team-list');
+  if(!state.people.length){el.innerHTML='<div class="card-panel"><div class="empty-msg">Lägg till kollegor så grupperas de per team här.</div></div>';return;}
+  var groups={};
+  state.people.forEach(function(p){var t=p.team||'Utan team';(groups[t]=groups[t]||[]).push(p);});
+  var keys=Object.keys(groups).sort(function(a,b){return a.localeCompare(b,'sv');});
+  var h='<div class="card-panel" style="margin-bottom:12px"><div class="soft">'+state.people.length+' kollegor i '+keys.length+' '+(keys.length===1?'team':'team')+'. En liten gul prick betyder att det var ett tag sen en 1:1.</div></div>';
+  h+=keys.map(function(t){
+    var people=groups[t].slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'','sv');});
+    var rows=people.map(function(p){
+      var last=lastOneDate(p),lbl='Ingen 1:1',cl='warn',d=last?daysFromToday(last):null;
+      if(last){lbl='1:1 '+fmtDate(last);cl=(d!=null&&d<-35)?'warn':'';}
+      return '<div class="team-row" data-id="'+p.id+'">'+avatarHTML(p)+
+        '<span class="nm">'+esc(p.name||'Namnlös')+(p.role?' <span style="color:var(--muted);font-size:11px">'+esc(p.role)+'</span>':'')+'</span>'+
+        '<span class="last '+cl+'">'+lbl+'</span></div>';
+    }).join('');
+    return '<div class="team-group card-panel"><div class="team-head">'+esc(t)+'<span>'+people.length+' pers.</span></div>'+rows+'</div>';
+  }).join('');
+  el.innerHTML=h;
+  var rows=el.querySelectorAll('.team-row');
+  for(var i=0;i<rows.length;i++)(function(r){r.onclick=function(){openPerson(r.dataset.id,false);};})(rows[i]);
+}
+
+// ── Att göra ──────────────────────────────────────────
+function renderTodo(){
+  var el=document.getElementById('todo-list');
+  var items=[];
+  state.people.forEach(function(p){(p.followups||[]).forEach(function(f){items.push({p:p,f:f});});});
+  var open=items.filter(function(x){return !x.f.done;});
+  if(!open.length){
+    el.innerHTML='<div class="card-panel"><div class="empty-msg">Inga öppna uppföljningar. 🌿<br>Allt du behöver komma ihåg dyker upp här.</div></div>';
+    var done=items.filter(function(x){return x.f.done;});
+    if(done.length)el.innerHTML+=doneBlock(done);
+    return;
+  }
+  function sortf(a,b){return (a.f.due||'9999').localeCompare(b.f.due||'9999');}
+  var over=open.filter(function(x){return daysFromToday(x.f.due)<0;}).sort(sortf);
+  var today=open.filter(function(x){return daysFromToday(x.f.due)===0;}).sort(sortf);
+  var soon=open.filter(function(x){return daysFromToday(x.f.due)>0;}).sort(sortf);
+  var h='';
+  h+=sec('Försenat',over);
+  h+=sec('Idag',today);
+  h+=sec('Kommande',soon);
+  var done=items.filter(function(x){return x.f.done;});
+  if(done.length)h+=doneBlock(done);
+  el.innerHTML=h;
+  wireTodo(el);
+}
+function sec(title,arr){
+  if(!arr.length)return '';
+  return '<div class="card-panel" style="margin-bottom:12px"><div class="section-title" style="margin:0 0 4px">'+title+'</div>'+arr.map(row).join('')+'</div>';
+}
+function doneBlock(arr){
+  arr=arr.slice().sort(function(a,b){return (b.f.due||'').localeCompare(a.f.due||'');}).slice(0,15);
+  return '<div class="card-panel"><div class="section-title" style="margin:0 0 4px">Klart</div>'+arr.map(row).join('')+'</div>';
+}
+function row(x){
+  var f=x.f,p=x.p,d=daysFromToday(f.due),due=fmtDate(f.due),cl='soon';
+  if(!f.done&&d!=null){if(d<0)cl='over';else if(d===0){cl='today';due='Idag';}}
+  return '<div class="todo-row"><div class="todo-check'+(f.done?' done':'')+'" data-chk="'+p.id+'|'+f.id+'">'+(f.done?'✓':'')+'</div>'+
+    '<div class="todo-body"><div class="todo-txt'+(f.done?' done':'')+'">'+esc(f.text)+'</div>'+
+    '<div class="todo-meta" data-open="'+p.id+'"><b>'+esc(p.name||'?')+'</b>'+(p.team?' · '+esc(p.team):'')+'</div></div>'+
+    '<span class="todo-due '+cl+'">'+(f.done?'':due)+'</span></div>';
+}
+function wireTodo(el){
+  var chks=el.querySelectorAll('[data-chk]');
+  for(var i=0;i<chks.length;i++)(function(c){c.onclick=function(){
+    var parts=c.dataset.chk.split('|'),p=findP(parts[0]);if(!p)return;
+    var f=p.followups.filter(function(x){return x.id===parts[1];})[0];
+    if(f){f.done=!f.done;save();renderTodo();renderPeople();}
+  };})(chks[i]);
+  var ops=el.querySelectorAll('[data-open]');
+  for(var j=0;j<ops.length;j++)(function(o){o.onclick=function(){openPerson(o.dataset.open,false);};})(ops[j]);
+}
+
+// ── Skriv ─────────────────────────────────────────────
+ui.sit='';
+function fillWritePeople(){
+  var sel=document.getElementById('w-person');
+  var cur=sel.value;
+  var list=state.people.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'','sv');});
+  sel.innerHTML='<option value="">— välj kollega —</option>'+list.map(function(p){return '<option value="'+p.id+'">'+esc(p.name||'Namnlös')+(p.team?' ('+esc(p.team)+')':'')+'</option>';}).join('');
+  if(cur)sel.value=cur;
+}
+function renderWriteChips(){
+  var c=document.getElementById('w-sit');
+  c.innerHTML=SIT_OPTS.map(function(o){return '<button class="chip sit'+(ui.sit===o?' sel':'')+'" data-sit="'+esc(o)+'">'+esc(o)+'</button>';}).join('');
+  var btns=c.querySelectorAll('.chip');
+  for(var i=0;i<btns.length;i++)(function(b){b.onclick=function(){ui.sit=(ui.sit===b.dataset.sit)?'':b.dataset.sit;renderWriteChips();};})(btns[i]);
+}
+document.getElementById('w-person').onchange=function(){
+  var p=findP(this.value);
+  if(p&&p.pref.channel)document.getElementById('w-channel').value=p.pref.channel;
+};
+document.getElementById('w-go').onclick=function(e){runWrite(e.target);};
+
+// ── AI ────────────────────────────────────────────────
+var AI_KEY='kollegorna_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function aiCall(prompt,maxTok){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||700,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+
+function personContext(p){
+  var L=[];
+  L.push('Namn: '+(p.name||'okänt'));
+  if(p.role)L.push('Roll: '+p.role);
+  if(p.team)L.push('Team: '+p.team);
+  L.push('Relation till mig: '+(RELS[p.rel]?RELS[p.rel][0]:'kollega'));
+  if(p.pref.channel)L.push('Föredrar kanal: '+p.pref.channel);
+  if(p.pref.time)L.push('Bästa tid: '+p.pref.time);
+  if(p.pref.style&&p.pref.style.length)L.push('Kommunikationsstil: '+p.pref.style.join(', '));
+  if(p.pref.note)L.push('Övrigt: '+p.pref.note);
+  return L.join('\n');
+}
+
+function runAiSummary(p,btn){
+  var ones=(p.ones||[]).slice().sort(function(a,b){return a.date.localeCompare(b.date);}).slice(-6);
+  var notes=(p.notes||[]).slice().sort(function(a,b){return a.date.localeCompare(b.date);}).slice(-6);
+  var open=(p.followups||[]).filter(function(f){return !f.done;});
+  if(!ones.length&&!notes.length&&!open.length){alert('Logga några anteckningar, 1:1 eller uppföljningar först.');return;}
+  var body='';
+  if(ones.length)body+='\n1:1-loggar:\n'+ones.map(function(o){return '- '+fmtDate(o.date)+': '+[o.topics,o.their?'(de tog upp: '+o.their+')':'',o.actions?'(nästa steg: '+o.actions+')':''].filter(Boolean).join(' ');}).join('\n');
+  if(notes.length)body+='\nMötesanteckningar:\n'+notes.map(function(n){return '- '+fmtDate(n.date)+' '+(n.title?n.title+': ':'')+n.text;}).join('\n');
+  if(open.length)body+='\nÖppna uppföljningar:\n'+open.map(function(f){return '- '+f.text+(f.due?' (senast '+fmtDate(f.due)+')':'');}).join('\n');
+  var prompt='Du hjälper en person att hålla ordning på sina arbetsrelationer och sänka den sociala belastningen på jobbet. Sammanfatta var personen står med den här kollegan, på svenska, i en lugn och saklig ton. Skriv flytande text på högst 160 ord utan rubriker eller punktlistor. Väv in: var ni står just nu, eventuella återkommande teman, öppna punkter att inte tappa, och en konkret sak att tänka på inför nästa kontakt. Var konkret och stödjande, inte värderande.\n\nOm kollegan:\n'+personContext(p)+'\n\nUnderlag:'+body;
+  var orig=btn.textContent;btn.textContent='✨ Sammanfattar…';btn.disabled=true;
+  aiCall(prompt,500).then(function(t){p.ai=t;save();renderPerson();}).catch(function(e){if(e.message!=='NOKEY')alert('Kunde inte hämta sammanfattning: '+e.message);btn.textContent=orig;btn.disabled=false;});
+}
+
+function runWrite(btn){
+  var p=findP(document.getElementById('w-person').value);
+  if(!p){alert('Välj vilken kollega det gäller.');return;}
+  if(!ui.sit){alert('Välj vad du vill göra.');return;}
+  var ch=document.getElementById('w-channel').value;
+  var ctx=document.getElementById('w-context').value.trim();
+  var lenHint=(ch==='Teams-chatt'||ch==='Telefon')?'Håll det kort och vänligt, som ett chattmeddelande.':(ch==='Mejl'?'Skriv som ett tydligt men koncist mejl med en kort ämnesrad först (Ämne: ...).':'Skriv som ett kort talmanus / öppning jag kan använda muntligt.');
+  var prompt='Du hjälper mig att formulera ett professionellt meddelande till en kollega så att jag slipper grubbla över ordvalen. Skriv på svenska. Anpassa tonen efter kollegans kommunikationsstil och vår relation. '+lenHint+' Var respektfull, tydlig och naturlig — inte stel. Ge endast själva meddelandet, inga förklaringar runt omkring.\n\nVad jag vill göra: '+ui.sit+'\nKanal: '+ch+'\n'+(ctx?'Situation: '+ctx+'\n':'')+'\nOm kollegan:\n'+personContext(p);
+  var orig=btn.textContent;btn.textContent='✨ Formulerar…';btn.disabled=true;
+  document.getElementById('w-out').innerHTML='';
+  aiCall(prompt,650).then(function(t){
+    document.getElementById('w-out').innerHTML='<div class="ai-box"><span class="ai-lbl">✉️ Förslag — '+esc(ui.sit)+'</span>'+esc(t)+'</div><button class="ai-copy" id="w-copy">Kopiera</button>';
+    document.getElementById('w-copy').onclick=function(){
+      if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){this.textContent='Kopierat ✓';}.bind(this));
+      var b=document.getElementById('w-copy');b.textContent='Kopierat ✓';setTimeout(function(){b.textContent='Kopiera';},1500);
+    };
+    btn.textContent=orig;btn.disabled=false;
+  }).catch(function(e){if(e.message!=='NOKEY')alert('Kunde inte hämta förslag: '+e.message);btn.textContent=orig;btn.disabled=false;});
+}
+
+document.getElementById('ai-set-btn').onclick=function(){document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+document.getElementById('ps-close').onclick=closeSheets;
+
+// ── Synk-sheet UI ─────────────────────────────────────
+function setSyncStatus(stt,msg){var el=document.getElementById('sync-status');el.className='sync-status'+(stt?' '+stt:'');el.textContent=msg;}
+function openSyncSheet(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  setSyncStatus('', '');document.getElementById('sync-status').className='sync-status';
+  openSheet('sync-sheet');
+}
+document.getElementById('sync-btn-foot').onclick=openSyncSheet;
+document.getElementById('sync-close').onclick=closeSheets;
+document.getElementById('sync-now').onclick=function(){ghPull();};
+document.getElementById('gh-clear').onclick=function(){
+  sync.owner='';sync.repo='';sync.token='';sync.sha=null;
+  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';
+  reflectSyncUI();setSyncStatus('info','Bortkopplad. Data finns kvar lokalt.');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setSyncStatus('err','Fyll i alla tre fälten.');return;}
+  saveSync();reflectSyncUI();
+  setSyncStatus('info','Testar anslutning…');
+  ghGet().then(function(data){
+    if(data&&Array.isArray(data.people)){
+      setSyncStatus('ok','✓ Ansluten! Hämtar data från repot…');
+      state.people=data.people;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+      renderPeople();renderTeam();renderTodo();fillWritePeople();setBadge('ok','Synkad');
+    }else{
+      setSyncStatus('ok','✓ Ansluten! Repot var tomt — laddar upp din data…');
+      ghPush();
+    }
+    setTimeout(closeSheets,1300);
+  }).catch(function(e){setSyncStatus('err','Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.');});
+};
+function reflectSyncUI(){
+  if(syncOn()){setBadge('ok','Synkad');document.getElementById('sync-now').style.display='';}
+  else{setBadge('offline','Lokal');document.getElementById('sync-now').style.display='none';}
+}
+
+// ── Export/import ─────────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='kollegorna-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.people){state=Object.assign({people:[]},d);save();renderPeople();renderTeam();renderTodo();fillWritePeople();alert('Importerat.');}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#1A1E24':'#EDF0F3';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var ni=0;ni<navBtns.length;ni++)(function(b){
+  b.onclick=function(){
+    for(var i=0;i<navBtns.length;i++)navBtns[i].classList.remove('active');
+    b.classList.add('active');
+    var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='team')renderTeam();
+    if(b.dataset.v==='todo')renderTodo();
+    if(b.dataset.v==='write'){fillWritePeople();renderWriteChips();}
+  };
+})(navBtns[ni]);
+
+// ── Init ──────────────────────────────────────────────
+renderPeople();
+renderWriteChips();
+fillWritePeople();
+applyTheme();
+setInterval(applyTheme,60000);
+loadSync();
+reflectSyncUI();
+if(syncOn())ghPull();
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>

@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="IT-koordinator">
+<meta name="theme-color" content="#EDF1F5">
+<link rel="manifest" href='data:application/manifest+json,{"name":"IT-koordinator","short_name":"IT-koord","display":"standalone","background_color":"%23EDF1F5","theme_color":"%23EDF1F5","start_url":"."}'>
+<title>IT-koordinator</title>
+<style>
+:root{
+  --bg:#EDF1F5;--panel:#FFFFFF;--panel2:#F1F4F8;--line:#D7DEE7;
+  --ink:#283340;--muted:#74808F;--accent:#2D6CB5;--accent-soft:#DCE8F5;
+  --green:#3F8F5B;--green-soft:#DCEFE2;--amber:#B6822A;--amber-soft:#F6ECD6;
+  --red:#C0504A;--red-soft:#F6E1DF;--purple:#7A6FB0;--purple-soft:#E7E3F2;
+  --navbg:rgba(237,241,245,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.03em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.sm{font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.view{display:none}
+.view.active{display:block}
+
+/* Översikt */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px}
+.stat .n{font-family:Georgia,serif;font-size:28px;line-height:1;color:var(--ink)}
+.stat .n.alert{color:var(--red)}
+.stat .lbl{font-size:11px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.05em}
+.todo-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.todo-row:first-child{border-top:none}
+.todo-row .pdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.todo-row .t{flex:1}
+.todo-row .meta{font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* Chips / filter */
+.filterbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.fchip{flex-shrink:0;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:6px 11px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.fchip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Ärende-kort */
+.tcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;margin-bottom:9px;cursor:pointer}
+.tcard .top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.tcard .ttl{flex:1;font-size:14px;font-weight:500}
+.badge{font-size:10px;padding:2px 8px;border-radius:9px;white-space:nowrap;font-weight:500}
+.b-ny{background:var(--accent-soft);color:var(--accent)}
+.b-pagaende{background:var(--amber-soft);color:var(--amber)}
+.b-vantar_anv{background:var(--purple-soft);color:var(--purple)}
+.b-vantar_lev{background:var(--purple-soft);color:var(--purple)}
+.b-klar{background:var(--green-soft);color:var(--green)}
+.pflag{font-size:10px;padding:2px 7px;border-radius:9px;font-weight:600}
+.p-lag{background:var(--panel2);color:var(--muted)}
+.p-normal{background:var(--accent-soft);color:var(--accent)}
+.p-akut{background:var(--red-soft);color:var(--red)}
+.tcard .sub{font-size:12px;color:var(--muted)}
+
+/* Personal / checklista */
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;margin-bottom:9px;cursor:pointer}
+.pcard .top{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.pcard .nm{flex:1;font-size:14px;font-weight:500}
+.tag{font-size:10px;padding:2px 8px;border-radius:9px;font-weight:500}
+.tag.on{background:var(--green-soft);color:var(--green)}
+.tag.off{background:var(--red-soft);color:var(--red)}
+.pbar-bg{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:2px}
+.pbar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
+.pbar-lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.step{display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.step:first-child{border-top:none}
+.step input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);flex-shrink:0}
+.step span{flex:1}
+.step.done span{text-decoration:line-through;color:var(--muted)}
+.step .del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;width:auto}
+
+/* Utrustning */
+.ecard{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
+.eicon{font-size:20px;flex-shrink:0}
+.ecard .body{flex:1;min-width:0}
+.ecard .em{font-size:14px;font-weight:500}
+.ecard .es{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.estatus{font-size:10px;padding:2px 8px;border-radius:9px;white-space:nowrap;font-weight:500}
+.s-lager{background:var(--panel2);color:var(--muted)}
+.s-redo{background:var(--accent-soft);color:var(--accent)}
+.s-utdelad{background:var(--green-soft);color:var(--green)}
+.s-retur{background:var(--amber-soft);color:var(--amber)}
+
+/* Kunskapsbank */
+.kcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:8px}
+.kcard .kt{font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:space-between}
+.kcard .ktags{font-size:11px;color:var(--accent);margin-top:3px}
+.kcard .kbody{font-size:13px;color:var(--ink);line-height:1.6;margin-top:7px;white-space:pre-wrap;display:none}
+.kcard.open .kbody{display:block}
+.kcard .kedit{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;width:auto;margin-top:8px;text-decoration:underline;text-underline-offset:3px}
+
+/* AI */
+.ai-box{border:1px solid var(--accent);background:var(--accent-soft);border-radius:13px;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--accent);font-size:12px;display:block;margin-bottom:5px}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:2px}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(40,51,64,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.fab{position:fixed;right:max(16px,calc(50vw - 224px));bottom:calc(86px + env(safe-area-inset-bottom));width:50px;height:50px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:26px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(45,108,181,.4);z-index:42}
+.foot{display:flex;gap:14px;justify-content:center;margin-top:18px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.logline{font-size:12px;color:var(--muted);padding:6px 0;border-top:1px solid var(--line);line-height:1.5}
+.logline:first-child{border-top:none}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#181C22;--panel:#21262E;--panel2:#2A3038;--line:#39414B;
+  --ink:#E3E8EF;--muted:#929CA8;--accent:#5B9BD9;--accent-soft:#2A3A4D;
+  --green:#6FB389;--green-soft:#26352B;--amber:#D2A85C;--amber-soft:#3A3322;
+  --red:#D38078;--red-soft:#3A2826;--purple:#A99DD6;--purple-soft:#2E2A3D;
+  --navbg:rgba(24,28,34,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+.sync-badge{display:block;margin:-8px auto 14px;width:max-content;font-size:11px;padding:3px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.sync-badge.ok{background:var(--green-soft);color:var(--green);border-color:var(--green-soft)}
+.sync-badge.load{background:var(--amber-soft);color:var(--amber);border-color:var(--amber-soft)}
+.sync-badge.err{background:var(--red-soft);color:var(--red);border-color:var(--red-soft)}
+.hint{font-size:11px;color:var(--muted);font-family:monospace;background:var(--panel2);padding:6px 9px;border-radius:8px;line-height:1.5;margin-top:6px}
+#gh-status{display:none;margin-top:10px;font-size:12px;padding:8px 11px;border-radius:9px}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🖥️ IT-koordinator</h1>
+<button class="sync-badge" id="sync-badge">Lokal · tryck för synk</button>
+
+<!-- ÖVERSIKT -->
+<div class="view active" id="view-home">
+  <div class="stat-grid">
+    <div class="stat"><div class="n" id="s-open">0</div><div class="lbl">Öppna ärenden</div></div>
+    <div class="stat"><div class="n alert" id="s-akut">0</div><div class="lbl">Akuta</div></div>
+    <div class="stat"><div class="n" id="s-newusers">0</div><div class="lbl">Nya användare (7 d)</div></div>
+    <div class="stat"><div class="n" id="s-handout">0</div><div class="lbl">Utrustning att lämna ut</div></div>
+  </div>
+  <div class="section-title">🚦 Mina viktigaste idag</div>
+  <div class="card-panel" id="home-todo"></div>
+  <div class="section-title">👤 Pågående checklistor</div>
+  <div class="card-panel" id="home-people"></div>
+  <div class="foot">
+    <button id="settings-btn">Inställningar</button>
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas lokalt i din enhet (localStorage). Inget skickas någonstans utom dina egna AI-anrop till Anthropic.</div>
+</div>
+
+<!-- ÄRENDEN -->
+<div class="view" id="view-tickets">
+  <div class="filterbar" id="ticket-filter">
+    <button class="fchip active" data-f="open">Öppna</button>
+    <button class="fchip" data-f="ny">Nya</button>
+    <button class="fchip" data-f="pagaende">Pågående</button>
+    <button class="fchip" data-f="vantar_anv">Väntar användare</button>
+    <button class="fchip" data-f="vantar_lev">Väntar leverantör</button>
+    <button class="fchip" data-f="klar">Klara</button>
+    <button class="fchip" data-f="all">Alla</button>
+  </div>
+  <div id="ticket-list"></div>
+</div>
+
+<!-- PERSONAL -->
+<div class="view" id="view-people">
+  <div class="filterbar" id="people-filter">
+    <button class="fchip active" data-f="active">Pågående</button>
+    <button class="fchip" data-f="on">Onboarding</button>
+    <button class="fchip" data-f="off">Offboarding</button>
+    <button class="fchip" data-f="done">Klara</button>
+    <button class="fchip" data-f="all">Alla</button>
+  </div>
+  <div id="people-list"></div>
+</div>
+
+<!-- UTRUSTNING -->
+<div class="view" id="view-equip">
+  <div class="filterbar" id="equip-filter">
+    <button class="fchip active" data-f="all">Alla</button>
+    <button class="fchip" data-f="dator">Datorer</button>
+    <button class="fchip" data-f="mobil">Mobiler</button>
+    <button class="fchip" data-f="skarm">Skärmar</button>
+    <button class="fchip" data-f="headset">Headset</button>
+    <button class="fchip" data-f="redo">Att lämna ut</button>
+    <button class="fchip" data-f="retur">Att samla in</button>
+  </div>
+  <div id="equip-list"></div>
+</div>
+
+<!-- KUNSKAP -->
+<div class="view" id="view-kb">
+  <div class="card-panel">
+    <div class="section-title" style="margin-top:0">🤖 IT-assistent</div>
+    <div class="soft" style="margin-bottom:8px">Beskriv ett problem så får du felsökning steg-för-steg och förslag på när det bör eskaleras.</div>
+    <textarea id="assist-input" rows="2" placeholder="T.ex. Min Teams fungerar inte"></textarea>
+    <button class="btn fill sm" id="assist-go" style="margin-top:8px;width:100%">Fråga assistenten</button>
+    <div id="assist-out"></div>
+  </div>
+  <div class="section-title">📚 Kunskapsbank <button class="btn ghost" id="kb-add">+ Ny</button></div>
+  <input id="kb-search" placeholder="Sök i kunskapsbanken…" style="margin-bottom:10px">
+  <div id="kb-list"></div>
+</div>
+
+<button class="fab" id="fab">+</button>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" data-v="home"><span>📊</span>Översikt</button>
+  <button data-v="tickets"><span>🎫</span>Ärenden</button>
+  <button data-v="people"><span>👤</span>Personal</button>
+  <button data-v="equip"><span>💻</span>Utrustning</button>
+  <button data-v="kb"><span>📚</span>Kunskap</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Nytt/redigera ärende -->
+<div class="sheet" id="ticket-sheet">
+  <h3 id="ts-title">Nytt ärende</h3>
+  <label>Rubrik</label>
+  <input id="ts-ttl" placeholder="Kort beskrivning av ärendet">
+  <label>Användare</label>
+  <input id="ts-user" placeholder="Vem gäller det?">
+  <label>Beskrivning</label>
+  <textarea id="ts-desc" rows="3" placeholder="Detaljer, felmeddelanden, vad som testats…"></textarea>
+  <label>Status</label>
+  <select id="ts-status">
+    <option value="ny">Nytt</option>
+    <option value="pagaende">Pågående</option>
+    <option value="vantar_anv">Väntar på användare</option>
+    <option value="vantar_lev">Väntar på leverantör</option>
+    <option value="klar">Klart</option>
+  </select>
+  <label>Prioritet</label>
+  <select id="ts-prio">
+    <option value="lag">Låg</option>
+    <option value="normal" selected>Normal</option>
+    <option value="akut">Akut</option>
+  </select>
+  <div id="ts-ai-area" style="display:none">
+    <label>🤖 AI-hjälp</label>
+    <div class="btn-row">
+      <button class="btn sm" id="ai-summary">Sammanfatta</button>
+      <button class="btn sm" id="ai-next">Nästa steg</button>
+      <button class="btn sm" id="ai-reply">Skriv svar</button>
+    </div>
+    <div id="ts-ai-out"></div>
+  </div>
+  <div id="ts-log-area" style="display:none">
+    <label>Historik</label>
+    <div id="ts-log"></div>
+  </div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn fill" id="ts-save">Spara</button>
+    <button class="btn ghost" id="ts-del" style="display:none">Ta bort</button>
+  </div>
+  <button class="sheet-close" id="ts-close">Stäng</button>
+</div>
+
+<!-- Ny person / checklista -->
+<div class="sheet" id="person-sheet">
+  <h3 id="ps-title">Ny medarbetare</h3>
+  <label>Namn</label>
+  <input id="ps-name" placeholder="För- och efternamn">
+  <label>Roll / avdelning</label>
+  <input id="ps-role" placeholder="T.ex. Butikssäljare, IT, Ekonomi">
+  <div id="ps-typewrap">
+    <label>Typ av checklista</label>
+    <select id="ps-type">
+      <option value="on">Onboarding – ny anställd</option>
+      <option value="off">Offboarding – avsluta anställd</option>
+    </select>
+  </div>
+  <div id="ps-steps-area" style="display:none">
+    <label>Checklista</label>
+    <div id="ps-steps"></div>
+    <div class="btn-row" style="margin-top:8px">
+      <input id="ps-newstep" placeholder="Lägg till steg…">
+      <button class="btn sm" id="ps-addstep" style="flex:0 0 auto">+</button>
+    </div>
+  </div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn fill" id="ps-save">Spara</button>
+    <button class="btn ghost" id="ps-del" style="display:none">Ta bort</button>
+  </div>
+  <button class="sheet-close" id="ps-close">Stäng</button>
+</div>
+
+<!-- Ny/redigera utrustning -->
+<div class="sheet" id="equip-sheet">
+  <h3 id="es-title">Ny utrustning</h3>
+  <label>Typ</label>
+  <select id="es-type">
+    <option value="dator">💻 Dator</option>
+    <option value="mobil">📱 Mobil</option>
+    <option value="skarm">🖥️ Skärm</option>
+    <option value="headset">🎧 Headset</option>
+    <option value="ovrigt">📦 Övrigt</option>
+  </select>
+  <label>Modell</label>
+  <input id="es-model" placeholder="T.ex. Dell Latitude 5440">
+  <label>Serienummer</label>
+  <input id="es-serial" placeholder="Serienummer / IMEI">
+  <label>Innehavare</label>
+  <input id="es-holder" placeholder="Vem har enheten?">
+  <label>Status</label>
+  <select id="es-status">
+    <option value="lager">I lager</option>
+    <option value="redo">Redo att lämna ut</option>
+    <option value="utdelad">Utdelad</option>
+    <option value="retur">Ska samlas in</option>
+  </select>
+  <label>Garanti / slutdatum</label>
+  <input id="es-warranty" type="date">
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn fill" id="es-save">Spara</button>
+    <button class="btn ghost" id="es-del" style="display:none">Ta bort</button>
+  </div>
+  <button class="sheet-close" id="es-close">Stäng</button>
+</div>
+
+<!-- KB editor -->
+<div class="sheet" id="kb-sheet">
+  <h3 id="ks-title">Ny artikel</h3>
+  <label>Titel</label>
+  <input id="ks-ttl" placeholder="T.ex. VPN ansluter inte">
+  <label>Taggar (komma-separerade)</label>
+  <input id="ks-tags" placeholder="vpn, nätverk, distans">
+  <label>Innehåll / felsökningssteg</label>
+  <textarea id="ks-body" rows="6" placeholder="Steg för steg…"></textarea>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn fill" id="ks-save">Spara</button>
+    <button class="btn ghost" id="ks-del" style="display:none">Ta bort</button>
+  </div>
+  <button class="sheet-close" id="ks-close">Stäng</button>
+</div>
+
+<!-- Inställningar / AI-nyckel + synk -->
+<div class="sheet" id="settings-sheet">
+  <h3>⚙️ Inställningar</h3>
+
+  <label>Synk via GitHub (likt Appkollen)</label>
+  <p class="soft" style="margin-bottom:8px">Appen läser och sparar <code>it-koordinator.json</code> i ett <b style="color:var(--ink)">privat</b> GitHub-repo, så att din telefon och datorversionen visar samma ärenden, personal, utrustning och kunskapsbank. Token sparas bara lokalt på den här enheten.</p>
+  <input type="text" id="gh-owner" placeholder="GitHub-användarnamn (repo-ägare)" autocomplete="off">
+  <input type="text" id="gh-repo" placeholder="Namn på privat data-repo" autocomplete="off" style="margin-top:8px">
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off" style="margin-top:8px">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div id="gh-status"></div>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="gh-save">Spara &amp; synka</button>
+    <button class="btn ghost" id="gh-clear">Koppla från</button>
+  </div>
+
+  <label style="margin-top:18px">Anthropic API-nyckel</label>
+  <p class="soft" style="margin-bottom:8px">AI-funktionerna körs av Claude via din egen API-nyckel. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt och följer inte med i säkerhetskopior eller synk.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara nyckel</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa</button>
+  </div>
+  <button class="sheet-close" id="settings-close">Stäng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='itkoord_v1';
+var AI_KEY='itkoord_ai_key';
+var SYNC_KEY='itkoord_sync_v1';
+var SYNC_FILE='it-koordinator.json';
+var sync={owner:'',repo:'',token:'',sha:null};
+var pushTimer=null;
+var ONBOARD=['Skapa AD-konto','Tilldela M365-licenser','Beställ dator','Beställ mobil','Konfigurera e-post','Lägg till i grupper och behörigheter','Boka introduktion','Lämna ut utrustning'];
+var OFFBOARD=['Inaktivera AD-konto','Återkalla licenser','Samla in dator','Samla in mobil','Vidarebefordra/arkivera e-post','Ta bort behörigheter','Arkivera filer','Avregistrera utrustning'];
+
+var state={tickets:[],people:[],equipment:[],kb:[],theme:'auto',seeded:false};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+
+if(!state.seeded){
+  state.kb=[
+    {id:uid(),title:'Teams startar eller fungerar inte',tags:'teams, microsoft 365',body:'1. Logga ut och in igen i Teams.\n2. Stäng appen helt och starta om.\n3. Rensa cache: stäng Teams, ta bort innehållet i mappen %appdata%\\Microsoft\\Teams.\n4. Kontrollera nätverk/VPN.\n5. Testa webbversionen teams.microsoft.com.\nEskalera om problemet kvarstår för flera användare.'},
+    {id:uid(),title:'VPN ansluter inte',tags:'vpn, nätverk, distans',body:'1. Kontrollera internetanslutning.\n2. Starta om VPN-klienten.\n3. Verifiera användarnamn och lösenord.\n4. Kontrollera MFA/autentisering.\n5. Starta om datorn.\nEskalera till nätverk om servern inte svarar.'},
+    {id:uid(),title:'Återställa lösenord',tags:'lösenord, konto, m365',body:'1. Be användaren använda självbetjäning för lösenordsåterställning om aktiverat.\n2. Annars: återställ i Microsoft 365 admin / AD.\n3. Tvinga byte vid nästa inloggning.\n4. Påminn om att uppdatera lösenord i Teams/Outlook på mobil.'},
+    {id:uid(),title:'Skrivare skriver inte ut',tags:'skrivare, utskrift',body:'1. Kontrollera att skrivaren är på och har papper/toner.\n2. Kontrollera nätverksanslutning.\n3. Töm utskriftskön.\n4. Ta bort och lägg till skrivaren igen.\n5. Uppdatera drivrutin.'},
+    {id:uid(),title:'Microsoft 365 / Outlook synkar inte',tags:'microsoft 365, outlook, e-post',body:'1. Kontrollera licensstatus i admin.\n2. Logga ut och in i Office-appen.\n3. Kontrollera nätverk.\n4. Reparera Office via Inställningar > Appar.\n5. Kontrollera tjänststatus på status.office.com.'}
+  ];
+  state.seeded=true;
+  save();
+}
+
+function persistLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function save(){persistLocal();schedulePush();}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+var esc=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayKey(){return toISO(new Date());}
+function nowStr(){var d=new Date();return toISO(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function daysAgo(iso){if(!iso)return 0;var d=new Date(iso),n=new Date();return Math.floor((n-d)/86400000);}
+
+// ── Etiketter ─────────────────────────────────────────
+var STATUS_LBL={ny:'Nytt',pagaende:'Pågående',vantar_anv:'Väntar användare',vantar_lev:'Väntar leverantör',klar:'Klart'};
+var PRIO_LBL={lag:'Låg',normal:'Normal',akut:'Akut'};
+var ETYPE={dator:'💻',mobil:'📱',skarm:'🖥️',headset:'🎧',ovrigt:'📦'};
+var ETYPE_LBL={dator:'Dator',mobil:'Mobil',skarm:'Skärm',headset:'Headset',ovrigt:'Övrigt'};
+var ESTATUS_LBL={lager:'I lager',redo:'Redo att lämna ut',utdelad:'Utdelad',retur:'Ska samlas in'};
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var l=document.querySelectorAll('.sheet');for(var i=0;i<l.length;i++)l[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Översikt ──────────────────────────────────────────
+function prioScore(t){var w={akut:100,normal:40,lag:10};return (w[t.prio]||40)+daysAgo(t.created);}
+function openTickets(){return state.tickets.filter(function(t){return t.status!=='klar';});}
+function renderHome(){
+  var open=openTickets();
+  document.getElementById('s-open').textContent=open.length;
+  document.getElementById('s-akut').textContent=open.filter(function(t){return t.prio==='akut';}).length;
+  document.getElementById('s-newusers').textContent=state.people.filter(function(p){return p.type==='on'&&daysAgo(p.created)<=7;}).length;
+  document.getElementById('s-handout').textContent=state.equipment.filter(function(e){return e.status==='redo';}).length;
+
+  var todo=open.slice().sort(function(a,b){return prioScore(b)-prioScore(a);}).slice(0,5);
+  var pcol={akut:'var(--red)',normal:'var(--accent)',lag:'var(--muted)'};
+  var h=document.getElementById('home-todo');
+  if(!todo.length){h.innerHTML='<div class="empty-msg">Inga öppna ärenden 🎉</div>';}
+  else{
+    h.innerHTML=todo.map(function(t){
+      return '<div class="todo-row" data-id="'+t.id+'"><span class="pdot" style="background:'+pcol[t.prio]+'"></span><span class="t">'+esc(t.title)+'</span><span class="meta">'+esc(STATUS_LBL[t.status])+'</span></div>';
+    }).join('');
+    var rows=h.querySelectorAll('.todo-row');
+    for(var i=0;i<rows.length;i++){(function(r){r.onclick=function(){openTicket(r.dataset.id);};})(rows[i]);}
+  }
+
+  var act=state.people.filter(function(p){return progress(p).pct<100;});
+  var hp=document.getElementById('home-people');
+  if(!act.length){hp.innerHTML='<div class="empty-msg">Inga pågående checklistor</div>';}
+  else{
+    hp.innerHTML=act.map(function(p){var pr=progress(p);
+      return '<div class="todo-row" data-id="'+p.id+'"><span class="tag '+p.type+'">'+(p.type==='on'?'In':'Ut')+'</span><span class="t">'+esc(p.name)+'</span><span class="meta">'+pr.done+'/'+pr.total+'</span></div>';
+    }).join('');
+    var rs=hp.querySelectorAll('.todo-row');
+    for(var j=0;j<rs.length;j++){(function(r){r.onclick=function(){openPerson(r.dataset.id);};})(rs[j]);}
+  }
+}
+
+// ── Ärenden ───────────────────────────────────────────
+var ticketFilter='open';
+function renderTickets(){
+  var f=ticketFilter;
+  var list=state.tickets.filter(function(t){
+    if(f==='all')return true;
+    if(f==='open')return t.status!=='klar';
+    return t.status===f;
+  });
+  list.sort(function(a,b){return prioScore(b)-prioScore(a);});
+  var el=document.getElementById('ticket-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga ärenden här. Tryck + för att skapa ett.</div>';return;}
+  el.innerHTML=list.map(function(t){
+    return '<div class="tcard" data-id="'+t.id+'"><div class="top"><span class="ttl">'+esc(t.title)+'</span><span class="pflag p-'+t.prio+'">'+esc(PRIO_LBL[t.prio])+'</span></div>'+
+    '<div class="top" style="margin-bottom:0"><span class="badge b-'+t.status+'">'+esc(STATUS_LBL[t.status])+'</span><span class="sub">'+(t.user?esc(t.user)+' · ':'')+daysAgo(t.created)+' d</span></div></div>';
+  }).join('');
+  var cards=el.querySelectorAll('.tcard');
+  for(var i=0;i<cards.length;i++){(function(c){c.onclick=function(){openTicket(c.dataset.id);};})(cards[i]);}
+}
+var fb=document.getElementById('ticket-filter').querySelectorAll('.fchip');
+for(var i=0;i<fb.length;i++){(function(b){b.onclick=function(){for(var k=0;k<fb.length;k++)fb[k].classList.remove('active');b.classList.add('active');ticketFilter=b.dataset.f;renderTickets();};})(fb[i]);}
+
+var editingTicket=null;
+function openTicket(id){
+  editingTicket=id;
+  var t=id?state.tickets.filter(function(x){return x.id===id;})[0]:null;
+  document.getElementById('ts-title').textContent=t?'Ärende':'Nytt ärende';
+  document.getElementById('ts-ttl').value=t?t.title:'';
+  document.getElementById('ts-user').value=t?(t.user||''):'';
+  document.getElementById('ts-desc').value=t?(t.desc||''):'';
+  document.getElementById('ts-status').value=t?t.status:'ny';
+  document.getElementById('ts-prio').value=t?t.prio:'normal';
+  document.getElementById('ts-del').style.display=t?'block':'none';
+  document.getElementById('ts-ai-area').style.display=t?'block':'none';
+  document.getElementById('ts-ai-out').innerHTML='';
+  var la=document.getElementById('ts-log-area');
+  if(t&&t.log&&t.log.length){la.style.display='block';document.getElementById('ts-log').innerHTML=t.log.map(function(l){return '<div class="logline">'+esc(l)+'</div>';}).join('');}
+  else la.style.display='none';
+  openSheet('ticket-sheet');
+}
+document.getElementById('ts-save').onclick=function(){
+  var ttl=document.getElementById('ts-ttl').value.trim();
+  if(!ttl){alert('Ange en rubrik.');return;}
+  var data={title:ttl,user:document.getElementById('ts-user').value.trim(),desc:document.getElementById('ts-desc').value.trim(),status:document.getElementById('ts-status').value,prio:document.getElementById('ts-prio').value};
+  if(editingTicket){
+    var t=state.tickets.filter(function(x){return x.id===editingTicket;})[0];
+    if(t.status!==data.status){t.log=t.log||[];t.log.unshift(nowStr()+' — status: '+STATUS_LBL[data.status]);}
+    Object.assign(t,data);
+  }else{
+    state.tickets.push(Object.assign({id:uid(),created:todayKey(),log:[nowStr()+' — ärende skapat']},data));
+  }
+  save();closeSheets();renderTickets();renderHome();
+};
+document.getElementById('ts-del').onclick=function(){
+  if(!editingTicket)return;
+  if(!confirm('Ta bort ärendet?'))return;
+  state.tickets=state.tickets.filter(function(x){return x.id!==editingTicket;});
+  save();closeSheets();renderTickets();renderHome();
+};
+document.getElementById('ts-close').onclick=closeSheets;
+
+// ── Personal / checklistor ────────────────────────────
+function progress(p){var total=p.steps.length,done=p.steps.filter(function(s){return s.done;}).length;return {total:total,done:done,pct:total?Math.round(done/total*100):0};}
+var peopleFilter='active';
+function renderPeople(){
+  var f=peopleFilter;
+  var list=state.people.filter(function(p){
+    if(f==='all')return true;
+    if(f==='active')return progress(p).pct<100;
+    if(f==='done')return progress(p).pct===100;
+    return p.type===f;
+  });
+  list.sort(function(a,b){return progress(a).pct-progress(b).pct;});
+  var el=document.getElementById('people-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga checklistor här. Tryck + för att lägga till.</div>';return;}
+  el.innerHTML=list.map(function(p){var pr=progress(p);
+    return '<div class="pcard" data-id="'+p.id+'"><div class="top"><span class="nm">'+esc(p.name)+'</span><span class="tag '+p.type+'">'+(p.type==='on'?'Onboarding':'Offboarding')+'</span></div>'+
+    (p.role?'<div class="soft" style="margin-bottom:6px">'+esc(p.role)+'</div>':'')+
+    '<div class="pbar-bg"><div class="pbar-fill" style="width:'+pr.pct+'%"></div></div><div class="pbar-lbl">'+pr.done+' av '+pr.total+' klara · '+pr.pct+'%</div></div>';
+  }).join('');
+  var cards=el.querySelectorAll('.pcard');
+  for(var i=0;i<cards.length;i++){(function(c){c.onclick=function(){openPerson(c.dataset.id);};})(cards[i]);}
+}
+var pf=document.getElementById('people-filter').querySelectorAll('.fchip');
+for(var p2=0;p2<pf.length;p2++){(function(b){b.onclick=function(){for(var k=0;k<pf.length;k++)pf[k].classList.remove('active');b.classList.add('active');peopleFilter=b.dataset.f;renderPeople();};})(pf[p2]);}
+
+var editingPerson=null;
+function openPerson(id){
+  editingPerson=id;
+  var p=id?state.people.filter(function(x){return x.id===id;})[0]:null;
+  document.getElementById('ps-title').textContent=p?esc(p.name):'Ny medarbetare';
+  document.getElementById('ps-name').value=p?p.name:'';
+  document.getElementById('ps-role').value=p?(p.role||''):'';
+  document.getElementById('ps-typewrap').style.display=p?'none':'block';
+  document.getElementById('ps-type').value=p?p.type:'on';
+  document.getElementById('ps-del').style.display=p?'block':'none';
+  var area=document.getElementById('ps-steps-area');
+  if(p){area.style.display='block';renderPersonSteps(p);}else area.style.display='none';
+  openSheet('person-sheet');
+}
+function renderPersonSteps(p){
+  var el=document.getElementById('ps-steps');
+  el.innerHTML=p.steps.map(function(st,i){
+    return '<div class="step'+(st.done?' done':'')+'"><input type="checkbox" data-i="'+i+'"'+(st.done?' checked':'')+'><span>'+esc(st.t)+'</span><button class="del" data-i="'+i+'">×</button></div>';
+  }).join('')||'<div class="empty-msg">Inga steg ännu</div>';
+  var cbs=el.querySelectorAll('input');
+  for(var i=0;i<cbs.length;i++){(function(cb){cb.onchange=function(){p.steps[+cb.dataset.i].done=cb.checked;save();renderPersonSteps(p);renderHome();};})(cbs[i]);}
+  var dls=el.querySelectorAll('.del');
+  for(var j=0;j<dls.length;j++){(function(d){d.onclick=function(){p.steps.splice(+d.dataset.i,1);save();renderPersonSteps(p);};})(dls[j]);}
+}
+document.getElementById('ps-addstep').onclick=function(){
+  if(!editingPerson)return;
+  var v=document.getElementById('ps-newstep').value.trim();if(!v)return;
+  var p=state.people.filter(function(x){return x.id===editingPerson;})[0];
+  p.steps.push({t:v,done:false});document.getElementById('ps-newstep').value='';save();renderPersonSteps(p);
+};
+document.getElementById('ps-save').onclick=function(){
+  var nm=document.getElementById('ps-name').value.trim();
+  if(!nm){alert('Ange ett namn.');return;}
+  var role=document.getElementById('ps-role').value.trim();
+  if(editingPerson){
+    var p=state.people.filter(function(x){return x.id===editingPerson;})[0];
+    p.name=nm;p.role=role;
+  }else{
+    var type=document.getElementById('ps-type').value;
+    var tmpl=(type==='on'?ONBOARD:OFFBOARD).map(function(t){return {t:t,done:false};});
+    state.people.push({id:uid(),name:nm,role:role,type:type,steps:tmpl,created:todayKey()});
+  }
+  save();closeSheets();renderPeople();renderHome();
+};
+document.getElementById('ps-del').onclick=function(){
+  if(!editingPerson)return;
+  if(!confirm('Ta bort checklistan?'))return;
+  state.people=state.people.filter(function(x){return x.id!==editingPerson;});
+  save();closeSheets();renderPeople();renderHome();
+};
+document.getElementById('ps-close').onclick=closeSheets;
+
+// ── Utrustning ────────────────────────────────────────
+var equipFilter='all';
+function renderEquip(){
+  var f=equipFilter;
+  var list=state.equipment.filter(function(e){
+    if(f==='all')return true;
+    if(f==='redo'||f==='retur')return e.status===f;
+    return e.type===f;
+  });
+  var el=document.getElementById('equip-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Ingen utrustning här. Tryck + för att lägga till.</div>';return;}
+  el.innerHTML=list.map(function(e){
+    var sub=[];if(e.serial)sub.push('SN '+e.serial);if(e.holder)sub.push(e.holder);if(e.warranty)sub.push('garanti '+e.warranty);
+    return '<div class="ecard" data-id="'+e.id+'"><span class="eicon">'+(ETYPE[e.type]||'📦')+'</span><div class="body"><div class="em">'+esc(e.model||ETYPE_LBL[e.type])+'</div><div class="es">'+esc(sub.join(' · ')||'—')+'</div></div><span class="estatus s-'+e.status+'">'+esc(ESTATUS_LBL[e.status])+'</span></div>';
+  }).join('');
+  var cards=el.querySelectorAll('.ecard');
+  for(var i=0;i<cards.length;i++){(function(c){c.onclick=function(){openEquip(c.dataset.id);};})(cards[i]);}
+}
+var ef=document.getElementById('equip-filter').querySelectorAll('.fchip');
+for(var e2=0;e2<ef.length;e2++){(function(b){b.onclick=function(){for(var k=0;k<ef.length;k++)ef[k].classList.remove('active');b.classList.add('active');equipFilter=b.dataset.f;renderEquip();};})(ef[e2]);}
+
+var editingEquip=null;
+function openEquip(id){
+  editingEquip=id;
+  var e=id?state.equipment.filter(function(x){return x.id===id;})[0]:null;
+  document.getElementById('es-title').textContent=e?'Utrustning':'Ny utrustning';
+  document.getElementById('es-type').value=e?e.type:'dator';
+  document.getElementById('es-model').value=e?(e.model||''):'';
+  document.getElementById('es-serial').value=e?(e.serial||''):'';
+  document.getElementById('es-holder').value=e?(e.holder||''):'';
+  document.getElementById('es-status').value=e?e.status:'lager';
+  document.getElementById('es-warranty').value=e?(e.warranty||''):'';
+  document.getElementById('es-del').style.display=e?'block':'none';
+  openSheet('equip-sheet');
+}
+document.getElementById('es-save').onclick=function(){
+  var data={type:document.getElementById('es-type').value,model:document.getElementById('es-model').value.trim(),serial:document.getElementById('es-serial').value.trim(),holder:document.getElementById('es-holder').value.trim(),status:document.getElementById('es-status').value,warranty:document.getElementById('es-warranty').value};
+  if(!data.model&&!data.serial){alert('Ange minst modell eller serienummer.');return;}
+  if(editingEquip){var e=state.equipment.filter(function(x){return x.id===editingEquip;})[0];Object.assign(e,data);}
+  else state.equipment.push(Object.assign({id:uid()},data));
+  save();closeSheets();renderEquip();renderHome();
+};
+document.getElementById('es-del').onclick=function(){
+  if(!editingEquip)return;
+  if(!confirm('Ta bort utrustningen?'))return;
+  state.equipment=state.equipment.filter(function(x){return x.id!==editingEquip;});
+  save();closeSheets();renderEquip();renderHome();
+};
+document.getElementById('es-close').onclick=closeSheets;
+
+// ── Kunskapsbank ──────────────────────────────────────
+function renderKB(){
+  var q=document.getElementById('kb-search').value.trim().toLowerCase();
+  var list=state.kb.filter(function(k){
+    if(!q)return true;
+    return (k.title+' '+k.tags+' '+k.body).toLowerCase().indexOf(q)>=0;
+  });
+  var el=document.getElementById('kb-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga artiklar matchar.</div>';return;}
+  el.innerHTML=list.map(function(k){
+    return '<div class="kcard" data-id="'+k.id+'"><div class="kt"><span>'+esc(k.title)+'</span><span style="color:var(--muted);font-size:13px">▾</span></div>'+
+    (k.tags?'<div class="ktags">#'+esc(k.tags.split(',').map(function(t){return t.trim();}).filter(Boolean).join(' #'))+'</div>':'')+
+    '<div class="kbody">'+esc(k.body)+'<br><button class="kedit" data-id="'+k.id+'">Redigera</button></div></div>';
+  }).join('');
+  var cards=el.querySelectorAll('.kcard');
+  for(var i=0;i<cards.length;i++){(function(c){
+    c.onclick=function(ev){if(ev.target.classList.contains('kedit'))return;c.classList.toggle('open');};
+  })(cards[i]);}
+  var eds=el.querySelectorAll('.kedit');
+  for(var j=0;j<eds.length;j++){(function(b){b.onclick=function(ev){ev.stopPropagation();openKB(b.dataset.id);};})(eds[j]);}
+}
+document.getElementById('kb-search').oninput=renderKB;
+document.getElementById('kb-add').onclick=function(){openKB(null);};
+
+var editingKB=null;
+function openKB(id){
+  editingKB=id;
+  var k=id?state.kb.filter(function(x){return x.id===id;})[0]:null;
+  document.getElementById('ks-title').textContent=k?'Redigera artikel':'Ny artikel';
+  document.getElementById('ks-ttl').value=k?k.title:'';
+  document.getElementById('ks-tags').value=k?(k.tags||''):'';
+  document.getElementById('ks-body').value=k?(k.body||''):'';
+  document.getElementById('ks-del').style.display=k?'block':'none';
+  openSheet('kb-sheet');
+}
+document.getElementById('ks-save').onclick=function(){
+  var ttl=document.getElementById('ks-ttl').value.trim();
+  if(!ttl){alert('Ange en titel.');return;}
+  var data={title:ttl,tags:document.getElementById('ks-tags').value.trim(),body:document.getElementById('ks-body').value.trim()};
+  if(editingKB){var k=state.kb.filter(function(x){return x.id===editingKB;})[0];Object.assign(k,data);}
+  else state.kb.unshift(Object.assign({id:uid()},data));
+  save();closeSheets();renderKB();
+};
+document.getElementById('ks-del').onclick=function(){
+  if(!editingKB)return;
+  if(!confirm('Ta bort artikeln?'))return;
+  state.kb=state.kb.filter(function(x){return x.id!==editingKB;});
+  save();closeSheets();renderKB();
+};
+document.getElementById('ks-close').onclick=closeSheets;
+
+// ── AI ────────────────────────────────────────────────
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function aiCall(prompt,maxTok){
+  var key=getAiKey();
+  if(!key){openSheet('settings-sheet');return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||600,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI</span>'+esc(t)+'</div>';}
+
+function ticketContext(t){
+  var lines=['Ärende: '+t.title,'Användare: '+(t.user||'okänd'),'Status: '+STATUS_LBL[t.status],'Prioritet: '+PRIO_LBL[t.prio],'Beskrivning: '+(t.desc||'(ingen)')];
+  if(t.log&&t.log.length)lines.push('Historik:\n'+t.log.join('\n'));
+  return lines.join('\n');
+}
+function runTicketAi(kind,btn){
+  if(!editingTicket){alert('Spara ärendet först.');return;}
+  var t=state.tickets.filter(function(x){return x.id===editingTicket;})[0];
+  var prompt,tok=600;
+  if(kind==='summary')prompt='Du är en erfaren IT-koordinator. Sammanfatta följande IT-ärende kort och sakligt på svenska i högst 3 meningar, utan rubriker. Lyft fram problemet och var det står just nu.\n\n'+ticketContext(t);
+  else if(kind==='next')prompt='Du är en erfaren IT-koordinator. Föreslå konkret nästa steg för att komma vidare med detta ärende, på svenska som en kort numrerad lista med 2–4 punkter. Avsluta med en rad om huruvida ärendet bör eskaleras.\n\n'+ticketContext(t);
+  else prompt='Du är en hjälpsam och tydlig IT-koordinator. Skriv ett vänligt svar på svenska direkt till användaren om detta ärende, högst 120 ord, konkret och utan teknisk jargong. Avsluta vänligt.\n\n'+ticketContext(t);
+  var orig=btn.textContent;btn.textContent='✨…';btn.disabled=true;
+  var out=document.getElementById('ts-ai-out');
+  aiCall(prompt,tok).then(function(text){out.innerHTML=aiBox(text);}).catch(function(e){if(e.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta svar: '+esc(e.message)+'</div>';}).then(function(){btn.textContent=orig;btn.disabled=false;});
+}
+document.getElementById('ai-summary').onclick=function(){runTicketAi('summary',this);};
+document.getElementById('ai-next').onclick=function(){runTicketAi('next',this);};
+document.getElementById('ai-reply').onclick=function(){runTicketAi('reply',this);};
+
+document.getElementById('assist-go').onclick=function(){
+  var txt=document.getElementById('assist-input').value.trim();
+  if(!txt){alert('Beskriv ett problem först.');return;}
+  var btn=this,orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  var out=document.getElementById('assist-out');
+  var prompt='Du är en kunnig och pedagogisk IT-supportassistent som svarar på svenska. Användaren beskriver ett problem. Ge: 1) en kort felsökning steg-för-steg (numrerad lista), 2) en avslutande rad om när ärendet bör eskaleras. Håll det konkret och under 180 ord, ingen onödig inledning.\n\nProblem: '+txt;
+  aiCall(prompt,700).then(function(text){out.innerHTML=aiBox(text);}).catch(function(e){if(e.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta svar: '+esc(e.message)+'</div>';}).then(function(){btn.textContent=orig;btn.disabled=false;});
+};
+
+// ── Synk via GitHub (likt Appkollen) ──────────────────
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+SYNC_FILE;}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sync-badge'+(st?' '+st:'');}
+function syncPayload(){return {tickets:state.tickets,people:state.people,equipment:state.equipment,kb:state.kb,updated:new Date().toISOString()};}
+function applyRemote(d){
+  if(Array.isArray(d.tickets))state.tickets=d.tickets;
+  if(Array.isArray(d.people))state.people=d.people;
+  if(Array.isArray(d.equipment))state.equipment=d.equipment;
+  if(Array.isArray(d.kb))state.kb=d.kb;
+  state.lastSync=d.updated||'';
+  persistLocal();renderAll();
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(d){
+    if(d){
+      // Tidsstämpelvakt: applicera bara om fjärrdatan är nyare än det vi senast synkade
+      if(!state.lastSync||!d.updated||d.updated>=state.lastSync)applyRemote(d);
+    }else{
+      // Tomt repo — ladda upp lokal data
+      return ghPush();
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var payload=syncPayload();
+  var doPut=function(){
+    var body={message:'Uppdatering via IT-koordinator',content:b64enc(JSON.stringify(payload,null,2))};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});
+  };
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().then(function(){return doPut();});}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){
+    if(j.content&&j.content.sha)sync.sha=j.content.sha;
+    state.lastSync=payload.updated;persistLocal();
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function schedulePush(){
+  if(!syncOn())return;
+  if(pushTimer)clearTimeout(pushTimer);
+  pushTimer=setTimeout(function(){pushTimer=null;ghPush();},1200);
+}
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'var(--red-soft)':'var(--accent-soft)';
+  el.style.color=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--accent)';
+  el.textContent=msg;
+}
+document.getElementById('sync-badge').onclick=function(){openSettings();};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(d){
+    if(d){setGhStatus('✓ Ansluten! Hämtar delad data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Repot var tomt — laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1000);}).catch(function(e){
+    setGhStatus('Fel: '+e.message+'. Kontrollera namn och att token har Contents: Read and write.','err');setBadge('err','Synkfel');
+  });
+};
+document.getElementById('gh-clear').onclick=function(){
+  sync={owner:'',repo:'',token:'',sha:null};localStorage.removeItem(SYNC_KEY);
+  document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';
+  setGhStatus('Frånkopplad. Data finns kvar lokalt.','info');setBadge('','Lokal · tryck för synk');
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Inställningar / nyckel ────────────────────────────
+function openSettings(){
+  document.getElementById('ai-key').value=getAiKey();
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('settings-sheet');
+}
+document.getElementById('settings-btn').onclick=openSettings;
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('settings-close').onclick=closeSheets;
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='it-koordinator-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.tickets||d.people||d.equipment||d.kb)){state=Object.assign(state,d);save();renderAll();closeSheets();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── FAB ───────────────────────────────────────────────
+document.getElementById('fab').onclick=function(){
+  if(currentView==='tickets')openTicket(null);
+  else if(currentView==='people')openPerson(null);
+  else if(currentView==='equip')openEquip(null);
+  else if(currentView==='kb')openKB(null);
+  else openTicket(null);
+};
+function updateFab(){document.getElementById('fab').style.display=currentView==='home'?'none':'block';}
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#181C22':'#EDF1F5';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+var currentView='home';
+var navBtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navBtns.length;n++){(function(b){
+  b.onclick=function(){
+    for(var k=0;k<navBtns.length;k++)navBtns[k].classList.remove('active');
+    b.classList.add('active');
+    var views=document.querySelectorAll('.view');
+    for(var v=0;v<views.length;v++)views[v].classList.remove('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    currentView=b.dataset.v;
+    updateFab();
+    if(currentView==='home')renderHome();
+    if(currentView==='tickets')renderTickets();
+    if(currentView==='people')renderPeople();
+    if(currentView==='equip')renderEquip();
+    if(currentView==='kb')renderKB();
+  };
+})(navBtns[n]);}
+
+function renderAll(){renderHome();renderTickets();renderPeople();renderEquip();renderKB();}
+
+loadSync();
+if(syncOn())setBadge('','Synkar…');else setBadge('','Lokal · tryck för synk');
+renderAll();
+updateFab();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

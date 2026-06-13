@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#EDF1F5">
+<title>IT-koordinator — Skrivbord</title>
+<style>
+:root{
+  --bg:#EDF1F5;--panel:#FFFFFF;--panel2:#F1F4F8;--line:#D7DEE7;
+  --ink:#283340;--muted:#74808F;--accent:#2D6CB5;--accent-dark:#1F4F88;--accent-soft:#DCE8F5;
+  --green:#3F8F5B;--green-soft:#DCEFE2;--amber:#B6822A;--amber-soft:#F6ECD6;
+  --red:#C0504A;--red-soft:#F6E1DF;--purple:#7A6FB0;--purple-soft:#E7E3F2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+h1,h2,h3{font-family:Georgia,serif;font-weight:400}
+a{color:var(--accent)}
+
+/* Top bar */
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:11px 22px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-size:18px;color:var(--ink);letter-spacing:.02em;margin-right:6px}
+.tabs{display:flex;gap:4px}
+.tab{font-size:13px;padding:7px 14px;border-radius:9px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;font-family:inherit}
+.tab:hover{background:var(--panel2)}
+.tab.active{background:var(--accent);color:#fff}
+.spacer{flex:1}
+.tbtn{font-size:12px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.tbtn:hover{background:var(--panel2)}
+.badge-pill{font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.badge-pill.ok{background:var(--green-soft);color:var(--green);border-color:var(--green-soft)}
+.badge-pill.load{background:var(--amber-soft);color:var(--amber);border-color:var(--amber-soft)}
+.badge-pill.err{background:var(--red-soft);color:var(--red);border-color:var(--red-soft)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:22px}
+.view{display:none}
+.view.active{display:block}
+.view-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.view-head h2{font-size:18px}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:9px 15px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--accent-dark)}
+.btn.ghost{background:var(--panel);color:var(--accent)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.sub{border-color:var(--line);color:var(--muted);background:var(--panel)}
+.btn.sub:hover{background:var(--panel2)}
+.btn.sm{padding:6px 11px;font-size:12px}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.stat .n{font-family:Georgia,serif;font-size:34px;line-height:1;color:var(--ink)}
+.stat .n.alert{color:var(--red)}
+.stat .lbl{font-size:12px;color:var(--muted);margin-top:7px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.panel h3{font-size:15px;margin-bottom:10px}
+
+/* filter chips */
+.filterbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.fchip{border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:6px 13px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.fchip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Tables / rows */
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer}
+.row:hover{border-color:var(--accent)}
+.row .pdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.row .main{flex:1;min-width:0}
+.row .ttl{font-size:14px;font-weight:500}
+.row .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.badge{font-size:11px;padding:3px 9px;border-radius:9px;white-space:nowrap;font-weight:500}
+.b-ny{background:var(--accent-soft);color:var(--accent)}
+.b-pagaende{background:var(--amber-soft);color:var(--amber)}
+.b-vantar_anv{background:var(--purple-soft);color:var(--purple)}
+.b-vantar_lev{background:var(--purple-soft);color:var(--purple)}
+.b-klar{background:var(--green-soft);color:var(--green)}
+.pflag{font-size:11px;padding:3px 9px;border-radius:9px;font-weight:600}
+.p-lag{background:var(--panel2);color:var(--muted)}
+.p-normal{background:var(--accent-soft);color:var(--accent)}
+.p-akut{background:var(--red-soft);color:var(--red)}
+.age{font-size:12px;color:var(--muted);white-space:nowrap}
+.eicon{font-size:22px}
+.estatus{font-size:11px;padding:3px 9px;border-radius:9px;white-space:nowrap;font-weight:500}
+.s-lager{background:var(--panel2);color:var(--muted)}
+.s-redo{background:var(--accent-soft);color:var(--accent)}
+.s-utdelad{background:var(--green-soft);color:var(--green)}
+.s-retur{background:var(--amber-soft);color:var(--amber)}
+.tag{font-size:11px;padding:3px 9px;border-radius:9px;font-weight:500}
+.tag.on{background:var(--green-soft);color:var(--green)}
+.tag.off{background:var(--red-soft);color:var(--red)}
+.empty{font-size:13px;color:var(--muted);padding:14px 0;text-align:center}
+
+/* People grid */
+.pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;cursor:pointer}
+.pcard:hover{border-color:var(--accent)}
+.pcard .top{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.pcard .nm{flex:1;font-size:15px;font-weight:500}
+.pbar-bg{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:8px}
+.pbar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
+.pbar-lbl{font-size:12px;color:var(--muted);margin-top:5px}
+
+/* KB */
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+.kcard .kt{font-size:15px;font-weight:500}
+.kcard .ktags{font-size:12px;color:var(--accent);margin-top:4px}
+.kcard .kbody{font-size:13px;line-height:1.65;margin-top:9px;white-space:pre-wrap;color:var(--ink)}
+.kcard .kedit{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:10px;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+
+/* Forms */
+label{font-size:12px;color:var(--muted);display:block;margin:12px 0 5px}
+input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:14px;padding:9px 11px;font-family:inherit;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+.hint{font-size:11px;color:var(--muted);font-family:monospace;background:var(--panel2);padding:7px 10px;border-radius:8px;line-height:1.5;margin-top:6px}
+.soft{font-size:13px;color:var(--muted);line-height:1.6}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* AI */
+.ai-box{border:1px solid var(--accent);background:var(--accent-soft);border-radius:11px;padding:13px 15px;font-size:13px;line-height:1.65;color:var(--ink);margin-top:12px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--accent);font-size:12px;display:block;margin-bottom:6px}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(40,51,64,.45);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:40px 16px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 24px;width:560px;max-width:100%}
+.modal h3{font-size:18px;margin-bottom:4px}
+.modal-foot{display:flex;gap:10px;margin-top:18px}
+.modal-foot .spc{flex:1}
+.logline{font-size:12px;color:var(--muted);padding:6px 0;border-top:1px solid var(--line);line-height:1.5}
+.logline:first-child{border-top:none}
+.step{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.step:first-child{border-top:none}
+.step input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex-shrink:0}
+.step span{flex:1}
+.step.done span{text-decoration:line-through;color:var(--muted)}
+.step .del{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;width:auto}
+#gh-status{display:none;margin-top:10px;font-size:12px;padding:8px 11px;border-radius:9px}
+
+html[data-theme=dark]{
+  --bg:#181C22;--panel:#21262E;--panel2:#2A3038;--line:#39414B;
+  --ink:#E3E8EF;--muted:#929CA8;--accent:#5B9BD9;--accent-dark:#4A86C2;--accent-soft:#2A3A4D;
+  --green:#6FB389;--green-soft:#26352B;--amber:#D2A85C;--amber-soft:#3A3322;
+  --red:#D38078;--red-soft:#3A2826;--purple:#A99DD6;--purple-soft:#2E2A3D;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">🖥️ IT-koordinator</span>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-v="home">Översikt</button>
+    <button class="tab" data-v="tickets">Ärenden</button>
+    <button class="tab" data-v="people">Personal</button>
+    <button class="tab" data-v="equip">Utrustning</button>
+    <button class="tab" data-v="kb">Kunskap</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="badge-pill" id="sync-badge">Lokal</button>
+  <button class="tbtn" id="sync-now" title="Hämta senaste">↻ Synka</button>
+  <button class="tbtn" id="settings-btn">⚙️ Inställningar</button>
+  <button class="tbtn" id="theme-btn" title="Tema">◐</button>
+</div>
+
+<div class="wrap">
+
+  <!-- ÖVERSIKT -->
+  <div class="view active" id="view-home">
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="s-open">0</div><div class="lbl">Öppna ärenden</div></div>
+      <div class="stat"><div class="n alert" id="s-akut">0</div><div class="lbl">Akuta ärenden</div></div>
+      <div class="stat"><div class="n" id="s-newusers">0</div><div class="lbl">Nya användare (7 dagar)</div></div>
+      <div class="stat"><div class="n" id="s-handout">0</div><div class="lbl">Utrustning att lämna ut</div></div>
+    </div>
+    <div class="cols">
+      <div class="panel"><h3>🚦 Mina viktigaste idag</h3><div id="home-todo"></div></div>
+      <div class="panel"><h3>👤 Pågående checklistor</h3><div id="home-people"></div></div>
+    </div>
+  </div>
+
+  <!-- ÄRENDEN -->
+  <div class="view" id="view-tickets">
+    <div class="view-head"><h2>🎫 Ärenden</h2><button class="btn" id="new-ticket">+ Nytt ärende</button></div>
+    <div class="filterbar" id="ticket-filter">
+      <button class="fchip active" data-f="open">Öppna</button>
+      <button class="fchip" data-f="ny">Nya</button>
+      <button class="fchip" data-f="pagaende">Pågående</button>
+      <button class="fchip" data-f="vantar_anv">Väntar användare</button>
+      <button class="fchip" data-f="vantar_lev">Väntar leverantör</button>
+      <button class="fchip" data-f="klar">Klara</button>
+      <button class="fchip" data-f="all">Alla</button>
+    </div>
+    <div id="ticket-list"></div>
+  </div>
+
+  <!-- PERSONAL -->
+  <div class="view" id="view-people">
+    <div class="view-head"><h2>👤 Personal</h2><button class="btn" id="new-person">+ Ny checklista</button></div>
+    <div class="filterbar" id="people-filter">
+      <button class="fchip active" data-f="active">Pågående</button>
+      <button class="fchip" data-f="on">Onboarding</button>
+      <button class="fchip" data-f="off">Offboarding</button>
+      <button class="fchip" data-f="done">Klara</button>
+      <button class="fchip" data-f="all">Alla</button>
+    </div>
+    <div class="pgrid" id="people-list"></div>
+  </div>
+
+  <!-- UTRUSTNING -->
+  <div class="view" id="view-equip">
+    <div class="view-head"><h2>💻 Utrustning</h2><button class="btn" id="new-equip">+ Ny utrustning</button></div>
+    <div class="filterbar" id="equip-filter">
+      <button class="fchip active" data-f="all">Alla</button>
+      <button class="fchip" data-f="dator">Datorer</button>
+      <button class="fchip" data-f="mobil">Mobiler</button>
+      <button class="fchip" data-f="skarm">Skärmar</button>
+      <button class="fchip" data-f="headset">Headset</button>
+      <button class="fchip" data-f="redo">Att lämna ut</button>
+      <button class="fchip" data-f="retur">Att samla in</button>
+    </div>
+    <div id="equip-list"></div>
+  </div>
+
+  <!-- KUNSKAP -->
+  <div class="view" id="view-kb">
+    <div class="view-head"><h2>📚 Kunskap</h2><button class="btn" id="new-kb">+ Ny artikel</button></div>
+    <div class="cols" style="align-items:start">
+      <div class="panel">
+        <h3>🤖 IT-assistent</h3>
+        <div class="soft" style="margin-bottom:9px">Beskriv ett problem så får du felsökning steg-för-steg och förslag på när det bör eskaleras.</div>
+        <textarea id="assist-input" rows="3" placeholder="T.ex. Min Teams fungerar inte"></textarea>
+        <button class="btn" id="assist-go" style="margin-top:10px">Fråga assistenten</button>
+        <div id="assist-out"></div>
+      </div>
+      <div class="panel">
+        <h3>Sök i kunskapsbanken</h3>
+        <input id="kb-search" placeholder="Sök på titel, tagg eller innehåll…">
+      </div>
+    </div>
+    <div class="kgrid" id="kb-list" style="margin-top:14px"></div>
+  </div>
+
+</div>
+
+<!-- MODALS -->
+<div class="overlay" id="ov-ticket"><div class="modal">
+  <h3 id="ts-title">Nytt ärende</h3>
+  <label>Rubrik</label><input id="ts-ttl" placeholder="Kort beskrivning av ärendet">
+  <div class="field-row">
+    <div><label>Användare</label><input id="ts-user" placeholder="Vem gäller det?"></div>
+    <div><label>Prioritet</label><select id="ts-prio"><option value="lag">Låg</option><option value="normal" selected>Normal</option><option value="akut">Akut</option></select></div>
+  </div>
+  <label>Status</label>
+  <select id="ts-status"><option value="ny">Nytt</option><option value="pagaende">Pågående</option><option value="vantar_anv">Väntar på användare</option><option value="vantar_lev">Väntar på leverantör</option><option value="klar">Klart</option></select>
+  <label>Beskrivning</label><textarea id="ts-desc" rows="4" placeholder="Detaljer, felmeddelanden, vad som testats…"></textarea>
+  <div id="ts-ai-area" style="display:none">
+    <label>🤖 AI-hjälp</label>
+    <div style="display:flex;gap:8px"><button class="btn ghost sm" id="ai-summary">Sammanfatta</button><button class="btn ghost sm" id="ai-next">Nästa steg</button><button class="btn ghost sm" id="ai-reply">Skriv svar</button></div>
+    <div id="ts-ai-out"></div>
+  </div>
+  <div id="ts-log-area" style="display:none"><label>Historik</label><div id="ts-log"></div></div>
+  <div class="modal-foot"><button class="btn" id="ts-save">Spara</button><button class="btn sub" id="ts-del" style="display:none">Ta bort</button><span class="spc"></span><button class="btn sub" id="ts-close">Stäng</button></div>
+</div></div>
+
+<div class="overlay" id="ov-person"><div class="modal">
+  <h3 id="ps-title">Ny medarbetare</h3>
+  <div class="field-row">
+    <div><label>Namn</label><input id="ps-name" placeholder="För- och efternamn"></div>
+    <div><label>Roll / avdelning</label><input id="ps-role" placeholder="T.ex. Butikssäljare, Ekonomi"></div>
+  </div>
+  <div id="ps-typewrap"><label>Typ av checklista</label><select id="ps-type"><option value="on">Onboarding – ny anställd</option><option value="off">Offboarding – avsluta anställd</option></select></div>
+  <div id="ps-steps-area" style="display:none">
+    <label>Checklista</label><div id="ps-steps"></div>
+    <div style="display:flex;gap:10px;margin-top:10px"><input id="ps-newstep" placeholder="Lägg till steg…"><button class="btn ghost sm" id="ps-addstep" style="flex:0 0 auto">+ Steg</button></div>
+  </div>
+  <div class="modal-foot"><button class="btn" id="ps-save">Spara</button><button class="btn sub" id="ps-del" style="display:none">Ta bort</button><span class="spc"></span><button class="btn sub" id="ps-close">Stäng</button></div>
+</div></div>
+
+<div class="overlay" id="ov-equip"><div class="modal">
+  <h3 id="es-title">Ny utrustning</h3>
+  <div class="field-row">
+    <div><label>Typ</label><select id="es-type"><option value="dator">💻 Dator</option><option value="mobil">📱 Mobil</option><option value="skarm">🖥️ Skärm</option><option value="headset">🎧 Headset</option><option value="ovrigt">📦 Övrigt</option></select></div>
+    <div><label>Status</label><select id="es-status"><option value="lager">I lager</option><option value="redo">Redo att lämna ut</option><option value="utdelad">Utdelad</option><option value="retur">Ska samlas in</option></select></div>
+  </div>
+  <label>Modell</label><input id="es-model" placeholder="T.ex. Dell Latitude 5440">
+  <div class="field-row">
+    <div><label>Serienummer</label><input id="es-serial" placeholder="Serienummer / IMEI"></div>
+    <div><label>Innehavare</label><input id="es-holder" placeholder="Vem har enheten?"></div>
+  </div>
+  <label>Garanti / slutdatum</label><input id="es-warranty" type="date">
+  <div class="modal-foot"><button class="btn" id="es-save">Spara</button><button class="btn sub" id="es-del" style="display:none">Ta bort</button><span class="spc"></span><button class="btn sub" id="es-close">Stäng</button></div>
+</div></div>
+
+<div class="overlay" id="ov-kb"><div class="modal">
+  <h3 id="ks-title">Ny artikel</h3>
+  <label>Titel</label><input id="ks-ttl" placeholder="T.ex. VPN ansluter inte">
+  <label>Taggar (komma-separerade)</label><input id="ks-tags" placeholder="vpn, nätverk, distans">
+  <label>Innehåll / felsökningssteg</label><textarea id="ks-body" rows="8" placeholder="Steg för steg…"></textarea>
+  <div class="modal-foot"><button class="btn" id="ks-save">Spara</button><button class="btn sub" id="ks-del" style="display:none">Ta bort</button><span class="spc"></span><button class="btn sub" id="ks-close">Stäng</button></div>
+</div></div>
+
+<div class="overlay" id="ov-settings"><div class="modal">
+  <h3>⚙️ Inställningar</h3>
+  <label>Synk via GitHub (likt Appkollen)</label>
+  <p class="soft" style="margin-bottom:8px">Datorn läser och sparar <code>it-koordinator.json</code> i samma <b style="color:var(--ink)">privata</b> GitHub-repo som mobilappen — så telefon och dator delar ärenden, personal, utrustning och kunskapsbank. Token sparas bara lokalt på den här enheten.</p>
+  <input type="text" id="gh-owner" placeholder="GitHub-användarnamn (repo-ägare)" autocomplete="off">
+  <input type="text" id="gh-repo" placeholder="Namn på privat data-repo" autocomplete="off" style="margin-top:8px">
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off" style="margin-top:8px">
+  <div class="hint">github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Åtkomst till ENDAST data-repot, Contents: Read and write. Använd samma repo som i mobilen.</div>
+  <div id="gh-status"></div>
+  <div style="display:flex;gap:10px;margin-top:10px"><button class="btn" id="gh-save">Spara &amp; synka</button><button class="btn sub" id="gh-clear">Koppla från</button></div>
+
+  <label style="margin-top:18px">Anthropic API-nyckel</label>
+  <p class="soft" style="margin-bottom:8px">AI-funktionerna körs av Claude via din egen API-nyckel från <b style="color:var(--ink)">console.anthropic.com</b>. Sparas bara lokalt, synkas inte.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div style="display:flex;gap:10px;margin-top:10px"><button class="btn ghost" id="ai-key-save">Spara nyckel</button><button class="btn sub" id="ai-key-clear">Rensa</button></div>
+
+  <label style="margin-top:18px">Säkerhetskopiering</label>
+  <div style="display:flex;gap:10px"><button class="btn sub" id="export-btn">Exportera JSON</button><button class="btn sub" id="import-btn">Importera JSON</button><input type="file" id="import-file" accept=".json" style="display:none"></div>
+
+  <div class="modal-foot"><span class="spc"></span><button class="btn sub" id="settings-close">Stäng</button></div>
+</div></div>
+
+<script>
+// ── State (delas med mobilappen via samma nyckel + repo) ──
+var KEY='itkoord_v1';
+var AI_KEY='itkoord_ai_key';
+var SYNC_KEY='itkoord_sync_v1';
+var SYNC_FILE='it-koordinator.json';
+var sync={owner:'',repo:'',token:'',sha:null};
+var pushTimer=null;
+var ONBOARD=['Skapa AD-konto','Tilldela M365-licenser','Beställ dator','Beställ mobil','Konfigurera e-post','Lägg till i grupper och behörigheter','Boka introduktion','Lämna ut utrustning'];
+var OFFBOARD=['Inaktivera AD-konto','Återkalla licenser','Samla in dator','Samla in mobil','Vidarebefordra/arkivera e-post','Ta bort behörigheter','Arkivera filer','Avregistrera utrustning'];
+
+var state={tickets:[],people:[],equipment:[],kb:[],theme:'auto',seeded:false};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+if(!state.seeded){
+  state.kb=[
+    {id:uid(),title:'Teams startar eller fungerar inte',tags:'teams, microsoft 365',body:'1. Logga ut och in igen i Teams.\n2. Stäng appen helt och starta om.\n3. Rensa cache: stäng Teams, ta bort innehållet i mappen %appdata%\\Microsoft\\Teams.\n4. Kontrollera nätverk/VPN.\n5. Testa webbversionen teams.microsoft.com.\nEskalera om problemet kvarstår för flera användare.'},
+    {id:uid(),title:'VPN ansluter inte',tags:'vpn, nätverk, distans',body:'1. Kontrollera internetanslutning.\n2. Starta om VPN-klienten.\n3. Verifiera användarnamn och lösenord.\n4. Kontrollera MFA/autentisering.\n5. Starta om datorn.\nEskalera till nätverk om servern inte svarar.'},
+    {id:uid(),title:'Återställa lösenord',tags:'lösenord, konto, m365',body:'1. Be användaren använda självbetjäning om aktiverat.\n2. Annars: återställ i Microsoft 365 admin / AD.\n3. Tvinga byte vid nästa inloggning.\n4. Påminn om att uppdatera lösenord i Teams/Outlook på mobil.'},
+    {id:uid(),title:'Skrivare skriver inte ut',tags:'skrivare, utskrift',body:'1. Kontrollera att skrivaren är på och har papper/toner.\n2. Kontrollera nätverksanslutning.\n3. Töm utskriftskön.\n4. Ta bort och lägg till skrivaren igen.\n5. Uppdatera drivrutin.'},
+    {id:uid(),title:'Microsoft 365 / Outlook synkar inte',tags:'microsoft 365, outlook, e-post',body:'1. Kontrollera licensstatus i admin.\n2. Logga ut och in i Office-appen.\n3. Kontrollera nätverk.\n4. Reparera Office via Inställningar > Appar.\n5. Kontrollera status.office.com.'}
+  ];
+  state.seeded=true;persistLocal();
+}
+
+function persistLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function save(){persistLocal();schedulePush();}
+var esc=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayKey(){return toISO(new Date());}
+function nowStr(){var d=new Date();return toISO(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function daysAgo(iso){if(!iso)return 0;return Math.floor((new Date()-new Date(iso))/86400000);}
+
+var STATUS_LBL={ny:'Nytt',pagaende:'Pågående',vantar_anv:'Väntar användare',vantar_lev:'Väntar leverantör',klar:'Klart'};
+var PRIO_LBL={lag:'Låg',normal:'Normal',akut:'Akut'};
+var ETYPE={dator:'💻',mobil:'📱',skarm:'🖥️',headset:'🎧',ovrigt:'📦'};
+var ETYPE_LBL={dator:'Dator',mobil:'Mobil',skarm:'Skärm',headset:'Headset',ovrigt:'Övrigt'};
+var ESTATUS_LBL={lager:'I lager',redo:'Redo att lämna ut',utdelad:'Utdelad',retur:'Ska samlas in'};
+
+// ── Modaler ───────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModals(){var l=document.querySelectorAll('.overlay');for(var i=0;i<l.length;i++)l[i].classList.remove('open');}
+var ovs=document.querySelectorAll('.overlay');
+for(var o=0;o<ovs.length;o++){(function(ov){ov.onclick=function(e){if(e.target===ov)closeModals();};})(ovs[o]);}
+
+// ── Synk via GitHub (likt Appkollen) ──────────────────
+function loadSync(){try{var x=localStorage.getItem(SYNC_KEY);if(x){var d=JSON.parse(x);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+SYNC_FILE;}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='badge-pill'+(st?' '+st:'');}
+function syncPayload(){return {tickets:state.tickets,people:state.people,equipment:state.equipment,kb:state.kb,updated:new Date().toISOString()};}
+function applyRemote(d){
+  if(Array.isArray(d.tickets))state.tickets=d.tickets;
+  if(Array.isArray(d.people))state.people=d.people;
+  if(Array.isArray(d.equipment))state.equipment=d.equipment;
+  if(Array.isArray(d.kb))state.kb=d.kb;
+  state.lastSync=d.updated||'';persistLocal();renderAll();
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(d){
+    if(d){if(!state.lastSync||!d.updated||d.updated>=state.lastSync)applyRemote(d);}
+    else return ghPush();
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var payload=syncPayload();
+  var doPut=function(){
+    var body={message:'Uppdatering via IT-koordinator (dator)',content:b64enc(JSON.stringify(payload,null,2))};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});
+  };
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().then(function(){return doPut();});}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){
+    if(j.content&&j.content.sha)sync.sha=j.content.sha;
+    state.lastSync=payload.updated;persistLocal();setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function schedulePush(){if(!syncOn())return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(function(){pushTimer=null;ghPush();},1200);}
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'var(--red-soft)':'var(--accent-soft)';
+  el.style.color=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--accent)';
+  el.textContent=msg;
+}
+document.getElementById('sync-badge').onclick=openSettings;
+document.getElementById('sync-now').onclick=function(){if(syncOn())ghPull();else openSettings();};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(d){
+    if(d){setGhStatus('✓ Ansluten! Hämtar delad data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Repot var tomt — laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeModals,1000);}).catch(function(e){
+    setGhStatus('Fel: '+e.message+'. Kontrollera namn och token-behörighet.','err');setBadge('err','Synkfel');
+  });
+};
+document.getElementById('gh-clear').onclick=function(){
+  sync={owner:'',repo:'',token:'',sha:null};localStorage.removeItem(SYNC_KEY);
+  document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';
+  setGhStatus('Frånkopplad. Data finns kvar lokalt.','info');setBadge('','Lokal');
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Översikt ──────────────────────────────────────────
+function prioScore(t){var w={akut:100,normal:40,lag:10};return (w[t.prio]||40)+daysAgo(t.created);}
+function openTickets(){return state.tickets.filter(function(t){return t.status!=='klar';});}
+function progress(p){var total=p.steps.length,done=p.steps.filter(function(s){return s.done;}).length;return {total:total,done:done,pct:total?Math.round(done/total*100):0};}
+function renderHome(){
+  var open=openTickets();
+  document.getElementById('s-open').textContent=open.length;
+  document.getElementById('s-akut').textContent=open.filter(function(t){return t.prio==='akut';}).length;
+  document.getElementById('s-newusers').textContent=state.people.filter(function(p){return p.type==='on'&&daysAgo(p.created)<=7;}).length;
+  document.getElementById('s-handout').textContent=state.equipment.filter(function(e){return e.status==='redo';}).length;
+  var pcol={akut:'var(--red)',normal:'var(--accent)',lag:'var(--muted)'};
+  var todo=open.slice().sort(function(a,b){return prioScore(b)-prioScore(a);}).slice(0,6);
+  var h=document.getElementById('home-todo');
+  if(!todo.length)h.innerHTML='<div class="empty">Inga öppna ärenden 🎉</div>';
+  else{
+    h.innerHTML=todo.map(function(t){return '<div class="row" data-id="'+t.id+'"><span class="pdot" style="background:'+pcol[t.prio]+'"></span><div class="main"><div class="ttl">'+esc(t.title)+'</div><div class="sub">'+(t.user?esc(t.user)+' · ':'')+daysAgo(t.created)+' dagar</div></div><span class="badge b-'+t.status+'">'+esc(STATUS_LBL[t.status])+'</span></div>';}).join('');
+    bindRows(h,openTicket);
+  }
+  var act=state.people.filter(function(p){return progress(p).pct<100;});
+  var hp=document.getElementById('home-people');
+  if(!act.length)hp.innerHTML='<div class="empty">Inga pågående checklistor</div>';
+  else{
+    hp.innerHTML=act.map(function(p){var pr=progress(p);return '<div class="row" data-id="'+p.id+'"><span class="tag '+p.type+'">'+(p.type==='on'?'In':'Ut')+'</span><div class="main"><div class="ttl">'+esc(p.name)+'</div><div class="sub">'+pr.done+' av '+pr.total+' klara</div></div><span class="age">'+pr.pct+'%</span></div>';}).join('');
+    bindRows(hp,openPerson);
+  }
+}
+function bindRows(container,fn){var rs=container.querySelectorAll('.row');for(var i=0;i<rs.length;i++){(function(r){r.onclick=function(){fn(r.dataset.id);};})(rs[i]);}}
+
+// ── Ärenden ───────────────────────────────────────────
+var ticketFilter='open';
+function renderTickets(){
+  var f=ticketFilter;
+  var list=state.tickets.filter(function(t){if(f==='all')return true;if(f==='open')return t.status!=='klar';return t.status===f;});
+  list.sort(function(a,b){return prioScore(b)-prioScore(a);});
+  var el=document.getElementById('ticket-list');
+  if(!list.length){el.innerHTML='<div class="empty">Inga ärenden här.</div>';return;}
+  var pcol={akut:'var(--red)',normal:'var(--accent)',lag:'var(--muted)'};
+  el.innerHTML=list.map(function(t){return '<div class="row" data-id="'+t.id+'"><span class="pdot" style="background:'+pcol[t.prio]+'"></span><div class="main"><div class="ttl">'+esc(t.title)+'</div><div class="sub">'+(t.user?esc(t.user)+' · ':'')+esc(PRIO_LBL[t.prio])+'</div></div><span class="badge b-'+t.status+'">'+esc(STATUS_LBL[t.status])+'</span><span class="age">'+daysAgo(t.created)+' d</span></div>';}).join('');
+  bindRows(el,openTicket);
+}
+bindFilter('ticket-filter',function(v){ticketFilter=v;renderTickets();});
+
+var editingTicket=null;
+function openTicket(id){
+  editingTicket=id;
+  var t=id?byId(state.tickets,id):null;
+  document.getElementById('ts-title').textContent=t?'Ärende':'Nytt ärende';
+  document.getElementById('ts-ttl').value=t?t.title:'';
+  document.getElementById('ts-user').value=t?(t.user||''):'';
+  document.getElementById('ts-desc').value=t?(t.desc||''):'';
+  document.getElementById('ts-status').value=t?t.status:'ny';
+  document.getElementById('ts-prio').value=t?t.prio:'normal';
+  document.getElementById('ts-del').style.display=t?'inline-block':'none';
+  document.getElementById('ts-ai-area').style.display=t?'block':'none';
+  document.getElementById('ts-ai-out').innerHTML='';
+  var la=document.getElementById('ts-log-area');
+  if(t&&t.log&&t.log.length){la.style.display='block';document.getElementById('ts-log').innerHTML=t.log.map(function(l){return '<div class="logline">'+esc(l)+'</div>';}).join('');}else la.style.display='none';
+  openModal('ov-ticket');
+}
+document.getElementById('new-ticket').onclick=function(){openTicket(null);};
+document.getElementById('ts-save').onclick=function(){
+  var ttl=document.getElementById('ts-ttl').value.trim();if(!ttl){alert('Ange en rubrik.');return;}
+  var data={title:ttl,user:document.getElementById('ts-user').value.trim(),desc:document.getElementById('ts-desc').value.trim(),status:document.getElementById('ts-status').value,prio:document.getElementById('ts-prio').value};
+  if(editingTicket){var t=byId(state.tickets,editingTicket);if(t.status!==data.status){t.log=t.log||[];t.log.unshift(nowStr()+' — status: '+STATUS_LBL[data.status]);}Object.assign(t,data);}
+  else state.tickets.push(Object.assign({id:uid(),created:todayKey(),log:[nowStr()+' — ärende skapat']},data));
+  save();closeModals();renderTickets();renderHome();
+};
+document.getElementById('ts-del').onclick=function(){if(!editingTicket||!confirm('Ta bort ärendet?'))return;state.tickets=state.tickets.filter(function(x){return x.id!==editingTicket;});save();closeModals();renderTickets();renderHome();};
+document.getElementById('ts-close').onclick=closeModals;
+
+// ── Personal ──────────────────────────────────────────
+var peopleFilter='active';
+function renderPeople(){
+  var f=peopleFilter;
+  var list=state.people.filter(function(p){if(f==='all')return true;if(f==='active')return progress(p).pct<100;if(f==='done')return progress(p).pct===100;return p.type===f;});
+  list.sort(function(a,b){return progress(a).pct-progress(b).pct;});
+  var el=document.getElementById('people-list');
+  if(!list.length){el.innerHTML='<div class="empty">Inga checklistor här.</div>';return;}
+  el.innerHTML=list.map(function(p){var pr=progress(p);return '<div class="pcard" data-id="'+p.id+'"><div class="top"><span class="nm">'+esc(p.name)+'</span><span class="tag '+p.type+'">'+(p.type==='on'?'Onboarding':'Offboarding')+'</span></div>'+(p.role?'<div class="soft">'+esc(p.role)+'</div>':'')+'<div class="pbar-bg"><div class="pbar-fill" style="width:'+pr.pct+'%"></div></div><div class="pbar-lbl">'+pr.done+' av '+pr.total+' klara · '+pr.pct+'%</div></div>';}).join('');
+  var cs=el.querySelectorAll('.pcard');for(var i=0;i<cs.length;i++){(function(c){c.onclick=function(){openPerson(c.dataset.id);};})(cs[i]);}
+}
+bindFilter('people-filter',function(v){peopleFilter=v;renderPeople();});
+
+var editingPerson=null;
+function openPerson(id){
+  editingPerson=id;var p=id?byId(state.people,id):null;
+  document.getElementById('ps-title').textContent=p?esc(p.name):'Ny medarbetare';
+  document.getElementById('ps-name').value=p?p.name:'';
+  document.getElementById('ps-role').value=p?(p.role||''):'';
+  document.getElementById('ps-typewrap').style.display=p?'none':'block';
+  document.getElementById('ps-type').value=p?p.type:'on';
+  document.getElementById('ps-del').style.display=p?'inline-block':'none';
+  var area=document.getElementById('ps-steps-area');
+  if(p){area.style.display='block';renderPersonSteps(p);}else area.style.display='none';
+  openModal('ov-person');
+}
+function renderPersonSteps(p){
+  var el=document.getElementById('ps-steps');
+  el.innerHTML=p.steps.map(function(st,i){return '<div class="step'+(st.done?' done':'')+'"><input type="checkbox" data-i="'+i+'"'+(st.done?' checked':'')+'><span>'+esc(st.t)+'</span><button class="del" data-i="'+i+'">×</button></div>';}).join('')||'<div class="empty">Inga steg ännu</div>';
+  var cbs=el.querySelectorAll('input');for(var i=0;i<cbs.length;i++){(function(cb){cb.onchange=function(){p.steps[+cb.dataset.i].done=cb.checked;save();renderPersonSteps(p);renderHome();};})(cbs[i]);}
+  var dls=el.querySelectorAll('.del');for(var j=0;j<dls.length;j++){(function(d){d.onclick=function(){p.steps.splice(+d.dataset.i,1);save();renderPersonSteps(p);};})(dls[j]);}
+}
+document.getElementById('ps-addstep').onclick=function(){if(!editingPerson)return;var v=document.getElementById('ps-newstep').value.trim();if(!v)return;var p=byId(state.people,editingPerson);p.steps.push({t:v,done:false});document.getElementById('ps-newstep').value='';save();renderPersonSteps(p);};
+document.getElementById('ps-save').onclick=function(){
+  var nm=document.getElementById('ps-name').value.trim();if(!nm){alert('Ange ett namn.');return;}
+  var role=document.getElementById('ps-role').value.trim();
+  if(editingPerson){var p=byId(state.people,editingPerson);p.name=nm;p.role=role;}
+  else{var type=document.getElementById('ps-type').value;var tmpl=(type==='on'?ONBOARD:OFFBOARD).map(function(t){return {t:t,done:false};});state.people.push({id:uid(),name:nm,role:role,type:type,steps:tmpl,created:todayKey()});}
+  save();closeModals();renderPeople();renderHome();
+};
+document.getElementById('ps-del').onclick=function(){if(!editingPerson||!confirm('Ta bort checklistan?'))return;state.people=state.people.filter(function(x){return x.id!==editingPerson;});save();closeModals();renderPeople();renderHome();};
+document.getElementById('ps-close').onclick=closeModals;
+document.getElementById('new-person').onclick=function(){openPerson(null);};
+
+// ── Utrustning ────────────────────────────────────────
+var equipFilter='all';
+function renderEquip(){
+  var f=equipFilter;
+  var list=state.equipment.filter(function(e){if(f==='all')return true;if(f==='redo'||f==='retur')return e.status===f;return e.type===f;});
+  var el=document.getElementById('equip-list');
+  if(!list.length){el.innerHTML='<div class="empty">Ingen utrustning här.</div>';return;}
+  el.innerHTML=list.map(function(e){
+    var sub=[];if(e.serial)sub.push('SN '+e.serial);if(e.holder)sub.push(e.holder);if(e.warranty)sub.push('garanti '+e.warranty);
+    return '<div class="row" data-id="'+e.id+'"><span class="eicon">'+(ETYPE[e.type]||'📦')+'</span><div class="main"><div class="ttl">'+esc(e.model||ETYPE_LBL[e.type])+'</div><div class="sub">'+esc(sub.join(' · ')||'—')+'</div></div><span class="estatus s-'+e.status+'">'+esc(ESTATUS_LBL[e.status])+'</span></div>';
+  }).join('');
+  bindRows(el,openEquip);
+}
+bindFilter('equip-filter',function(v){equipFilter=v;renderEquip();});
+
+var editingEquip=null;
+function openEquip(id){
+  editingEquip=id;var e=id?byId(state.equipment,id):null;
+  document.getElementById('es-title').textContent=e?'Utrustning':'Ny utrustning';
+  document.getElementById('es-type').value=e?e.type:'dator';
+  document.getElementById('es-model').value=e?(e.model||''):'';
+  document.getElementById('es-serial').value=e?(e.serial||''):'';
+  document.getElementById('es-holder').value=e?(e.holder||''):'';
+  document.getElementById('es-status').value=e?e.status:'lager';
+  document.getElementById('es-warranty').value=e?(e.warranty||''):'';
+  document.getElementById('es-del').style.display=e?'inline-block':'none';
+  openModal('ov-equip');
+}
+document.getElementById('new-equip').onclick=function(){openEquip(null);};
+document.getElementById('es-save').onclick=function(){
+  var data={type:document.getElementById('es-type').value,model:document.getElementById('es-model').value.trim(),serial:document.getElementById('es-serial').value.trim(),holder:document.getElementById('es-holder').value.trim(),status:document.getElementById('es-status').value,warranty:document.getElementById('es-warranty').value};
+  if(!data.model&&!data.serial){alert('Ange minst modell eller serienummer.');return;}
+  if(editingEquip){var e=byId(state.equipment,editingEquip);Object.assign(e,data);}else state.equipment.push(Object.assign({id:uid()},data));
+  save();closeModals();renderEquip();renderHome();
+};
+document.getElementById('es-del').onclick=function(){if(!editingEquip||!confirm('Ta bort utrustningen?'))return;state.equipment=state.equipment.filter(function(x){return x.id!==editingEquip;});save();closeModals();renderEquip();renderHome();};
+document.getElementById('es-close').onclick=closeModals;
+
+// ── Kunskapsbank ──────────────────────────────────────
+function renderKB(){
+  var q=document.getElementById('kb-search').value.trim().toLowerCase();
+  var list=state.kb.filter(function(k){if(!q)return true;return (k.title+' '+k.tags+' '+k.body).toLowerCase().indexOf(q)>=0;});
+  var el=document.getElementById('kb-list');
+  if(!list.length){el.innerHTML='<div class="empty">Inga artiklar matchar.</div>';return;}
+  el.innerHTML=list.map(function(k){return '<div class="kcard"><div class="kt">'+esc(k.title)+'</div>'+(k.tags?'<div class="ktags">#'+esc(k.tags.split(',').map(function(t){return t.trim();}).filter(Boolean).join(' #'))+'</div>':'')+'<div class="kbody">'+esc(k.body)+'</div><button class="kedit" data-id="'+k.id+'">Redigera</button></div>';}).join('');
+  var eds=el.querySelectorAll('.kedit');for(var j=0;j<eds.length;j++){(function(b){b.onclick=function(){openKB(b.dataset.id);};})(eds[j]);}
+}
+document.getElementById('kb-search').oninput=renderKB;
+document.getElementById('new-kb').onclick=function(){openKB(null);};
+var editingKB=null;
+function openKB(id){
+  editingKB=id;var k=id?byId(state.kb,id):null;
+  document.getElementById('ks-title').textContent=k?'Redigera artikel':'Ny artikel';
+  document.getElementById('ks-ttl').value=k?k.title:'';
+  document.getElementById('ks-tags').value=k?(k.tags||''):'';
+  document.getElementById('ks-body').value=k?(k.body||''):'';
+  document.getElementById('ks-del').style.display=k?'inline-block':'none';
+  openModal('ov-kb');
+}
+document.getElementById('ks-save').onclick=function(){
+  var ttl=document.getElementById('ks-ttl').value.trim();if(!ttl){alert('Ange en titel.');return;}
+  var data={title:ttl,tags:document.getElementById('ks-tags').value.trim(),body:document.getElementById('ks-body').value.trim()};
+  if(editingKB){var k=byId(state.kb,editingKB);Object.assign(k,data);}else state.kb.unshift(Object.assign({id:uid()},data));
+  save();closeModals();renderKB();
+};
+document.getElementById('ks-del').onclick=function(){if(!editingKB||!confirm('Ta bort artikeln?'))return;state.kb=state.kb.filter(function(x){return x.id!==editingKB;});save();closeModals();renderKB();};
+document.getElementById('ks-close').onclick=closeModals;
+
+// ── AI ────────────────────────────────────────────────
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function aiCall(prompt,maxTok){
+  var key=getAiKey();
+  if(!key){openSettings();return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||600,messages:[{role:'user',content:prompt}]})}).then(function(r){if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);return r.json();}).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI</span>'+esc(t)+'</div>';}
+function ticketContext(t){var lines=['Ärende: '+t.title,'Användare: '+(t.user||'okänd'),'Status: '+STATUS_LBL[t.status],'Prioritet: '+PRIO_LBL[t.prio],'Beskrivning: '+(t.desc||'(ingen)')];if(t.log&&t.log.length)lines.push('Historik:\n'+t.log.join('\n'));return lines.join('\n');}
+function runTicketAi(kind,btn){
+  if(!editingTicket){alert('Spara ärendet först.');return;}
+  var t=byId(state.tickets,editingTicket),prompt;
+  if(kind==='summary')prompt='Du är en erfaren IT-koordinator. Sammanfatta följande IT-ärende kort och sakligt på svenska i högst 3 meningar, utan rubriker.\n\n'+ticketContext(t);
+  else if(kind==='next')prompt='Du är en erfaren IT-koordinator. Föreslå konkret nästa steg på svenska som en kort numrerad lista med 2–4 punkter. Avsluta med en rad om huruvida ärendet bör eskaleras.\n\n'+ticketContext(t);
+  else prompt='Du är en hjälpsam IT-koordinator. Skriv ett vänligt och tydligt svar på svenska direkt till användaren om detta ärende, högst 120 ord, utan teknisk jargong.\n\n'+ticketContext(t);
+  var orig=btn.textContent;btn.textContent='✨…';btn.disabled=true;var out=document.getElementById('ts-ai-out');
+  aiCall(prompt,650).then(function(text){out.innerHTML=aiBox(text);}).catch(function(e){if(e.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta svar: '+esc(e.message)+'</div>';}).then(function(){btn.textContent=orig;btn.disabled=false;});
+}
+document.getElementById('ai-summary').onclick=function(){runTicketAi('summary',this);};
+document.getElementById('ai-next').onclick=function(){runTicketAi('next',this);};
+document.getElementById('ai-reply').onclick=function(){runTicketAi('reply',this);};
+document.getElementById('assist-go').onclick=function(){
+  var txt=document.getElementById('assist-input').value.trim();if(!txt){alert('Beskriv ett problem först.');return;}
+  var btn=this,orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;var out=document.getElementById('assist-out');
+  var prompt='Du är en kunnig och pedagogisk IT-supportassistent som svarar på svenska. Användaren beskriver ett problem. Ge: 1) en kort felsökning steg-för-steg (numrerad lista), 2) en avslutande rad om när ärendet bör eskaleras. Håll det under 180 ord.\n\nProblem: '+txt;
+  aiCall(prompt,750).then(function(text){out.innerHTML=aiBox(text);}).catch(function(e){if(e.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta svar: '+esc(e.message)+'</div>';}).then(function(){btn.textContent=orig;btn.disabled=false;});
+};
+
+// ── Inställningar ─────────────────────────────────────
+function openSettings(){
+  document.getElementById('ai-key').value=getAiKey();
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openModal('ov-settings');
+}
+document.getElementById('settings-btn').onclick=openSettings;
+document.getElementById('settings-close').onclick=closeModals;
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('export-btn').onclick=function(){var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='it-koordinator-backup-'+todayKey()+'.json';a.click();};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.tickets||d.people||d.equipment||d.kb)){state=Object.assign(state,d);save();renderAll();closeModals();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};r.readAsText(f);};
+
+// ── Hjälpare ──────────────────────────────────────────
+function byId(arr,id){return arr.filter(function(x){return x.id===id;})[0];}
+function bindFilter(id,fn){var el=document.getElementById(id);var cs=el.querySelectorAll('.fchip');for(var i=0;i<cs.length;i++){(function(b){b.onclick=function(){for(var k=0;k<cs.length;k++)cs[k].classList.remove('active');b.classList.add('active');fn(b.dataset.f);};})(cs[i]);}}
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';persistLocal();applyTheme();};
+
+// ── Tabs ──────────────────────────────────────────────
+var tabBtns=document.querySelectorAll('#tabs .tab');
+for(var tb=0;tb<tabBtns.length;tb++){(function(b){
+  b.onclick=function(){
+    for(var k=0;k<tabBtns.length;k++)tabBtns[k].classList.remove('active');
+    b.classList.add('active');
+    var views=document.querySelectorAll('.view');for(var v=0;v<views.length;v++)views[v].classList.remove('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='home')renderHome();
+    if(b.dataset.v==='tickets')renderTickets();
+    if(b.dataset.v==='people')renderPeople();
+    if(b.dataset.v==='equip')renderEquip();
+    if(b.dataset.v==='kb')renderKB();
+  };
+})(tabBtns[tb]);}
+
+function renderAll(){renderHome();renderTickets();renderPeople();renderEquip();renderKB();}
+
+loadSync();
+setBadge('',syncOn()?'Synkar…':'Lokal');
+renderAll();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
