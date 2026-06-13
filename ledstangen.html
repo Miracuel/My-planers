@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ledstången">
+<meta name="theme-color" content="#EBF0EF">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Ledstången","short_name":"Ledstången","display":"standalone","background_color":"%23EBF0EF","theme_color":"%23EBF0EF","start_url":"."}'>
+<title>Ledstången</title>
+<style>
+:root{
+  --bg:#EBF0EF;--panel:#F6F9F8;--panel2:#E2EAE8;--line:#CFDBD8;
+  --ink:#2C3836;--muted:#6B7976;--accent:#357B74;--accent-soft:#D3E4E1;
+  --navbg:rgba(235,240,239,.95);
+  --ok:#3E7C5A;--warn:#9A6B2F;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 2px}
+.tagline{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em}
+.section-title .soft{font-weight:400}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+textarea{resize:vertical;line-height:1.5}
+input:focus,textarea:focus{border-color:var(--accent)}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Princip */
+.princip{background:var(--accent-soft);border:1px solid var(--accent);border-radius:18px;padding:18px 16px;text-align:center}
+.princip .lbl{font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.princip .txt{font-family:Georgia,serif;font-size:18px;line-height:1.45;color:var(--ink)}
+.princip .next{margin-top:12px;background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px}
+
+/* Checklist-rader */
+.checkrow{display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}
+.checkrow:first-child{border-top:none}
+.checkrow .box{width:23px;height:23px;border-radius:7px;border:2px solid var(--accent);background:var(--panel);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;margin-top:1px}
+.checkrow.done .box{background:var(--accent)}
+.checkrow .lab{flex:1;line-height:1.4}
+.checkrow.done .lab{color:var(--muted);text-decoration:line-through}
+.grp-lbl{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 2px;font-weight:600}
+.grp-lbl:first-child{margin-top:4px}
+
+/* Verktyg accordion */
+.tool{border-top:1px solid var(--line)}
+.tool:first-child{border-top:none}
+.tool-head{display:flex;align-items:center;gap:11px;padding:13px 0;cursor:pointer}
+.tool-ic{font-size:18px;width:24px;text-align:center;flex-shrink:0;color:var(--accent)}
+.tool-t{flex:1;font-size:15px;font-family:Georgia,serif}
+.tool-arr{color:var(--muted);font-size:13px;transition:transform .2s}
+.tool.open .tool-arr{transform:rotate(90deg)}
+.tool-body{display:none;padding:0 0 14px 35px}
+.tool.open .tool-body{display:block}
+.tool-pr{font-style:italic;color:var(--ink);font-size:13px;line-height:1.5;margin-bottom:10px}
+.tool-sub{font-size:10px;text-transform:uppercase;letter-spacing:.07em;margin:8px 0 4px;font-weight:600}
+.tool-sub.gor{color:var(--ok)}
+.tool-sub.undvik{color:var(--warn)}
+.tool-li{font-size:13px;line-height:1.5;padding:3px 0 3px 14px;position:relative;color:var(--ink)}
+.tool-li::before{content:'·';position:absolute;left:2px;color:var(--muted)}
+
+/* Medarbetare */
+.member{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:10px}
+.member-top{display:flex;align-items:baseline;gap:8px}
+.member-nm{font-family:Georgia,serif;font-size:16px;flex:1}
+.member-role{font-size:11px;color:var(--muted)}
+.member-edit{background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:2px}
+.member-field{margin-top:9px}
+.member-field .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
+.member-field .v{font-size:13px;line-height:1.5;white-space:pre-wrap}
+.consent{background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:11px 13px;font-size:12px;line-height:1.6;color:var(--ink);margin-bottom:12px}
+
+/* Reflektion */
+.reflog{display:flex;flex-direction:column;gap:3px;padding:10px 0;border-top:1px solid var(--line)}
+.reflog:first-child{border-top:none}
+.reflog .when{font-size:11px;color:var(--muted)}
+.reflog .score{font-size:13px}
+.reflog .rnote{font-size:13px;line-height:1.5;font-style:italic;color:var(--ink);margin-top:2px}
+.reflog .rdel{float:right;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.sync-badge{display:inline-block;font-size:10px;padding:2px 10px;border-radius:11px;background:var(--accent-soft);color:var(--accent);font-weight:600;letter-spacing:.04em}
+.sync-badge.offline{background:var(--panel2);color:var(--muted)}
+.sync-badge.err{background:#F4E1DC;color:#9A4A3A}
+.sync-wrap{text-align:center;margin-bottom:14px;margin-top:-8px}
+.gh-status{font-size:12px;line-height:1.5;border-radius:10px;padding:9px 11px;margin-top:10px;display:none}
+.gh-status.ok{background:var(--accent-soft);color:var(--ink)}
+.gh-status.err{background:#F4E1DC;color:#9A4A3A}
+.gh-status.info{background:var(--panel2);color:var(--muted)}
+.gh-hint{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:6px 9px;margin-top:4px;line-height:1.5}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(44,56,54,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;font-family:inherit;margin-top:14px}
+.sheet-del{width:100%;padding:9px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;margin-top:8px}
+
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#181F1D;--panel:#212927;--panel2:#29322F;--line:#39443F;
+  --ink:#DFE7E4;--muted:#92A19C;--accent:#5FA199;--accent-soft:#2C3B37;
+  --navbg:rgba(24,31,29,.95);--ok:#7FB394;--warn:#C29A63;
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🧭 Ledstången</h1>
+<div class="tagline">NPF-anpassat ledarskap</div>
+<div class="sync-wrap"><span class="sync-badge offline" id="sync-badge" style="display:none">Synk av</span></div>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <div class="princip">
+    <div class="lbl">Dagens princip</div>
+    <div class="txt" id="princip-txt"></div>
+    <button class="next" id="princip-next">Visa en annan ↻</button>
+  </div>
+
+  <div class="section-title">Inför mötet <span class="soft">(nollställs varje dag)</span></div>
+  <div class="card-panel" id="meeting-checks"></div>
+
+  <div class="section-title">Kom snabbt igång</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn" data-go="tools">🧰 Verktyg</button>
+      <button class="btn" data-go="convos">💬 Samtal</button>
+    </div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn" data-go="team">👥 Team</button>
+      <button class="btn" data-go="me">✎ Min vecka</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button id="sync-btn">Synk</button>
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas bara i din enhet — inget skickas någonstans.<br>Anpassningar görs alltid tillsammans med medarbetaren. Detta är ett ledarstöd, inte en bedömning av någon.</div>
+</div>
+
+<!-- TEAM -->
+<div class="view" id="view-team">
+  <div class="consent">Notera <b>behov och överenskomna anpassningar</b> — inte diagnoser. Spara bara det medarbetaren själv vill att du minns, och berätta gärna att du för stödanteckningar. Det jämnar ut förutsättningar, det stämplar inte.</div>
+  <div id="member-list"></div>
+  <button class="btn fill" id="add-member" style="width:100%">+ Lägg till medarbetare</button>
+</div>
+
+<!-- VERKTYG -->
+<div class="view" id="view-tools">
+  <div class="soft" style="margin-bottom:6px">Korta, konkreta principer. Tryck för att fälla ut.</div>
+  <div class="card-panel" id="tool-list"></div>
+</div>
+
+<!-- SAMTAL -->
+<div class="view" id="view-convos">
+  <div class="soft" style="margin-bottom:6px">Checklistor för olika samtal. Bocka av medan du går — nollställ när du vill.</div>
+  <div id="convo-list"></div>
+</div>
+
+<!-- JAG / REFLEKTION -->
+<div class="view" id="view-me">
+  <div class="section-title" style="margin-top:0">Veckans reflektion</div>
+  <div class="card-panel">
+    <div id="reflect-checks"></div>
+    <label>En rad till dig själv (frivilligt)</label>
+    <textarea id="reflect-note" rows="2" placeholder="T.ex. jag glömde skicka agendan på onsdag — nästa vecka skickar jag den dagen innan."></textarea>
+    <button class="btn fill" id="reflect-save" style="width:100%;margin-top:10px">Spara veckan</button>
+  </div>
+  <div class="section-title">Tidigare veckor</div>
+  <div class="card-panel"><div id="reflect-log"></div></div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="today"><span>🧭</span>Idag</button>
+  <button data-v="team"><span>👥</span>Team</button>
+  <button data-v="tools"><span>🧰</span>Verktyg</button>
+  <button data-v="convos"><span>💬</span>Samtal</button>
+  <button data-v="me"><span>✎</span>Jag</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="member-sheet">
+  <h3 id="ms-title">Ny medarbetare</h3>
+  <label>Namn</label>
+  <input type="text" id="ms-name" placeholder="Förnamn räcker">
+  <label>Roll (frivilligt)</label>
+  <input type="text" id="ms-role" placeholder="T.ex. utvecklare">
+  <label>Styrkor</label>
+  <textarea id="ms-strengths" rows="2" placeholder="Det hen är riktigt bra på"></textarea>
+  <label>Fungerar bra</label>
+  <textarea id="ms-helps" rows="2" placeholder="Det som underlättar — t.ex. skriftliga instruktioner, lugn plats"></textarea>
+  <label>Tar energi / blir svårt</label>
+  <textarea id="ms-drains" rows="2" placeholder="T.ex. plötsliga möten, öppet landskap, oklara förväntningar"></textarea>
+  <label>Kommunikation</label>
+  <textarea id="ms-comm" rows="2" placeholder="Hur hen helst tar emot info — chatt, mejl, en sak i taget, tid att svara"></textarea>
+  <label>Överenskomna anpassningar</label>
+  <textarea id="ms-adapt" rows="2" placeholder="Det ni kommit överens om — t.ex. flextid, hörlurar, agenda i förväg"></textarea>
+  <label>Övrigt</label>
+  <textarea id="ms-notes" rows="2" placeholder="Annat värt att minnas"></textarea>
+  <button class="sheet-close" id="ms-save">Spara</button>
+  <button class="sheet-del" id="ms-del" style="display:none">Ta bort medarbetare</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <b>ledstangen.json</b> i ett GitHub-repo så att dina enheter delar samma data. Din token sparas bara här på enheten — aldrig i koden.</div>
+  <div class="gh-hint">⚠ Repot <b>måste vara privat</b> — Team-fliken innehåller känsliga personuppgifter.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="ditt-användarnamn">
+  <label>Privat repo-namn</label>
+  <input type="text" id="gh-repo" placeholder="ledstangen-data">
+  <label>Fine-grained token (Contents: read &amp; write)</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="gh-hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens, med åtkomst till repot och behörighet <b>Contents: Read and write</b>.</div>
+  <div class="gh-status" id="gh-status"></div>
+  <button class="sheet-close" id="gh-save">Anslut &amp; synka</button>
+  <button class="sheet-del" id="gh-disconnect" style="display:none">Koppla från synk</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='ledstangen_v1';
+var state={members:[],reflections:[],meeting:{date:'',items:{}},convos:{},principle:null,theme:'auto'};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}schedulePush();}
+var pushTimer=null;
+function schedulePush(){if(!syncOn())return;clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayKey(){return toISO(new Date());}
+function uid(){return 'm'+Date.now()+Math.floor(Math.random()*1000);}
+
+// ── Data ──────────────────────────────────────────────
+var PRINCIPLES=[
+  'Säg det rakt ut — det underförstådda är ofta osynligt.',
+  'Skicka agendan innan mötet, inte efter.',
+  'Tystnad efter en fråga är oftast tänkande, inte ointresse.',
+  'Beskriv beteendet, inte personen.',
+  'En förändring i taget — och berätta varför.',
+  'Fråga personen. Hen är experten på sig själv.',
+  'Bekräfta muntliga överenskommelser skriftligt.',
+  'Anpassning är inte gräddfil — det jämnar ut förutsättningar.',
+  'Förutsägbarhet är en form av omsorg.',
+  'Ge en sak i taget. Hjärnan tackar.',
+  'Lyft styrkan innan du lyfter problemet.',
+  'Förvarna hellre för tidigt än för sent.',
+  'Strukturen finns för människan, inte tvärtom.',
+  'Det som är tydligt för dig är inte alltid tydligt för andra.',
+  'Lugn miljö är ingen lyx — för många är det en förutsättning.',
+  'Du behöver ingen diagnos för att få anpassa dig.'
+];
+
+var MEETING_ITEMS=[
+  ['agenda','Agenda skickad i förväg'],
+  ['syfte','Syfte och tidsram tydliga'],
+  ['forvarn','Förvarnat om eventuella ändringar'],
+  ['paus','Paus inplanerad om mötet är långt'],
+  ['skrift','Möjligt att delta i skrift/chatt'],
+  ['anteckn','Anteckningar delas efteråt']
+];
+
+var TOOLS=[
+  {ic:'◎',t:'Tydlighet',pr:'Det som är underförstått är ofta osynligt. Var konkret.',
+   gor:['Ge en sak i taget','Var specifik: vad, hur, när och varför','Bekräfta muntliga överenskommelser skriftligt','Visa hur "klart" ser ut, gärna med exempel'],
+   undvik:['Ironi eller antydningar som enda budskap','"Du vet väl vad jag menar"']},
+  {ic:'⌖',t:'Förutsägbarhet',pr:'Trygghet byggs av att veta vad som kommer.',
+   gor:['Skicka agenda och underlag i förväg','Förvarna om förändringar i god tid','Håll återkommande hållpunkter — samma tid, samma form','Berätta alltid vad nästa steg är'],
+   undvik:['Plötsliga möten utan syfte','Att ändra planer i sista stund utan förklaring']},
+  {ic:'⊙',t:'Kommunikation',pr:'Ge tid att tänka. Tystnad är inte ointresse.',
+   gor:['En fråga i taget','Vänta in svaret — processtiden varierar','Erbjud att svara skriftligt i efterhand','Sammanfatta och stäm av att ni förstått lika'],
+   undvik:['Att avbryta eller fylla i åt någon','Beslut på stående fot utan betänketid']},
+  {ic:'▦',t:'Möten',pr:'Strukturen är en omsorg, inte en formalitet.',
+   gor:['Sätt syfte, agenda och tidsram','Lägg in pauser i längre möten','Tillåt deltagande i chatt eller skrift','Dela anteckningar efteråt — kamera valfritt'],
+   undvik:['Spontana rundor utan förvarning','Möten som drar över utan paus']},
+  {ic:'↺',t:'Återkoppling',pr:'Beskriv beteendet, inte personen.',
+   gor:['Var konkret och saklig','Börja med det som fungerar','Ge feedback enskilt, i lugn miljö','Knyt till ett tydligt nästa steg'],
+   undvik:['Feedback inför andra','Svepande omdömen ("du verkar omotiverad")']},
+  {ic:'☼',t:'Arbetsmiljö',pr:'Sänk den sensoriska belastningen.',
+   gor:['Erbjud lugn plats och hörlurar','Gör placeringen flexibel','Ge möjlighet att pausa intryck','Fråga vad som faktiskt stör'],
+   undvik:['Att anta att öppet landskap passar alla','Att tolka behov av lugn som ovilja']},
+  {ic:'✦',t:'Styrkor & anpassning',pr:'Fråga personen — hen är experten på sig själv.',
+   gor:['Utgå från styrkor och intressen','Gör individuella anpassningar — flextid, pauser, arbetssätt','Stäm av att anpassningen faktiskt funkar','Kom ihåg: anpassning jämnar ut, det gräddfiler inte'],
+   undvik:['Standardlösningar för alla','Att vänta på en diagnos innan du anpassar']},
+  {ic:'⇄',t:'Förändring',pr:'En sak i taget, och berätta alltid varför.',
+   gor:['Förvarna tidigt','Förklara syftet','Visa konkret hur vardagen påverkas','Inför stegvis när det går'],
+   undvik:['Många förändringar samtidigt','"Det löser sig" utan en plan']}
+];
+
+var CONVOS=[
+  {id:'avstamning',ic:'☕',t:'Avstämning (1:1)',g:[
+    ['Innan',['Skicka 2–3 punkter i förväg','Boka en lugn plats','Håll samma tid varje gång']],
+    ['Under',['Börja med en öppen fråga','En sak i taget — ge processtid','Fråga: vad behöver du av mig?']],
+    ['Efter',['Sammanfatta det ni enats om skriftligt','Boka nästa avstämning']]
+  ]},
+  {id:'aterkoppling',ic:'↺',t:'Återkoppling',g:[
+    ['Innan',['Förbered konkreta exempel','Välj enskild, lugn miljö','Förvarna att ni ska prata']],
+    ['Under',['Beskriv beteende, inte person','Ta det som fungerar först','Var saklig och lyssna']],
+    ['Efter',['Enas om ett (1) nästa steg','Skriv ner det ni kom överens om']]
+  ]},
+  {id:'forandring',ic:'⇄',t:'Introducera en förändring',g:[
+    ['Innan',['Förvarna i god tid','Skriv ner vad, varför och när']],
+    ['Under',['Förklara syftet','Visa hur vardagen påverkas konkret','Ge utrymme för frågor']],
+    ['Efter',['Dela en skriftlig sammanfattning','Stäm av igen om en vecka']]
+  ]},
+  {id:'onboarding',ic:'🌱',t:'Ny medarbetare',g:[
+    ['Innan',['Förbered ett tydligt schema för dag 1','Utse en kontaktperson']],
+    ['Under',['En sak i taget','Ge rutiner skriftligt','Visa — berätta inte bara']],
+    ['Efter',['Kort daglig avstämning första veckan','Fråga vad som underlättar']]
+  ]},
+  {id:'atergang',ic:'🍃',t:'Återgång efter frånvaro',g:[
+    ['Innan',['Hör av dig vänligt innan återstart','Planera en mjuk upptrappning']],
+    ['Under',['Stäm av arbetsbörda och anpassningar','Inga krav på att "ta igen" det missade']],
+    ['Efter',['Tätare avstämningar i början','Justera tillsammans efter hand']]
+  ]}
+];
+
+var REFLECT_PROMPTS=[
+  ['tydlig','Var jag tydlig och konkret?'],
+  ['forvarn','Förvarnade jag om förändringar?'],
+  ['processtid','Gav jag tid att tänka?'],
+  ['fragade','Frågade jag istället för att anta?'],
+  ['styrkor','Lyfte jag någons styrka?']
+];
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Idag: princip ─────────────────────────────────────
+function renderPrincip(){
+  if(state.principle==null||state.principle>=PRINCIPLES.length){
+    var doy=Math.floor((new Date()-new Date(new Date().getFullYear(),0,0))/86400000);
+    state.principle=doy%PRINCIPLES.length;
+  }
+  document.getElementById('princip-txt').textContent='”'+PRINCIPLES[state.principle]+'”';
+}
+document.getElementById('princip-next').onclick=function(){
+  state.principle=(state.principle+1)%PRINCIPLES.length;save();renderPrincip();
+};
+
+// ── Idag: inför mötet ─────────────────────────────────
+function meetingState(){
+  if(state.meeting.date!==todayKey()){state.meeting={date:todayKey(),items:{}};}
+  return state.meeting.items;
+}
+function renderMeeting(){
+  var items=meetingState();
+  var el=document.getElementById('meeting-checks');
+  var h='';
+  for(var i=0;i<MEETING_ITEMS.length;i++){
+    var k=MEETING_ITEMS[i][0],done=!!items[k];
+    h+='<div class="checkrow'+(done?' done':'')+'" data-k="'+k+'"><div class="box">'+(done?'✓':'')+'</div><div class="lab">'+esc(MEETING_ITEMS[i][1])+'</div></div>';
+  }
+  el.innerHTML=h;
+  var rows=el.querySelectorAll('.checkrow');
+  for(var j=0;j<rows.length;j++){rows[j].onclick=function(){
+    var k=this.dataset.k,it=meetingState();it[k]=!it[k];save();renderMeeting();
+  };}
+}
+
+// ── Idag: snabbknappar ────────────────────────────────
+(function(){
+  var btns=document.querySelectorAll('[data-go]');
+  for(var i=0;i<btns.length;i++){btns[i].onclick=function(){switchView(this.dataset.go);};}
+})();
+
+// ── Team ──────────────────────────────────────────────
+function renderMembers(){
+  var el=document.getElementById('member-list');
+  if(!state.members.length){el.innerHTML='<div class="empty-msg">Inga medarbetare ännu. Lägg till en nedan för att samla behov och överenskomna anpassningar på ett ställe.</div>';return;}
+  var h='';
+  for(var i=0;i<state.members.length;i++){
+    var m=state.members[i];
+    h+='<div class="member"><div class="member-top"><div class="member-nm">'+esc(m.name)+'</div>'+(m.role?'<div class="member-role">'+esc(m.role)+'</div>':'')+'<button class="member-edit" data-id="'+m.id+'">Ändra</button></div>';
+    h+=field('Styrkor',m.strengths);
+    h+=field('Fungerar bra',m.helps);
+    h+=field('Tar energi',m.drains);
+    h+=field('Kommunikation',m.comm);
+    h+=field('Överenskomna anpassningar',m.adapt);
+    h+=field('Övrigt',m.notes);
+    h+='</div>';
+  }
+  el.innerHTML=h;
+  var btns=el.querySelectorAll('.member-edit');
+  for(var j=0;j<btns.length;j++){btns[j].onclick=function(){openMember(this.dataset.id);};}
+}
+function field(k,v){if(!v)return '';return '<div class="member-field"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>';}
+
+var editingId=null;
+function openMember(id){
+  editingId=id||null;
+  var m=id?find(id):{name:'',role:'',strengths:'',helps:'',drains:'',comm:'',adapt:'',notes:''};
+  document.getElementById('ms-title').textContent=id?'Ändra medarbetare':'Ny medarbetare';
+  document.getElementById('ms-name').value=m.name||'';
+  document.getElementById('ms-role').value=m.role||'';
+  document.getElementById('ms-strengths').value=m.strengths||'';
+  document.getElementById('ms-helps').value=m.helps||'';
+  document.getElementById('ms-drains').value=m.drains||'';
+  document.getElementById('ms-comm').value=m.comm||'';
+  document.getElementById('ms-adapt').value=m.adapt||'';
+  document.getElementById('ms-notes').value=m.notes||'';
+  document.getElementById('ms-del').style.display=id?'block':'none';
+  openSheet('member-sheet');
+}
+function find(id){for(var i=0;i<state.members.length;i++)if(state.members[i].id===id)return state.members[i];return null;}
+document.getElementById('add-member').onclick=function(){openMember(null);};
+document.getElementById('ms-save').onclick=function(){
+  var name=document.getElementById('ms-name').value.trim();
+  if(!name){document.getElementById('ms-name').focus();return;}
+  var data={
+    name:name,
+    role:document.getElementById('ms-role').value.trim(),
+    strengths:document.getElementById('ms-strengths').value.trim(),
+    helps:document.getElementById('ms-helps').value.trim(),
+    drains:document.getElementById('ms-drains').value.trim(),
+    comm:document.getElementById('ms-comm').value.trim(),
+    adapt:document.getElementById('ms-adapt').value.trim(),
+    notes:document.getElementById('ms-notes').value.trim()
+  };
+  if(editingId){var m=find(editingId);if(m)Object.assign(m,data);}
+  else{data.id=uid();state.members.push(data);}
+  save();closeSheets();renderMembers();
+};
+document.getElementById('ms-del').onclick=function(){
+  if(!editingId)return;
+  if(!confirm('Ta bort den här medarbetaren och alla anteckningar?'))return;
+  state.members=state.members.filter(function(m){return m.id!==editingId;});
+  save();closeSheets();renderMembers();
+};
+
+// ── Verktyg ───────────────────────────────────────────
+function renderTools(){
+  var el=document.getElementById('tool-list');
+  var h='';
+  for(var i=0;i<TOOLS.length;i++){
+    var x=TOOLS[i];
+    h+='<div class="tool" data-i="'+i+'"><div class="tool-head"><div class="tool-ic">'+x.ic+'</div><div class="tool-t">'+esc(x.t)+'</div><div class="tool-arr">▸</div></div><div class="tool-body"><div class="tool-pr">'+esc(x.pr)+'</div>';
+    h+='<div class="tool-sub gor">Gör så här</div>';
+    for(var a=0;a<x.gor.length;a++)h+='<div class="tool-li">'+esc(x.gor[a])+'</div>';
+    h+='<div class="tool-sub undvik">Undvik</div>';
+    for(var b=0;b<x.undvik.length;b++)h+='<div class="tool-li">'+esc(x.undvik[b])+'</div>';
+    h+='</div></div>';
+  }
+  el.innerHTML=h;
+  var heads=el.querySelectorAll('.tool-head');
+  for(var j=0;j<heads.length;j++){heads[j].onclick=function(){this.parentNode.classList.toggle('open');};}
+}
+
+// ── Samtal ────────────────────────────────────────────
+function renderConvos(){
+  var el=document.getElementById('convo-list');
+  var h='';
+  for(var i=0;i<CONVOS.length;i++){
+    var c=CONVOS[i];
+    var st=state.convos[c.id]||{};
+    h+='<div class="section-title" style="margin-top:'+(i?'18px':'0')+'">'+c.ic+' '+esc(c.t)+'</div>';
+    h+='<div class="card-panel">';
+    var idx=0;
+    for(var gi=0;gi<c.g.length;gi++){
+      h+='<div class="grp-lbl">'+esc(c.g[gi][0])+'</div>';
+      var its=c.g[gi][1];
+      for(var k=0;k<its.length;k++){
+        var done=!!st[idx];
+        h+='<div class="checkrow'+(done?' done':'')+'" data-c="'+c.id+'" data-x="'+idx+'"><div class="box">'+(done?'✓':'')+'</div><div class="lab">'+esc(its[k])+'</div></div>';
+        idx++;
+      }
+    }
+    h+='<button class="btn ghost" data-reset="'+c.id+'" style="margin-top:10px;width:100%">Nollställ</button>';
+    h+='</div>';
+  }
+  el.innerHTML=h;
+  var rows=el.querySelectorAll('.checkrow');
+  for(var r=0;r<rows.length;r++){rows[r].onclick=function(){
+    var c=this.dataset.c,x=this.dataset.x;
+    if(!state.convos[c])state.convos[c]={};
+    state.convos[c][x]=!state.convos[c][x];save();renderConvos();
+  };}
+  var rs=el.querySelectorAll('[data-reset]');
+  for(var rr=0;rr<rs.length;rr++){rs[rr].onclick=function(){
+    state.convos[this.dataset.reset]={};save();renderConvos();
+  };}
+}
+
+// ── Jag / reflektion ──────────────────────────────────
+var reflectDraft={};
+function renderReflectChecks(){
+  var el=document.getElementById('reflect-checks');
+  var h='';
+  for(var i=0;i<REFLECT_PROMPTS.length;i++){
+    var k=REFLECT_PROMPTS[i][0],done=!!reflectDraft[k];
+    h+='<div class="checkrow'+(done?' done':'')+'" data-k="'+k+'"><div class="box">'+(done?'✓':'')+'</div><div class="lab">'+esc(REFLECT_PROMPTS[i][1])+'</div></div>';
+  }
+  el.innerHTML=h;
+  var rows=el.querySelectorAll('.checkrow');
+  for(var j=0;j<rows.length;j++){rows[j].onclick=function(){
+    var k=this.dataset.k;reflectDraft[k]=!reflectDraft[k];renderReflectChecks();
+  };}
+}
+document.getElementById('reflect-save').onclick=function(){
+  var checks={};var n=0;
+  for(var i=0;i<REFLECT_PROMPTS.length;i++){var k=REFLECT_PROMPTS[i][0];checks[k]=!!reflectDraft[k];if(checks[k])n++;}
+  var note=document.getElementById('reflect-note').value.trim();
+  state.reflections.unshift({date:todayKey(),checks:checks,score:n,total:REFLECT_PROMPTS.length,note:note});
+  reflectDraft={};document.getElementById('reflect-note').value='';
+  save();renderReflectChecks();renderReflectLog();
+};
+function renderReflectLog(){
+  var el=document.getElementById('reflect-log');
+  if(!state.reflections.length){el.innerHTML='<div class="empty-msg">Spara din första vecka så samlas den här.</div>';return;}
+  var h='';
+  for(var i=0;i<state.reflections.length;i++){
+    var r=state.reflections[i];
+    h+='<div class="reflog"><button class="rdel" data-i="'+i+'">×</button><span class="when">'+esc(r.date)+'</span><span class="score">'+r.score+' av '+r.total+' ✓</span>'+(r.note?'<div class="rnote">”'+esc(r.note)+'”</div>':'')+'</div>';
+  }
+  el.innerHTML=h;
+  var dels=el.querySelectorAll('.rdel');
+  for(var j=0;j<dels.length;j++){dels[j].onclick=function(){
+    state.reflections.splice(+this.dataset.i,1);save();renderReflectLog();
+  };}
+}
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='ledstangen-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{var d=JSON.parse(r.result);
+      if(d&&(Array.isArray(d.members)||Array.isArray(d.reflections))){
+        state=Object.assign(state,d);save();
+        renderMembers();renderReflectLog();renderConvos();renderMeeting();renderPrincip();
+        alert('Importen klar.');
+      }else alert('Filen verkar inte vara en giltig säkerhetskopia.');
+    }catch(err){alert('Kunde inte läsa filen.');}
+  };
+  r.readAsText(f);
+};
+
+// ── Synk via GitHub ───────────────────────────────────
+var SYNC_KEY='ledstangen_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/ledstangen.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(s,msg){
+  var b=document.getElementById('sync-badge');
+  if(!syncOn()){b.style.display='none';return;}
+  b.style.display='inline-block';
+  b.textContent=msg;
+  b.className='sync-badge'+(s==='ok'?'':s==='err'?' err':' offline');
+}
+function applyRemote(d){
+  if(Array.isArray(d.members))state.members=d.members;
+  if(Array.isArray(d.reflections))state.reflections=d.reflections;
+  if(d.convos&&typeof d.convos==='object')state.convos=d.convos;
+  if(d.meeting&&typeof d.meeting==='object')state.meeting=d.meeting;
+  if(typeof d.principle==='number')state.principle=d.principle;
+}
+function renderAllFromState(){renderPrincip();renderMeeting();renderMembers();renderConvos();renderReflectLog();}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Synkar…');
+  return ghGet().then(function(d){
+    if(d){applyRemote(d);try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}renderAllFromState();}
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Synkar…');
+  var payload={members:state.members,reflections:state.reflections,convos:state.convos,meeting:state.meeting,principle:state.principle,updated:new Date().toISOString()};
+  var content=b64enc(JSON.stringify(payload));
+  function doPut(){
+    var body={message:'Uppdatering via Ledstången',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(e){setBadge('err','Synkfel');throw e;});
+}
+function ghStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.className='gh-status '+type;el.textContent=msg;}
+document.getElementById('sync-btn').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('gh-disconnect').style.display=syncOn()?'block':'none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){ghStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  ghStatus('Testar anslutning…','info');
+  ghGet().then(function(d){
+    if(d){ghStatus('✓ Ansluten — hämtar din data…','ok');return ghPull();}
+    ghStatus('✓ Ansluten — repot är tomt, laddar upp din data…','ok');return ghPush();
+  }).then(function(){setBadge('ok','Synkad');setTimeout(closeSheets,1100);})
+  .catch(function(e){ghStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents: Read and write.','err');});
+};
+document.getElementById('gh-disconnect').onclick=function(){
+  sync={owner:'',repo:'',token:'',sha:null};
+  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  setBadge('off','');closeSheets();
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#181F1D':'#EBF0EF';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+function switchView(v){
+  var nb=document.querySelectorAll('.nav button');
+  for(var i=0;i<nb.length;i++)nb[i].classList.toggle('active',nb[i].dataset.v===v);
+  var vs=document.querySelectorAll('.view');
+  for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='today'){renderMeeting();renderPrincip();}
+  if(v==='team')renderMembers();
+  if(v==='me'){renderReflectChecks();renderReflectLog();}
+  window.scrollTo(0,0);
+}
+(function(){
+  var nb=document.querySelectorAll('.nav button');
+  for(var i=0;i<nb.length;i++){nb[i].onclick=function(){switchView(this.dataset.v);};}
+})();
+
+// ── Init ──────────────────────────────────────────────
+renderPrincip();
+renderMeeting();
+renderTools();
+renderConvos();
+renderReflectChecks();
+renderReflectLog();
+applyTheme();
+loadSync();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
