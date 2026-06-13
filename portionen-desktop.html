@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F4EFE9">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23B57B5A'/%3E%3Ccircle cx='50' cy='44' r='22' fill='none' stroke='%23FBF7F2' stroke-width='6'/%3E%3Crect x='47' y='60' width='6' height='26' rx='3' fill='%23FBF7F2'/%3E%3C/svg%3E">
+<title>Portionen — dator</title>
+<style>
+:root{
+  --bg:#F4EFE9;--panel:#FBF7F2;--panel2:#EEE6DC;--line:#E0D5C7;
+  --ink:#43392F;--muted:#8A7D6E;--clay:#B57B5A;--clay-soft:#EADBCF;
+  --green:#7E946B;--green-soft:#DCE3D1;--yellow:#C9A95F;--red:#C08A7E;--blue:#7E8BA3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s}
+.app{max-width:1180px;margin:0 auto;padding:18px 22px 48px}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:23px;letter-spacing:.03em}
+.section-title{font-family:Georgia,serif;font-size:15px;margin:16px 0 8px;letter-spacing:.02em}
+.section-title:first-child,.col>.section-title:first-child{margin-top:0}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus{border-color:var(--clay)}
+.btn{border:1px solid var(--clay);background:var(--panel);color:var(--clay);border-radius:12px;padding:9px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn:hover{background:var(--clay-soft)}
+.btn.fill{background:var(--clay);color:#fff}.btn.fill:hover{background:#9C6646}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}.btn-row .btn{flex:1}
+code{font-family:monospace;font-size:.92em;background:var(--panel2);padding:1px 5px;border-radius:5px}
+
+/* Top bar */
+.top-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.spacer{flex:1}
+.tbtn{font-size:12px;padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font-family:inherit;transition:background .15s}
+.tbtn:hover{background:var(--panel2)}
+.sync-badge{font-size:11px;padding:5px 11px;border-radius:10px;background:var(--panel2);color:var(--muted);font-weight:500}
+.sync-badge.ok{background:var(--green-soft);color:var(--green)}
+.sync-badge.err{background:#F4E0DB;color:#A2685B}
+.sync-badge.load{background:var(--clay-soft);color:var(--clay)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 1fr 1.05fr;gap:20px;align-items:start}
+@media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.grid{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column}
+
+/* Kostfas */
+.phase-card{cursor:pointer}
+.phase-name{font-family:Georgia,serif;font-size:18px;display:flex;align-items:center;gap:8px}
+.phase-pips{display:flex;gap:5px;margin:8px 0}
+.phase-pips span{flex:1;height:5px;border-radius:3px;background:var(--panel2)}
+.phase-pips span.on{background:var(--clay)}
+
+/* Ringar */
+.rings{display:flex;gap:14px}
+.ring2{flex:1;display:flex;flex-direction:column;align-items:center}
+.ring2 .dial{width:100%;max-width:130px;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--clay) 0%,var(--panel2) 0);cursor:pointer}
+.ring2 .dial-inner{width:74%;height:74%;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring2 .big{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.05}
+.ring2 .small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ring2 .cap{font-size:12px;color:var(--muted);margin-top:7px;text-align:center}
+.ring2 .cap b{color:var(--ink);font-weight:600}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit;transition:background .15s}
+.chip small{color:var(--muted);margin-left:4px}
+.chip:hover{background:var(--clay-soft)}
+.chip.add{border-color:var(--clay-soft)}
+
+/* Loggrader */
+.log-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-row .g{font-weight:600;color:var(--clay);min-width:42px}
+.log-row .name{flex:1}
+.log-row time{color:var(--muted);font-size:11px}
+.log-row button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.log-row button:hover{color:var(--red)}
+
+/* Tillskott */
+.vit{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.vit:first-child{border-top:none}
+.vit-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--clay);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:13px;color:#fff;line-height:21px;text-align:center}
+.vit-check.done{background:var(--clay)}
+.vit-name{flex:1;font-size:14px}
+.vit-name.done{color:var(--muted)}
+
+/* Påminnelser */
+.tip{display:flex;gap:10px;padding:7px 0;font-size:13px;line-height:1.5}
+.tip .b{color:var(--clay);flex-shrink:0}
+
+/* Timer */
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:6px 0}
+.ring{width:150px;height:150px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--clay) 0%,var(--panel2) 0)}
+.ring-inner{width:126px;height:126px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-time{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+.ring-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* Vikt */
+.weight-now{text-align:center;padding:6px 0 10px}
+.weight-now .num{font-family:Georgia,serif;font-size:40px;color:var(--clay)}
+.weight-now .num small{font-size:18px;color:var(--muted)}
+.weight-now .sub{font-size:13px;color:var(--muted);margin-top:2px}
+canvas{width:100%;display:block}
+
+/* Mönster */
+.avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.avg-row:first-child{border-top:none}
+.avg-row b{font-variant-numeric:tabular-nums}
+.care-banner{background:var(--clay-soft);border:1px solid var(--clay);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#5C4536;margin-bottom:12px;display:none}
+
+/* Add rows / editors */
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--clay);background:var(--clay);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item small{color:var(--clay);font-weight:600}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+.hint{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:6px 8px;line-height:1.5;margin-top:4px}
+#gh-status{display:none;font-size:12px;padding:8px 12px;border-radius:8px;margin-top:8px}
+.disclaimer{text-align:center;font-size:11px;color:var(--muted);opacity:.85;margin-top:26px;line-height:1.7}
+
+/* Modaler (overlay) */
+.sheet-bg{position:fixed;inset:0;background:rgba(67,57,47,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);opacity:0;pointer-events:none;width:440px;max-width:92vw;max-height:88vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 24px;z-index:51;transition:opacity .18s,transform .18s;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.sheet.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+.sheet h3{font-family:Georgia,serif;font-size:18px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:14px;cursor:pointer;margin-top:12px}
+.phase-opt{padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;margin:6px 0;cursor:pointer}
+.phase-opt.sel{border-color:var(--clay);background:var(--clay-soft)}
+.phase-opt b{font-family:Georgia,serif;font-weight:400;font-size:15px;display:block;margin-bottom:2px}
+
+html[data-theme=dark]{
+  --bg:#231E18;--panel:#2C2620;--panel2:#352E27;--line:#43392F;
+  --ink:#E8DFD4;--muted:#A29686;--clay:#CB9472;--clay-soft:#43342A;
+  --green:#94A87E;--green-soft:#39402F;--yellow:#C9A95F;--red:#C08A7E;--blue:#92A0B8;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="top-bar">
+  <h1 class="brand">&#129348; Portionen</h1>
+  <div class="spacer"></div>
+  <span id="sync-badge" class="sync-badge">Lokal</span>
+  <button class="tbtn" id="sync-now" style="display:none">&#8635; Synka</button>
+  <button class="tbtn" id="open-sync">&#9881; Synk</button>
+  <button class="tbtn" id="open-goals">&#9881; Mål</button>
+  <button class="tbtn" id="export-btn">Säkerhetskopiera</button>
+  <button class="tbtn" id="import-btn">Importera</button>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+  <button class="tbtn" id="theme-btn" title="Tema">&#9680;</button>
+</div>
+
+<div class="grid">
+  <div class="col" id="view-today">
+  <div class="card-panel phase-card" id="phase-card">
+    <div class="phase-name"><span id="phase-name"></span> <span class="soft" style="margin-left:auto;font-weight:400">Ändra ›</span></div>
+    <div class="phase-pips" id="phase-pips"></div>
+    <div class="soft" id="phase-desc"></div>
+  </div>
+
+  <div class="section-title" style="margin-top:16px">Dagens näring</div>
+  <div class="card-panel">
+    <div class="rings">
+      <div class="ring2">
+        <div class="dial" id="prot-dial"><div class="dial-inner"><div class="big" id="prot-big">0</div><div class="small">g protein</div></div></div>
+        <div class="cap" id="prot-cap"></div>
+      </div>
+      <div class="ring2">
+        <div class="dial" id="fluid-dial"><div class="dial-inner"><div class="big" id="fluid-big">0</div><div class="small">ml vätska</div></div></div>
+        <div class="cap" id="fluid-cap"></div>
+      </div>
+    </div>
+    <div class="soft" style="text-align:center;margin-top:10px">Tryck på en ring för att lägga till</div>
+  </div>
+
+  <div class="section-title">Tillskott idag <button class="btn ghost" id="edit-vits" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="vit-list"></div>
+
+  <div class="section-title">Dagens måltider</div>
+  <div class="card-panel"><div id="day-log"></div></div>
+
+  <div class="section-title">Mjuka påminnelser</div>
+  <div class="card-panel" id="tips">  </div>
+
+  <div class="col" id="view-log">
+  <div class="section-title" style="margin-top:0">Snabblogga protein</div>
+  <div class="card-panel">
+    <div class="chips" id="food-chips"></div>
+    <div class="add-row">
+      <input type="text" id="food-name" placeholder="Annat — namn">
+      <input type="number" id="food-g" placeholder="g" style="flex:0 0 64px" inputmode="numeric">
+      <button id="food-add">+</button>
+    </div>
+    <div class="soft" style="margin-top:6px">Lägg gärna ofta använda livsmedel i listan via <button class="btn ghost" id="edit-foods" style="padding:3px 8px">Redigera livsmedel</button></div>
+  </div>
+
+  <div class="section-title">Vätska</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn fill" id="fluid-glass">+1 glas (<span id="glass-ml">200</span> ml)</button>
+      <button class="btn" id="fluid-custom">Annan mängd</button>
+    </div>
+    <div class="soft" style="margin-top:8px">Sippa lite hela dagen. Försök hålla isär dryck och mat — ungefär 30 min före och efter.</div>
+  </div>
+
+  <div class="section-title">Hur mår magen?</div>
+  <div class="card-panel">
+    <div class="chips" id="symptom-chips"></div>
+    <div id="symptom-log" style="margin-top:6px"></div>
+  </div>
+
+  <div class="section-title">Måltidstimer</div>
+  <div class="card-panel">
+    <div class="timer-wrap">
+      <div class="ring" id="ring"><div class="ring-inner"><div class="ring-time" id="ring-time">20:00</div><div class="ring-label" id="ring-label">Ät lugnt</div></div></div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn fill" id="t-start">Starta 20 min</button>
+        <button class="btn" id="t-reset">Nollställ</button>
+      </div>
+      <div class="soft" style="text-align:center">Ta dig tid. Tugga väl, lägg ner besticket emellan, sluta vid första mättnaden.</div>
+    </div>
+  </div>
+  </div>
+
+  <div class="col">
+    <div id="view-weight" class="view active">
+  <div class="section-title" style="margin-top:0">Vikt</div>
+  <div class="card-panel">
+    <div class="weight-now">
+      <div class="num" id="w-now">–</div>
+      <div class="sub" id="w-sub"></div>
+    </div>
+    <div class="add-row">
+      <input type="number" id="w-in" placeholder="Vikt" inputmode="decimal" step="0.1">
+      <button id="w-add">+</button>
+    </div>
+    <div class="soft" style="margin-top:6px;text-align:center">Väg dig högst en gång per dag — gärna mer sällan. Siffran säger inget om dagen. Kurvan över tid säger mer än ett enskilt tal.</div>
+  </div>
+
+  <div class="section-title">Kurva</div>
+  <div class="card-panel">
+    <canvas id="w-chart" width="440" height="180"></canvas>
+    <div id="w-history" style="margin-top:8px"></div>
+  </div>
+    </div>
+    <div id="view-pattern" class="view active">
+  <div class="care-banner" id="care-banner"></div>
+  <div class="section-title" style="margin-top:0">Protein — 14 dagar</div>
+  <div class="card-panel">
+    <canvas id="prot-chart" width="440" height="170"></canvas>
+    <div class="soft" style="text-align:center;margin-top:4px">Streckad linje = ditt proteinmål</div>
+  </div>
+
+  <div class="section-title">Senaste 7 dagarna</div>
+  <div class="card-panel" id="avgs"></div>
+
+  <div class="section-title">Magen — 30 dagar</div>
+  <div class="card-panel" id="symptom-summary"></div>
+    </div>
+  </div>
+</div>
+
+<div class="disclaimer">Allt sparas på din enhet (och i ditt egna privata GitHub-repo om synk är på). Portionen är ett vardagsstöd — inte vård.<br>Följ alltid råden från ditt bariatriska team och din dietist. 🌿</div>
+
+<div class="sheet-bg" id="sheet-bg"></div>
+
+
+<!-- Sheets -->
+<div class="sheet" id="phase-sheet">
+  <h3>Kostfas</h3>
+  <div class="soft">Var i återhämtningen är du nu? Faserna följer det ditt team satt — ändra fritt.</div>
+  <div id="phase-opts"></div>
+  <button class="sheet-close" id="phase-done">Klar</button>
+</div>
+
+<div class="sheet" id="prot-sheet">
+  <h3>Lägg till protein</h3>
+  <div class="chips" id="prot-sheet-chips"></div>
+  <label>Annat — namn &amp; gram</label>
+  <div class="add-row">
+    <input type="text" id="prot-sheet-name" placeholder="T.ex. Keso">
+    <input type="number" id="prot-sheet-g" placeholder="g" style="flex:0 0 64px" inputmode="numeric">
+    <button id="prot-sheet-add">+</button>
+  </div>
+  <button class="sheet-close" id="prot-sheet-close">Klar</button>
+</div>
+
+<div class="sheet" id="fluid-sheet">
+  <h3>Lägg till vätska</h3>
+  <div class="btn-row">
+    <button class="btn" data-ml="100">+100</button>
+    <button class="btn" data-ml="150">+150</button>
+    <button class="btn" data-ml="200">+200</button>
+    <button class="btn" data-ml="250">+250</button>
+  </div>
+  <label>Egen mängd (ml)</label>
+  <div class="add-row">
+    <input type="number" id="fluid-in" placeholder="ml" inputmode="numeric">
+    <button id="fluid-in-add">+</button>
+  </div>
+  <button class="sheet-close" id="fluid-sheet-close">Klar</button>
+</div>
+
+<div class="sheet" id="goals-sheet">
+  <h3>Mål &amp; inställningar</h3>
+  <div class="soft">Sätt målen som ditt team rekommenderat. Vanligt efter operation är 60–80 g protein och minst 1,5 liter vätska per dag — men dina mål gäller.</div>
+  <label>Proteinmål (g/dag)</label>
+  <input type="number" id="g-prot" inputmode="numeric">
+  <label>Vätskemål (ml/dag)</label>
+  <input type="number" id="g-fluid" inputmode="numeric">
+  <label>Glasstorlek (ml)</label>
+  <input type="number" id="g-glass" inputmode="numeric">
+  <label>Startvikt (frivilligt)</label>
+  <input type="number" id="g-startw" inputmode="decimal" step="0.1" placeholder="kg">
+  <button class="sheet-close" id="goals-save">Spara</button>
+</div>
+
+<div class="sheet" id="vits-sheet">
+  <h3>Tillskott</h3>
+  <div id="vits-items"></div>
+  <div class="add-row"><input type="text" id="vits-in" placeholder="Lägg till tillskott…"><button id="vits-add">+</button></div>
+  <button class="sheet-close" id="vits-done">Klar</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Portionen kan spara en privat <code>portionen.json</code> i ett GitHub-repo, så att telefon och dator visar samma data. Din token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="mittnamn">
+  <label>Privat repo-namn</label>
+  <input type="text" id="gh-repo" placeholder="portionen-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST detta repo, med Contents: Read and write.</div>
+  <div id="gh-status"></div>
+  <button class="btn fill" id="gh-save" style="width:100%;margin-top:10px">Spara &amp; synka</button>
+  <button class="sheet-close" id="sync-close">Stäng</button>
+</div>
+
+<div class="sheet" id="foods-sheet">
+  <h3>Livsmedel</h3>
+  <div class="soft">Dina vanligaste proteinkällor — namn och gram protein.</div>
+  <div id="foods-items"></div>
+  <label>Lägg till</label>
+  <div class="add-row">
+    <input type="text" id="foods-name" placeholder="Namn">
+    <input type="number" id="foods-g" placeholder="g" style="flex:0 0 64px" inputmode="numeric">
+    <button id="foods-add">+</button>
+  </div>
+  <button class="sheet-close" id="foods-done">Klar</button>
+</div>
+
+
+<script>
+
+// ── State ─────────────────────────────────────────────
+const KEY='portionen_v1';
+let state={
+  goals:{protein:70,fluid:1500,glass:200,startWeight:null},
+  phase:1,
+  vitamins:['Multivitamin','B12','Järn','Kalcium + D-vitamin'],
+  foods:[['Proteinshake',20],['Kvarg 1dl',10],['Keso 1dl',12],['Ägg',6],['Kyckling 50g',15],['Fisk 50g',10],['Proteinpudding',10],['Linser 50g',4]],
+  symptomTypes:['Illamående','Dumpning','Halsbränna','Kräkning','Mätt för fort','Trött','Smärta'],
+  days:{},
+  weights:[],
+  theme:'auto'
+};
+try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+state.goals=Object.assign({protein:70,fluid:1500,glass:200,startWeight:null},state.goals||{});
+
+// ── GitHub-synk (privat repo, likt övriga svit-appar) ─
+const SYNC_KEY='portionensync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+let applyingRemote=false,pushT=null;
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/portionen.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+function setBadge(st,msg){const b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sync-badge'+(st?' '+st:'');}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function save(){saveLocal();if(syncOn()&&!applyingRemote){state.updated=new Date().toISOString();saveLocal();clearTimeout(pushT);pushT=setTimeout(ghPushNow,1000);}}
+function payload(){return{days:state.days,weights:state.weights,goals:state.goals,phase:state.phase,vitamins:state.vitamins,foods:state.foods,symptomTypes:state.symptomTypes,updated:state.updated||new Date().toISOString()};}
+function applyRemote(d,force){
+  const lu=state.updated||'',ru=d.updated||'';
+  if(!force&&ru&&lu&&ru<=lu)return false;
+  if(d.days)state.days=d.days;
+  if(Array.isArray(d.weights))state.weights=d.weights;
+  if(d.goals)state.goals=Object.assign({protein:70,fluid:1500,glass:200,startWeight:null},d.goals);
+  if(typeof d.phase==='number')state.phase=d.phase;
+  if(Array.isArray(d.vitamins))state.vitamins=d.vitamins;
+  if(Array.isArray(d.foods))state.foods=d.foods;
+  if(Array.isArray(d.symptomTypes))state.symptomTypes=d.symptomTypes;
+  state.updated=ru||lu;
+  return true;
+}
+async function ghGet(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(force){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');const d=await ghGet();
+    if(d&&applyRemote(d,force)){applyingRemote=true;saveLocal();applyingRemote=false;renderAll();}
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPushNow(){
+  if(!syncOn())return;
+  try{setBadge('load','Sparar…');
+    if(!state.updated)state.updated=new Date().toISOString();
+    const content=b64enc(JSON.stringify(payload()));
+    const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Portionen',content},sync.sha?{sha:sync.sha}:{}))});
+    let r=await doPut();
+    if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+function ghPush(){if(syncOn()){clearTimeout(pushT);pushT=setTimeout(ghPushNow,1000);}}
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>toISO(new Date());
+const nowT=()=>new Date().toTimeString().slice(0,5);
+function day(){
+  const k=todayKey();
+  if(!state.days[k])state.days[k]={meals:[],protein:0,fluid:0,vits:[],symptoms:[]};
+  const d=state.days[k];
+  d.meals=d.meals||[];d.vits=d.vits||[];d.symptoms=d.symptoms||[];
+  if(typeof d.protein!=='number')d.protein=0;
+  if(typeof d.fluid!=='number')d.fluid=0;
+  return d;
+}
+
+// ── Faser ─────────────────────────────────────────────
+const PHASES=[
+  ['Flytande kost','Tunna, slätta vätskor i små klunkar ofta. Proteindryck hjälper dig nå målet.'],
+  ['Trögflytande & puré','Slätt och mjukt — yoghurt, kvarg, soppa, puré. Protein först.'],
+  ['Mjuk mat','Mört och lättuggat. Tugga länge och ta små portioner.'],
+  ['Fast föda','Vanlig mat i små portioner. Protein först, ät långsamt.']
+];
+const TIPS=[
+  ['🥚','Protein först — ät det viktigaste innan resten tar plats.'],
+  ['🐌','Ät långsamt och tugga väl. En måltid får ta sin tid.'],
+  ['🥄','Små portioner. Sluta vid första tecknet på mättnad.'],
+  ['💧','Drick mellan måltider, inte till — ungefär 30 min före och efter.'],
+  ['💊','Ta dina tillskott varje dag. De är en del av maten nu.']
+];
+
+// ── Sheets ────────────────────────────────────────────
+const bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+bg.onclick=closeSheets;
+
+// ── Ringar ────────────────────────────────────────────
+function dial(elId,val,goal,unit){
+  const el=document.getElementById(elId);
+  const pct=goal>0?Math.min(100,Math.round(val/goal*100)):0;
+  const met=goal>0&&val>=goal;
+  const col=met?'var(--green)':'var(--clay)';
+  el.style.background='conic-gradient('+col+' '+pct+'%,var(--panel2) 0)';
+}
+function renderRings(){
+  const d=day(),g=state.goals;
+  document.getElementById('prot-big').textContent=Math.round(d.protein);
+  document.getElementById('fluid-big').textContent=Math.round(d.fluid);
+  dial('prot-dial',d.protein,g.protein,'g');
+  dial('fluid-dial',d.fluid,g.fluid,'ml');
+  const pLeft=Math.max(0,g.protein-d.protein);
+  document.getElementById('prot-cap').innerHTML=pLeft<=0?'Mål nått 🌿':'<b>'+pLeft+' g</b> kvar av '+g.protein;
+  const fLeft=Math.max(0,g.fluid-d.fluid);
+  document.getElementById('fluid-cap').innerHTML=fLeft<=0?'Mål nått 🌿':'<b>'+fLeft+' ml</b> kvar av '+g.fluid;
+}
+
+// ── Logga protein / måltid ────────────────────────────
+function addMeal(name,grams){
+  const d=day();
+  d.meals.push({t:nowT(),name:name,g:grams});
+  d.protein=Math.max(0,d.protein+(grams||0));
+  save();renderToday();
+}
+function addFluid(ml){
+  const d=day();
+  d.fluid=Math.max(0,d.fluid+ml);
+  d.meals.push({t:nowT(),name:'Vätska',g:0,ml:ml});
+  save();renderToday();
+}
+function renderLog(){
+  const d=day();const el=document.getElementById('day-log');
+  if(!d.meals.length){el.innerHTML='<div class="empty-msg">Inget loggat ännu — det kommer.</div>';return;}
+  el.innerHTML=d.meals.map((m,i)=>{
+    const tag=m.ml?(m.ml+' ml'):(m.g?(m.g+' g'):'');
+    return '<div class="log-row"><span class="g">'+esc(tag)+'</span><span class="name">'+esc(m.name)+'</span><time>'+esc(m.t)+'</time><button data-i="'+i+'">×</button></div>';
+  }).reverse().join('');
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{
+    const i=+b.dataset.i,m=d.meals[i];
+    if(m.ml)d.fluid=Math.max(0,d.fluid-m.ml);
+    if(m.g)d.protein=Math.max(0,d.protein-m.g);
+    d.meals.splice(i,1);save();renderToday();
+  };});
+}
+function renderFoodChips(){
+  const html=state.foods.map((f,i)=>'<button class="chip add" data-i="'+i+'">'+esc(f[0])+'<small>'+f[1]+' g</small></button>').join('');
+  ['food-chips','prot-sheet-chips'].forEach(id=>{
+    const c=document.getElementById(id);c.innerHTML=html;
+    c.querySelectorAll('.chip').forEach(ch=>{ch.onclick=()=>{const f=state.foods[+ch.dataset.i];addMeal(f[0],f[1]);};});
+  });
+}
+
+// ── Tillskott ─────────────────────────────────────────
+function renderVits(){
+  const d=day();const el=document.getElementById('vit-list');
+  if(!state.vitamins.length){el.innerHTML='<div class="empty-msg">Lägg till tillskott via Ändra</div>';return;}
+  el.innerHTML=state.vitamins.map((v,i)=>{
+    const done=d.vits.includes(i);
+    return '<div class="vit"><div class="vit-check'+(done?' done':'')+'" data-i="'+i+'">'+(done?'✓':'')+'</div><span class="vit-name'+(done?' done':'')+'">'+esc(v)+'</span></div>';
+  }).join('');
+  el.querySelectorAll('.vit-check').forEach(c=>{c.onclick=()=>{
+    const i=+c.dataset.i;
+    if(d.vits.includes(i))d.vits=d.vits.filter(x=>x!==i);else d.vits.push(i);
+    save();renderVits();
+  };});
+}
+
+// ── Påminnelser ───────────────────────────────────────
+function renderTips(){
+  document.getElementById('tips').innerHTML=TIPS.map(t=>'<div class="tip"><span class="b">'+t[0]+'</span><span>'+t[1]+'</span></div>').join('');
+}
+
+// ── Fas ───────────────────────────────────────────────
+function renderPhase(){
+  document.getElementById('phase-name').textContent=PHASES[state.phase][0];
+  document.getElementById('phase-desc').textContent=PHASES[state.phase][1];
+  document.getElementById('phase-pips').innerHTML=PHASES.map((p,i)=>'<span class="'+(i<=state.phase?'on':'')+'"></span>').join('');
+}
+document.getElementById('phase-card').onclick=()=>{
+  document.getElementById('phase-opts').innerHTML=PHASES.map((p,i)=>'<div class="phase-opt'+(i===state.phase?' sel':'')+'" data-i="'+i+'"><b>'+esc(p[0])+'</b><span class="soft">'+esc(p[1])+'</span></div>').join('');
+  document.querySelectorAll('#phase-opts .phase-opt').forEach(o=>{o.onclick=()=>{state.phase=+o.dataset.i;save();renderPhase();document.querySelectorAll('#phase-opts .phase-opt').forEach(x=>x.classList.toggle('sel',x===o));};});
+  openSheet('phase-sheet');
+};
+document.getElementById('phase-done').onclick=closeSheets;
+
+// ── Ring-knappar ──────────────────────────────────────
+document.getElementById('prot-dial').onclick=()=>{openSheet('prot-sheet');};
+document.getElementById('prot-sheet-add').onclick=()=>{
+  const n=document.getElementById('prot-sheet-name').value.trim();
+  const g=parseInt(document.getElementById('prot-sheet-g').value,10);
+  if(!n||isNaN(g))return;
+  addMeal(n,g);
+  document.getElementById('prot-sheet-name').value='';document.getElementById('prot-sheet-g').value='';
+};
+document.getElementById('prot-sheet-close').onclick=closeSheets;
+document.getElementById('fluid-dial').onclick=()=>openSheet('fluid-sheet');
+document.querySelectorAll('#fluid-sheet [data-ml]').forEach(b=>{b.onclick=()=>addFluid(+b.dataset.ml);});
+document.getElementById('fluid-in-add').onclick=()=>{
+  const ml=parseInt(document.getElementById('fluid-in').value,10);
+  if(isNaN(ml))return;addFluid(ml);document.getElementById('fluid-in').value='';
+};
+document.getElementById('fluid-sheet-close').onclick=closeSheets;
+
+// ── Logga-vy: protein + vätska ────────────────────────
+document.getElementById('food-add').onclick=()=>{
+  const n=document.getElementById('food-name').value.trim();
+  const g=parseInt(document.getElementById('food-g').value,10);
+  if(!n||isNaN(g))return;
+  addMeal(n,g);
+  document.getElementById('food-name').value='';document.getElementById('food-g').value='';
+};
+document.getElementById('fluid-glass').onclick=()=>addFluid(state.goals.glass);
+document.getElementById('fluid-custom').onclick=()=>openSheet('fluid-sheet');
+
+// ── Symptom ───────────────────────────────────────────
+function renderSymptomChips(){
+  const c=document.getElementById('symptom-chips');
+  c.innerHTML=state.symptomTypes.map((s,i)=>'<button class="chip" data-i="'+i+'">'+esc(s)+'</button>').join('');
+  c.querySelectorAll('.chip').forEach(ch=>{ch.onclick=()=>{
+    const d=day();d.symptoms.push({t:nowT(),s:state.symptomTypes[+ch.dataset.i]});save();renderSymptomLog();
+  };});
+}
+function renderSymptomLog(){
+  const d=day();const el=document.getElementById('symptom-log');
+  if(!d.symptoms.length){el.innerHTML='';return;}
+  el.innerHTML=d.symptoms.map((s,i)=>'<div class="log-row"><span class="name">'+esc(s.s)+'</span><time>'+esc(s.t)+'</time><button data-i="'+i+'">×</button></div>').reverse().join('');
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{d.symptoms.splice(+b.dataset.i,1);save();renderSymptomLog();};});
+}
+
+// ── Måltidstimer ──────────────────────────────────────
+let tTotal=20*60,tLeft=20*60,tId=null;
+const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+function renderTimer(){
+  document.getElementById('ring-time').textContent=fmtT(tLeft);
+  const pct=tTotal>0?(tTotal-tLeft)/tTotal*100:0;
+  document.getElementById('ring').style.background='conic-gradient(var(--clay) '+pct+'%,var(--panel2) 0)';
+}
+document.getElementById('t-start').onclick=()=>{
+  if(tId){clearInterval(tId);tId=null;document.getElementById('t-start').textContent='Starta 20 min';document.getElementById('ring-label').textContent='Ät lugnt';return;}
+  if(tLeft<=0)tLeft=tTotal;
+  document.getElementById('t-start').textContent='Pausa';
+  document.getElementById('ring-label').textContent='Pågår';
+  tId=setInterval(()=>{
+    tLeft--;renderTimer();
+    if(tLeft<=0){clearInterval(tId);tId=null;document.getElementById('ring-label').textContent='Klart 🌿';document.getElementById('t-start').textContent='Starta 20 min';}
+  },1000);
+};
+document.getElementById('t-reset').onclick=()=>{if(tId){clearInterval(tId);tId=null;}tLeft=tTotal;document.getElementById('t-start').textContent='Starta 20 min';document.getElementById('ring-label').textContent='Ät lugnt';renderTimer();};
+
+// ── Vikt ──────────────────────────────────────────────
+function renderWeight(){
+  const ws=state.weights.slice().sort((a,b)=>a.date<b.date?-1:1);
+  const now=ws.length?ws[ws.length-1]:null;
+  document.getElementById('w-now').innerHTML=now?(now.kg+'<small> kg</small>'):'–';
+  let sub='';
+  const sw=state.goals.startWeight;
+  if(now&&sw){const diff=Math.round((now.kg-sw)*10)/10;sub=(diff<=0?'':'+')+diff+' kg sedan start';}
+  else if(now){sub='Senast vägd '+now.date;}
+  document.getElementById('w-sub').textContent=sub;
+  // historik
+  const h=document.getElementById('w-history');
+  if(!ws.length){h.innerHTML='<div class="empty-msg">Lägg in din vikt så ritas kurvan</div>';}
+  else{
+    h.innerHTML=ws.slice(-8).reverse().map(w=>'<div class="log-row"><span class="name">'+esc(w.date)+'</span><span class="g">'+w.kg+' kg</span><button data-d="'+esc(w.date)+'">×</button></div>').join('');
+    h.querySelectorAll('button').forEach(b=>{b.onclick=()=>{state.weights=state.weights.filter(x=>x.date!==b.dataset.d);save();renderWeight();};});
+  }
+  drawWeightChart(ws);
+}
+function drawWeightChart(ws){
+  const cv=document.getElementById('w-chart'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const css=getComputedStyle(document.documentElement),col=v=>css.getPropertyValue(v).trim();
+  const pts=ws.slice(-30);
+  if(pts.length<1){ctx.fillStyle=col('--muted');ctx.font='13px -apple-system';ctx.textAlign='center';ctx.fillText('Ingen data ännu',cv.width/2,cv.height/2);return;}
+  const W=cv.width,H=cv.height,pad=34;
+  const vals=pts.map(p=>p.kg);
+  let mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);
+  if(mn===mx){mn-=1;mx+=1;}
+  const range=mx-mn;mn-=range*0.15;mx+=range*0.15;
+  const x=i=>pad+(pts.length===1?(W-2*pad)/2:i*(W-2*pad)/(pts.length-1));
+  const y=v=>H-20-(v-mn)/(mx-mn)*(H-40);
+  ctx.strokeStyle=col('--line');ctx.lineWidth=1;
+  [0,0.5,1].forEach(f=>{const yy=20+f*(H-40);ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(W-pad,yy);ctx.stroke();});
+  ctx.fillStyle=col('--muted');ctx.font='11px -apple-system';ctx.textAlign='right';
+  ctx.fillText(Math.round(mx)+' kg',pad-4,24);ctx.fillText(Math.round(mn)+' kg',pad-4,H-16);
+  ctx.strokeStyle=col('--clay');ctx.lineWidth=2.5;ctx.beginPath();
+  pts.forEach((p,i)=>{i?ctx.lineTo(x(i),y(p.kg)):ctx.moveTo(x(i),y(p.kg));});ctx.stroke();
+  ctx.fillStyle=col('--clay');pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(x(i),y(p.kg),3.5,0,7);ctx.fill();});
+}
+document.getElementById('w-add').onclick=()=>{
+  const v=parseFloat(document.getElementById('w-in').value.replace(',','.'));
+  if(isNaN(v)||v<=0)return;
+  const k=todayKey();
+  state.weights=state.weights.filter(x=>x.date!==k);
+  state.weights.push({date:k,kg:Math.round(v*10)/10});
+  if(!state.goals.startWeight)state.goals.startWeight=Math.round(v*10)/10;
+  save();document.getElementById('w-in').value='';renderWeight();
+};
+
+// ── Mönster ───────────────────────────────────────────
+function renderPattern(){
+  const cv=document.getElementById('prot-chart'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const css=getComputedStyle(document.documentElement),col=v=>css.getPropertyValue(v).trim();
+  const goal=state.goals.protein||70;
+  const days=[];
+  for(let i=13;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);const k=toISO(dt);days.push({d:state.days[k]||null,lbl:dt.getDate()});}
+  const W=cv.width,H=cv.height,pad=28,bw=(W-pad*2)/14;
+  const top=Math.max(goal*1.25,Math.max.apply(null,days.map(o=>o.d?o.d.protein:0).concat([goal])));
+  ctx.strokeStyle=col('--line');ctx.lineWidth=1;
+  [0,0.5,1].forEach(f=>{const yy=H-20-f*(H-40);ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(W-pad,yy);ctx.stroke();});
+  // mål-linje
+  const gy=H-20-(goal/top)*(H-40);
+  ctx.strokeStyle=col('--clay');ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(pad,gy);ctx.lineTo(W-pad,gy);ctx.stroke();ctx.setLineDash([]);
+  days.forEach((o,i)=>{
+    const x=pad+i*bw+bw*0.18;
+    if(o.d){
+      const v=o.d.protein,h=(v/top)*(H-40);
+      ctx.fillStyle=v>=goal?col('--green'):col('--clay');
+      ctx.beginPath();ctx.roundRect(x,H-20-h,bw*0.64,Math.max(0,h),4);ctx.fill();
+    }
+    ctx.fillStyle=col('--muted');ctx.font='15px -apple-system';ctx.textAlign='center';
+    ctx.fillText(o.lbl,x+bw*0.32,H-4);
+  });
+  // snitt 7d
+  const last7=[];for(let i=0;i<7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const dd=state.days[toISO(dt)];if(dd)last7.push(dd);}
+  const avg=f=>{const v=last7.map(f).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const aP=avg(d=>d.protein),aF=avg(d=>d.fluid);
+  const metP=last7.filter(d=>d.protein>=goal).length;
+  const vitDays=last7.filter(d=>state.vitamins.length&&d.vits.length>=state.vitamins.length).length;
+  document.getElementById('avgs').innerHTML=
+    '<div class="avg-row"><span>Protein i snitt</span><b>'+(aP!=null?Math.round(aP)+' g':'–')+'</b></div>'+
+    '<div class="avg-row"><span>Vätska i snitt</span><b>'+(aF!=null?Math.round(aF)+' ml':'–')+'</b></div>'+
+    '<div class="avg-row"><span>Dagar proteinmålet nåtts</span><b>'+metP+' / 7</b></div>'+
+    '<div class="avg-row"><span>Dagar alla tillskott tagna</span><b>'+vitDays+' / 7</b></div>';
+  // omsorgsbanner: protein lågt flera dagar
+  const lowDays=last7.filter(d=>d.protein<goal*0.5).length;
+  const banner=document.getElementById('care-banner');
+  if(last7.length>=4&&lowDays>=4){
+    banner.style.display='block';
+    banner.textContent='Ditt protein har legat lågt flera dagar i rad. Det är vanligt att det är svårt — men hör gärna av dig till din dietist eller ditt team, de kan hjälpa dig hitta sätt att få i dig mer.';
+  }else banner.style.display='none';
+  // symptom 30 dagar
+  const cnt={};
+  for(let i=0;i<30;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const dd=state.days[toISO(dt)];if(dd)dd.symptoms.forEach(s=>{cnt[s.s]=(cnt[s.s]||0)+1;});}
+  const ent=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('symptom-summary').innerHTML=ent.length?
+    ent.map(e=>'<div class="avg-row"><span>'+esc(e[0])+'</span><b>× '+e[1]+'</b></div>').join(''):
+    '<div class="empty-msg">Inga besvär loggade — fint.</div>';
+}
+
+// ── Listredigerare: tillskott ─────────────────────────
+function renderVitsEditor(){
+  const el=document.getElementById('vits-items');
+  el.innerHTML=state.vitamins.map((v,i)=>'<div class="edit-item"><span>'+esc(v)+'</span><button data-i="'+i+'">×</button></div>').join('')||'<div class="empty-msg">Inga tillskott</div>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{state.vitamins.splice(+b.dataset.i,1);save();renderVitsEditor();renderVits();};});
+}
+document.getElementById('edit-vits').onclick=()=>{renderVitsEditor();openSheet('vits-sheet');};
+document.getElementById('vits-add').onclick=()=>{const v=document.getElementById('vits-in').value.trim();if(!v)return;state.vitamins.push(v);save();document.getElementById('vits-in').value='';renderVitsEditor();};
+document.getElementById('vits-done').onclick=()=>{closeSheets();renderVits();};
+
+// ── Listredigerare: livsmedel ─────────────────────────
+function renderFoodsEditor(){
+  const el=document.getElementById('foods-items');
+  el.innerHTML=state.foods.map((f,i)=>'<div class="edit-item"><span>'+esc(f[0])+'</span><small>'+f[1]+' g</small><button data-i="'+i+'">×</button></div>').join('')||'<div class="empty-msg">Inga livsmedel</div>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{state.foods.splice(+b.dataset.i,1);save();renderFoodsEditor();renderFoodChips();};});
+}
+document.getElementById('edit-foods').onclick=()=>{renderFoodsEditor();openSheet('foods-sheet');};
+document.getElementById('foods-add').onclick=()=>{
+  const n=document.getElementById('foods-name').value.trim();
+  const g=parseInt(document.getElementById('foods-g').value,10);
+  if(!n||isNaN(g))return;
+  state.foods.push([n,g]);save();
+  document.getElementById('foods-name').value='';document.getElementById('foods-g').value='';
+  renderFoodsEditor();renderFoodChips();
+};
+document.getElementById('foods-done').onclick=closeSheets;
+
+// ── Mål & inställningar ───────────────────────────────
+document.getElementById('open-goals').onclick=()=>{
+  document.getElementById('g-prot').value=state.goals.protein;
+  document.getElementById('g-fluid').value=state.goals.fluid;
+  document.getElementById('g-glass').value=state.goals.glass;
+  document.getElementById('g-startw').value=state.goals.startWeight||'';
+  openSheet('goals-sheet');
+};
+document.getElementById('goals-save').onclick=()=>{
+  const p=parseInt(document.getElementById('g-prot').value,10);
+  const f=parseInt(document.getElementById('g-fluid').value,10);
+  const gl=parseInt(document.getElementById('g-glass').value,10);
+  const sw=parseFloat((document.getElementById('g-startw').value||'').replace(',','.'));
+  if(!isNaN(p)&&p>0)state.goals.protein=p;
+  if(!isNaN(f)&&f>0)state.goals.fluid=f;
+  if(!isNaN(gl)&&gl>0)state.goals.glass=gl;
+  state.goals.startWeight=isNaN(sw)?null:Math.round(sw*10)/10;
+  save();closeSheets();document.getElementById('glass-ml').textContent=state.goals.glass;renderToday();renderWeight();
+};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='portionen-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.days){state=Object.assign(state,d);state.goals=Object.assign({protein:70,fluid:1500,glass:200,startWeight:null},state.goals||{});save();renderAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Synk-UI ───────────────────────────────────────────
+function ghStatus(msg,type){
+  const el=document.getElementById('gh-status');
+  el.style.display='block';
+  el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'#F4E0DB':'var(--clay-soft)';
+  el.style.color=type==='ok'?'var(--green)':type==='err'?'#A2685B':'var(--clay)';
+  el.textContent=msg;
+}
+document.getElementById('open-sync').onclick=()=>{
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('sync-close').onclick=closeSheets;
+document.getElementById('sync-now').onclick=()=>ghPull(false);
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){ghStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  document.getElementById('sync-now').style.display='';
+  ghStatus('Testar anslutning…','info');
+  try{
+    const d=await ghGet();
+    if(d){ghStatus('✓ Ansluten! Hämtar din data…','ok');applyingRemote=true;applyRemote(d,true);saveLocal();applyingRemote=false;renderAll();setBadge('ok','Synkad');}
+    else{ghStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPushNow();}
+    setTimeout(closeSheets,1100);
+  }catch(e){ghStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents: Read and write.','err');setBadge('err','Synkfel');}
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto';
+  const h=new Date().getHours();
+  const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#231E18':'#F4EFE9';
+  const b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  renderRings();
+  if(document.getElementById('view-weight').classList.contains('active'))renderWeight();
+  if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();
+}
+document.getElementById('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='weight')renderWeight();
+    if(b.dataset.v==='pattern')renderPattern();
+  };
+});
+
+// ── Render ────────────────────────────────────────────
+function renderToday(){renderPhase();renderRings();renderVits();renderLog();renderTips();}
+function renderAll(){renderToday();renderFoodChips();renderSymptomChips();renderSymptomLog();renderWeight();document.getElementById('glass-ml').textContent=state.goals.glass;}
+renderAll();
+renderTimer();
+applyTheme();
+setInterval(applyTheme,60000);
+
+// ── Synk-init ─────────────────────────────────────────
+loadSync();
+if(syncOn()){document.getElementById('sync-now').style.display='';setBadge('','Synk på');ghPull(true);}
+else setBadge('','Lokal');
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull(false);});
+
+// ── Desktop: alla vyer syns samtidigt ─────────────────
+(function(){
+  var _r=renderAll;
+  renderAll=function(){_r();renderPattern();};
+  renderPattern();
+})();
+</script>
+</body>
+</html>
