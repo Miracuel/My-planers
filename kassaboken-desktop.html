@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kassaboken">
+<meta name="theme-color" content="#ECEEF0">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Kassaboken (dator)","short_name":"Kassaboken","display":"standalone","background_color":"%23ECEEF0","theme_color":"%23ECEEF0","start_url":"."}'>
+<title>Kassaboken — dator</title>
+<style>
+:root{
+  --bg:#ECEEF0;--panel:#F8F9FA;--panel2:#E5E9ED;--line:#D5DBE1;
+  --ink:#2B3138;--muted:#79828C;
+  --accent:#2E6E6A;--accent-soft:#D5E3E1;
+  --pos:#3B7A57;--pos-soft:#DCEAE0;--neg:#B0584E;--neg-soft:#F1E0DD;
+  --amber:#9C7420;--amber-soft:#F0E6CF;
+  --navbg:rgba(236,238,240,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.card-panel + .card-panel{margin-top:10px}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 11px}
+.btn.wide{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:11px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+.num{font-variant-numeric:tabular-nums}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px}
+.kpi .lab{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.kpi .val{font-family:Georgia,serif;font-size:19px;margin-top:5px}
+.kpi .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+.kpi.click{cursor:pointer}
+.kpi.click:active{background:var(--panel2)}
+.v-pos{color:var(--pos)}.v-neg{color:var(--neg)}.v-amber{color:var(--amber)}
+
+/* Listrader */
+.row-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.row-item:first-child{border-top:none}
+.ri-main{flex:1;min-width:0}
+.ri-title{font-size:14px}
+.ri-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.ri-amt{font-size:14px;text-align:right;white-space:nowrap}
+.ri-del{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px}
+.tag{font-size:10px;padding:2px 8px;border-radius:9px;white-space:nowrap;font-weight:500}
+.tag.ok{background:var(--pos-soft);color:var(--pos)}
+.tag.warn{background:var(--amber-soft);color:var(--amber)}
+.tag.late{background:var(--neg-soft);color:var(--neg)}
+.tag.muted{background:var(--panel2);color:var(--muted)}
+
+/* Subtabs */
+.subtabs{display:flex;gap:6px;margin-bottom:4px}
+.subtab{flex:1;font-size:12px;padding:8px 4px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit;text-align:center}
+.subtab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.subview{display:none}
+.subview.active{display:block}
+
+/* Verifikat-rader i sheet */
+.ver-row{display:grid;grid-template-columns:1fr 84px 84px 26px;gap:6px;align-items:center;margin-bottom:6px}
+.ver-row select{font-size:12px;padding:7px 7px}
+.ver-row input{font-size:13px;padding:7px 7px;text-align:right}
+.ver-row .rmrow{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.ver-head{display:grid;grid-template-columns:1fr 84px 84px 26px;gap:6px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;padding:0 2px}
+.ver-head span:nth-child(2),.ver-head span:nth-child(3){text-align:right}
+.balcheck{font-size:12px;text-align:center;padding:7px;border-radius:10px;margin-top:4px}
+.balcheck.ok{background:var(--pos-soft);color:var(--pos)}
+.balcheck.bad{background:var(--neg-soft);color:var(--neg)}
+
+/* mallar */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:7px 11px;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip:active{background:var(--accent-soft)}
+
+/* rapport */
+.rep-line{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.rep-line:first-child{border-top:none}
+.rep-line.total{font-weight:600;border-top:2px solid var(--line)}
+.rep-line .num{font-variant-numeric:tabular-nums}
+.rep-acct{color:var(--muted);font-size:11px}
+
+/* AI */
+.ai-box{background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.65;margin-top:10px;white-space:pre-wrap}
+.ai-lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px;font-weight:600}
+
+/* checklista */
+.check-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.check-row:first-child{border-top:none}
+.check-row input[type=checkbox]{width:auto;accent-color:var(--accent)}
+.check-row.done span{text-decoration:line-through;color:var(--muted)}
+
+/* Nav + views + sheets */
+.view{display:none}.view.active{display:block}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10.5px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.sheet-bg{position:fixed;inset:0;background:rgba(43,49,56,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.foot{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.hint{font-size:11px;color:var(--muted);line-height:1.55;margin-top:6px}
+.mer-acc{margin-bottom:10px}
+.mer-head{width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-size:14px;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center}
+.mer-body{display:none;padding:12px 4px 4px}
+.mer-acc.open .mer-body{display:block}
+.mer-acc.open .mer-head{border-radius:14px 14px 0 0}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+.sync-pill{display:block;margin:-8px auto 14px;width:fit-content;font-size:10.5px;letter-spacing:.04em;padding:3px 12px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.sync-pill.ok{background:var(--pos-soft);color:var(--pos);border-color:var(--pos-soft)}
+.sync-pill.err{background:var(--neg-soft);color:var(--neg);border-color:var(--neg-soft)}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1B1F24;--panel:#23282E;--panel2:#2B3138;--line:#3A424B;
+  --ink:#E4E8EC;--muted:#929BA5;
+  --accent:#5FA8A2;--accent-soft:#26403E;
+  --pos:#7DB893;--pos-soft:#26392D;--neg:#CF9189;--neg-soft:#3A2A28;
+  --amber:#D2B069;--amber-soft:#3A3220;
+  --navbg:rgba(27,31,36,.95);
+}
+
+/* ===== Desktop-layout (delar data med mobilen via samma synk) ===== */
+.app{max-width:1180px;margin:0 auto;padding:30px 34px 56px 230px}
+h1.brand{text-align:left;font-size:27px;margin:0 0 2px;letter-spacing:.02em}
+.sync-pill{margin:6px 0 20px;display:inline-block}
+.kpi-grid{grid-template-columns:repeat(3,1fr)}
+.view{max-width:880px}
+.section-title{font-size:16px;margin:22px 0 9px}
+.card-panel{border-radius:16px;padding:16px}
+.btn{transition:background .2s,filter .2s}
+.btn:hover{filter:brightness(.97)}
+.row-item{padding:11px 4px;border-radius:8px;transition:background .15s}
+.row-item:hover{background:var(--panel2)}
+.mer-head:hover{background:var(--panel2)}
+
+/* Sidebar-nav */
+.nav{top:0;left:0;bottom:0;right:auto;width:204px;max-width:204px;margin:0;flex-direction:column;align-items:stretch;
+  border-top:none;border-right:1px solid var(--line);padding:24px 14px;gap:4px;background:var(--panel);backdrop-filter:none}
+.nav::before{content:'📒 Kassaboken';display:block;font-family:Georgia,serif;font-size:16px;padding:4px 12px 18px;color:var(--ink);letter-spacing:.03em}
+.nav button{flex:0 0 auto;text-align:left;font-size:14px;padding:12px 14px;border-radius:12px;color:var(--muted);
+  display:flex;align-items:center;gap:11px;transition:background .15s,color .15s}
+.nav button span{display:inline-block;font-size:18px;margin:0}
+.nav button:hover{background:var(--panel2);color:var(--ink)}
+.nav button.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+/* Sheets som centrerad modal */
+.sheet{left:50%;right:auto;top:50%;bottom:auto;margin:0;width:calc(100% - 48px);max-width:560px;
+  border-radius:18px;max-height:88vh;opacity:0;pointer-events:none;
+  transform:translate(-50%,-46%);transition:opacity .18s ease,transform .18s ease;box-shadow:0 26px 72px rgba(0,0,0,.30)}
+.sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+.sheet-close{position:static}
+
+.theme-btn{top:20px;right:30px}
+
+/* Faller tillbaka till mobil-layout i smala fönster */
+@media(max-width:860px){
+  .app{padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+  h1.brand{text-align:center;font-size:21px;margin:4px 0 14px}
+  .sync-pill{display:block;margin:-8px auto 14px}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .view{max-width:none}
+  .nav{top:auto;left:0;right:0;bottom:0;width:auto;max-width:480px;margin:0 auto;flex-direction:row;
+    border-right:none;border-top:1px solid var(--line);padding:0 0 env(safe-area-inset-bottom);background:var(--navbg);backdrop-filter:blur(8px)}
+  .nav::before{display:none}
+  .nav button{flex:1;text-align:center;flex-direction:column;gap:1px;font-size:10.5px;padding:9px 2px 8px;border-radius:0}
+  .nav button span{display:block;font-size:16px;margin-bottom:1px}
+  .nav button.active{background:none;color:var(--accent)}
+  .sheet{left:0;right:0;top:auto;bottom:0;width:auto;max-width:480px;margin:0 auto;border-radius:20px 20px 0 0;
+    transform:translateY(102%);opacity:1;pointer-events:auto;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+  .sheet.open{transform:translateY(0)}
+  .theme-btn{top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px))}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">📒 Kassaboken</h1>
+<div class="sync-pill offline" id="sync-pill">Lokal</div>
+
+<!-- ÖVERSIKT -->
+<div class="view active" id="view-home">
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="section-title">Kommande skattedatum</div>
+  <div class="card-panel"><div id="tax-list"></div></div>
+
+  <div class="section-title">Smart hjälp ✨</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn" id="ai-explain">Förklara läget</button>
+      <button class="btn" id="ai-anomaly">Hitta avvikelser</button>
+    </div>
+    <button class="btn wide" id="ai-vatremind" style="margin-top:8px">Momspåminnelse</button>
+    <div id="home-ai"></div>
+  </div>
+
+  <div class="privacy">Allt sparas bara i din enhet. Kassaboken är ett stöd för egen bokföring — inte rådgivning. Kontrollera alltid mot Skatteverket och din redovisningskonsult.</div>
+</div>
+
+<!-- BOKFÖR -->
+<div class="view" id="view-book">
+  <div class="section-title">Verifikationer
+    <button class="btn ghost" id="add-ver">+ Ny</button>
+  </div>
+  <div class="card-panel">
+    <label>Period</label>
+    <select id="book-period"></select>
+    <div id="ver-list" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- UNDERLAG -->
+<div class="view" id="view-docs">
+  <div class="subtabs">
+    <button class="subtab active" data-sub="kvitto">🧾 Kvitton</button>
+    <button class="subtab" data-sub="kund">📤 Kund</button>
+    <button class="subtab" data-sub="lev">📥 Lev.</button>
+  </div>
+
+  <div class="subview active" id="sub-kvitto">
+    <div class="section-title">Kvitton
+      <button class="btn ghost" id="add-kvitto">+ Ny</button>
+    </div>
+    <div class="card-panel">
+      <button class="btn wide" id="ai-receipt">✨ Tolka kvitto med bild</button>
+      <input type="file" id="receipt-file" accept="image/*" style="display:none">
+      <div id="kvitto-list" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="subview" id="sub-kund">
+    <div class="section-title">Kundfakturor
+      <button class="btn ghost" id="add-kund">+ Ny</button>
+    </div>
+    <div class="card-panel"><div id="kund-list"></div></div>
+  </div>
+
+  <div class="subview" id="sub-lev">
+    <div class="section-title">Leverantörsfakturor
+      <button class="btn ghost" id="add-lev">+ Ny</button>
+    </div>
+    <div class="card-panel"><div id="lev-list"></div></div>
+  </div>
+</div>
+
+<!-- RAPPORT -->
+<div class="view" id="view-report">
+  <div class="card-panel">
+    <label>Period</label>
+    <div class="btn-row">
+      <select id="rep-period"></select>
+    </div>
+  </div>
+  <div class="subtabs" style="margin-top:10px">
+    <button class="subtab active" data-rep="moms">Moms</button>
+    <button class="subtab" data-rep="res">Resultat</button>
+    <button class="subtab" data-rep="bal">Balans</button>
+    <button class="subtab" data-rep="bokslut">Bokslut</button>
+  </div>
+  <div class="subview active" id="rep-moms"><div class="card-panel" id="moms-box"></div></div>
+  <div class="subview" id="rep-res"><div class="card-panel" id="res-box"></div></div>
+  <div class="subview" id="rep-bal"><div class="card-panel" id="bal-box"></div></div>
+  <div class="subview" id="rep-bokslut">
+    <div class="section-title" style="margin-top:0">Checklista årsbokslut</div>
+    <div class="card-panel"><div id="bokslut-list"></div></div>
+  </div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-more">
+  <div class="mer-acc" id="m-foretag">
+    <button class="mer-head">🏢 Företagsuppgifter <span>›</span></button>
+    <div class="mer-body">
+      <label>Företagsnamn</label><input type="text" id="f-name">
+      <label>Organisationsnummer</label><input type="text" id="f-org" placeholder="556xxx-xxxx">
+      <label>Bolagsform</label>
+      <select id="f-form"><option value="ef">Enskild firma</option><option value="ab">Aktiebolag</option><option value="hb">Handels-/Kommanditbolag</option></select>
+      <label>Momsperiod</label>
+      <select id="f-vat"><option value="manad">Månad</option><option value="kvartal">Kvartal</option><option value="ar">Helår</option></select>
+      <label>Räkenskapsår börjar</label>
+      <select id="f-fyear"><option value="01">Januari (kalenderår)</option><option value="07">Juli</option></select>
+      <button class="btn fill wide" id="f-save" style="margin-top:12px">Spara</button>
+    </div>
+  </div>
+
+  <div class="mer-acc" id="m-konto">
+    <button class="mer-head">📚 Kontoplan <span>›</span></button>
+    <div class="mer-body">
+      <div class="hint">BAS-baserad kontoplan. Lägg till egna konton vid behov.</div>
+      <div class="ver-row" style="grid-template-columns:70px 1fr 30px 26px;margin-top:8px">
+        <input type="text" id="ny-konto" placeholder="6230" inputmode="numeric">
+        <input type="text" id="ny-konto-namn" placeholder="Datakommunikation">
+        <input type="text" id="ny-konto-moms" placeholder="%" inputmode="numeric" title="Momssats">
+        <button class="btn ghost" id="add-konto" style="padding:7px 6px">+</button>
+      </div>
+      <div id="konto-list" style="margin-top:8px;max-height:300px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <div class="mer-acc" id="m-tax">
+    <button class="mer-head">📅 Skattedatum <span>›</span></button>
+    <div class="mer-body">
+      <div class="hint">Standarddatum för småföretag (deklaration &amp; betalning ofta den 12:e). Justera vid behov och kontrollera alltid mot Skatteverket.</div>
+      <label>Moms &amp; arbetsgivardeklaration — dag i månaden</label>
+      <input type="number" id="tax-day" min="1" max="28" value="12">
+      <label>Preliminärskatt (debiterad) — dag i månaden</label>
+      <input type="number" id="tax-prel" min="1" max="28" value="12">
+      <button class="btn fill wide" id="tax-save" style="margin-top:12px">Spara</button>
+    </div>
+  </div>
+
+  <div class="mer-acc" id="m-csv">
+    <button class="mer-head">🏦 Bank &amp; integrationer <span>›</span></button>
+    <div class="mer-body">
+      <div class="hint">Direktkoppling till bank, Fortnox/Visma, Skatteverket, Swish och Stripe/Klarna kräver en server med OAuth och kan inte göras säkert i en fristående HTML-fil. Det praktiska alternativet här är att importera kontoutdrag som CSV.</div>
+      <label>Klistra in CSV (datum;text;belopp)</label>
+      <textarea id="csv-in" rows="4" placeholder="2026-06-01;Kortköp Webhallen;-1240,00&#10;2026-06-03;Inbetalning kund;6250,00"></textarea>
+      <button class="btn fill wide" id="csv-parse" style="margin-top:8px">Läs transaktioner</button>
+      <div id="csv-list" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="mer-acc" id="m-ai">
+    <button class="mer-head">✨ AI-inställningar <span>›</span></button>
+    <div class="mer-body">
+      <div class="hint">AI-funktionerna (tolka kvitto, föreslå konto, förklara, hitta avvikelser) använder din egen Anthropic API-nyckel. Den sparas bara lokalt på den här enheten och skickas direkt till Claude.</div>
+      <label>Anthropic API-nyckel</label>
+      <input type="password" id="ai-key" placeholder="sk-ant-...">
+      <button class="btn fill wide" id="ai-key-save" style="margin-top:12px">Spara nyckel</button>
+    </div>
+  </div>
+
+  <div class="mer-acc" id="m-sync">
+    <button class="mer-head">☁️ Synk (GitHub) <span>›</span></button>
+    <div class="mer-body">
+      <div class="hint">Appen läser och sparar <code>kassaboken.json</code> i ett <strong>privat</strong> GitHub-repo så att telefon och dator delar samma bokföring. Token sparas bara lokalt på den här enheten — aldrig i koden. Använd ett eget repo för Kassaboken (inte samma som andra appar).</div>
+      <label>GitHub-användarnamn</label><input type="text" id="gh-owner" placeholder="dittnamn">
+      <label>Privat repo för bokföringen</label><input type="text" id="gh-repo" placeholder="kassaboken-data">
+      <label>Fine-grained token (Contents: Read and write)</label><input type="password" id="gh-token" placeholder="github_pat_…">
+      <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST det repot.</div>
+      <div id="gh-status" style="display:none;margin-top:8px;font-size:12px;padding:8px 12px;border-radius:10px"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn fill" id="gh-save">Spara &amp; synka</button>
+        <button class="btn" id="gh-pull">Hämta nu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mer-acc" id="m-data">
+    <button class="mer-head">💾 Säkerhetskopia <span>›</span></button>
+    <div class="mer-body">
+      <div class="btn-row">
+        <button class="btn" id="export-btn">Exportera</button>
+        <button class="btn" id="import-btn">Importera</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+      <div class="hint" style="margin-top:8px">Exporterar all data som JSON. Ta en kopia regelbundet.</div>
+    </div>
+  </div>
+
+  <div class="privacy">Kassaboken hjälper dig sköta din egen bokföring men ersätter inte en auktoriserad redovisningskonsult. Du ansvarar för att uppgifterna stämmer.</div>
+</div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" data-v="home"><span>📊</span>Översikt</button>
+  <button data-v="book"><span>📖</span>Bokför</button>
+  <button data-v="docs"><span>🧾</span>Underlag</button>
+  <button data-v="report"><span>📈</span>Rapport</button>
+  <button data-v="more"><span>⚙️</span>Mer</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="ver-sheet">
+  <h3 id="ver-title">Ny verifikat</h3>
+  <div class="soft">Dubbel bokföring: total debet måste vara lika med total kredit.</div>
+  <label>Snabbmallar</label>
+  <div class="chips" id="ver-mallar"></div>
+  <label>Datum</label><input type="date" id="ver-date">
+  <label>Beskrivning</label><input type="text" id="ver-desc" placeholder="T.ex. Inköp kontorsmaterial">
+  <label>Konteringsrader</label>
+  <div class="ver-head"><span>Konto</span><span>Debet</span><span>Kredit</span><span></span></div>
+  <div id="ver-rows"></div>
+  <button class="btn ghost" id="ver-addrow" style="margin-top:4px">+ Rad</button>
+  <button class="btn ghost wide" id="ver-aikonto" style="margin-top:8px">✨ Föreslå konto utifrån beskrivning</button>
+  <div id="ver-ai"></div>
+  <div class="balcheck" id="ver-balcheck"></div>
+  <button class="sheet-close" id="ver-save">Spara verifikat</button>
+</div>
+
+<div class="sheet" id="kvitto-sheet">
+  <h3>Kvitto</h3>
+  <label>Datum</label><input type="date" id="kv-date">
+  <label>Leverantör / butik</label><input type="text" id="kv-sup" placeholder="T.ex. Webhallen">
+  <label>Bruttobelopp (inkl. moms)</label><input type="number" id="kv-gross" inputmode="decimal" placeholder="0">
+  <label>Momssats</label>
+  <select id="kv-vat"><option value="25">25 %</option><option value="12">12 %</option><option value="6">6 %</option><option value="0">0 % / momsfritt</option></select>
+  <label>Kostnadskonto</label><select id="kv-acct"></select>
+  <label>Betalsätt</label>
+  <select id="kv-pay"><option value="1930">Betalt — Bank (1930)</option><option value="1910">Betalt — Kassa (1910)</option><option value="2440">Obetald — Leverantörsskuld (2440)</option></select>
+  <div class="soft" id="kv-preview" style="margin-top:8px"></div>
+  <button class="sheet-close" id="kv-save">Spara &amp; bokför</button>
+</div>
+
+<div class="sheet" id="fakt-sheet">
+  <h3 id="fakt-title">Faktura</h3>
+  <label>Motpart</label><input type="text" id="fk-party" placeholder="Namn">
+  <label>Fakturadatum</label><input type="date" id="fk-date">
+  <label>Förfallodatum</label><input type="date" id="fk-due">
+  <label>Nettobelopp (exkl. moms)</label><input type="number" id="fk-net" inputmode="decimal" placeholder="0">
+  <label>Momssats</label>
+  <select id="fk-vat"><option value="25">25 %</option><option value="12">12 %</option><option value="6">6 %</option><option value="0">0 %</option></select>
+  <label id="fk-acct-lbl">Konto</label><select id="fk-acct"></select>
+  <div class="soft" id="fk-preview" style="margin-top:8px"></div>
+  <button class="sheet-close" id="fk-save">Spara faktura</button>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+var KEY='kassaboken_v1';
+var AI_KEY='kassaboken_ai_key';
+var DEFAULT_ACCTS=[
+  ['1510','Kundfordringar',0],['1630','Skattekonto',0],['1910','Kassa',0],['1930','Företagskonto (bank)',0],
+  ['2018','Egna insättningar',0],['2081','Aktiekapital',0],['2099','Årets resultat',0],
+  ['2440','Leverantörsskulder',0],
+  ['2610','Utgående moms 25%',25],['2620','Utgående moms 12%',12],['2630','Utgående moms 6%',6],
+  ['2640','Ingående moms',0],['2650','Redovisningskonto moms',0],
+  ['2710','Personalskatt',0],['2731','Sociala avgifter',0],
+  ['3001','Försäljning varor 25%',25],['3041','Försäljning tjänster 25%',25],['3105','Försäljning tjänster utanför EU',0],
+  ['4010','Inköp varor/material',25],['5010','Lokalhyra',25],['5410','Förbrukningsinventarier',25],
+  ['5611','Drivmedel',25],['5800','Resekostnader',25],['6071','Representation (avdragsgill)',25],
+  ['6110','Kontorsmateriel',25],['6212','Mobiltelefon',25],['6230','Datakommunikation',25],
+  ['6540','IT-tjänster',25],['6570','Bankkostnader',0],['6990','Övriga kostnader',25],
+  ['7210','Löner tjänstemän',0],['7510','Sociala avgifter (kostnad)',0],
+  ['8310','Ränteintäkter',0],['8410','Räntekostnader',0]
+];
+var DEFAULT_BOKSLUT=[
+  'Stäm av bankkonto mot kontoutdrag',
+  'Stäm av kund- och leverantörsreskontra',
+  'Kontrollera att all moms är bokförd och avstämd',
+  'Periodisera intäkter och kostnader över årsskiftet',
+  'Boka av- och nedskrivningar på inventarier',
+  'Kontrollera ingående balanser mot förra årets bokslut',
+  'Stäm av skattekonto mot Skatteverket',
+  'Boka årets resultat',
+  'Upprätta resultat- och balansräkning',
+  'Lämna inkomstdeklaration / fastställ årsredovisning'
+];
+var state={
+  company:{name:'',org:'',form:'ef',vat:'manad',fyear:'01'},
+  accounts:DEFAULT_ACCTS.map(function(a){return {nr:a[0],namn:a[1],moms:a[2]};}),
+  vers:[],          // {nr, date, desc, rows:[{konto,debet,kredit}]}
+  verNr:1,
+  kvitton:[],       // {id,date,sup,gross,vat,acct,pay,booked,verNr}
+  kund:[],          // {id,party,date,due,net,vat,acct,status,verNr,paidVer}
+  lev:[],           // dito
+  taxDay:12, taxPrel:12,
+  bokslut:{},
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+if(!state.accounts||!state.accounts.length)state.accounts=DEFAULT_ACCTS.map(function(a){return {nr:a[0],namn:a[1],moms:a[2]};});
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function save(){state.updated=new Date().toISOString();saveLocal();schedulePush();}
+
+// ── Hjälpare ───────────────────────────────────────────
+function el(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return String(n).padStart(2,'0');}
+function toISO(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function todayISO(){return toISO(new Date());}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function kr(v){
+  var neg=v<0;v=Math.abs(Math.round(v*100)/100);
+  var s=v.toFixed(2).replace('.',',');
+  var p=s.split(',');
+  p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  return (neg?'−':'')+p[0]+','+p[1]+' kr';
+}
+function cls(nr){return String(nr).charAt(0);}
+function acctName(nr){var a=state.accounts.find(function(x){return x.nr===nr;});return a?a.nr+' '+a.namn:nr;}
+function vatOut(rate){return rate==25?'2610':rate==12?'2620':rate==6?'2630':'2610';}
+function round2(v){return Math.round(v*100)/100;}
+
+// ── Sheets ─────────────────────────────────────────────
+var bg=el('sheet-bg');
+function openSheet(id){bg.classList.add('open');el(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+bg.onclick=closeSheets;
+
+// ── Period-hantering ───────────────────────────────────
+function periodList(){
+  var out=[],now=new Date(),y=now.getFullYear();
+  for(var i=0;i<14;i++){
+    var d=new Date(y,now.getMonth()-i,1);
+    out.push({v:'m'+d.getFullYear()+'-'+pad(d.getMonth()+1),
+      label:['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'][d.getMonth()]+' '+d.getFullYear(),
+      from:toISO(new Date(d.getFullYear(),d.getMonth(),1)),
+      to:toISO(new Date(d.getFullYear(),d.getMonth()+1,0))});
+  }
+  for(var q=0;q<4;q++){
+    var qm=q*3;
+    out.push({v:'q'+y+'-'+(q+1),label:'Kv'+(q+1)+' '+y,
+      from:toISO(new Date(y,qm,1)),to:toISO(new Date(y,qm+3,0))});
+  }
+  out.push({v:'y'+y,label:'Helår '+y,from:y+'-01-01',to:y+'-12-31'});
+  out.push({v:'y'+(y-1),label:'Helår '+(y-1),from:(y-1)+'-01-01',to:(y-1)+'-12-31'});
+  return out;
+}
+function fillPeriodSelect(sel,def){
+  var list=periodList();
+  sel.innerHTML=list.map(function(p){return '<option value="'+p.v+'">'+p.label+'</option>';}).join('');
+  if(def)sel.value=def;
+  return list;
+}
+function periodRange(v){return periodList().find(function(p){return p.v===v;});}
+
+// ── Konteringsberäkning ────────────────────────────────
+function balances(from,to){
+  var b={};
+  state.vers.forEach(function(v){
+    if(from&&v.date<from)return; if(to&&v.date>to)return;
+    v.rows.forEach(function(r){
+      if(!b[r.konto])b[r.konto]={d:0,k:0};
+      b[r.konto].d+=(+r.debet||0); b[r.konto].k+=(+r.kredit||0);
+    });
+  });
+  return b;
+}
+
+// ── ÖVERSIKT ───────────────────────────────────────────
+function curMonthRange(){var n=new Date();return {from:toISO(new Date(n.getFullYear(),n.getMonth(),1)),to:toISO(new Date(n.getFullYear(),n.getMonth()+1,0))};}
+function vatForRange(from,to){
+  var b=balances(from,to),ut=0,in_=0;
+  Object.keys(b).forEach(function(nr){
+    if(nr==='2610'||nr==='2620'||nr==='2630')ut+=b[nr].k-b[nr].d;
+    if(nr==='2640')in_+=b[nr].d-b[nr].k;
+  });
+  return {ut:ut,in:in_,net:ut-in_};
+}
+function resultForRange(from,to){
+  var b=balances(from,to),intakt=0,kostnad=0,fin=0;
+  Object.keys(b).forEach(function(nr){
+    var c=cls(nr),net=b[nr].k-b[nr].d;
+    if(c==='3')intakt+=net;
+    else if(c==='4'||c==='5'||c==='6'||c==='7')kostnad+=(b[nr].d-b[nr].k);
+    else if(c==='8'&&nr!=='8999')fin+=net;
+  });
+  return {intakt:intakt,kostnad:kostnad,fin:fin,res:intakt-kostnad+fin};
+}
+function bankSaldo(){
+  var b=balances(null,null),s=0;
+  ['1910','1930'].forEach(function(nr){if(b[nr])s+=b[nr].d-b[nr].k;});
+  return s;
+}
+function renderHome(){
+  var cm=curMonthRange();
+  var vat=vatForRange(cm.from,cm.to);
+  var res=resultForRange(cm.from,cm.to);
+  var obok=state.kvitton.filter(function(k){return !k.booked;}).length;
+  var kundOpen=state.kund.filter(function(f){return f.status!=='paid';}).reduce(function(a,f){return a+grossOf(f);},0);
+  var levOpen=state.lev.filter(function(f){return f.status!=='paid';}).reduce(function(a,f){return a+grossOf(f);},0);
+  var vatTxt=vat.net>=0?'att betala':'att få tillbaka';
+  var g=el('kpi-grid');
+  g.innerHTML=
+    kpi('Moms denna månad',kr(Math.abs(vat.net)),vatTxt,vat.net>=0?'v-neg':'v-pos')+
+    kpi('Resultat denna månad',kr(res.res),res.res>=0?'vinst':'förlust',res.res>=0?'v-pos':'v-neg')+
+    kpi('Obetalda kundfakturor',kr(kundOpen),'väntar in',kundOpen>0?'v-amber':'')+
+    kpi('Att betala lev.',kr(levOpen),'väntar ut',levOpen>0?'v-neg':'')+
+    kpiClick('Obokförda kvitton',obok+' st',obok>0?'tryck för att bokföra':'allt bokfört',obok>0?'v-amber':'v-pos','docs','kvitto')+
+    kpi('Kassa & bank',kr(bankSaldo()),'aktuellt saldo','');
+  renderTaxList();
+}
+function kpi(lab,val,sub,vc){return '<div class="kpi"><div class="lab">'+lab+'</div><div class="val '+vc+'">'+val+'</div><div class="sub">'+sub+'</div></div>';}
+function kpiClick(lab,val,sub,vc,gotoV,gotoSub){return '<div class="kpi click" data-goto="'+gotoV+'" data-sub="'+(gotoSub||'')+'"><div class="lab">'+lab+'</div><div class="val '+vc+'">'+val+'</div><div class="sub">'+sub+'</div></div>';}
+function renderTaxList(){
+  var now=new Date(),items=[];
+  for(var i=0;i<3;i++){
+    var d=new Date(now.getFullYear(),now.getMonth()+i,state.taxDay);
+    if(d<now&&i===0)continue;
+    items.push({d:d,t:'Momsdeklaration & arbetsgivardeklaration'});
+  }
+  var pr=new Date(now.getFullYear(),now.getMonth()+ (now.getDate()>state.taxPrel?1:0),state.taxPrel);
+  items.push({d:pr,t:'Preliminärskatt (om debiterad)'});
+  items.sort(function(a,b){return a.d-b.d;});
+  el('tax-list').innerHTML=items.slice(0,4).map(function(it){
+    var days=Math.ceil((it.d-now)/86400000);
+    return '<div class="row-item"><div class="ri-main"><div class="ri-title">'+esc(it.t)+'</div><div class="ri-sub">'+toISO(it.d)+'</div></div><span class="tag '+(days<=7?'warn':'muted')+'">'+(days<=0?'idag':'om '+days+' d')+'</span></div>';
+  }).join('')+'<div class="hint">Typiska datum för småföretag — kontrollera alltid mot ditt eget betalningsdatum hos Skatteverket.</div>';
+}
+document.addEventListener('click',function(e){
+  var k=e.target.closest('.kpi.click');
+  if(k){switchView(k.dataset.goto);if(k.dataset.sub)switchSub(k.dataset.sub);}
+});
+
+// ── BOKFÖR / VERIFIKAT ─────────────────────────────────
+var MALLAR=[
+  {n:'Kontantförsäljning 25%',rows:[['1930',1250,0],['3001',0,1000],['2610',0,250]],desc:'Försäljning'},
+  {n:'Inköp betalt med kort',rows:[['6110',800,0],['2640',200,0],['1930',0,1000]],desc:'Inköp'},
+  {n:'Lev.faktura',rows:[['4010',1000,0],['2640',250,0],['2440',0,1250]],desc:'Leverantörsfaktura'},
+  {n:'Bankavgift',rows:[['6570',75,0],['1930',0,75]],desc:'Bankavgift'},
+  {n:'Eget uttag/insättning',rows:[['1930',1000,0],['2018',0,1000]],desc:'Egen insättning'}
+];
+function acctOptions(selected){
+  return state.accounts.map(function(a){return '<option value="'+a.nr+'"'+(a.nr===selected?' selected':'')+'>'+a.nr+' '+esc(a.namn)+'</option>';}).join('');
+}
+var verRows=[];
+function renderVerRows(){
+  el('ver-rows').innerHTML=verRows.map(function(r,i){
+    return '<div class="ver-row"><select data-i="'+i+'" data-f="konto">'+acctOptions(r.konto)+'</select>'+
+      '<input data-i="'+i+'" data-f="debet" inputmode="decimal" value="'+(r.debet||'')+'" placeholder="0">'+
+      '<input data-i="'+i+'" data-f="kredit" inputmode="decimal" value="'+(r.kredit||'')+'" placeholder="0">'+
+      '<button class="rmrow" data-rm="'+i+'">×</button></div>';
+  }).join('');
+  el('ver-rows').querySelectorAll('select,input').forEach(function(inp){
+    inp.onchange=inp.oninput=function(){
+      var i=+inp.dataset.i,f=inp.dataset.f;
+      verRows[i][f]= f==='konto'?inp.value:(parseFloat(inp.value.replace(',','.'))||0);
+      checkBal();
+    };
+  });
+  el('ver-rows').querySelectorAll('.rmrow').forEach(function(b){b.onclick=function(){verRows.splice(+b.dataset.rm,1);renderVerRows();checkBal();};});
+  checkBal();
+}
+function checkBal(){
+  var d=verRows.reduce(function(a,r){return a+(+r.debet||0);},0);
+  var k=verRows.reduce(function(a,r){return a+(+r.kredit||0);},0);
+  var diff=round2(d-k);
+  var box=el('ver-balcheck');
+  if(diff===0&&d>0){box.className='balcheck ok';box.textContent='Balanserar ✓  '+kr(d);}
+  else{box.className='balcheck bad';box.textContent='Differens '+kr(diff)+'  (D '+kr(d)+' / K '+kr(k)+')';}
+}
+function openVerSheet(pre){
+  el('ver-title').textContent='Ny verifikat';
+  el('ver-date').value=todayISO();
+  el('ver-desc').value=pre&&pre.desc?pre.desc:'';
+  el('ver-ai').innerHTML='';
+  verRows= pre&&pre.rows ? pre.rows.map(function(r){return {konto:r[0],debet:r[1],kredit:r[2]};}) : [{konto:state.accounts[0].nr,debet:0,kredit:0},{konto:state.accounts[0].nr,debet:0,kredit:0}];
+  el('ver-mallar').innerHTML=MALLAR.map(function(m,i){return '<button class="chip" data-mall="'+i+'">'+esc(m.n)+'</button>';}).join('');
+  el('ver-mallar').querySelectorAll('.chip').forEach(function(c){c.onclick=function(){var m=MALLAR[+c.dataset.mall];verRows=m.rows.map(function(r){return {konto:r[0],debet:r[1],kredit:r[2]};});el('ver-desc').value=m.desc;renderVerRows();};});
+  renderVerRows();
+  openSheet('ver-sheet');
+}
+el('add-ver').onclick=function(){openVerSheet();};
+el('ver-addrow').onclick=function(){verRows.push({konto:state.accounts[0].nr,debet:0,kredit:0});renderVerRows();};
+el('ver-save').onclick=function(){
+  var d=verRows.reduce(function(a,r){return a+(+r.debet||0);},0);
+  var k=verRows.reduce(function(a,r){return a+(+r.kredit||0);},0);
+  if(round2(d-k)!==0||d===0){alert('Verifikatet balanserar inte. Debet måste vara lika med kredit.');return;}
+  var rows=verRows.filter(function(r){return (+r.debet||0)||(+r.kredit||0);}).map(function(r){return {konto:r.konto,debet:round2(+r.debet||0),kredit:round2(+r.kredit||0)};});
+  state.vers.push({nr:'V'+state.verNr,date:el('ver-date').value,desc:el('ver-desc').value||'(ingen beskrivning)',rows:rows});
+  state.verNr++; save(); closeSheets(); renderBook(); renderHome();
+};
+function renderBook(){
+  var sel=el('book-period');
+  if(!sel.options.length)fillPeriodSelect(sel,'m'+new Date().getFullYear()+'-'+pad(new Date().getMonth()+1));
+  var p=periodRange(sel.value);
+  var list=state.vers.filter(function(v){return v.date>=p.from&&v.date<=p.to;}).sort(function(a,b){return a.date<b.date?1:-1;});
+  var box=el('ver-list');
+  if(!list.length){box.innerHTML='<div class="empty-msg">Inga verifikationer i perioden.</div>';return;}
+  box.innerHTML=list.map(function(v){
+    var sum=v.rows.reduce(function(a,r){return a+r.debet;},0);
+    var rowsHtml=v.rows.map(function(r){return '<div class="rep-line"><span class="rep-acct">'+esc(acctName(r.konto))+'</span><span class="num">'+(r.debet?kr(r.debet):'')+(r.kredit?'  /  '+kr(r.kredit):'')+'</span></div>';}).join('');
+    return '<div class="row-item"><div class="ri-main"><div class="ri-title">'+v.nr+' · '+esc(v.desc)+'</div><div class="ri-sub">'+v.date+' · '+kr(sum)+'</div><div style="margin-top:6px">'+rowsHtml+'</div></div><button class="ri-del" data-delv="'+v.nr+'">🗑</button></div>';
+  }).join('');
+  box.querySelectorAll('.ri-del').forEach(function(b){b.onclick=function(){if(confirm('Ta bort '+b.dataset.delv+'?')){state.vers=state.vers.filter(function(v){return v.nr!==b.dataset.delv;});save();renderBook();renderHome();}};});
+}
+el('book-period').onchange=renderBook;
+
+// ── KVITTON ────────────────────────────────────────────
+function kvVatAmt(gross,rate){return rate==0?0:round2(gross*rate/(100+ +rate));}
+function openKvitto(pre){
+  el('kv-date').value=pre&&pre.date?pre.date:todayISO();
+  el('kv-sup').value=pre&&pre.sup?pre.sup:'';
+  el('kv-gross').value=pre&&pre.gross?pre.gross:'';
+  el('kv-vat').value=pre&&pre.vat?pre.vat:'25';
+  el('kv-acct').innerHTML=state.accounts.filter(function(a){return cls(a.nr)==='4'||cls(a.nr)==='5'||cls(a.nr)==='6'||cls(a.nr)==='7';}).map(function(a){return '<option value="'+a.nr+'">'+a.nr+' '+esc(a.namn)+'</option>';}).join('');
+  if(pre&&pre.acct)el('kv-acct').value=pre.acct;
+  el('kv-pay').value='1930';
+  kvPreview();
+  openSheet('kvitto-sheet');
+}
+function kvPreview(){
+  var g=parseFloat(String(el('kv-gross').value).replace(',','.'))||0;
+  var rate=+el('kv-vat').value;
+  var moms=kvVatAmt(g,rate),net=round2(g-moms);
+  el('kv-preview').innerHTML='Netto '+kr(net)+' · Moms '+kr(moms)+' · Brutto '+kr(g);
+}
+['kv-gross','kv-vat'].forEach(function(id){el(id).oninput=el(id).onchange=kvPreview;});
+el('add-kvitto').onclick=function(){openKvitto();};
+el('kv-save').onclick=function(){
+  var g=parseFloat(String(el('kv-gross').value).replace(',','.'))||0;
+  if(g<=0){alert('Ange ett bruttobelopp.');return;}
+  var rate=+el('kv-vat').value,moms=kvVatAmt(g,rate),net=round2(g-moms);
+  var acct=el('kv-acct').value,pay=el('kv-pay').value;
+  var rows=[{konto:acct,debet:net,kredit:0}];
+  if(moms>0)rows.push({konto:'2640',debet:moms,kredit:0});
+  rows.push({konto:pay,debet:0,kredit:g});
+  var v={nr:'V'+state.verNr,date:el('kv-date').value,desc:'Kvitto '+(el('kv-sup').value||''),rows:rows};
+  state.vers.push(v);state.verNr++;
+  state.kvitton.push({id:uid(),date:el('kv-date').value,sup:el('kv-sup').value,gross:g,vat:rate,acct:acct,pay:pay,booked:true,verNr:v.nr});
+  save();closeSheets();renderKvitton();renderBook();renderHome();
+};
+function renderKvitton(){
+  var box=el('kvitto-list');
+  if(!state.kvitton.length){box.innerHTML='<div class="empty-msg">Inga kvitton ännu.</div>';return;}
+  box.innerHTML=state.kvitton.slice().sort(function(a,b){return a.date<b.date?1:-1;}).map(function(k){
+    return '<div class="row-item"><div class="ri-main"><div class="ri-title">'+esc(k.sup||'Kvitto')+'</div><div class="ri-sub">'+k.date+' · '+esc(acctName(k.acct))+'</div></div><div style="text-align:right"><div class="ri-amt num">'+kr(k.gross)+'</div><span class="tag '+(k.booked?'ok':'warn')+'">'+(k.booked?'bokfört':'obokfört')+'</span></div><button class="ri-del" data-delk="'+k.id+'">🗑</button></div>';
+  }).join('');
+  box.querySelectorAll('.ri-del').forEach(function(b){b.onclick=function(){if(confirm('Ta bort kvitto?')){var k=state.kvitton.find(function(x){return x.id===b.dataset.delk;});if(k&&k.verNr)state.vers=state.vers.filter(function(v){return v.nr!==k.verNr;});state.kvitton=state.kvitton.filter(function(x){return x.id!==b.dataset.delk;});save();renderKvitton();renderBook();renderHome();}};});
+}
+
+// ── FAKTUROR ───────────────────────────────────────────
+function grossOf(f){var moms=f.vat==0?0:round2(f.net*f.vat/100);return round2(f.net+moms);}
+var faktKind='kund';
+function openFakt(kind,pre){
+  faktKind=kind;
+  el('fakt-title').textContent=kind==='kund'?'Kundfaktura':'Leverantörsfaktura';
+  el('fk-party').value='';el('fk-date').value=todayISO();
+  var due=new Date();due.setDate(due.getDate()+30);el('fk-due').value=toISO(due);
+  el('fk-net').value='';el('fk-vat').value='25';
+  if(kind==='kund'){
+    el('fk-acct-lbl').textContent='Intäktskonto';
+    el('fk-acct').innerHTML=state.accounts.filter(function(a){return cls(a.nr)==='3';}).map(function(a){return '<option value="'+a.nr+'">'+a.nr+' '+esc(a.namn)+'</option>';}).join('');
+  }else{
+    el('fk-acct-lbl').textContent='Kostnadskonto';
+    el('fk-acct').innerHTML=state.accounts.filter(function(a){return cls(a.nr)==='4'||cls(a.nr)==='5'||cls(a.nr)==='6'||cls(a.nr)==='7';}).map(function(a){return '<option value="'+a.nr+'">'+a.nr+' '+esc(a.namn)+'</option>';}).join('');
+  }
+  fkPreview();openSheet('fakt-sheet');
+}
+function fkPreview(){
+  var net=parseFloat(String(el('fk-net').value).replace(',','.'))||0;
+  var rate=+el('fk-vat').value,moms=rate==0?0:round2(net*rate/100);
+  el('fk-preview').innerHTML='Netto '+kr(net)+' · Moms '+kr(moms)+' · Att '+(faktKind==='kund'?'fakturera':'betala')+' '+kr(net+moms);
+}
+['fk-net','fk-vat'].forEach(function(id){el(id).oninput=el(id).onchange=fkPreview;});
+el('add-kund').onclick=function(){openFakt('kund');};
+el('add-lev').onclick=function(){openFakt('lev');};
+el('fk-save').onclick=function(){
+  var net=parseFloat(String(el('fk-net').value).replace(',','.'))||0;
+  if(net<=0){alert('Ange ett nettobelopp.');return;}
+  var rate=+el('fk-vat').value,moms=rate==0?0:round2(net*rate/100),gross=round2(net+moms);
+  var acct=el('fk-acct').value;
+  var f={id:uid(),party:el('fk-party').value||'(namnlös)',date:el('fk-date').value,due:el('fk-due').value,net:net,vat:rate,acct:acct,status:'open'};
+  var rows;
+  if(faktKind==='kund'){
+    rows=[{konto:'1510',debet:gross,kredit:0},{konto:acct,debet:0,kredit:net}];
+    if(moms>0)rows.push({konto:vatOut(rate),debet:0,kredit:moms});
+  }else{
+    rows=[{konto:acct,debet:net,kredit:0}];
+    if(moms>0)rows.push({konto:'2640',debet:moms,kredit:0});
+    rows.push({konto:'2440',debet:0,kredit:gross});
+  }
+  var v={nr:'V'+state.verNr,date:f.date,desc:(faktKind==='kund'?'Kundfaktura ':'Lev.faktura ')+f.party,rows:rows};
+  state.vers.push(v);state.verNr++;f.verNr=v.nr;
+  (faktKind==='kund'?state.kund:state.lev).push(f);
+  save();closeSheets();renderFakt();renderBook();renderHome();
+};
+function payFakt(kind,id){
+  var arr=kind==='kund'?state.kund:state.lev;
+  var f=arr.find(function(x){return x.id===id;});if(!f)return;
+  var gross=grossOf(f);
+  var rows= kind==='kund' ? [{konto:'1930',debet:gross,kredit:0},{konto:'1510',debet:0,kredit:gross}]
+                          : [{konto:'2440',debet:gross,kredit:0},{konto:'1930',debet:0,kredit:gross}];
+  var v={nr:'V'+state.verNr,date:todayISO(),desc:'Betalning '+(kind==='kund'?'kundfaktura ':'lev.faktura ')+f.party,rows:rows};
+  state.vers.push(v);state.verNr++;f.status='paid';f.paidVer=v.nr;
+  save();renderFakt();renderBook();renderHome();
+}
+function renderFaktList(kind,boxId){
+  var arr=kind==='kund'?state.kund:state.lev;
+  var box=el(boxId);
+  if(!arr.length){box.innerHTML='<div class="empty-msg">Inga fakturor ännu.</div>';return;}
+  box.innerHTML=arr.slice().sort(function(a,b){return a.date<b.date?1:-1;}).map(function(f){
+    var late=f.status!=='paid'&&f.due<todayISO();
+    var tag=f.status==='paid'?'<span class="tag ok">betald</span>':(late?'<span class="tag late">förfallen</span>':'<span class="tag warn">obetald</span>');
+    var payBtn=f.status!=='paid'?'<button class="btn ghost" data-pay="'+f.id+'" data-kind="'+kind+'">Markera betald</button>':'';
+    return '<div class="row-item"><div class="ri-main"><div class="ri-title">'+esc(f.party)+'</div><div class="ri-sub">'+f.date+' · förfaller '+f.due+'</div>'+(payBtn?'<div style="margin-top:6px">'+payBtn+'</div>':'')+'</div><div style="text-align:right"><div class="ri-amt num">'+kr(grossOf(f))+'</div>'+tag+'</div><button class="ri-del" data-delf="'+f.id+'" data-kind="'+kind+'">🗑</button></div>';
+  }).join('');
+  box.querySelectorAll('[data-pay]').forEach(function(b){b.onclick=function(){payFakt(b.dataset.kind,b.dataset.pay);};});
+  box.querySelectorAll('[data-delf]').forEach(function(b){b.onclick=function(){if(confirm('Ta bort faktura?')){var arr2=b.dataset.kind==='kund'?state.kund:state.lev;var f=arr2.find(function(x){return x.id===b.dataset.delf;});if(f){if(f.verNr)state.vers=state.vers.filter(function(v){return v.nr!==f.verNr;});if(f.paidVer)state.vers=state.vers.filter(function(v){return v.nr!==f.paidVer;});}if(b.dataset.kind==='kund')state.kund=state.kund.filter(function(x){return x.id!==b.dataset.delf;});else state.lev=state.lev.filter(function(x){return x.id!==b.dataset.delf;});save();renderFakt();renderBook();renderHome();}};});
+}
+function renderFakt(){renderKvitton();renderFaktList('kund','kund-list');renderFaktList('lev','lev-list');}
+
+// ── RAPPORTER ──────────────────────────────────────────
+function renderReports(){
+  var sel=el('rep-period');
+  if(!sel.options.length)fillPeriodSelect(sel,'m'+new Date().getFullYear()+'-'+pad(new Date().getMonth()+1));
+  var p=periodRange(sel.value);
+  renderMoms(p);renderRes(p);renderBal(p);renderBokslut();
+}
+el('rep-period').onchange=renderReports;
+function line(lab,val,acct,total){return '<div class="rep-line'+(total?' total':'')+'"><span>'+(acct?'<span class="rep-acct">'+acct+'</span> ':'')+esc(lab)+'</span><span class="num">'+kr(val)+'</span></div>';}
+function renderMoms(p){
+  var v=vatForRange(p.from,p.to);
+  var html=line('Utgående moms (försäljning)',v.ut)+line('Ingående moms (inköp)',v.in)+
+    line(v.net>=0?'Moms att betala':'Moms att få tillbaka',Math.abs(v.net),null,true)+
+    '<div class="hint" style="margin-top:8px">Period '+p.from+' – '+p.to+'. Stäm av mot konto 2650 vid momsredovisning.</div>';
+  el('moms-box').innerHTML=html;
+}
+function renderRes(p){
+  var b=balances(p.from,p.to);
+  var intLines='',kostLines='',intakt=0,kostnad=0;
+  Object.keys(b).sort().forEach(function(nr){
+    var c=cls(nr),net=b[nr].k-b[nr].d,cost=b[nr].d-b[nr].k;
+    if(c==='3'&&Math.abs(net)>0.001){intLines+=line(acctName(nr).split(' ').slice(1).join(' '),net,nr);intakt+=net;}
+    if((c==='4'||c==='5'||c==='6'||c==='7')&&Math.abs(cost)>0.001){kostLines+=line(acctName(nr).split(' ').slice(1).join(' '),cost,nr);kostnad+=cost;}
+  });
+  el('res-box').innerHTML='<div class="section-title" style="margin-top:0">Intäkter</div>'+(intLines||'<div class="empty-msg">Inga</div>')+line('Summa intäkter',intakt,null,true)+
+    '<div class="section-title">Kostnader</div>'+(kostLines||'<div class="empty-msg">Inga</div>')+line('Summa kostnader',kostnad,null,true)+
+    '<div style="margin-top:10px"></div>'+line('Resultat',intakt-kostnad,null,true);
+}
+function renderBal(p){
+  var b=balances(null,p.to); // ackumulerat t.o.m. periodslut
+  var tillg='',skuld='',tSum=0,sSum=0;
+  Object.keys(b).sort().forEach(function(nr){
+    var c=cls(nr);
+    if(c==='1'){var d=b[nr].d-b[nr].k;if(Math.abs(d)>0.001){tillg+=line(acctName(nr).split(' ').slice(1).join(' '),d,nr);tSum+=d;}}
+    if(c==='2'){var k=b[nr].k-b[nr].d;if(Math.abs(k)>0.001){skuld+=line(acctName(nr).split(' ').slice(1).join(' '),k,nr);sSum+=k;}}
+  });
+  var res=resultForRange((p.from.slice(0,4))+'-01-01',p.to).res;
+  var bersUEK=tSum-sSum; // beräknat eget kapital/resultat saldo
+  el('bal-box').innerHTML='<div class="section-title" style="margin-top:0">Tillgångar</div>'+(tillg||'<div class="empty-msg">Inga</div>')+line('Summa tillgångar',tSum,null,true)+
+    '<div class="section-title">Eget kapital & skulder</div>'+(skuld||'<div class="empty-msg">Inga</div>')+
+    line('Beräknat årets resultat',res,'8999')+
+    line('Summa EK & skulder',sSum+res,null,true)+
+    '<div class="hint" style="margin-top:8px">Balansomslutning '+kr(tSum)+'. Diff mot EK+skulder+resultat: '+kr(tSum-(sSum+res))+' (ska vara 0 vid komplett kontering).</div>';
+}
+function renderBokslut(){
+  var box=el('bokslut-list');
+  box.innerHTML=DEFAULT_BOKSLUT.map(function(t,i){
+    var done=!!state.bokslut[i];
+    return '<div class="check-row'+(done?' done':'')+'"><input type="checkbox" data-bk="'+i+'"'+(done?' checked':'')+'><span>'+esc(t)+'</span></div>';
+  }).join('');
+  box.querySelectorAll('input').forEach(function(cb){cb.onchange=function(){state.bokslut[+cb.dataset.bk]=cb.checked;save();renderBokslut();};});
+}
+
+// ── AI ─────────────────────────────────────────────────
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(content,maxTok){
+  var key=getAiKey();
+  if(!key){alert('Lägg in din Anthropic API-nyckel under Mer → AI-inställningar först.');switchView('more');openMer('m-ai');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||700,messages:[{role:'user',content:content}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI</span>'+esc(t)+'</div>';}
+function ctxSummary(){
+  var cm=curMonthRange(),vat=vatForRange(cm.from,cm.to),res=resultForRange(cm.from,cm.to);
+  return 'Företag: '+(state.company.name||'okänt')+' ('+state.company.form+'). '+
+    'Denna månad: intäkter '+kr(res.intakt)+', kostnader '+kr(res.kostnad)+', resultat '+kr(res.res)+'. '+
+    'Moms denna månad netto '+kr(vat.net)+'. '+
+    'Obokförda kvitton: '+state.kvitton.filter(function(k){return !k.booked;}).length+'. '+
+    'Obetalda kundfakturor: '+kr(state.kund.filter(function(f){return f.status!=='paid';}).reduce(function(a,f){return a+grossOf(f);},0))+'. '+
+    'Att betala leverantörer: '+kr(state.lev.filter(function(f){return f.status!=='paid';}).reduce(function(a,f){return a+grossOf(f);},0))+'.';
+}
+async function runHomeAi(prompt,btn){
+  var box=el('home-ai'),o=btn.textContent;btn.textContent='✨ …';btn.disabled=true;
+  try{box.innerHTML=aiBox(await aiCall(prompt,650));}catch(e){if(e.message!=='NOKEY')box.innerHTML='<div class="hint">Kunde inte hämta: '+esc(e.message)+'</div>';}
+  btn.textContent=o;btn.disabled=false;
+}
+el('ai-explain').onclick=function(e){runHomeAi('Du är en varm och pedagogisk redovisningshjälp för småföretag i Sverige. Förklara företagets ekonomiska läge enkelt på svenska, max 130 ord, utan rubriker. Ge en eller två konkreta saker att tänka på.\n\nUnderlag: '+ctxSummary(),e.target);};
+el('ai-anomaly').onclick=function(e){
+  var verTxt=state.vers.slice(-25).map(function(v){return v.nr+' '+v.date+' '+v.desc+' '+kr(v.rows.reduce(function(a,r){return a+r.debet;},0));}).join('; ');
+  runHomeAi('Du är en noggrann redovisningskonsult. Granska dessa senaste verifikationer för ett svenskt småföretag och peka ut möjliga avvikelser, dubbletter eller orimligheter. Svara på svenska, max 130 ord, punktvis om det behövs. Om allt ser rimligt ut, säg det.\n\n'+ctxSummary()+'\n\nVerifikationer: '+(verTxt||'inga'),e.target);
+};
+el('ai-vatremind').onclick=function(e){
+  var cm=curMonthRange(),vat=vatForRange(cm.from,cm.to);
+  runHomeAi('Du är en hjälpsam redovisningsassistent. Skriv en kort, vänlig påminnelse på svenska (max 80 ord) om moms- och skatteinlämning. Momsperiod: '+state.company.vat+'. Moms denna månad netto: '+kr(vat.net)+'. Deklaration sker normalt runt den '+state.taxDay+':e. Påminn om att kontrollera mot Skatteverket.',e.target);
+};
+el('ver-aikonto').onclick=async function(e){
+  var desc=el('ver-desc').value.trim();
+  if(!desc){alert('Skriv en beskrivning först.');return;}
+  var o=e.target.textContent;e.target.textContent='✨ …';e.target.disabled=true;
+  var accts=state.accounts.map(function(a){return a.nr+' '+a.namn;}).join(', ');
+  try{
+    el('ver-ai').innerHTML=aiBox(await aiCall('Du är en svensk redovisningsexpert. Föreslå hur följande affärshändelse ska konteras (debet/kredit) med konton ur BAS. Svara kort på svenska med konton och belopp. Förklara momsen om relevant.\n\nHändelse: '+desc+'\n\nTillgängliga konton: '+accts,500));
+  }catch(err){if(err.message!=='NOKEY')el('ver-ai').innerHTML='<div class="hint">Kunde inte hämta: '+esc(err.message)+'</div>';}
+  e.target.textContent=o;e.target.disabled=false;
+};
+// AI tolka kvitto (bild)
+el('ai-receipt').onclick=function(){if(!getAiKey()){alert('Lägg in din API-nyckel under Mer → AI-inställningar först.');switchView('more');openMer('m-ai');return;}el('receipt-file').click();};
+el('receipt-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var btn=el('ai-receipt'),o=btn.textContent;btn.textContent='✨ Läser kvitto…';btn.disabled=true;
+  var r=new FileReader();
+  r.onload=async function(){
+    try{
+      var b64=r.result.split(',')[1];
+      var accts=state.accounts.filter(function(a){return cls(a.nr)==='4'||cls(a.nr)==='5'||cls(a.nr)==='6'||cls(a.nr)==='7';}).map(function(a){return a.nr+' '+a.namn;}).join(', ');
+      var content=[
+        {type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:b64}},
+        {type:'text',text:'Detta är ett svenskt kvitto. Svara ENDAST med JSON, inga backticks eller förklaring: {"datum":"YYYY-MM-DD","leverantor":"...","brutto":number,"momssats":25|12|6|0,"konto":"NNNN"}. Välj kostnadskonto ur: '+accts+'. Om något saknas, gissa rimligt.'}
+      ];
+      var txt=await aiCall(content,400);
+      var clean=txt.replace(/```json|```/g,'').trim();
+      var d=JSON.parse(clean);
+      openKvitto({date:d.datum||todayISO(),sup:d.leverantor||'',gross:d.brutto||'',vat:String(d.momssats||25),acct:d.konto});
+    }catch(err){alert('Kunde inte tolka kvittot: '+err.message);}
+    btn.textContent=o;btn.disabled=false;el('receipt-file').value='';
+  };
+  r.readAsDataURL(f);
+};
+
+// ── KONTOPLAN ──────────────────────────────────────────
+function renderKonto(){
+  el('konto-list').innerHTML=state.accounts.slice().sort(function(a,b){return a.nr<b.nr?-1:1;}).map(function(a){
+    return '<div class="row-item" style="padding:7px 0"><div class="ri-main"><div class="ri-title" style="font-size:13px">'+a.nr+' '+esc(a.namn)+'</div>'+(a.moms?'<div class="ri-sub">moms '+a.moms+'%</div>':'')+'</div><button class="ri-del" data-delc="'+a.nr+'">🗑</button></div>';
+  }).join('');
+  el('konto-list').querySelectorAll('.ri-del').forEach(function(b){b.onclick=function(){state.accounts=state.accounts.filter(function(a){return a.nr!==b.dataset.delc;});save();renderKonto();};});
+}
+el('add-konto').onclick=function(){
+  var nr=el('ny-konto').value.trim();
+  if(!/^\d{4}$/.test(nr)){alert('Ange ett fyrsiffrigt kontonummer.');return;}
+  if(state.accounts.find(function(a){return a.nr===nr;})){alert('Kontot finns redan.');return;}
+  state.accounts.push({nr:nr,namn:el('ny-konto-namn').value.trim()||'Nytt konto',moms:+el('ny-konto-moms').value||0});
+  el('ny-konto').value='';el('ny-konto-namn').value='';el('ny-konto-moms').value='';
+  save();renderKonto();
+};
+
+// ── CSV-import ─────────────────────────────────────────
+el('csv-parse').onclick=function(){
+  var txt=el('csv-in').value.trim();if(!txt){return;}
+  var lines=txt.split(/\r?\n/).filter(function(l){return l.trim();});
+  var rows=lines.map(function(l){
+    var p=l.split(/[;\t,](?=(?:[^"]*"[^"]*")*[^"]*$)/);
+    var amt=parseFloat(String(p[2]||'').replace(/\s/g,'').replace(',','.'))||0;
+    return {date:(p[0]||'').trim(),text:(p[1]||'').trim().replace(/^"|"$/g,''),amt:amt};
+  }).filter(function(r){return r.date&&r.amt;});
+  var box=el('csv-list');
+  if(!rows.length){box.innerHTML='<div class="hint">Hittade inga transaktioner. Format: datum;text;belopp</div>';return;}
+  box.innerHTML='<div class="hint">'+rows.length+' transaktioner. Bokför var och en som verifikat (förifylld mall).</div>'+rows.map(function(r,i){
+    return '<div class="row-item"><div class="ri-main"><div class="ri-title" style="font-size:13px">'+esc(r.text||'Transaktion')+'</div><div class="ri-sub">'+esc(r.date)+'</div></div><div style="text-align:right"><div class="ri-amt num '+(r.amt<0?'v-neg':'v-pos')+'">'+kr(r.amt)+'</div><button class="btn ghost" data-csv="'+i+'">Bokför</button></div></div>';
+  }).join('');
+  box.querySelectorAll('[data-csv]').forEach(function(b){b.onclick=function(){
+    var r=rows[+b.dataset.csv],g=Math.abs(r.amt);
+    var pre;
+    if(r.amt<0){ // utgift
+      var moms=kvVatAmt(g,25);
+      pre={desc:r.text,rows:[['6990',round2(g-moms),0],['2640',moms,0],['1930',0,g]]};
+    }else{ // inbetalning
+      var momsI=kvVatAmt(g,25);
+      pre={desc:r.text,rows:[['1930',g,0],['3001',0,round2(g-momsI)],['2610',0,momsI]]};
+    }
+    closeMerAll();switchView('book');openVerSheet(pre);el('ver-date').value=r.date;
+  };});
+};
+
+// ── Företag / skatt / nyckel ───────────────────────────
+function loadCompany(){var c=state.company;el('f-name').value=c.name||'';el('f-org').value=c.org||'';el('f-form').value=c.form||'ef';el('f-vat').value=c.vat||'manad';el('f-fyear').value=c.fyear||'01';el('tax-day').value=state.taxDay;el('tax-prel').value=state.taxPrel;el('ai-key').value=getAiKey();}
+el('f-save').onclick=function(){state.company={name:el('f-name').value,org:el('f-org').value,form:el('f-form').value,vat:el('f-vat').value,fyear:el('f-fyear').value};save();alert('Sparat.');renderHome();};
+el('tax-save').onclick=function(){state.taxDay=+el('tax-day').value||12;state.taxPrel=+el('tax-prel').value||12;save();renderHome();alert('Sparat.');};
+el('ai-key-save').onclick=function(){localStorage.setItem(AI_KEY,el('ai-key').value.trim());alert('Nyckel sparad lokalt.');};
+
+// ── Export/import ──────────────────────────────────────
+el('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kassaboken-backup-'+todayISO()+'.json';a.click();
+};
+el('import-btn').onclick=function(){el('import-file').click();};
+el('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.vers){state=Object.assign(state,d);save();renderAll();alert('Importerat.');}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Mer-dragspel ───────────────────────────────────────
+document.querySelectorAll('.mer-acc').forEach(function(acc){
+  acc.querySelector('.mer-head').onclick=function(){
+    var open=acc.classList.contains('open');
+    closeMerAll();
+    if(!open){acc.classList.add('open');if(acc.id==='m-konto')renderKonto();if(acc.id==='m-sync')fillSyncFields();}
+  };
+});
+function closeMerAll(){document.querySelectorAll('.mer-acc').forEach(function(a){a.classList.remove('open');});}
+function openMer(id){closeMerAll();el(id).classList.add('open');if(id==='m-konto')renderKonto();if(id==='m-sync')fillSyncFields();}
+
+// ── Subtabs ────────────────────────────────────────────
+function switchSub(name){
+  document.querySelectorAll('#view-docs .subtab').forEach(function(t){t.classList.toggle('active',t.dataset.sub===name);});
+  document.querySelectorAll('#view-docs .subview').forEach(function(v){v.classList.toggle('active',v.id==='sub-'+name);});
+}
+document.querySelectorAll('#view-docs .subtab').forEach(function(t){t.onclick=function(){switchSub(t.dataset.sub);};});
+document.querySelectorAll('#view-report .subtab').forEach(function(t){t.onclick=function(){
+  document.querySelectorAll('#view-report .subtab').forEach(function(x){x.classList.remove('active');});t.classList.add('active');
+  document.querySelectorAll('#view-report .subview').forEach(function(v){v.classList.remove('active');});
+  el('rep-'+t.dataset.rep).classList.add('active');
+};});
+
+// ── Nav ────────────────────────────────────────────────
+function switchView(v){
+  document.querySelectorAll('.nav button').forEach(function(b){b.classList.toggle('active',b.dataset.v===v);});
+  document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active');});
+  el('view-'+v).classList.add('active');
+  if(v==='home')renderHome();
+  if(v==='book')renderBook();
+  if(v==='docs')renderFakt();
+  if(v==='report')renderReports();
+  if(v==='more')loadCompany();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){switchView(b.dataset.v);};});
+
+// ── Tema ───────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto',h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1B1F24':'#ECEEF0';
+  var b=el('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+}
+el('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── GitHub-synk (delad bokföring telefon ⇄ dator) ──────
+var SYNC_KEY='kassaboken_sync_v1';
+var GH_FILE='kassaboken.json';
+var sync={owner:'',repo:'',token:'',sha:null};
+var pushTimer=null;
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+GH_FILE;}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setSyncBadge(st,msg){var p=el('sync-pill');if(!p)return;if(!syncOn()){p.className='sync-pill offline';p.textContent='Lokal';return;}p.className='sync-pill '+(st==='err'?'err':st==='load'?'':'ok');p.textContent=msg||'Synkad';}
+function syncPayload(){var c=Object.assign({},state);delete c.theme;return c;}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setSyncBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data&&data.vers){
+      var localU=state.updated||'',remoteU=data.updated||'';
+      if(remoteU&&localU&&remoteU<localU){ // lokal version är nyare — ladda upp istället för att skriva över
+        setSyncBadge('ok','Synkad');ghPush();return;
+      }
+      var theme=state.theme;
+      state=Object.assign({},state,data);
+      state.theme=theme;
+      saveLocal();renderAll();
+    }
+    setSyncBadge('ok','Synkad');
+  }catch(e){setSyncBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setSyncBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(syncPayload()));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Kassaboken',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  try{
+    var r=await doPut();
+    if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+    setSyncBadge('ok','Synkad');
+  }catch(e){setSyncBadge('err','Synkfel');}
+}
+function schedulePush(){
+  if(!syncOn())return;
+  if(pushTimer)clearTimeout(pushTimer);
+  pushTimer=setTimeout(function(){pushTimer=null;ghPush();},1500);
+}
+function fillSyncFields(){el('gh-owner').value=sync.owner;el('gh-repo').value=sync.repo;el('gh-token').value=sync.token;el('gh-status').style.display='none';}
+function setGhStatus(msg,type){var e2=el('gh-status');e2.style.display='block';e2.textContent=msg;
+  if(type==='ok'){e2.style.background='var(--pos-soft)';e2.style.color='var(--pos)';}
+  else if(type==='err'){e2.style.background='var(--neg-soft)';e2.style.color='var(--neg)';}
+  else{e2.style.background='var(--accent-soft)';e2.style.color='var(--accent)';}
+}
+el('gh-save').onclick=async function(){
+  sync.owner=el('gh-owner').value.trim();sync.repo=el('gh-repo').value.trim();sync.token=el('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setSyncBadge('load','…');setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data&&data.vers){setGhStatus('✓ Ansluten! Hämtar bokföringen…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din lokala bokföring…','ok');await ghPush();}
+    setSyncBadge('ok','Synkad');
+  }catch(e){setSyncBadge('err','Synkfel');setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents: Read and write.','err');}
+};
+el('gh-pull').onclick=function(){ghPull();};
+el('sync-pill').onclick=function(){switchView('more');openMer('m-sync');};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Init ───────────────────────────────────────────────
+function renderAll(){renderHome();renderBook();renderFakt();renderReports();loadCompany();}
+loadSync();
+renderAll();applyTheme();setSyncBadge();setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
