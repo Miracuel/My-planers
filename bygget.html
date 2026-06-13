@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bygget">
+<meta name="theme-color" content="#ECEEF2">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Bygget","short_name":"Bygget","display":"standalone","background_color":"%23ECEEF2","theme_color":"%23ECEEF2","start_url":"."}'>
+<title>Bygget</title>
+<style>
+:root{
+  --bg:#ECEEF2;--panel:#F6F7FA;--panel2:#E2E6EE;--line:#D2D8E4;
+  --ink:#2E3440;--muted:#717A8C;--accent:#5B7B9A;--accent-soft:#D6E0EC;
+  --prio1:#B98A3E;--prio1-soft:#F0E4CC;--prio2:#BB6755;--prio2-soft:#F2DDD7;
+  --ok:#6E9070;--navbg:rgba(236,238,242,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.section-title .soft{font-family:-apple-system,sans-serif}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.danger{border-color:var(--prio2);color:var(--prio2)}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:13px;color:var(--muted);padding:14px 6px;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Projekt-kort */
+.proj{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.proj:active{border-color:var(--accent)}
+.proj.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.proj-head{display:flex;align-items:center;gap:10px}
+.proj-ic{font-size:22px;flex-shrink:0}
+.proj-name{font-family:Georgia,serif;font-size:16px;flex:1}
+.proj-type{font-size:11px;color:var(--muted);margin-top:1px}
+.proj-edit{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
+.bar{height:7px;background:var(--panel2);border-radius:5px;overflow:hidden;margin:10px 0 6px}
+.bar-fill{height:100%;background:var(--accent);border-radius:5px;transition:width .5s}
+.proj-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.proj-next{font-size:12px;color:var(--ink);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.proj-next b{font-weight:600;color:var(--accent)}
+
+/* Aktiv-projekt header i Uppgifter */
+.active-head{margin-bottom:4px}
+.active-head .nm{font-family:Georgia,serif;font-size:18px}
+.nextcard{background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:12px 14px;margin:12px 0}
+.nextcard .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600}
+.nextcard .t{font-size:15px;margin-top:3px}
+.nextcard .why{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* Uppgifter */
+.fas-title{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:16px 0 6px;font-weight:600}
+.task{padding:10px 0;border-top:1px solid var(--line)}
+.task:first-child{border-top:none}
+.task-head{display:flex;align-items:center;gap:10px}
+.task-check{width:24px;height:24px;border-radius:7px;border:2px solid var(--accent);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:13px;color:#fff;line-height:20px;text-align:center;padding:0}
+.task-check.done{background:var(--accent)}
+.task-body{flex:1;cursor:pointer}
+.task-title{font-size:14px}
+.task-title.done{text-decoration:line-through;color:var(--muted)}
+.task-tags{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--panel2);color:var(--muted)}
+.tag.p1{background:var(--prio1-soft);color:var(--prio1)}
+.tag.p2{background:var(--prio2-soft);color:var(--prio2)}
+.tag.steps{background:var(--accent-soft);color:var(--accent)}
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:0 16px;cursor:pointer;font-size:18px}
+
+/* Steg i detaljvy */
+.step{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:var(--ink)}
+.step input[type=checkbox]{width:auto;accent-color:var(--accent)}
+.step.done span{text-decoration:line-through;color:var(--muted)}
+.step button{margin-left:auto;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.step-add{display:flex;gap:6px;margin:6px 0 0}
+.step-add input{font-size:13px}
+.step-add button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 12px;color:var(--accent);cursor:pointer}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 4px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.seg button.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+/* Mallar */
+.tpl{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:10px;cursor:pointer}
+.tpl:active{border-color:var(--accent)}
+.tpl-head{display:flex;align-items:center;gap:10px}
+.tpl-ic{font-size:24px}
+.tpl-name{font-family:Georgia,serif;font-size:16px;flex:1}
+.tpl-cnt{font-size:11px;color:var(--muted)}
+.tpl-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-top:7px}
+
+/* AI */
+.ai-box{border:1px solid var(--accent);background:linear-gradient(160deg,var(--accent-soft),var(--panel));border-radius:14px;padding:13px 14px;font-size:13px;line-height:1.65;color:var(--ink);margin-top:12px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--accent);font-size:12px;display:block;margin-bottom:6px}
+.local-row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+.local-row:first-child{border-top:none}
+.local-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600}
+.local-row .t{font-size:14px}
+.local-row .why{font-size:11px;color:var(--muted);margin-top:2px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(46,52,64,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.tpl-pick{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px}
+.tpl-pick.sel{border-color:var(--accent);background:var(--accent-soft)}
+.tpl-pick .ic{font-size:20px}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:10px;line-height:1.6}
+
+/* Synk */
+.syncbar{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px}
+.sync-badge{font-size:11px;padding:3px 10px;border-radius:10px;background:var(--panel2);color:var(--muted)}
+.sync-badge.ok{background:var(--accent-soft);color:var(--accent)}
+.sync-badge.err{background:var(--prio2-soft);color:var(--prio2)}
+.sync-badge.load{background:var(--prio1-soft);color:var(--prio1)}
+.sync-mini{font-size:11px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:5px 11px;cursor:pointer;font-family:inherit}
+.sync-mini:active{background:var(--panel2)}
+.gh-hint{font-size:11px;color:var(--muted);font-family:ui-monospace,monospace;background:var(--panel2);padding:6px 9px;border-radius:8px;margin-top:6px;line-height:1.5}
+#gh-status{display:none;margin-top:10px;font-size:12px;padding:8px 11px;border-radius:9px;line-height:1.5}
+#gh-status.ok{background:var(--accent-soft);color:var(--accent)}
+#gh-status.err{background:var(--prio2-soft);color:var(--prio2)}
+#gh-status.info{background:var(--panel2);color:var(--muted)}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1B1E26;--panel:#242832;--panel2:#2C313D;--line:#3A4150;
+  --ink:#E4E7EE;--muted:#9098A8;--accent:#7E9CBC;--accent-soft:#32404F;
+  --prio1:#D2A65C;--prio1-soft:#3D3527;--prio2:#CC8273;--prio2-soft:#3F2C28;
+  --ok:#8AAE8C;--navbg:rgba(27,30,38,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🧱 Bygget</h1>
+
+<!-- PROJEKT -->
+<div class="view active" id="view-projects">
+  <div id="proj-list"></div>
+  <button class="btn fill" id="new-proj" style="width:100%;margin-top:6px">+ Nytt projekt</button>
+  <div class="syncbar">
+    <span class="sync-badge" id="sync-badge">Lokal</span>
+    <button class="sync-mini" id="sync-btn">⟳ Synka</button>
+    <button class="sync-mini" id="sync-settings">⚙ Synk</button>
+  </div>
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <button id="ai-set-btn">API-nyckel</button>
+  </div>
+  <input type="file" id="import-file" accept="application/json" style="display:none">
+  <div class="privacy">Data sparas lokalt i din webbläsare. Med synk delas projekten via ditt egna privata GitHub-repo.</div>
+</div>
+
+<!-- UPPGIFTER -->
+<div class="view" id="view-tasks">
+  <div id="tasks-empty" class="empty-msg" style="display:none">Inget projekt valt. Skapa eller välj ett projekt under <b>Projekt</b>.</div>
+  <div id="tasks-body">
+    <div class="active-head">
+      <div class="section-title" style="margin-top:0"><span class="nm" id="at-name"></span></div>
+      <div class="bar"><div class="bar-fill" id="at-bar"></div></div>
+      <div class="proj-meta"><span id="at-count"></span><span id="at-pct"></span></div>
+    </div>
+    <div id="at-next"></div>
+    <div id="task-groups"></div>
+    <div class="add-row">
+      <input type="text" id="task-in" placeholder="Ny uppgift…">
+      <button id="task-add">+</button>
+    </div>
+    <div class="soft" style="margin-top:8px;text-align:center">Tryck på en uppgift för fas, prioritet, insats och deluppgifter.</div>
+  </div>
+</div>
+
+<!-- PRIORITERA -->
+<div class="view" id="view-ai">
+  <div id="ai-empty" class="empty-msg" style="display:none">Välj ett projekt först — då kan jag hjälpa dig prioritera.</div>
+  <div id="ai-body">
+    <div class="card-panel">
+      <div class="soft">Få förslag på vad du bör göra härnäst i <b id="ai-proj-name" style="color:var(--ink)"></b>. AI väger prioritet, fas och insats mot varandra.</div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn fill" id="ai-run">✨ Fråga AI</button>
+        <button class="btn" id="ai-local">Prioritera lokalt</button>
+      </div>
+      <div class="soft" id="ai-status" style="text-align:center;margin-top:8px"></div>
+    </div>
+    <div id="ai-out"></div>
+  </div>
+</div>
+
+<!-- MALLAR -->
+<div class="view" id="view-templates">
+  <div class="soft" style="margin:0 2px 12px">Välj en färdig checklista för din typ av hemsida. Den blir ett nytt projekt med alla standarduppgifter — du kan ändra fritt efteråt.</div>
+  <div id="tpl-list"></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="projects"><span>🧱</span>Projekt</button>
+  <button data-v="tasks"><span>✓</span>Uppgifter</button>
+  <button data-v="ai"><span>✨</span>Prioritera</button>
+  <button data-v="templates"><span>📋</span>Mallar</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="newproj-sheet">
+  <h3>Nytt projekt</h3>
+  <label>Namn</label>
+  <input type="text" id="np-name" placeholder="T.ex. Min hemsida">
+  <label>Webbadress (frivilligt)</label>
+  <input type="text" id="np-url" placeholder="https://…">
+  <label>Utgå från mall</label>
+  <div id="np-templates"></div>
+  <button class="sheet-close" id="np-create">Skapa projekt</button>
+</div>
+
+<div class="sheet" id="projedit-sheet">
+  <h3>Redigera projekt</h3>
+  <label>Namn</label>
+  <input type="text" id="pe-name">
+  <label>Webbadress</label>
+  <input type="text" id="pe-url" placeholder="https://…">
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn" id="pe-save">Spara</button>
+    <button class="btn danger" id="pe-delete">Ta bort</button>
+  </div>
+  <button class="sheet-close" id="pe-close">Stäng</button>
+</div>
+
+<div class="sheet" id="task-sheet">
+  <h3 id="ts-h">Uppgift</h3>
+  <label>Titel</label>
+  <input type="text" id="ts-title">
+  <label>Fas</label>
+  <select id="ts-fas"></select>
+  <label>Prioritet</label>
+  <div class="seg" id="ts-prio">
+    <button data-v="0">Normal</button>
+    <button data-v="1">Hög</button>
+    <button data-v="2">Kritisk</button>
+  </div>
+  <label>Insats</label>
+  <div class="seg" id="ts-effort">
+    <button data-v="1">Liten</button>
+    <button data-v="2">Mellan</button>
+    <button data-v="3">Stor</button>
+  </div>
+  <label>Anteckning</label>
+  <textarea id="ts-note" rows="2" placeholder="Detaljer, länkar, idéer…"></textarea>
+  <label>Deluppgifter</label>
+  <div id="ts-steps"></div>
+  <div class="step-add"><input type="text" id="ts-step-in" placeholder="Lägg till steg…"><button id="ts-step-add">+</button></div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn" id="ts-save">Spara</button>
+    <button class="btn danger" id="ts-delete">Ta bort</button>
+  </div>
+  <button class="sheet-close" id="ts-close">Stäng</button>
+</div>
+
+<div class="sheet" id="tplview-sheet">
+  <h3 id="tv-h"></h3>
+  <div class="soft" id="tv-desc" style="margin-bottom:6px"></div>
+  <div id="tv-tasks"></div>
+  <button class="sheet-close" id="tv-create">Skapa projekt från mall</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>✨ API-nyckel</h3>
+  <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">AI-prioriteringen görs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt i din webbläsare och följer inte med i säkerhetskopior. Varje förslag kostar några ören från ditt API-saldo. Utan nyckel kan du alltid använda lokal prioritering.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:6px">Bygget läser och sparar <b style="color:var(--ink)">bygget.json</b> i ett <b style="color:var(--ink)">privat</b> GitHub-repo, så att telefon och dator delar samma projekt. Token sparas bara lokalt på den här enheten — aldrig i koden.</p>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="mitt-användarnamn" autocomplete="off">
+  <label>Privat repo-namn</label>
+  <input type="text" id="gh-repo" placeholder="bygget-data" autocomplete="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="gh-hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div id="gh-status"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn" id="gh-save">Spara &amp; synka</button>
+    <button class="btn ghost" id="gh-disconnect">Koppla från</button>
+  </div>
+  <button class="sheet-close" id="gh-close">Stäng</button>
+</div>
+
+<script>
+// ── Data: faser och mallar ───────────────────────────
+var FASER=['Planering','Design','Innehåll','Bygg','Lansering','Efter lansering'];
+// uppgift = [titel, fas, prio(0/1/2), insats(1/2/3)]
+var BASE_PLAN=[
+  ['Definiera mål och målgrupp','Planering',1,1],
+  ['Välj och registrera domännamn','Planering',1,1],
+  ['Bestäm plattform och teknik','Planering',1,2],
+  ['Skissa sidstruktur (sitemap)','Planering',0,2],
+  ['Sätt upp webbhotell / hosting','Planering',0,2]
+];
+var BASE_DESIGN=[
+  ['Ta fram färgschema och typsnitt','Design',0,2],
+  ['Skapa logotyp / grafisk profil','Design',0,2],
+  ['Designa startsidan','Design',1,2],
+  ['Säkerställ mobilanpassning','Design',1,2]
+];
+var BASE_LANS=[
+  ['Testa alla länkar och formulär','Lansering',1,1],
+  ['Kontrollera responsivitet på mobil','Lansering',1,1],
+  ['SEO-grund: titlar och beskrivningar','Lansering',0,2],
+  ['Koppla domän och SSL-certifikat','Lansering',1,1],
+  ['Lägg in cookie- och integritetspolicy','Lansering',1,1],
+  ['Sätt upp webbanalys / statistik','Lansering',0,1]
+];
+var BASE_EFTER=[
+  ['Be om feedback från riktiga besökare','Efter lansering',0,1],
+  ['Planera löpande innehåll och uppdateringar','Efter lansering',0,1],
+  ['Säkerhetskopiering och underhåll','Efter lansering',0,1]
+];
+function tpl(arr){return BASE_PLAN.concat(BASE_DESIGN,arr,BASE_LANS,BASE_EFTER);}
+
+var TEMPLATES={
+  webbshop:{name:'Webbshop',ic:'🛒',desc:'E-handel med produkter, varukorg, betalning och frakt.',tasks:tpl([
+    ['Välj e-handelslösning / betalleverantör','Planering',2,2],
+    ['Kategorisera produktsortimentet','Planering',1,2],
+    ['Designa produktsida och varukorg','Design',1,2],
+    ['Fotografera och redigera produktbilder','Innehåll',1,3],
+    ['Skriv produktbeskrivningar','Innehåll',1,3],
+    ['Sätt priser, moms och fraktregler','Bygg',2,2],
+    ['Koppla betalning (Klarna/Swish/kort)','Bygg',2,2],
+    ['Sätt upp frakt- och leveransalternativ','Bygg',1,2],
+    ['Bygg kassaflöde (checkout)','Bygg',2,3],
+    ['Konfigurera orderbekräftelser via e-post','Bygg',1,1],
+    ['Lägg in köpvillkor och returpolicy','Lansering',1,1],
+    ['Testa ett skarpt köp från start till slut','Lansering',2,1]
+  ])},
+  marknadsforing:{name:'Marknadsföring',ic:'📣',desc:'Landnings- eller kampanjsida med tydlig konvertering.',tasks:tpl([
+    ['Definiera erbjudande och uppmaning (CTA)','Planering',2,1],
+    ['Bestäm en tydlig konverteringspunkt','Planering',1,1],
+    ['Designa hero-sektion med stark rubrik','Design',1,2],
+    ['Skriv övertygande säljtext','Innehåll',1,2],
+    ['Samla in kundcase och recensioner','Innehåll',0,2],
+    ['Bygg e-postinsamling / nyhetsbrev','Bygg',1,2],
+    ['Koppla formulär till utskickstjänst','Bygg',1,2],
+    ['Sätt upp spårning av konvertering','Bygg',1,2],
+    ['A/B-testa rubrik och knapp','Efter lansering',0,2]
+  ])},
+  logi:{name:'Logi & boende',ic:'🏡',desc:'Boendesida med bilder, bokningskalender och betalning.',tasks:tpl([
+    ['Kartlägg rum/stugor och kapacitet','Planering',1,2],
+    ['Välj boknings- och kalendersystem','Planering',2,2],
+    ['Bestäm prissättning och säsonger','Planering',1,2],
+    ['Designa galleri för boendebilder','Design',1,2],
+    ['Fotografera boende och omgivning','Innehåll',1,3],
+    ['Skriv beskrivningar av boende och faciliteter','Innehåll',1,2],
+    ['Lägg in vägbeskrivning och karta','Innehåll',0,1],
+    ['Bygg bokningskalender med tillgänglighet','Bygg',2,3],
+    ['Koppla betalning eller handpenning','Bygg',1,2],
+    ['Sätt upp automatisk bokningsbekräftelse','Bygg',1,2],
+    ['Lägg in bokningsvillkor och avbokningsregler','Lansering',1,1]
+  ])},
+  portfolio:{name:'Portfolio',ic:'🎨',desc:'Personlig portfölj som visar dina bästa arbeten.',tasks:tpl([
+    ['Välj ut dina bästa arbeten','Planering',1,2],
+    ['Designa rent och bildfokuserat galleri','Design',1,2],
+    ['Skriv en stark om-mig-text','Innehåll',1,1],
+    ['Förbered högupplösta projektbilder','Innehåll',1,2],
+    ['Skriv kort beskrivning per projekt','Innehåll',0,2],
+    ['Bygg kontakt- och förfrågningsformulär','Bygg',1,1],
+    ['Lägg in länkar till sociala medier och CV','Bygg',0,1]
+  ])},
+  foretag:{name:'Företag',ic:'🏢',desc:'Företagspresentation med tjänster, om oss och kontakt.',tasks:tpl([
+    ['Formulera tydligt värdeerbjudande','Planering',1,1],
+    ['Lista tjänster/produkter att presentera','Planering',1,1],
+    ['Designa förtroendeingivande startsida','Design',1,2],
+    ['Skriv om oss / vår historia','Innehåll',0,2],
+    ['Skriv tjänstebeskrivningar','Innehåll',1,2],
+    ['Samla teampresentation och bilder','Innehåll',0,2],
+    ['Bygg kontaktsida med karta och formulär','Bygg',1,2],
+    ['Lägg in kundreferenser och logotyper','Bygg',0,1]
+  ])},
+  blogg:{name:'Blogg',ic:'✍️',desc:'Innehållssajt med inlägg, kategorier och prenumeration.',tasks:tpl([
+    ['Bestäm nisch och innehållsteman','Planering',1,1],
+    ['Planera de första 5 inläggen','Planering',1,2],
+    ['Designa läsvänlig artikellayout','Design',1,2],
+    ['Sätt upp kategorier och taggar','Bygg',0,1],
+    ['Skriv och publicera första inlägget','Innehåll',1,2],
+    ['Bygg prenumeration på nyhetsbrev','Bygg',0,2],
+    ['Lägg in delningsknappar för sociala medier','Bygg',0,1],
+    ['Planera en publiceringskalender','Efter lansering',0,1]
+  ])},
+  eget:{name:'Tomt projekt',ic:'⬜',desc:'Börja från ett blankt blad och lägg till egna uppgifter.',tasks:[]}
+};
+var TPL_ORDER=['webbshop','marknadsforing','logi','portfolio','foretag','blogg','eget'];
+
+// ── State ─────────────────────────────────────────────
+var KEY='bygget_v1';
+var state={projects:[],active:null,theme:'auto',updated:null};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function nowISO(){return new Date().toISOString();}
+function writeLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function save(){state.updated=nowISO();writeLocal();schedulePush();}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function getProj(id){for(var i=0;i<state.projects.length;i++){if(state.projects[i].id===id)return state.projects[i];}return null;}
+function activeProj(){return state.active?getProj(state.active):null;}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Hjälp: prioritering ───────────────────────────────
+function fasIdx(f){var i=FASER.indexOf(f);return i<0?9:i;}
+function sortPlan(a,b){return (b.prio-a.prio)||(fasIdx(a.fas)-fasIdx(b.fas))||(a.effort-b.effort);}
+function undone(p){return p.tasks.filter(function(t){return !t.done;});}
+function nextTask(p){var u=undone(p);if(!u.length)return null;u.sort(sortPlan);return u[0];}
+function progress(p){var d=p.tasks.filter(function(t){return t.done;}).length;return {done:d,total:p.tasks.length};}
+var PRIO_LBL=['Normal','Hög','Kritisk'];
+var EFFORT_LBL={1:'Liten',2:'Mellan',3:'Stor'};
+function whyReason(t){
+  if(t.prio===2)return 'Kritisk — kan blockera lansering';
+  if(t.prio===1&&t.effort===1)return 'Hög prioritet och snabb';
+  if(t.prio===1)return 'Hög prioritet';
+  if(t.effort===1)return 'Snabb vinst';
+  if(fasIdx(t.fas)<=1)return 'Tidig fas — bra att göra först';
+  return 'Nästa steg i bygget';
+}
+
+// ── Render: Projekt ───────────────────────────────────
+function renderProjects(){
+  var el=document.getElementById('proj-list');
+  if(!state.projects.length){el.innerHTML='<div class="empty-msg">Inga projekt ännu.<br>Skapa ett nytt eller välj en mall under <b>Mallar</b>.</div>';return;}
+  var html='';
+  for(var i=0;i<state.projects.length;i++){
+    var p=state.projects[i];
+    var tp=TEMPLATES[p.type]||TEMPLATES.eget;
+    var pr=progress(p);
+    var pct=pr.total?Math.round(pr.done/pr.total*100):0;
+    var nt=nextTask(p);
+    var nextHtml=pr.total===0?'<div class="proj-next">Inga uppgifter ännu — öppna och lägg till.</div>':
+      (nt?'<div class="proj-next">Näst: <b>'+esc(nt.title)+'</b></div>':'<div class="proj-next">🎉 Allt klart!</div>');
+    html+='<div class="proj'+(p.id===state.active?' active':'')+'" data-id="'+p.id+'">'+
+      '<div class="proj-head"><div class="proj-ic">'+tp.ic+'</div>'+
+      '<div style="flex:1"><div class="proj-name">'+esc(p.name)+'</div><div class="proj-type">'+esc(tp.name)+'</div></div>'+
+      '<button class="proj-edit" data-edit="'+p.id+'">⋯</button></div>'+
+      '<div class="bar"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+
+      '<div class="proj-meta"><span>'+pr.done+' / '+pr.total+' klara</span><span>'+pct+'%</span></div>'+
+      nextHtml+'</div>';
+  }
+  el.innerHTML=html;
+  var cards=el.querySelectorAll('.proj');
+  for(var j=0;j<cards.length;j++){
+    cards[j].onclick=function(ev){
+      if(ev.target.dataset.edit){openProjectEdit(ev.target.dataset.edit);return;}
+      state.active=this.dataset.id;save();renderAll();go('tasks');
+    };
+  }
+}
+
+// ── Render: Uppgifter ─────────────────────────────────
+function renderTasks(){
+  var p=activeProj();
+  document.getElementById('tasks-empty').style.display=p?'none':'block';
+  document.getElementById('tasks-body').style.display=p?'block':'none';
+  if(!p)return;
+  document.getElementById('at-name').textContent=p.name;
+  var pr=progress(p);
+  var pct=pr.total?Math.round(pr.done/pr.total*100):0;
+  document.getElementById('at-bar').style.width=pct+'%';
+  document.getElementById('at-count').textContent=pr.done+' / '+pr.total+' klara';
+  document.getElementById('at-pct').textContent=pct+'%';
+  var nt=nextTask(p);
+  var nc=document.getElementById('at-next');
+  if(nt){nc.innerHTML='<div class="nextcard"><div class="lbl">Näst att göra</div><div class="t">'+esc(nt.title)+'</div><div class="why">'+whyReason(nt)+' · '+nt.fas+'</div></div>';}
+  else if(pr.total){nc.innerHTML='<div class="nextcard"><div class="lbl">Klart</div><div class="t">🎉 Alla uppgifter är avklarade!</div></div>';}
+  else{nc.innerHTML='';}
+  // grupperat per fas
+  var groups=document.getElementById('task-groups');
+  var html='';
+  for(var f=0;f<FASER.length;f++){
+    var fas=FASER[f];
+    var inFas=p.tasks.filter(function(t){return t.fas===fas;});
+    if(!inFas.length)continue;
+    html+='<div class="fas-title">'+fas+'</div>';
+    for(var i=0;i<inFas.length;i++){
+      var t=inFas[i];
+      var tags='';
+      tags+='<span class="tag">'+EFFORT_LBL[t.effort||2]+' insats</span>';
+      if(t.prio===1)tags+='<span class="tag p1">Hög</span>';
+      if(t.prio===2)tags+='<span class="tag p2">Kritisk</span>';
+      var sd=(t.steps||[]).filter(function(x){return x.done;}).length, st=(t.steps||[]).length;
+      if(st)tags+='<span class="tag steps">'+sd+'/'+st+' steg</span>';
+      html+='<div class="task"><div class="task-head">'+
+        '<button class="task-check'+(t.done?' done':'')+'" data-chk="'+t.id+'">'+(t.done?'✓':'')+'</button>'+
+        '<div class="task-body" data-open="'+t.id+'"><div class="task-title'+(t.done?' done':'')+'">'+esc(t.title)+'</div>'+
+        '<div class="task-tags">'+tags+'</div></div></div></div>';
+    }
+  }
+  groups.innerHTML=html||'<div class="empty-msg">Inga uppgifter ännu — lägg till nedan eller skapa projektet från en mall.</div>';
+  var chk=groups.querySelectorAll('[data-chk]');
+  for(var c=0;c<chk.length;c++){chk[c].onclick=function(){var t=findTask(this.dataset.chk);if(t){t.done=!t.done;save();renderAll();}};}
+  var op=groups.querySelectorAll('[data-open]');
+  for(var o=0;o<op.length;o++){op[o].onclick=function(){openTask(this.dataset.open);};}
+}
+function findTask(tid){var p=activeProj();if(!p)return null;for(var i=0;i<p.tasks.length;i++){if(p.tasks[i].id===tid)return p.tasks[i];}return null;}
+
+document.getElementById('task-add').onclick=function(){
+  var p=activeProj();if(!p){alert('Välj ett projekt först.');return;}
+  var inp=document.getElementById('task-in');var v=inp.value.trim();if(!v)return;
+  p.tasks.push({id:uid(),title:v,fas:'Bygg',prio:0,effort:2,done:false,note:'',steps:[]});
+  inp.value='';save();renderAll();
+};
+document.getElementById('task-in').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('task-add').click();});
+
+// ── Uppgift detalj-sheet ──────────────────────────────
+var editTaskId=null;
+function fillSeg(groupId,val){var bs=document.getElementById(groupId).querySelectorAll('button');for(var i=0;i<bs.length;i++)bs[i].classList.toggle('sel',+bs[i].dataset.v===val);}
+function segVal(groupId){var b=document.getElementById(groupId).querySelector('button.sel');return b?+b.dataset.v:0;}
+function bindSeg(groupId){var bs=document.getElementById(groupId).querySelectorAll('button');for(var i=0;i<bs.length;i++)bs[i].onclick=function(){var p=this.parentNode.querySelectorAll('button');for(var k=0;k<p.length;k++)p[k].classList.remove('sel');this.classList.add('sel');};}
+bindSeg('ts-prio');bindSeg('ts-effort');
+(function(){var sel=document.getElementById('ts-fas');var h='';for(var i=0;i<FASER.length;i++)h+='<option value="'+FASER[i]+'">'+FASER[i]+'</option>';sel.innerHTML=h;})();
+
+function openTask(tid){
+  editTaskId=tid;var t=findTask(tid);if(!t)return;
+  document.getElementById('ts-h').textContent='Uppgift';
+  document.getElementById('ts-title').value=t.title;
+  document.getElementById('ts-fas').value=t.fas;
+  fillSeg('ts-prio',t.prio||0);fillSeg('ts-effort',t.effort||2);
+  document.getElementById('ts-note').value=t.note||'';
+  renderSteps();
+  openSheet('task-sheet');
+}
+function renderSteps(){
+  var t=findTask(editTaskId);if(!t)return;t.steps=t.steps||[];
+  var el=document.getElementById('ts-steps');
+  if(!t.steps.length){el.innerHTML='<div class="soft" style="padding:4px 0">Inga deluppgifter ännu.</div>';return;}
+  var h='';for(var i=0;i<t.steps.length;i++){var st=t.steps[i];
+    h+='<div class="step'+(st.done?' done':'')+'"><input type="checkbox" data-si="'+i+'"'+(st.done?' checked':'')+'><span>'+esc(st.t)+'</span><button data-sd="'+i+'">×</button></div>';}
+  el.innerHTML=h;
+  var cb=el.querySelectorAll('input');for(var c=0;c<cb.length;c++)cb[c].onchange=function(){t.steps[+this.dataset.si].done=this.checked;save();renderSteps();};
+  var db=el.querySelectorAll('[data-sd]');for(var d=0;d<db.length;d++)db[d].onclick=function(){t.steps.splice(+this.dataset.sd,1);save();renderSteps();};
+}
+document.getElementById('ts-step-add').onclick=function(){var t=findTask(editTaskId);if(!t)return;var inp=document.getElementById('ts-step-in');var v=inp.value.trim();if(!v)return;t.steps=t.steps||[];t.steps.push({t:v,done:false});inp.value='';save();renderSteps();};
+document.getElementById('ts-step-in').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();document.getElementById('ts-step-add').click();}});
+document.getElementById('ts-save').onclick=function(){
+  var t=findTask(editTaskId);if(!t)return;
+  var v=document.getElementById('ts-title').value.trim();if(v)t.title=v;
+  t.fas=document.getElementById('ts-fas').value;
+  t.prio=segVal('ts-prio');t.effort=segVal('ts-effort')||2;
+  t.note=document.getElementById('ts-note').value;
+  save();closeSheets();renderAll();
+};
+document.getElementById('ts-delete').onclick=function(){
+  var p=activeProj();if(!p)return;
+  if(!confirm('Ta bort uppgiften?'))return;
+  p.tasks=p.tasks.filter(function(x){return x.id!==editTaskId;});
+  save();closeSheets();renderAll();
+};
+document.getElementById('ts-close').onclick=closeSheets;
+
+// ── Nytt projekt ──────────────────────────────────────
+var npType='eget';
+function renderNpTemplates(){
+  var el=document.getElementById('np-templates');var h='';
+  for(var i=0;i<TPL_ORDER.length;i++){var k=TPL_ORDER[i];var tp=TEMPLATES[k];
+    h+='<div class="tpl-pick'+(k===npType?' sel':'')+'" data-k="'+k+'"><span class="ic">'+tp.ic+'</span><span>'+esc(tp.name)+'</span></div>';}
+  el.innerHTML=h;
+  var ps=el.querySelectorAll('.tpl-pick');for(var j=0;j<ps.length;j++)ps[j].onclick=function(){npType=this.dataset.k;renderNpTemplates();};
+}
+document.getElementById('new-proj').onclick=function(){npType='eget';document.getElementById('np-name').value='';document.getElementById('np-url').value='';renderNpTemplates();openSheet('newproj-sheet');};
+document.getElementById('np-create').onclick=function(){
+  var name=document.getElementById('np-name').value.trim()||TEMPLATES[npType].name;
+  createProject(name,document.getElementById('np-url').value.trim(),npType);
+};
+function createProject(name,url,type){
+  var tp=TEMPLATES[type]||TEMPLATES.eget;
+  var tasks=tp.tasks.map(function(a){return {id:uid(),title:a[0],fas:a[1],prio:a[2],effort:a[3],done:false,note:'',steps:[]};});
+  var p={id:uid(),name:name,url:url||'',type:type,created:Date.now(),tasks:tasks,aiPlan:null};
+  state.projects.push(p);state.active=p.id;save();closeSheets();renderAll();go('tasks');
+}
+
+// ── Redigera projekt ──────────────────────────────────
+var editProjId=null;
+function openProjectEdit(id){editProjId=id;var p=getProj(id);if(!p)return;document.getElementById('pe-name').value=p.name;document.getElementById('pe-url').value=p.url||'';openSheet('projedit-sheet');}
+document.getElementById('pe-save').onclick=function(){var p=getProj(editProjId);if(!p)return;var v=document.getElementById('pe-name').value.trim();if(v)p.name=v;p.url=document.getElementById('pe-url').value.trim();save();closeSheets();renderAll();};
+document.getElementById('pe-delete').onclick=function(){if(!confirm('Ta bort hela projektet och alla uppgifter?'))return;state.projects=state.projects.filter(function(x){return x.id!==editProjId;});if(state.active===editProjId)state.active=state.projects.length?state.projects[0].id:null;save();closeSheets();renderAll();};
+document.getElementById('pe-close').onclick=closeSheets;
+
+// ── Mallar ────────────────────────────────────────────
+function renderTemplates(){
+  var el=document.getElementById('tpl-list');var h='';
+  for(var i=0;i<TPL_ORDER.length;i++){var k=TPL_ORDER[i];if(k==='eget')continue;var tp=TEMPLATES[k];
+    h+='<div class="tpl" data-k="'+k+'"><div class="tpl-head"><div class="tpl-ic">'+tp.ic+'</div>'+
+      '<div class="tpl-name">'+esc(tp.name)+'</div><div class="tpl-cnt">'+tp.tasks.length+' uppgifter</div></div>'+
+      '<div class="tpl-desc">'+esc(tp.desc)+'</div></div>';}
+  h+='<div class="tpl" data-k="eget"><div class="tpl-head"><div class="tpl-ic">⬜</div><div class="tpl-name">Tomt projekt</div></div><div class="tpl-desc">'+esc(TEMPLATES.eget.desc)+'</div></div>';
+  el.innerHTML=h;
+  var cs=el.querySelectorAll('.tpl');for(var j=0;j<cs.length;j++)cs[j].onclick=function(){openTplView(this.dataset.k);};
+}
+var tplViewKey=null;
+function openTplView(k){
+  tplViewKey=k;var tp=TEMPLATES[k];
+  document.getElementById('tv-h').textContent=tp.ic+' '+tp.name;
+  document.getElementById('tv-desc').textContent=tp.desc;
+  var h='';
+  if(!tp.tasks.length){h='<div class="soft" style="padding:6px 0">Inga förinlagda uppgifter — du börjar med ett blankt projekt.</div>';}
+  else{
+    for(var f=0;f<FASER.length;f++){var fas=FASER[f];var inFas=tp.tasks.filter(function(t){return t[1]===fas;});if(!inFas.length)continue;
+      h+='<div class="fas-title">'+fas+'</div>';
+      for(var i=0;i<inFas.length;i++){var t=inFas[i];var tags='<span class="tag">'+EFFORT_LBL[t[3]]+' insats</span>';if(t[2]===1)tags+='<span class="tag p1">Hög</span>';if(t[2]===2)tags+='<span class="tag p2">Kritisk</span>';
+        h+='<div class="task"><div class="task-body"><div class="task-title">'+esc(t[0])+'</div><div class="task-tags">'+tags+'</div></div></div>';}
+    }
+  }
+  document.getElementById('tv-tasks').innerHTML=h;
+  openSheet('tplview-sheet');
+}
+document.getElementById('tv-create').onclick=function(){var name=prompt('Namn på projektet:',TEMPLATES[tplViewKey].name);if(name===null)return;createProject(name.trim()||TEMPLATES[tplViewKey].name,'',tplViewKey);};
+
+// ── Prioritera (AI + lokalt) ──────────────────────────
+function renderAiView(){
+  var p=activeProj();
+  document.getElementById('ai-empty').style.display=p?'none':'block';
+  document.getElementById('ai-body').style.display=p?'block':'none';
+  if(!p)return;
+  document.getElementById('ai-proj-name').textContent=p.name;
+  document.getElementById('ai-status').textContent='';
+  var out=document.getElementById('ai-out');
+  if(p.aiPlan&&p.aiPlan.text){out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ AI-förslag</span>'+esc(p.aiPlan.text)+'</div>';}
+  else{out.innerHTML='';}
+}
+function renderLocalPlan(){
+  var p=activeProj();if(!p)return;
+  var u=undone(p);
+  var out=document.getElementById('ai-out');
+  if(!u.length){out.innerHTML='<div class="card-panel" style="margin-top:12px"><div class="empty-msg">🎉 Inga oavslutade uppgifter — allt är klart!</div></div>';return;}
+  u.sort(sortPlan);var top=u.slice(0,6);
+  var h='<div class="section-title">Lokal prioritering</div><div class="card-panel">';
+  for(var i=0;i<top.length;i++){var t=top[i];
+    h+='<div class="local-row"><div class="local-num">'+(i+1)+'</div><div><div class="t">'+esc(t.title)+'</div><div class="why">'+whyReason(t)+' · '+t.fas+'</div></div></div>';}
+  h+='</div>';
+  out.innerHTML=h;
+}
+document.getElementById('ai-local').onclick=renderLocalPlan;
+
+var AI_KEY='bygget_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function aiPrompt(p){
+  var u=undone(p);
+  var tp=TEMPLATES[p.type]||TEMPLATES.eget;
+  var lines=u.map(function(t){return '- '+t.title+' ('+t.fas+' | '+PRIO_LBL[t.prio||0]+' prioritet | '+EFFORT_LBL[t.effort||2]+' insats)';});
+  return 'Du är en erfaren och uppmuntrande webbutvecklingscoach. Nedan är ett hemsideprojekt och dess oavslutade uppgifter. Föreslå i vilken ordning de bör göras härnäst. Väg samman prioritet, fas (tidiga faser först) och insats (gärna någon snabb vinst tidigt). Svara på svenska som en numrerad lista med högst 6 punkter. Varje punkt: skriv uppgiften och därefter en kort motivering på max en mening. Avsluta med en kort uppmuntrande rad. Använd inga rubriker.\n\nProjekt: '+p.name+' (typ: '+tp.name+')\nOavslutade uppgifter:\n'+lines.join('\n');
+}
+document.getElementById('ai-run').onclick=async function(){
+  var p=activeProj();if(!p)return;
+  var u=undone(p);
+  if(!u.length){document.getElementById('ai-status').textContent='Inga oavslutade uppgifter att prioritera.';return;}
+  var st=document.getElementById('ai-status');var btn=this;
+  btn.disabled=true;st.textContent='✨ Tänker…';
+  try{
+    var text=await aiCall(aiPrompt(p));
+    p.aiPlan={text:text,ts:Date.now()};save();renderAiView();st.textContent='Uppdaterat just nu.';
+  }catch(err){
+    if(err.message!=='NOKEY')st.textContent='Kunde inte hämta förslag: '+err.message;
+    else st.textContent='Ange en API-nyckel för AI-förslag (eller använd lokal prioritering).';
+  }finally{btn.disabled=false;}
+};
+
+// ── API-nyckel sheet ──────────────────────────────────
+document.getElementById('ai-set-btn').onclick=function(){document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var data=JSON.stringify({projects:state.projects,active:state.active,theme:state.theme},null,2);
+  var blob=new Blob([data],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bygget-backup.json';a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.projects){state=Object.assign({projects:[],active:null,theme:'auto',updated:null},d);save();renderAll();go('projects');}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+  e.target.value='';
+};
+
+// ── Synk via GitHub (likt Appkollen) ──────────────────
+var SYNC_KEY='bygget_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/bygget.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sync-badge'+(st==='ok'?' ok':st==='err'?' err':st==='load'?' load':'');}
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.className=type||'info';el.textContent=msg;}
+function updateSyncUI(){if(syncOn())setBadge('ok','Synk på');else setBadge('','Lokal');document.getElementById('gh-disconnect').style.display=syncOn()?'':'none';}
+
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();
+  sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data&&data.projects){
+      var rt=data.updated||'', lt=state.updated||'';
+      if(!lt||rt>lt){
+        state.projects=data.projects;
+        if(data.active!==undefined)state.active=data.active;
+        state.updated=rt||nowISO();
+        if(state.active&&!getProj(state.active))state.active=state.projects.length?state.projects[0].id:null;
+        writeLocal();renderAll();
+      }
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({projects:state.projects,active:state.active,updated:state.updated||nowISO()}));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Bygget',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();
+  if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+var pushTimer=null;
+function schedulePush(){if(!syncOn())return;clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}
+
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('gh-disconnect').style.display=syncOn()?'':'none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-close').onclick=closeSheets;
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();updateSyncUI();
+  setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data&&data.projects){setGhStatus('✓ Ansluten! Slår ihop med molnet…','ok');await ghPull();}
+    else setGhStatus('✓ Ansluten! Repot är tomt — laddar upp dina projekt…','ok');
+    await ghPush();
+    setGhStatus('✓ Synkat. Telefon och dator delar nu samma projekt.','ok');
+    setTimeout(closeSheets,1100);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera användarnamn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-disconnect').onclick=function(){
+  sync={owner:'',repo:'',token:'',sha:null};
+  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  updateSyncUI();setGhStatus('Frånkopplad. Data finns kvar lokalt.','info');
+};
+document.getElementById('sync-btn').onclick=function(){if(syncOn())ghPull();else{document.getElementById('sync-settings').click();}};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1B1E26':'#ECEEF2';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Nav ───────────────────────────────────────────────
+function go(v){
+  var nb=document.querySelectorAll('.nav button');for(var i=0;i<nb.length;i++)nb[i].classList.toggle('active',nb[i].dataset.v===v);
+  var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='ai')renderAiView();
+  window.scrollTo(0,0);
+}
+(function(){var nb=document.querySelectorAll('.nav button');for(var i=0;i<nb.length;i++)nb[i].onclick=function(){go(this.dataset.v);};})();
+
+function renderAll(){renderProjects();renderTasks();renderTemplates();if(document.getElementById('view-ai').classList.contains('active'))renderAiView();}
+loadSync();
+renderAll();
+applyTheme();
+updateSyncUI();
+if(syncOn())ghPull();
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
