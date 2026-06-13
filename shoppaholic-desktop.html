@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F4EFE8">
+<title>Shoppaholic · Desktop</title>
+<style>
+:root{
+  --bg:#F1EBE2;--panel:#FFFFFF;--panel2:#F2EAE0;--line:#E1D7C9;
+  --ink:#3E382F;--muted:#8C8273;--clay:#B26B4E;--clay-dark:#9A5740;--clay-soft:#F0DACE;
+  --green:#7E9472;--green-soft:#DDE5D4;--yellow:#C7A85E;--red:#C0796A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);padding:16px;transition:background .4s,color .4s}
+.app{max-width:1240px;margin:0 auto}
+
+.top-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:11px 16px;background:var(--panel);border-radius:12px;border:1px solid var(--line)}
+.top-bar h1{font-family:Georgia,serif;font-weight:400;font-size:20px;letter-spacing:.03em}
+.spacer{flex:1}
+.top-stat{font-size:12px;color:var(--muted);padding-right:14px;border-right:1px solid var(--line);line-height:1.3}
+.top-stat b{display:block;font-family:Georgia,serif;font-size:16px;color:var(--ink)}
+.top-stat b.good{color:var(--green)}
+.tbtn{font-size:12px;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.tbtn:hover{background:var(--panel2)}
+.sync-badge{font-size:11px;padding:4px 11px;border-radius:11px;background:var(--panel2);color:var(--muted);border:1px solid var(--line);cursor:pointer}
+.sync-badge.ok{background:var(--green-soft);color:var(--green);border-color:var(--green-soft)}
+.sync-badge.load{background:var(--clay-soft);color:var(--clay);border-color:var(--clay-soft)}
+.sync-badge.err{background:#F4D9D2;color:var(--red);border-color:#F4D9D2}
+
+.dash{display:grid;grid-template-columns:1.45fr 1fr;gap:14px;align-items:start}
+@media(max-width:900px){.dash{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{font-family:Georgia,serif;font-weight:400;font-size:16px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.card .sub{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:13px;padding:8px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,select:focus{border-color:var(--clay)}
+.btn{border:1px solid var(--clay);background:var(--panel);color:var(--clay);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn:hover{background:var(--clay-soft)}
+.btn.fill{background:var(--clay);color:#fff}
+.btn.fill:hover{background:var(--clay-dark)}
+.btn.good{border-color:var(--green);color:var(--green)}
+.btn.good:hover{background:var(--green-soft)}
+.btn-row{display:flex;gap:8px}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+
+/* Add form */
+.add-grid{display:grid;grid-template-columns:1fr 110px;gap:8px}
+.add-grid .full{grid-column:1/3}
+.dotpick{display:flex;gap:7px;margin:2px 0}
+.dotpick button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;color:var(--muted)}
+.dotpick button.sel{background:var(--clay);border-color:var(--clay);color:#fff}
+
+/* Wish */
+.wish{padding:12px 0;border-top:1px solid var(--line)}
+.wish:first-child{border-top:none}
+.wish-top{display:flex;align-items:flex-start;gap:8px}
+.wish-name{flex:1;font-size:14px;font-weight:500}
+.wish-price{font-variant-numeric:tabular-nums;color:var(--clay);font-weight:600;font-size:14px}
+.wish-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.lust{letter-spacing:2px;color:var(--clay)}
+.link-a{color:var(--clay);text-decoration:none}
+.bar-track{height:7px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:9px 0 4px}
+.bar-fill{height:100%;background:var(--clay);border-radius:6px;transition:width .4s}
+.bar-fill.ready{background:var(--green)}
+.wish-status{font-size:11px;color:var(--muted)}
+.wish-status.ready{color:var(--green);font-weight:600}
+.wish-act{display:flex;gap:8px;margin-top:9px}
+.wish-act .btn{padding:7px 12px;font-size:12px}
+.x-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;flex-shrink:0;line-height:1}
+.x-btn:hover{color:var(--red)}
+
+/* Budget */
+.hero-num{font-family:Georgia,serif;font-size:30px;line-height:1}
+.budget-bar{height:13px;background:var(--panel2);border-radius:8px;overflow:hidden;margin:10px 0 6px}
+.budget-fill{height:100%;border-radius:8px;transition:width .5s,background .4s}
+.buy-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.buy-row:first-child{border-top:none}
+.buy-row .nm{flex:1}
+.buy-row .amt{font-variant-numeric:tabular-nums;font-weight:600}
+.tag{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--panel2);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tag.imp{background:var(--clay-soft);color:var(--clay)}
+.tag.plan{background:var(--green-soft);color:var(--green)}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row button{border:1px solid var(--clay);background:var(--clay);color:#fff;border-radius:9px;padding:0 14px;cursor:pointer;font-size:17px}
+.add-row button:hover{background:var(--clay-dark)}
+
+/* Pattern */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.stat-row:first-child{border-top:none}
+.stat-row b{font-variant-numeric:tabular-nums}
+.chart{display:flex;align-items:flex-end;gap:7px;height:120px;padding-top:8px}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.chart-bar{width:100%;background:var(--clay);border-radius:5px 5px 0 0;min-height:2px;transition:height .4s}
+.chart-bar:hover{background:var(--clay-dark)}
+.chart-lbl{font-size:10px;color:var(--muted)}
+.chart-val{font-size:9px;color:var(--muted);font-variant-numeric:tabular-nums}
+.care-banner{background:var(--green-soft);border:1px solid var(--green);border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.6;color:#3D4A35;margin-bottom:12px}
+
+/* Paus */
+.paus-q{font-family:Georgia,serif;font-size:16px;line-height:1.5;min-height:48px;display:flex;align-items:center}
+.paus-dots{display:flex;gap:6px;justify-content:center;margin-bottom:10px}
+.paus-dots i{width:7px;height:7px;border-radius:50%;background:var(--panel2);display:block}
+.paus-dots i.on{background:var(--clay)}
+.reframe{background:var(--clay-soft);border:1px solid var(--clay);border-radius:12px;padding:13px;font-family:Georgia,serif;font-size:14px;line-height:1.6;color:#5C3826;text-align:center;margin-bottom:8px}
+.breath-wrap{display:flex;align-items:center;gap:12px;margin-top:12px}
+.breath-circle{width:64px;height:64px;border-radius:50%;background:var(--clay-soft);border:2px solid var(--clay);transition:transform 4s ease-in-out;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--clay)}
+
+/* Edit list */
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+
+/* Overlay / modal */
+.overlay{position:fixed;inset:0;background:rgba(62,56,47,.4);display:none;align-items:center;justify-content:center;z-index:100}
+.overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 24px;width:460px;max-width:94vw;max-height:90vh;overflow:auto}
+.modal h3{font-family:Georgia,serif;font-weight:400;font-size:18px;margin-bottom:6px}
+.modal code{font-family:monospace;background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
+#sync-status{display:none;font-size:12px;padding:9px 12px;border-radius:10px;margin:10px 0;line-height:1.5}
+
+html[data-theme=dark]{
+  --bg:#211C18;--panel:#2D2823;--panel2:#352F28;--line:#433B31;
+  --ink:#EDE4D7;--muted:#A89C8A;--clay:#C8836A;--clay-dark:#A96A52;--clay-soft:#473228;
+  --green:#93A585;--green-soft:#36402F;--yellow:#C7A85E;--red:#C0796A;
+}
+html[data-theme=dark] .reframe{color:#F0DACE}
+html[data-theme=dark] .care-banner{color:#DCE3D3}
+html[data-theme=dark] .sync-badge.err{background:#4A2E28;border-color:#4A2E28}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="top-bar">
+  <h1>🛍 Shoppaholic</h1>
+  <div class="spacer"></div>
+  <div class="top-stat">Sparat<b class="good" id="saved-num">0 kr</b></div>
+  <div class="top-stat" id="left-stat">Kvar i budget<b id="left-num">0 kr</b></div>
+  <button class="tbtn" id="export-btn">💾 Säkerhetskopiera</button>
+  <button class="tbtn" id="import-btn">Importera</button>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+  <span class="sync-badge" id="sync-badge" title="Synk mellan enheter">Lokal</span>
+  <button class="tbtn" id="open-sync" title="Synkinställningar">⟳ Synk</button>
+  <button class="tbtn" id="theme-btn" title="Tema">◐</button>
+</div>
+
+<div class="dash">
+  <!-- VÄNSTER: Önskelista -->
+  <div class="col">
+    <div class="card">
+      <h2>Lägg till en lust</h2>
+      <div class="sub">Skriv ner det du vill ha här istället för i kundvagnen. Efter väntetiden bestämmer du i lugn och ro.</div>
+      <div class="add-grid">
+        <input type="text" id="a-name" class="full" placeholder="Vad är det? T.ex. nya hörlurar">
+        <select id="a-cat"></select>
+        <input type="number" id="a-price" placeholder="Pris (kr)" inputmode="numeric">
+        <input type="url" id="a-link" class="full" placeholder="Länk (frivilligt)">
+      </div>
+      <label>Hur mycket vill du ha det?</label>
+      <div class="dotpick" id="a-lust"></div>
+      <button class="btn fill" id="add-btn" style="width:100%;margin-top:10px">+ Spara i listan</button>
+    </div>
+
+    <div class="card">
+      <h2>Redo att bestämma</h2>
+      <div id="wish-ready"></div>
+    </div>
+
+    <div class="card">
+      <h2>Väntar ut</h2>
+      <div id="wish-waiting"></div>
+    </div>
+  </div>
+
+  <!-- HÖGER: Budget, Mönster, Paus -->
+  <div class="col">
+    <div class="card">
+      <h2>Budget <button class="tbtn" id="open-budget">Ändra</button></h2>
+      <div class="hero-num" id="left-num2">0 kr</div>
+      <div class="soft" id="left-sub"></div>
+      <div class="budget-bar"><div class="budget-fill" id="budget-fill"></div></div>
+      <div class="soft" id="budget-line"></div>
+      <div style="margin-top:12px">
+        <div class="soft" style="font-weight:600;color:var(--ink);margin-bottom:2px">Köp denna månad</div>
+        <div id="buy-list"></div>
+        <div class="add-row">
+          <input type="text" id="buy-in" placeholder="Snabbt köp…">
+          <input type="number" id="buy-amt" placeholder="kr" style="max-width:90px" inputmode="numeric">
+          <button id="buy-add">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Mönster <button class="tbtn" id="open-settings">Inställningar</button></h2>
+      <div class="care-banner" id="care" style="display:none"></div>
+      <div class="stat-row"><span>Sparat genom att släppa taget</span><b id="st-saved" style="color:var(--green)">0 kr</b></div>
+      <div class="stat-row"><span>Spenderat denna månad</span><b id="st-month">0 kr</b></div>
+      <div class="stat-row"><span>Saker du släppt taget om</span><b id="st-released">0</b></div>
+      <div class="stat-row"><span>Planerade köp / impulsköp</span><b id="st-ratio">0 / 0</b></div>
+      <div class="soft" style="font-weight:600;color:var(--ink);margin:14px 0 2px">Spenderat per månad</div>
+      <div class="chart" id="chart"></div>
+      <div class="soft" style="font-weight:600;color:var(--ink);margin:14px 0 2px">Vanligaste kategorierna</div>
+      <div id="cat-stats"></div>
+    </div>
+
+    <div class="card">
+      <h2>Paus</h2>
+      <div class="sub">Sug efter att handla? Känslan är en våg — den stiger och lägger sig. Stanna kvar en stund.</div>
+      <div class="paus-dots" id="paus-dots"></div>
+      <div class="paus-q" id="paus-q"></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn" id="paus-prev">Bakåt</button>
+        <button class="btn fill" id="paus-next" style="flex:1">Nästa</button>
+      </div>
+      <div class="reframe" id="reframe" style="margin-top:14px"></div>
+      <div class="btn-row">
+        <button class="btn" id="reframe-btn" style="flex:1">Ge mig en till</button>
+      </div>
+      <div class="breath-wrap">
+        <div class="breath-circle" id="breath"><span id="breath-lbl">·</span></div>
+        <button class="btn" id="breath-btn" style="flex:1">Sitt med känslan — 3 min</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODALER -->
+<div class="overlay" id="budget-overlay"><div class="modal">
+  <h3>Månadsbudget</h3>
+  <div class="soft">En budget är en plan du gör mot dig själv när du är lugn — så slipper du bestämma i stunden.</div>
+  <label>Budget för shopping per månad (kr)</label>
+  <input type="number" id="b-amt" placeholder="0" inputmode="numeric">
+  <div class="btn-row" style="margin-top:14px"><button class="btn fill" id="b-save" style="flex:1">Spara</button><button class="btn" id="b-close">Stäng</button></div>
+</div></div>
+
+<div class="overlay" id="settings-overlay"><div class="modal">
+  <h3>Inställningar</h3>
+  <label>Väntetid innan beslut: <span id="cd-val">7</span> dagar</label>
+  <input type="range" id="cd-range" min="1" max="30" step="1" value="7" style="accent-color:var(--clay);padding:0">
+  <div class="soft" id="cd-text" style="margin-top:4px"></div>
+  <label style="margin-top:14px">Kategorier</label>
+  <div id="cat-edit"></div>
+  <div class="add-row"><input type="text" id="cat-in" placeholder="Ny kategori…"><button id="cat-add">+</button></div>
+  <button class="btn fill" id="set-done" style="width:100%;margin-top:14px">Klar</button>
+</div></div>
+
+<div class="overlay" id="sync-overlay"><div class="modal">
+  <h3>⟳ Synk mellan enheter</h3>
+  <div class="soft">Appen sparar din data som <code>shoppaholic.json</code> i ett <strong>privat</strong> GitHub-repo, så att telefon och dator alltid visar samma listor. Token sparas bara här på enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="dittnamn">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="shoppaholic-data">
+  <label>Fine-grained token (Contents: Read and write)</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:6px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till enbart data-repot.</div>
+  <div id="sync-status"></div>
+  <div class="btn-row" style="margin-top:10px"><button class="btn" id="gh-pull">Hämta nu</button><button class="btn fill" id="gh-save" style="flex:1">Spara &amp; synka</button><button class="btn" id="sync-done">Stäng</button></div>
+</div></div>
+
+<div class="overlay" id="decide-overlay"><div class="modal">
+  <h3 id="dec-title"></h3>
+  <div class="soft" id="dec-sub"></div>
+  <div class="btn-row" style="margin-top:14px"><button class="btn good" id="dec-release" style="flex:1">Släpp taget</button><button class="btn fill" id="dec-buy" style="flex:1">Jag köper det</button></div>
+  <div class="soft" style="margin-top:10px;text-align:center">Inget av valen är fel. Du gör vad som känns rätt för dig idag.</div>
+  <button class="btn" id="dec-cancel" style="width:100%;margin-top:10px">Avbryt</button>
+</div></div>
+
+<script>
+// ── State (delas med mobilversionen via samma nyckel/fil) ──
+const KEY='shoppaholic_v1';
+let state={wish:[],purchases:[],budget:0,cooldownDays:7,cats:['Kläder','Skönhet','Hem','Elektronik','Böcker','Mat & dryck','Annat'],theme:'auto'};
+try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+let suppressPush=false,pushTimer=null;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}schedulePush();}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>toISO(new Date());
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const kr=n=>Math.round(n).toLocaleString('sv-SE')+' kr';
+function daysBetween(aISO,bISO){const a=new Date(aISO+'T00:00:00'),b=new Date(bISO+'T00:00:00');return Math.round((b-a)/86400000);}
+
+// ── Modaler ───────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'));}
+document.querySelectorAll('.overlay').forEach(o=>{o.onclick=e=>{if(e.target===o)closeModals();};});
+
+// ── Önskelista ────────────────────────────────────────
+let addLust=3;
+function renderLust(){
+  const lp=document.getElementById('a-lust');lp.innerHTML='';
+  for(let i=1;i<=5;i++){const b=document.createElement('button');b.textContent=i;if(i===addLust)b.className='sel';b.onclick=()=>{addLust=i;renderLust();};lp.appendChild(b);}
+}
+function renderCats(){document.getElementById('a-cat').innerHTML=state.cats.map(c=>'<option>'+esc(c)+'</option>').join('');}
+document.getElementById('add-btn').onclick=()=>{
+  const name=document.getElementById('a-name').value.trim();if(!name)return;
+  state.wish.push({id:uid(),name,price:Number(document.getElementById('a-price').value)||0,cat:document.getElementById('a-cat').value,link:document.getElementById('a-link').value.trim(),lust:addLust,added:todayKey(),decided:null,decidedDate:null});
+  document.getElementById('a-name').value='';document.getElementById('a-price').value='';document.getElementById('a-link').value='';addLust=3;renderLust();
+  save();renderWish();
+};
+function activeWish(){return state.wish.filter(w=>!w.decided);}
+function savedTotal(){return state.wish.filter(w=>w.decided==='released').reduce((a,w)=>a+(w.price||0),0);}
+function wishItemHTML(w){
+  const waited=daysBetween(w.added,todayKey()),cd=state.cooldownDays,ready=waited>=cd,pct=Math.min(100,Math.round(waited/cd*100));
+  let s='<div class="wish"><div class="wish-top"><div style="flex:1">';
+  s+='<div class="wish-name">'+esc(w.name)+'</div>';
+  s+='<div class="wish-meta">'+esc(w.cat)+' · <span class="lust">'+'♥'.repeat(w.lust)+'</span>'+(w.link?' · <a class="link-a" href="'+esc(w.link)+'" target="_blank" rel="noopener">länk</a>':'')+'</div>';
+  s+='</div><div class="wish-price">'+(w.price?kr(w.price):'—')+'</div>';
+  s+='<button class="x-btn" data-act="del" data-id="'+w.id+'">×</button></div>';
+  s+='<div class="bar-track"><div class="bar-fill'+(ready?' ready':'')+'" style="width:'+pct+'%"></div></div>';
+  if(ready){s+='<div class="wish-status ready">Väntetiden är slut — hur känns det nu?</div><div class="wish-act"><button class="btn good" data-act="release" data-id="'+w.id+'">Släpp taget</button><button class="btn fill" data-act="buy" data-id="'+w.id+'">Jag köper det</button></div>';}
+  else{s+='<div class="wish-status">'+(cd-waited)+' dagar kvar att vänta</div>';}
+  s+='</div>';return s;
+}
+function renderWish(){
+  document.getElementById('saved-num').textContent=kr(savedTotal());
+  const list=activeWish();
+  const ready=list.filter(w=>daysBetween(w.added,todayKey())>=state.cooldownDays);
+  const wait=list.filter(w=>daysBetween(w.added,todayKey())<state.cooldownDays).sort((a,b)=>b.lust-a.lust);
+  document.getElementById('wish-ready').innerHTML=ready.length?ready.map(wishItemHTML).join(''):'<div class="empty-msg">Inget redo att bestämma ännu</div>';
+  document.getElementById('wish-waiting').innerHTML=wait.length?wait.map(wishItemHTML).join(''):'<div class="empty-msg">Tomt här — lägg till nästa lust till vänster</div>';
+  document.querySelectorAll('#wish-ready [data-act], #wish-waiting [data-act]').forEach(b=>{
+    b.onclick=()=>{const id=b.dataset.id,act=b.dataset.act;
+      if(act==='del'){state.wish=state.wish.filter(w=>w.id!==id);save();renderWish();}
+      else openDecide(id);};
+  });
+}
+
+// ── Beslut ────────────────────────────────────────────
+let decideId=null;
+function openDecide(id){
+  decideId=id;const w=state.wish.find(x=>x.id===id);if(!w)return;
+  document.getElementById('dec-title').textContent=w.name+(w.price?' · '+kr(w.price):'');
+  document.getElementById('dec-sub').textContent='Du la till det här för '+daysBetween(w.added,todayKey())+' dagar sedan. Vill du fortfarande ha det lika mycket?';
+  openModal('decide-overlay');
+}
+function decide(action){
+  const w=state.wish.find(x=>x.id===decideId);if(!w)return;
+  if(action==='buy'){state.purchases.push({id:uid(),name:w.name,price:w.price||0,cat:w.cat,date:todayKey(),source:'planerat'});state.wish=state.wish.filter(x=>x.id!==w.id);}
+  else{w.decided='released';w.decidedDate=todayKey();}
+  save();closeModals();renderWish();renderBudget();renderPattern();
+}
+document.getElementById('dec-buy').onclick=()=>decide('buy');
+document.getElementById('dec-release').onclick=()=>decide('release');
+document.getElementById('dec-cancel').onclick=closeModals;
+
+// ── Budget ────────────────────────────────────────────
+function monthKey(){return todayKey().slice(0,7);}
+function monthSpent(mk){return state.purchases.filter(p=>p.date.slice(0,7)===mk).reduce((a,p)=>a+(p.price||0),0);}
+function renderBudget(){
+  const spent=monthSpent(monthKey()),b=state.budget||0,left=b-spent;
+  const setNum=(id,txt,col)=>{const e=document.getElementById(id);if(e){e.textContent=txt;if(col)e.style.color=col;}};
+  const col=!b?'var(--clay)':(left<0?'var(--red)':(left<b*0.2?'var(--yellow)':'var(--green)'));
+  setNum('left-num',b?kr(left):kr(spent),col);
+  setNum('left-num2',b?kr(left):kr(spent),col);
+  document.getElementById('left-stat').firstChild.textContent=b?(left<0?'Över budget':'Kvar i budget'):'Spenderat';
+  document.getElementById('left-sub').textContent=b?('av '+kr(b)+' · '+kr(spent)+' använt denna månad'):'Sätt en månadsbudget för att se hur mycket du har kvar.';
+  const fill=document.getElementById('budget-fill'),pct=b?Math.min(100,Math.round(spent/b*100)):0;
+  fill.style.width=pct+'%';fill.style.background=!b?'var(--panel2)':(spent>b?'var(--red)':(spent>b*0.8?'var(--yellow)':'var(--green)'));
+  document.getElementById('budget-line').textContent=b?(pct+'% av budgeten använd'):'';
+  const list=state.purchases.filter(p=>p.date.slice(0,7)===monthKey()).slice().reverse();
+  const el=document.getElementById('buy-list');
+  el.innerHTML=list.length?list.map(p=>'<div class="buy-row"><span class="nm">'+esc(p.name)+'</span><span class="tag '+(p.source==='impuls'?'imp':'plan')+'">'+(p.source==='impuls'?'impuls':'planerat')+'</span><span class="amt">'+kr(p.price)+'</span><button class="x-btn" data-id="'+p.id+'">×</button></div>').join(''):'<div class="empty-msg">Inga köp registrerade denna månad</div>';
+  el.querySelectorAll('.x-btn').forEach(b2=>{b2.onclick=()=>{state.purchases=state.purchases.filter(p=>p.id!==b2.dataset.id);save();renderBudget();renderPattern();};});
+}
+document.getElementById('buy-add').onclick=()=>{
+  const nm=document.getElementById('buy-in').value.trim(),amt=Number(document.getElementById('buy-amt').value)||0;if(!nm)return;
+  state.purchases.push({id:uid(),name:nm,price:amt,cat:'Annat',date:todayKey(),source:'impuls'});
+  document.getElementById('buy-in').value='';document.getElementById('buy-amt').value='';save();renderBudget();renderPattern();
+};
+document.getElementById('open-budget').onclick=()=>{document.getElementById('b-amt').value=state.budget||'';openModal('budget-overlay');};
+document.getElementById('b-save').onclick=()=>{state.budget=Number(document.getElementById('b-amt').value)||0;save();closeModals();renderBudget();renderPattern();};
+document.getElementById('b-close').onclick=closeModals;
+
+// ── Paus ──────────────────────────────────────────────
+const PAUS_Q=['Behöver jag det här, eller vill jag bara känna något annat just nu?','Har jag redan något som fyller samma behov?','Kommer jag vilja ha det lika mycket om en vecka?','Köper jag varan — eller känslan jag tror den ger?','Om jag la pengarna här istället, var skulle de göra mest nytta?'];
+let pausIdx=0;
+function renderPaus(){
+  document.getElementById('paus-q').textContent=PAUS_Q[pausIdx];
+  document.getElementById('paus-dots').innerHTML=PAUS_Q.map((q,i)=>'<i class="'+(i===pausIdx?'on':'')+'"></i>').join('');
+  document.getElementById('paus-next').textContent=pausIdx===PAUS_Q.length-1?'Börja om':'Nästa';
+}
+document.getElementById('paus-next').onclick=()=>{pausIdx=(pausIdx+1)%PAUS_Q.length;renderPaus();};
+document.getElementById('paus-prev').onclick=()=>{pausIdx=(pausIdx-1+PAUS_Q.length)%PAUS_Q.length;renderPaus();};
+const REFRAMES=['Känslan går över av sig själv. Kundvagnen finns kvar imorgon.','Att inte köpa är också ett val — och det räknas.','Du behöver inte förtjäna vila med en ny pryl. Du får bara vara.','En tom kundvagn är inte en förlust. Det är pengar du behöll.','Det fina med att vänta: ofta försvinner suget helt.','Du är inte dina köp. Du är hel precis som du är.','Rabatten sparar inget om du inte behövde varan.','Tänk på den du var igår som tackade nej. Var stolt över henne.'];
+function renderReframe(){document.getElementById('reframe').textContent=REFRAMES[Math.floor(Math.random()*REFRAMES.length)];}
+document.getElementById('reframe-btn').onclick=renderReframe;
+let breathOn=false,breathTimer=null;
+function stopBreath(){breathOn=false;if(breathTimer)clearTimeout(breathTimer);breathTimer=null;document.getElementById('breath').style.transform='scale(1)';document.getElementById('breath-lbl').textContent='·';document.getElementById('breath-btn').textContent='Sitt med känslan — 3 min';}
+function breathCycle(endAt){
+  if(!breathOn)return;
+  if(Date.now()>=endAt){document.getElementById('breath-lbl').textContent='🤍';document.getElementById('breath').style.transform='scale(1)';document.getElementById('breath-btn').textContent='Sitt med känslan — 3 min';breathOn=false;return;}
+  const c=document.getElementById('breath'),l=document.getElementById('breath-lbl');
+  c.style.transform='scale(1.4)';l.textContent='in';
+  breathTimer=setTimeout(()=>{if(!breathOn)return;c.style.transform='scale(1)';l.textContent='ut';breathTimer=setTimeout(()=>breathCycle(endAt),4000);},4000);
+}
+document.getElementById('breath-btn').onclick=()=>{if(breathOn){stopBreath();return;}breathOn=true;document.getElementById('breath-btn').textContent='Avbryt';breathCycle(Date.now()+180000);};
+
+// ── Mönster ───────────────────────────────────────────
+function renderPattern(){
+  document.getElementById('st-saved').textContent=kr(savedTotal());
+  document.getElementById('st-month').textContent=kr(monthSpent(monthKey()));
+  document.getElementById('st-released').textContent=state.wish.filter(w=>w.decided==='released').length;
+  const plan=state.purchases.filter(p=>p.source==='planerat').length,imp=state.purchases.filter(p=>p.source==='impuls').length;
+  document.getElementById('st-ratio').textContent=plan+' / '+imp;
+  const months=[];const now=new Date();
+  for(let i=5;i>=0;i--){months.push(toISO(new Date(now.getFullYear(),now.getMonth()-i,1)).slice(0,7));}
+  const vals=months.map(monthSpent),max=Math.max(1,...vals),names=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  document.getElementById('chart').innerHTML=months.map((mk,i)=>{
+    const h=Math.round(vals[i]/max*100),lbl=names[parseInt(mk.slice(5,7),10)-1];
+    return '<div class="chart-col"><div class="chart-val">'+(vals[i]?Math.round(vals[i]/1000*10)/10+'k':'')+'</div><div class="chart-bar" style="height:'+h+'%"></div><div class="chart-lbl">'+lbl+'</div></div>';
+  }).join('');
+  const byCat={};state.purchases.forEach(p=>{byCat[p.cat]=(byCat[p.cat]||0)+(p.price||0);});
+  const sorted=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
+  document.getElementById('cat-stats').innerHTML=sorted.length?sorted.slice(0,6).map(c=>'<div class="stat-row"><span>'+esc(c)+'</span><b>'+kr(byCat[c])+'</b></div>').join(''):'<div class="empty-msg">Inga köp att visa ännu</div>';
+  const saved=savedTotal(),care=document.getElementById('care');
+  if(saved>0){care.style.display='block';care.textContent='Du har sparat '+kr(saved)+' genom att vänta ut suget. Det är pengar — och lugn — du behållit. 🤍';}else care.style.display='none';
+}
+
+// ── Inställningar ─────────────────────────────────────
+function cdText(n){if(n<=2)return 'Kort paus — fångar de snabbaste impulserna.';if(n<=7)return 'En vecka räcker ofta för att suget ska lägga sig.';if(n<=14)return 'Två veckor — bra för lite större köp.';return 'Lång väntan — för det riktigt dyra du vill vara säker på.';}
+function renderSettings(){
+  document.getElementById('cd-range').value=state.cooldownDays;
+  document.getElementById('cd-val').textContent=state.cooldownDays;
+  document.getElementById('cd-text').textContent=cdText(state.cooldownDays);
+  const el=document.getElementById('cat-edit');
+  el.innerHTML=state.cats.map((c,i)=>'<div class="edit-item"><span>'+esc(c)+'</span><button data-i="'+i+'">×</button></div>').join('');
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{state.cats.splice(+b.dataset.i,1);save();renderSettings();renderCats();};});
+}
+document.getElementById('cd-range').oninput=e=>{state.cooldownDays=+e.target.value;document.getElementById('cd-val').textContent=state.cooldownDays;document.getElementById('cd-text').textContent=cdText(state.cooldownDays);save();renderWish();};
+document.getElementById('cat-add').onclick=()=>{const v=document.getElementById('cat-in').value.trim();if(v){state.cats.push(v);document.getElementById('cat-in').value='';save();renderSettings();renderCats();}};
+document.getElementById('open-settings').onclick=()=>{renderSettings();openModal('settings-overlay');};
+document.getElementById('set-done').onclick=closeModals;
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='shoppaholic-'+todayKey()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=Object.assign(state,JSON.parse(r.result));save();renderAll();renderCats();alert('Importerat ✓');}catch(err){alert('Kunde inte läsa filen.');}};r.readAsText(f);};
+
+// ── Synk via GitHub (likt Appkollen) ──────────────────
+const SYNC_KEY='shoppaholic_sync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/shoppaholic.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+function setBadge(stt,msg){const b=document.getElementById('sync-badge');b.textContent=msg;b.className='sync-badge'+(stt?' '+stt:'');}
+function syncFields(){return {wish:state.wish,purchases:state.purchases,budget:state.budget,cooldownDays:state.cooldownDays,cats:state.cats,updated:new Date().toISOString()};}
+function applyRemote(data){
+  if(Array.isArray(data.wish))state.wish=data.wish;
+  if(Array.isArray(data.purchases))state.purchases=data.purchases;
+  if(typeof data.budget==='number')state.budget=data.budget;
+  if(typeof data.cooldownDays==='number')state.cooldownDays=data.cooldownDays;
+  if(Array.isArray(data.cats))state.cats=data.cats;
+  suppressPush=true;save();suppressPush=false;renderAll();renderCats();
+}
+async function ghGet(){const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null;}if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));}
+async function ghPull(){if(!syncOn())return;try{setBadge('load','Synkar…');const data=await ghGet();if(data)applyRemote(data);setBadge('ok','Synkad');}catch(e){setBadge('err','Synkfel');}}
+async function ghPush(){
+  if(!syncOn())return;setBadge('load','Sparar…');
+  const content=b64enc(JSON.stringify(syncFields()));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content},sync.sha?{sha:sync.sha}:{}))});
+  let r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');return;}
+  const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');
+}
+function schedulePush(){if(!syncOn()||suppressPush)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(()=>ghPush().catch(()=>{}),900);}
+function setSyncStatus(msg,type){const el=document.getElementById('sync-status');el.style.display='block';el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'#F4D9D2':'var(--clay-soft)';el.style.color=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--clay)';el.textContent=msg;}
+document.getElementById('open-sync').onclick=()=>{document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;document.getElementById('sync-status').style.display='none';openModal('sync-overlay');};
+document.getElementById('sync-done').onclick=closeModals;
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();sync.repo=document.getElementById('gh-repo').value.trim();sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setSyncStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setSyncStatus('Testar anslutning…','info');
+  try{const data=await ghGet();if(data){setSyncStatus('✓ Ansluten! Hämtar din data…','ok');applyRemote(data);}else{setSyncStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPush();}setTimeout(closeModals,1100);}
+  catch(e){setSyncStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-pull').onclick=()=>ghPull();
+document.getElementById('sync-badge').onclick=()=>{if(syncOn())ghPull();else document.getElementById('open-sync').click();};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto',h=new Date().getHours(),dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Init ──────────────────────────────────────────────
+function renderAll(){renderWish();renderBudget();renderPattern();}
+loadSync();renderCats();renderLust();renderPaus();renderReframe();renderAll();applyTheme();
+if(syncOn())ghPull();else setBadge('','Lokal');
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
