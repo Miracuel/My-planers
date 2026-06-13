@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F4EFE6">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>🛒</text></svg>">
+<title>Handla — desktop</title>
+<style>
+:root{
+  --bg:#F4EFE6;--panel:#FBF8F2;--panel2:#ECE5D8;--line:#DDD3C2;
+  --ink:#3A352C;--muted:#857C6B;
+  --accent:#C2703D;--accent-soft:#F0DCCB;
+  --green:#6E9560;--green-soft:#DCE7D2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s}
+.app{max-width:1180px;margin:0 auto;padding:0 24px 48px}
+
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:30;background:var(--navbg,rgba(244,239,230,.96));backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px;padding:16px 0 14px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.topbar h1{font-family:Georgia,serif;font-weight:400;font-size:22px;letter-spacing:.04em}
+.topbar .spacer{flex:1}
+.tb-btn{font-size:12px;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit;transition:background .2s}
+.tb-btn:hover{background:var(--panel2)}
+.tb-btn.gear{color:var(--accent);border-color:var(--accent-soft)}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:400px 1fr;gap:22px;align-items:start}
+@media(max-width:880px){.layout{grid-template-columns:1fr}}
+.cart-col{position:sticky;top:86px}
+@media(max-width:880px){.cart-col{position:static}}
+
+/* Generella komponenter */
+h2.col-title{font-family:Georgia,serif;font-weight:400;font-size:17px;margin-bottom:10px;letter-spacing:.02em}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn:hover{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:8px 10px}
+.btn.ghost:hover{background:var(--panel2)}
+.btn-row{display:flex;gap:8px}.btn-row .btn{flex:1}
+.empty-msg{font-size:12px;color:var(--muted);padding:14px 6px;text-align:center;line-height:1.6}
+
+.add-row{display:flex;gap:8px}
+.add-row button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:0 16px;cursor:pointer;font-size:18px;flex-shrink:0}
+.add-row2{display:flex;gap:8px;margin-top:8px}
+.add-row2 select{max-width:150px;flex-shrink:0}
+
+.prog-row{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.prog-row b{font-family:Georgia,serif;font-weight:400}
+.prog{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-top:8px}
+.prog-fill{height:100%;background:var(--green);width:0;transition:width .4s ease}
+
+.grp{margin-top:14px}
+.grp-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 5px 2px}
+.item{display:flex;align-items:center;gap:11px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:6px}
+.cart-col .item{background:var(--bg)}
+.item-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--accent);background:transparent;flex-shrink:0;cursor:pointer;font-size:13px;color:#fff;line-height:1}
+.item-check.done{background:var(--green);border-color:var(--green)}
+.item-main{flex:1;cursor:pointer;min-width:0}
+.item-name{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-qty{font-size:11px;color:var(--muted);display:block;margin-top:1px}
+.item.bought .item-name{text-decoration:line-through;color:var(--muted)}
+.item-del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;flex-shrink:0}
+.item-del:hover{color:#A2685B}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit;transition:background .15s}
+.chip:hover{background:var(--accent-soft)}
+.chip.on{border-color:var(--green);background:var(--green-soft)}
+.chip.on::after{content:' ✓';color:var(--green)}
+.chip.del{border-color:#C08A7E;color:#A2685B}
+.chip.del::after{content:' ×';color:#A2685B}
+
+.recipe{display:flex;align-items:center;gap:10px;padding:13px;background:var(--panel);border:1px solid var(--line);border-radius:13px;margin-bottom:8px}
+.recipe-main{flex:1;min-width:0}
+.recipe-name{font-family:Georgia,serif;font-size:15px}
+.recipe-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.recipe-act{display:flex;gap:6px;flex-shrink:0}
+.icon-btn{background:none;border:1px solid var(--line);border-radius:10px;color:var(--accent);cursor:pointer;font-size:13px;padding:7px 10px;font-family:inherit;white-space:nowrap;transition:background .15s}
+.icon-btn:hover{background:var(--accent-soft)}
+.rs-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.rs-item:first-child{border-top:none}.rs-item span{flex:1}.rs-item small{color:var(--muted)}
+.rs-item button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+
+.hist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:560px){.hist-grid{grid-template-columns:1fr}}
+.hist-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:14px}
+.hist-row .n{flex:1}.hist-row small{color:var(--muted);font-size:11px}
+.hist-row button{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:10px;width:34px;height:34px;font-size:18px;cursor:pointer;flex-shrink:0}
+.hist-row button:hover{background:var(--accent-soft)}
+
+/* Flikar (återanvänder .nav-selektorn som JS:t letar efter) */
+.nav{display:inline-flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:4px;margin-bottom:14px}
+.nav button{background:none;border:none;color:var(--muted);font-size:13px;padding:8px 16px;cursor:pointer;font-family:inherit;border-radius:10px}
+.nav button span{margin-right:5px}
+.nav button.active{color:#fff;background:var(--accent);font-weight:600}
+.view{display:none}.view.active{display:block}
+
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--green-soft);color:var(--green);font-weight:600}
+.sp-badge.off{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#F4E0DB;color:#A2685B}
+
+/* Sheets som centrerade modaler på desktop */
+.sheet-bg{position:fixed;inset:0;background:rgba(58,53,44,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);opacity:0;pointer-events:none;width:460px;max-width:92vw;max-height:88vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;z-index:51;transition:transform .2s ease,opacity .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+.sheet h3{font-family:Georgia,serif;font-size:18px;margin-bottom:8px}
+.sheet code{font-family:monospace;background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+#gh-status{margin-top:10px;font-size:12px;padding:8px 12px;border-radius:8px;line-height:1.5;display:none}
+
+html{background:var(--bg)}
+html[data-theme=dark]{
+  --bg:#221F1A;--panel:#2B2823;--panel2:#34302A;--line:#433E36;
+  --ink:#E8E2D6;--muted:#A29888;
+  --accent:#D08A5A;--accent-soft:#3E342C;
+  --green:#85A578;--green-soft:#33402C;--navbg:rgba(34,31,26,.96);
+}
+html[data-theme=dark] .sp-badge.err{background:#3A2D29;color:#D49C8C}
+/* neutralisera mobilens fixerade temaknapp – på desktop ligger den i topbaren */
+.theme-btn{all:unset}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <h1>🛒 Handla</h1>
+  <div class="spacer"></div>
+  <span id="sync-badge" class="sp-badge off">Lokal</span>
+  <button class="tb-btn gear" id="sync-open">⚙ Synk</button>
+  <button class="tb-btn" id="export-btn">Exportera</button>
+  <button class="tb-btn" id="import-btn">Importera</button>
+  <button class="tb-btn" id="theme-btn" title="Tema">◐ Tema</button>
+  <input type="file" id="import-file" accept="application/json" style="display:none">
+</div>
+
+<div class="layout">
+
+  <!-- VÄNSTER: alltid synlig inköpslista -->
+  <div class="cart-col">
+    <h2 class="col-title">Inköpslista</h2>
+    <div class="card-panel">
+      <div class="add-row">
+        <input type="text" id="add-name" placeholder="Lägg till vara…" autocomplete="off">
+        <button id="add-btn" aria-label="Lägg till">+</button>
+      </div>
+      <div class="add-row2">
+        <input type="text" id="add-qty" placeholder="Mängd (frivilligt)">
+        <select id="add-cat"></select>
+      </div>
+      <div class="prog-row" style="margin-top:14px"><span id="prog-text">Listan är tom</span></div>
+      <div class="prog"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn ghost" id="clear-bought">Rensa ikryssade</button>
+        <button class="btn ghost" id="empty-list">Töm lista</button>
+      </div>
+    </div>
+    <div id="list-wrap" style="margin-top:8px"></div>
+  </div>
+
+  <!-- HÖGER: verktyg som matar listan -->
+  <div class="tools-col">
+    <div class="nav">
+      <button class="active" data-v="pantry"><span>🧺</span>Vanligt</button>
+      <button data-v="recipes"><span>📖</span>Recept</button>
+      <button data-v="history"><span>🕑</span>Historik</button>
+    </div>
+
+    <div class="view active" id="view-pantry">
+      <div class="prog-row">
+        <div class="section-title" style="margin:0">Vanliga varor</div>
+        <button class="icon-btn" id="pantry-edit">Redigera</button>
+      </div>
+      <div class="soft">Klicka för att lägga i listan. ✓ betyder att varan redan ligger där.</div>
+      <div id="pantry-wrap"></div>
+      <div class="card-panel" style="margin-top:16px">
+        <label>Lägg till egen vara i Vanligt</label>
+        <div class="add-row"><input type="text" id="pan-name" placeholder="Namn"><button id="pan-add" aria-label="Lägg till">+</button></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-recipes">
+      <div class="section-title">Recept</div>
+      <div class="soft">Lägg hela ingredienslistan i inköpslistan med ett klick.</div>
+      <div id="recipe-wrap" style="margin-top:8px"></div>
+      <button class="btn fill" id="new-recipe" style="margin-top:12px">+ Nytt recept</button>
+    </div>
+
+    <div class="view" id="view-history">
+      <div class="section-title">Köphistorik</div>
+      <div class="soft">Dina mest köpta varor. Klicka + för att lägga till igen.</div>
+      <div id="history-wrap" class="hist-grid" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Modaler -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="item-sheet">
+  <h3>Redigera vara</h3>
+  <label>Namn</label>
+  <input type="text" id="ed-name">
+  <label>Mängd / notis</label>
+  <input type="text" id="ed-qty" placeholder="T.ex. 2 liter, ekologisk">
+  <label>Avdelning</label>
+  <select id="ed-cat"></select>
+  <button class="sheet-close" id="ed-save">Spara</button>
+  <button class="btn ghost" id="ed-del" style="width:100%;margin-top:8px">Ta bort vara</button>
+</div>
+
+<div class="sheet" id="recipe-sheet">
+  <h3 id="rs-title">Recept</h3>
+  <label>Namn</label>
+  <input type="text" id="rs-name" placeholder="T.ex. Tacos">
+  <label>Ingredienser</label>
+  <div id="rs-items"></div>
+  <div class="add-row" style="margin-top:8px">
+    <input type="text" id="rs-iname" placeholder="Ingrediens">
+    <input type="text" id="rs-iqty" placeholder="Mängd" style="max-width:90px">
+    <button id="rs-iadd" aria-label="Lägg till">+</button>
+  </div>
+  <button class="sheet-close" id="rs-save">Spara recept</button>
+  <button class="btn ghost" id="rs-del" style="width:100%;margin-top:8px">Ta bort recept</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <code>handla.json</code> i ett <b>privat</b> GitHub-repo, så att telefon och dator delar samma lista. Din token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="mittnamn" autocomplete="off">
+  <label>Repo (privat)</label>
+  <input type="text" id="gh-repo" placeholder="handla-data" autocomplete="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="soft" style="margin-top:8px">Skapas på github.com → Settings → Developer settings → Fine-grained tokens. Ge åtkomst till <b>enbart</b> detta repo med <b>Contents: Read and write</b>.</div>
+  <div id="gh-status"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+  <button class="btn ghost" id="gh-clear" style="width:100%;margin-top:8px">Koppla från</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='handla_v1';
+function uid(){return 'i'+Math.random().toString(36).slice(2,9);}
+
+var CAT_ORDER=['frukt','mejeri','brod','kott','skafferi','fryst','dryck','godis','hushall','ovrigt'];
+var CAT_LABEL={
+  frukt:'🥬 Frukt & grönt',mejeri:'🧀 Mejeri',brod:'🍞 Bröd',kott:'🍗 Kött & fisk',
+  skafferi:'🥫 Skafferi',fryst:'🧊 Fryst',dryck:'🧃 Dryck',godis:'🍫 Snacks & godis',
+  hushall:'🧻 Hushåll',ovrigt:'🛒 Övrigt'
+};
+var CATWORDS={
+  frukt:['banan','äpple','apple','päron','citron','lime','tomat','gurka','sallad','paprika','vitlök','lök','potatis','morot','morötter','broccoli','avokado','apelsin','druvor','jordgubb','blåbär','hallon','spenat','champinjon','svamp','zucchini','kål','ingefära','persilja','basilika','majs','clementin','melon','vindruvor'],
+  mejeri:['mjölk','filmjölk','yoghurt','grädde','smör','ost','ägg','kvarg','keso','crème','creme','margarin','cottage'],
+  brod:['bröd','knäcke','bulle','kavring','tortilla','baguette','fralla','limpa','pitabröd','korvbröd','hamburgerbröd'],
+  kott:['kyckling','fläsk','nötfärs','köttfärs','färs','bacon','korv','skinka','lax','fisk','räkor','biff','kotlett','falukorv','kalkon','filé','revben','leverpastej'],
+  skafferi:['pasta','spagetti','spaghetti','ris','mjöl','socker','salt','peppar','olja','vinäger','ketchup','senap','krossade','buljong','linser','bönor','kikärt','müsli','flingor','havregryn','honung','sylt','nötter','tomatpuré','passerade','curry','kanel','jäst','bakpulver','tonfisk','kokosmjölk'],
+  fryst:['fryst','glass','pizza','pommes','fiskpinnar'],
+  dryck:['läsk','juice','vatten','öl','vin','saft','kombucha','energidryck','cola','must','cider','kaffe','te'],
+  godis:['choklad','godis','chips','kex','popcorn','snacks','lakrits','ostbågar','nötmix','dadlar'],
+  hushall:['toapapper','toalettpapper','hushållspapper','diskmedel','tvättmedel','tvål','schampo','tandkräm','blöj','soppås','folie','batteri','glödlampa','rengöring','servett','sopsäck','torkpapper','plastpåse']
+};
+function autoCat(name){
+  var n=(name||'').toLowerCase();
+  for(var ci=0;ci<CAT_ORDER.length;ci++){
+    var c=CAT_ORDER[ci],ws=CATWORDS[c];
+    if(!ws)continue;
+    for(var wi=0;wi<ws.length;wi++){if(n.indexOf(ws[wi])>=0)return c;}
+  }
+  return 'ovrigt';
+}
+
+var state={
+  items:[],
+  pantry:[
+    {name:'Mjölk',cat:'mejeri'},{name:'Ägg',cat:'mejeri'},{name:'Smör',cat:'mejeri'},{name:'Yoghurt',cat:'mejeri'},{name:'Ost',cat:'mejeri'},
+    {name:'Bröd',cat:'brod'},{name:'Knäckebröd',cat:'brod'},
+    {name:'Bananer',cat:'frukt'},{name:'Äpplen',cat:'frukt'},{name:'Tomater',cat:'frukt'},{name:'Gurka',cat:'frukt'},{name:'Gul lök',cat:'frukt'},{name:'Potatis',cat:'frukt'},{name:'Sallad',cat:'frukt'},{name:'Morötter',cat:'frukt'},{name:'Vitlök',cat:'frukt'},{name:'Avokado',cat:'frukt'},
+    {name:'Kycklingfilé',cat:'kott'},{name:'Köttfärs',cat:'kott'},{name:'Bacon',cat:'kott'},{name:'Lax',cat:'kott'},{name:'Korv',cat:'kott'},
+    {name:'Pasta',cat:'skafferi'},{name:'Ris',cat:'skafferi'},{name:'Krossade tomater',cat:'skafferi'},{name:'Kaffe',cat:'skafferi'},{name:'Havregryn',cat:'skafferi'},{name:'Olivolja',cat:'skafferi'},{name:'Mjöl',cat:'skafferi'},
+    {name:'Toapapper',cat:'hushall'},{name:'Hushållspapper',cat:'hushall'},{name:'Diskmedel',cat:'hushall'},{name:'Tvättmedel',cat:'hushall'},
+    {name:'Vatten',cat:'dryck'},{name:'Juice',cat:'dryck'},
+    {name:'Choklad',cat:'godis'},{name:'Chips',cat:'godis'}
+  ],
+  recipes:[
+    {id:'seed_kfs',name:'Köttfärssås',items:[
+      {name:'Köttfärs',qty:'500 g'},{name:'Krossade tomater',qty:'2 burkar'},{name:'Gul lök',qty:'1'},
+      {name:'Vitlök',qty:''},{name:'Tomatpuré',qty:''},{name:'Spagetti',qty:'1 pkt'}
+    ]}
+  ],
+  history:{},
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+state.items=state.items||[];state.pantry=state.pantry||[];state.recipes=state.recipes||[];state.history=state.history||{};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}if(syncOn()&&!applyingRemote)pushSoon();}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ss=document.querySelectorAll('.sheet');for(var i=0;i<ss.length;i++)ss[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Kategori-väljare ──────────────────────────────────
+function fillCatSelect(el,withAuto){
+  var html=withAuto?'<option value="auto">Auto</option>':'';
+  for(var i=0;i<CAT_ORDER.length;i++){var c=CAT_ORDER[i];html+='<option value="'+c+'">'+CAT_LABEL[c]+'</option>';}
+  el.innerHTML=html;
+}
+fillCatSelect(document.getElementById('add-cat'),true);
+fillCatSelect(document.getElementById('ed-cat'),false);
+
+// ── Lägg till / listlogik ─────────────────────────────
+function onList(name){
+  var n=name.toLowerCase();
+  return state.items.some(function(i){return i.name.toLowerCase()===n&&!i.bought;});
+}
+function addItem(name,qty,cat){
+  name=(name||'').trim();if(!name)return;
+  if(!cat||cat==='auto')cat=autoCat(name);
+  var ex=state.items.find(function(i){return i.name.toLowerCase()===name.toLowerCase()&&!i.bought;});
+  if(ex){if(qty)ex.qty=qty;}
+  else state.items.push({id:uid(),name:name,qty:qty||'',cat:cat,bought:false});
+  save();
+}
+
+function renderList(){
+  var total=state.items.length;
+  var bought=state.items.filter(function(i){return i.bought;}).length;
+  var ptxt=document.getElementById('prog-text'),pfill=document.getElementById('prog-fill');
+  if(!total){ptxt.textContent='Listan är tom';pfill.style.width='0';}
+  else{ptxt.innerHTML='<b>'+bought+'</b> av <b>'+total+'</b> i kundvagnen';pfill.style.width=Math.round(bought/total*100)+'%';}
+
+  var wrap=document.getElementById('list-wrap');
+  if(!total){wrap.innerHTML='<div class="empty-msg">Inga varor än.<br>Skriv ovan, eller hämta från Vanligt och Recept.</div>';return;}
+
+  var html='';
+  for(var ci=0;ci<CAT_ORDER.length;ci++){
+    var c=CAT_ORDER[ci];
+    var inCat=state.items.filter(function(i){return i.cat===c;});
+    if(!inCat.length)continue;
+    inCat.sort(function(a,b){return (a.bought?1:0)-(b.bought?1:0);});
+    html+='<div class="grp"><div class="grp-title">'+CAT_LABEL[c]+'</div>';
+    for(var k=0;k<inCat.length;k++){
+      var it=inCat[k];
+      html+='<div class="item'+(it.bought?' bought':'')+'">'
+        +'<button class="item-check'+(it.bought?' done':'')+'" data-a="t" data-id="'+it.id+'">'+(it.bought?'✓':'')+'</button>'
+        +'<div class="item-main" data-a="edit" data-id="'+it.id+'"><span class="item-name">'+esc(it.name)+'</span>'+(it.qty?'<span class="item-qty">'+esc(it.qty)+'</span>':'')+'</div>'
+        +'<button class="item-del" data-a="del" data-id="'+it.id+'">×</button>'
+      +'</div>';
+    }
+    html+='</div>';
+  }
+  wrap.innerHTML=html;
+  var btns=wrap.querySelectorAll('[data-a]');
+  for(var b=0;b<btns.length;b++){
+    btns[b].onclick=function(){
+      var id=this.dataset.id,a=this.dataset.a;
+      var item=state.items.find(function(i){return i.id===id;});
+      if(!item)return;
+      if(a==='t'){item.bought=!item.bought;save();renderList();renderPantry();}
+      else if(a==='del'){state.items=state.items.filter(function(i){return i.id!==id;});save();renderList();renderPantry();}
+      else if(a==='edit'){openItemSheet(id);}
+    };
+  }
+}
+
+document.getElementById('add-btn').onclick=function(){
+  var nameEl=document.getElementById('add-name'),qtyEl=document.getElementById('add-qty'),catEl=document.getElementById('add-cat');
+  addItem(nameEl.value,qtyEl.value,catEl.value);
+  nameEl.value='';qtyEl.value='';catEl.value='auto';nameEl.focus();
+  renderList();renderPantry();
+};
+document.getElementById('add-name').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('add-btn').click();});
+document.getElementById('add-qty').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('add-btn').click();});
+
+document.getElementById('clear-bought').onclick=function(){
+  state.items.filter(function(i){return i.bought;}).forEach(function(i){state.history[i.name]=(state.history[i.name]||0)+1;});
+  state.items=state.items.filter(function(i){return !i.bought;});
+  save();renderList();renderHistory();renderPantry();
+};
+document.getElementById('empty-list').onclick=function(){
+  if(!state.items.length)return;
+  if(confirm('Töm hela listan? Detta sparas inte i historiken.')){state.items=[];save();renderList();renderPantry();}
+};
+
+// ── Redigera vara ─────────────────────────────────────
+var editId=null;
+function openItemSheet(id){
+  editId=id;
+  var it=state.items.find(function(i){return i.id===id;});
+  if(!it)return;
+  document.getElementById('ed-name').value=it.name;
+  document.getElementById('ed-qty').value=it.qty||'';
+  document.getElementById('ed-cat').value=it.cat;
+  openSheet('item-sheet');
+}
+document.getElementById('ed-save').onclick=function(){
+  var it=state.items.find(function(i){return i.id===editId;});
+  if(it){it.name=document.getElementById('ed-name').value.trim()||it.name;it.qty=document.getElementById('ed-qty').value.trim();it.cat=document.getElementById('ed-cat').value;save();}
+  closeSheets();renderList();renderPantry();
+};
+document.getElementById('ed-del').onclick=function(){
+  state.items=state.items.filter(function(i){return i.id!==editId;});save();closeSheets();renderList();renderPantry();
+};
+
+// ── Vanligt ───────────────────────────────────────────
+var pantryEdit=false;
+function renderPantry(){
+  var wrap=document.getElementById('pantry-wrap');
+  var html='';
+  for(var ci=0;ci<CAT_ORDER.length;ci++){
+    var c=CAT_ORDER[ci];
+    var inCat=state.pantry.filter(function(p){return p.cat===c;});
+    if(!inCat.length)continue;
+    html+='<div class="grp"><div class="grp-title">'+CAT_LABEL[c]+'</div><div class="chips">';
+    for(var k=0;k<inCat.length;k++){
+      var p=inCat[k];
+      var cls='chip'+(pantryEdit?' del':(onList(p.name)?' on':''));
+      html+='<button class="'+cls+'" data-name="'+esc(p.name)+'">'+esc(p.name)+'</button>';
+    }
+    html+='</div></div>';
+  }
+  wrap.innerHTML=html||'<div class="empty-msg">Inga vanliga varor än.</div>';
+  var chips=wrap.querySelectorAll('.chip');
+  for(var i=0;i<chips.length;i++){
+    chips[i].onclick=function(){
+      var name=this.dataset.name;
+      if(pantryEdit){state.pantry=state.pantry.filter(function(p){return p.name!==name;});save();renderPantry();}
+      else{var p=state.pantry.find(function(x){return x.name===name;});addItem(name,'',p?p.cat:'auto');renderPantry();renderList();}
+    };
+  }
+}
+document.getElementById('pantry-edit').onclick=function(){pantryEdit=!pantryEdit;this.textContent=pantryEdit?'Klar':'Redigera';renderPantry();};
+document.getElementById('pan-add').onclick=function(){
+  var el=document.getElementById('pan-name'),name=el.value.trim();
+  if(!name)return;
+  if(!state.pantry.some(function(p){return p.name.toLowerCase()===name.toLowerCase();}))state.pantry.push({name:name,cat:autoCat(name)});
+  save();el.value='';renderPantry();
+};
+document.getElementById('pan-name').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('pan-add').click();});
+
+// ── Recept ────────────────────────────────────────────
+var editRecipe=null;
+function renderRecipes(){
+  var wrap=document.getElementById('recipe-wrap');
+  if(!state.recipes.length){wrap.innerHTML='<div class="empty-msg">Inga recept än.</div>';return;}
+  var html='';
+  for(var i=0;i<state.recipes.length;i++){
+    var r=state.recipes[i];
+    html+='<div class="recipe">'
+      +'<div class="recipe-main"><div class="recipe-name">'+esc(r.name)+'</div><div class="recipe-sub">'+r.items.length+' ingredienser</div></div>'
+      +'<div class="recipe-act"><button class="icon-btn" data-a="add" data-id="'+r.id+'">+ Lista</button><button class="icon-btn" data-a="edit" data-id="'+r.id+'">✎</button></div>'
+    +'</div>';
+  }
+  wrap.innerHTML=html;
+  var btns=wrap.querySelectorAll('[data-a]');
+  for(var b=0;b<btns.length;b++){
+    btns[b].onclick=function(){
+      var id=this.dataset.id,a=this.dataset.a;
+      var r=state.recipes.find(function(x){return x.id===id;});
+      if(!r)return;
+      if(a==='add'){r.items.forEach(function(it){addItem(it.name,it.qty,autoCat(it.name));});renderList();renderPantry();flash(this,'✓ Tillagt');}
+      else if(a==='edit'){openRecipeSheet(id);}
+    };
+  }
+}
+function flash(btn,txt){var o=btn.textContent;btn.textContent=txt;setTimeout(function(){btn.textContent=o;},1100);}
+
+function openRecipeSheet(id){
+  if(id){var r=state.recipes.find(function(x){return x.id===id;});editRecipe={id:r.id,name:r.name,items:r.items.map(function(it){return {name:it.name,qty:it.qty||''};})};document.getElementById('rs-title').textContent='Redigera recept';document.getElementById('rs-del').style.display='block';}
+  else{editRecipe={id:uid(),name:'',items:[]};document.getElementById('rs-title').textContent='Nytt recept';document.getElementById('rs-del').style.display='none';}
+  document.getElementById('rs-name').value=editRecipe.name;
+  document.getElementById('rs-iname').value='';document.getElementById('rs-iqty').value='';
+  renderRecipeItems();
+  openSheet('recipe-sheet');
+}
+function renderRecipeItems(){
+  var el=document.getElementById('rs-items');
+  if(!editRecipe.items.length){el.innerHTML='<div class="soft" style="padding:6px 0">Inga ingredienser än.</div>';return;}
+  var html='';
+  for(var i=0;i<editRecipe.items.length;i++){
+    var it=editRecipe.items[i];
+    html+='<div class="rs-item"><span>'+esc(it.name)+(it.qty?' <small>'+esc(it.qty)+'</small>':'')+'</span><button data-i="'+i+'">×</button></div>';
+  }
+  el.innerHTML=html;
+  var btns=el.querySelectorAll('button');
+  for(var b=0;b<btns.length;b++){btns[b].onclick=function(){editRecipe.items.splice(+this.dataset.i,1);renderRecipeItems();};}
+}
+document.getElementById('rs-iadd').onclick=function(){
+  var nEl=document.getElementById('rs-iname'),qEl=document.getElementById('rs-iqty');
+  var n=nEl.value.trim();if(!n)return;
+  editRecipe.items.push({name:n,qty:qEl.value.trim()});
+  nEl.value='';qEl.value='';nEl.focus();renderRecipeItems();
+};
+document.getElementById('rs-iname').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('rs-iadd').click();});
+document.getElementById('rs-iqty').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('rs-iadd').click();});
+document.getElementById('rs-save').onclick=function(){
+  editRecipe.name=document.getElementById('rs-name').value.trim()||'Namnlöst recept';
+  var ex=state.recipes.find(function(x){return x.id===editRecipe.id;});
+  if(ex){ex.name=editRecipe.name;ex.items=editRecipe.items;}
+  else state.recipes.push(editRecipe);
+  save();closeSheets();renderRecipes();
+};
+document.getElementById('rs-del').onclick=function(){
+  state.recipes=state.recipes.filter(function(x){return x.id!==editRecipe.id;});save();closeSheets();renderRecipes();
+};
+document.getElementById('new-recipe').onclick=function(){openRecipeSheet(null);};
+
+// ── Historik ──────────────────────────────────────────
+function renderHistory(){
+  var wrap=document.getElementById('history-wrap');
+  var entries=Object.keys(state.history).map(function(k){return [k,state.history[k]];}).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+  if(!entries.length){wrap.innerHTML='<div class="empty-msg">Inget köpt än. När du rensar ikryssade varor hamnar de här.</div>';return;}
+  var html='';
+  for(var i=0;i<entries.length;i++){
+    html+='<div class="hist-row"><span class="n">'+esc(entries[i][0])+'</span><small>köpt '+entries[i][1]+' ggr</small><button data-name="'+esc(entries[i][0])+'">+</button></div>';
+  }
+  wrap.innerHTML=html;
+  var btns=wrap.querySelectorAll('button');
+  for(var b=0;b<btns.length;b++){btns[b].onclick=function(){addItem(this.dataset.name,'','auto');renderList();renderPantry();flash(this,'✓');};}
+}
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='handla-backup.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);state=Object.assign(state,d);state.items=state.items||[];state.pantry=state.pantry||[];state.recipes=state.recipes||[];state.history=state.history||{};save();renderAll();}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);e.target.value='';
+};
+
+// ── Synk via GitHub ───────────────────────────────────
+var SYNC_KEY='handlasync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+var applyingRemote=false,pushTimer=null;
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/handla.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' off');}
+function syncPayload(){return {items:state.items,pantry:state.pantry,recipes:state.recipes,history:state.history,updated:new Date().toISOString()};}
+function applyRemote(d){if(Array.isArray(d.items))state.items=d.items;if(Array.isArray(d.pantry))state.pantry=d.pantry;if(Array.isArray(d.recipes))state.recipes=d.recipes;if(d.history&&typeof d.history==='object')state.history=d.history;}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');var d=await ghGet();if(d){applyingRemote=true;applyRemote(d);save();applyingRemote=false;renderAll();}setBadge('ok','Synkad');}
+  catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(syncPayload()));
+  function doPut(){var body={message:'Uppdatering via Handla',content:content};if(sync.sha)body.sha=sync.sha;return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});}
+  try{
+    var r=await doPut();
+    if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var j=await r.json();if(j&&j.content&&j.content.sha)sync.sha=j.content.sha;
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+function pushSoon(){clearTimeout(pushTimer);pushTimer=setTimeout(ghPush,1200);}
+
+function ghStatus(msg,type){var st=document.getElementById('gh-status');st.style.display='block';st.style.background=type==='ok'?'#E3EFD7':type==='err'?'#F4E0DB':'#E6EEF5';st.style.color=type==='ok'?'#3B6D11':type==='err'?'#A2685B':'#3A352C';st.textContent=msg;}
+document.getElementById('sync-open').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){ghStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();ghStatus('Testar anslutning…','info');
+  try{
+    var d=await ghGet();
+    if(d){ghStatus('✓ Ansluten! Hämtar din data…','ok');applyingRemote=true;applyRemote(d);save();applyingRemote=false;renderAll();}
+    else{ghStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPush();}
+    setBadge('ok','Synkad');
+    setTimeout(closeSheets,1100);
+  }catch(e){ghStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-clear').onclick=function(){
+  sync.owner='';sync.repo='';sync.token='';sync.sha=null;saveSync();setBadge('off','Lokal');closeSheets();
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#221F1A':'#F4EFE6';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var ni=0;ni<navBtns.length;ni++){
+  navBtns[ni].onclick=function(){
+    for(var x=0;x<navBtns.length;x++)navBtns[x].classList.remove('active');
+    this.classList.add('active');
+    var views=document.querySelectorAll('.view');
+    for(var v=0;v<views.length;v++)views[v].classList.remove('active');
+    document.getElementById('view-'+this.dataset.v).classList.add('active');
+    if(this.dataset.v==='pantry')renderPantry();
+    if(this.dataset.v==='recipes')renderRecipes();
+    if(this.dataset.v==='history')renderHistory();
+  };
+}
+
+// ── Init ──────────────────────────────────────────────
+function renderAll(){renderList();renderPantry();renderRecipes();renderHistory();}
+renderAll();
+applyTheme();
+setInterval(applyTheme,60000);
+loadSync();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}else{setBadge('off','Lokal');}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>
