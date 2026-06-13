@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Samlingen">
+<meta name="theme-color" content="#F3EFE7">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Samlingen","short_name":"Samlingen","display":"standalone","background_color":"%23F3EFE7","theme_color":"%23F3EFE7","start_url":"."}'>
+<title>Samlingen — Desktop</title>
+<style>
+:root{
+  --bg:#F3EFE7;--panel:#FBF8F2;--panel2:#ECE6DA;--line:#DDD5C6;
+  --ink:#3E382E;--muted:#857C6C;--amber:#A8794E;--amber-soft:#EADFCB;
+  --have:#7A8B6F;--wish:#C09A3E;--lent:#6E89A8;--used:#B58A82;
+  --navbg:rgba(243,239,231,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--amber);background:var(--panel);color:var(--amber);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--amber-soft)}
+.btn.fill{background:var(--amber);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.full{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:14px 0;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.view{display:none}
+.view.active{display:block}
+
+/* Översiktsruta */
+.overview{display:flex;gap:8px}
+.ov-cell{flex:1;text-align:center;background:var(--panel2);border-radius:14px;padding:12px 6px}
+.ov-num{font-family:Georgia,serif;font-size:24px;color:var(--amber)}
+.ov-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+/* Samlingskort */
+.coll-grid{display:flex;flex-direction:column;gap:8px}
+.coll-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;cursor:pointer;border-left:5px solid var(--amber);transition:background .2s}
+.coll-card:active{background:var(--panel2)}
+.coll-ic{font-size:24px;width:30px;text-align:center;flex-shrink:0}
+.coll-meta{flex:1;min-width:0}
+.coll-name{font-size:15px;font-weight:500}
+.coll-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.coll-arrow{color:var(--muted);font-size:18px}
+
+/* Detaljvy header */
+.detail-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.back-btn{background:none;border:none;color:var(--amber);font-size:15px;cursor:pointer;font-family:inherit;padding:4px 2px}
+.detail-title{font-family:Georgia,serif;font-size:19px;flex:1}
+.toolbar{display:flex;gap:8px;margin:10px 0}
+.toolbar input{flex:1}
+.toolbar select{max-width:128px}
+.filter-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.fchip{border:1.5px solid var(--line);background:var(--panel);border-radius:11px;padding:6px 11px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.fchip.sel{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
+
+/* Artikelrad */
+.item{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.item:first-child{border-top:none}
+.item-body{flex:1;min-width:0}
+.item-name{font-size:14px;font-weight:500}
+.item-name.used{color:var(--muted);text-decoration:line-through}
+.item-sub{font-size:11px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{background:var(--panel2);border-radius:8px;padding:2px 7px;font-size:10px;color:var(--muted)}
+.stars{color:var(--wish);font-size:11px;letter-spacing:1px}
+.qty{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.badge{font-size:10px;padding:3px 8px;border-radius:9px;color:#fff;flex-shrink:0;white-space:nowrap}
+
+/* Statistik */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.stat-row:first-child{border-top:none}
+.stat-row b{font-family:Georgia,serif;font-weight:400}
+.bar{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:6px}
+.bar > i{display:block;height:100%;border-radius:4px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--amber);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(62,56,46,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--amber);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0}
+.chip{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{color:#fff}
+.star-pick{display:flex;gap:4px;margin:4px 0}
+.star-pick button{background:none;border:none;font-size:24px;cursor:pointer;color:var(--line);padding:0}
+.star-pick button.on{color:var(--wish)}
+.icon-pick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.icon-pick button{width:38px;height:38px;border-radius:11px;border:1.5px solid var(--line);background:var(--panel2);font-size:19px;cursor:pointer}
+.icon-pick button.sel{border-color:var(--amber);background:var(--amber-soft)}
+.color-pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0}
+.color-pick button{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.color-pick button.sel{border-color:var(--ink)}
+.row2{display:flex;gap:10px}
+.row2 > div{flex:1}
+.del-link{display:block;width:100%;text-align:center;background:none;border:none;color:var(--used);font-size:12px;cursor:pointer;margin-top:10px;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#26231C;--panel:#2F2B22;--panel2:#39342A;--line:#46402F;
+  --ink:#E8E1D2;--muted:#A39A86;--amber:#C49A66;--amber-soft:#43392A;
+  --have:#8FA383;--wish:#D0B36A;--lent:#86A0BE;--used:#C49A91;
+  --navbg:rgba(38,35,28,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+.sync-badge{position:fixed;top:calc(14px + env(safe-area-inset-top));left:max(12px,calc(50vw - 228px));border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:10px;border-radius:11px;padding:4px 9px;cursor:pointer;z-index:45;font-family:inherit}
+.sync-badge.ok{background:var(--have);border-color:var(--have);color:#fff}
+.sync-badge.err{background:var(--used);border-color:var(--used);color:#fff}
+.hint{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:9px;padding:7px 9px;line-height:1.5;margin:6px 0}
+.status-line{font-size:12px;padding:8px 10px;border-radius:9px;margin:8px 0;display:none}
+.status-line.show{display:block}
+.status-line.ok{background:var(--amber-soft);color:var(--amber)}
+.status-line.err{background:#F4E3DE;color:var(--used)}
+.status-line.info{background:var(--panel2);color:var(--muted)}
+
+/* ===== DESKTOP OVERRIDES ===== */
+body{font-size:15px}
+.app{max-width:none;margin:0;padding:24px 32px 32px calc(232px + 32px);min-height:100vh}
+h1.brand{display:none}
+.theme-btn{top:16px;right:24px;left:auto}
+.sync-badge{position:fixed;top:20px;right:72px;left:auto}
+/* sidebar from .nav */
+.nav{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:232px;border-top:none;border-right:1px solid var(--line);padding:20px 12px;backdrop-filter:none;background:var(--panel);align-items:stretch;gap:4px}
+.nav::before{content:'🗃 Samlingen';font-family:Georgia,serif;font-size:20px;letter-spacing:.04em;color:var(--ink);padding:6px 12px 18px;display:block}
+.nav button{flex:none;text-align:left;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;font-size:14px}
+.nav button span{display:inline;font-size:17px;margin:0}
+.nav button.active{background:var(--amber-soft)}
+/* modals from sheets */
+.sheet-bg{background:rgba(62,56,46,.45)}
+.sheet{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-48%) scale(.98);width:440px;max-width:92vw;border-radius:18px;max-height:86vh;box-shadow:0 20px 60px rgba(0,0,0,.25);transition:transform .2s ease,opacity .2s ease;opacity:0}
+.sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1}
+/* content widths */
+#coll-home,#coll-detail,#view-wishlist,#view-stats{max-width:760px}
+.coll-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.coll-grid button.btn.full,#add-coll{grid-column:1 / -1}
+.card-panel{padding:16px 18px}
+.toolbar select{max-width:160px}
+.item{padding:12px 2px}
+.item:hover{background:var(--panel2)}
+.foot{justify-content:flex-start}
+
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<button class="sync-badge offline" id="sync-badge">Lokal</button>
+<h1 class="brand">🗃 Samlingen</h1>
+
+<!-- SAMLINGAR -->
+<div class="view active" id="view-collections">
+  <!-- Hem -->
+  <div id="coll-home">
+    <div class="card-panel">
+      <div class="overview">
+        <div class="ov-cell"><div class="ov-num" id="ov-items">0</div><div class="ov-lbl">Saker</div></div>
+        <div class="ov-cell"><div class="ov-num" id="ov-colls">0</div><div class="ov-lbl">Samlingar</div></div>
+        <div class="ov-cell"><div class="ov-num" id="ov-wish">0</div><div class="ov-lbl">Önskas</div></div>
+      </div>
+    </div>
+    <div class="section-title">Dina samlingar</div>
+    <div class="coll-grid" id="coll-grid"></div>
+    <button class="btn full" id="add-coll" style="margin-top:10px">+ Ny samling</button>
+
+    <div class="foot">
+      <button id="sync-now">↻ Synka</button>
+      <button id="sync-setup">⚙ Synk</button>
+      <button id="export-btn">Säkerhetskopiera</button>
+      <button id="import-btn">Importera</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+    <div class="privacy">Allt sparas bara i din enhet. Säkerhetskopiera då och då — en ny telefon glömmer allt. 🗃</div>
+  </div>
+
+  <!-- Detalj -->
+  <div id="coll-detail" style="display:none">
+    <div class="detail-head">
+      <button class="back-btn" id="coll-back">‹ Samlingar</button>
+      <button class="btn ghost" id="edit-coll">Ändra</button>
+    </div>
+    <div class="detail-title" id="detail-title"></div>
+    <div class="toolbar">
+      <input type="text" id="search-in" placeholder="Sök i samlingen…">
+      <select id="sort-sel">
+        <option value="new">Senast</option>
+        <option value="name">A–Ö</option>
+        <option value="rating">Betyg</option>
+        <option value="value">Värde</option>
+      </select>
+    </div>
+    <div class="filter-chips" id="filter-chips"></div>
+    <div class="card-panel"><div id="item-list"></div></div>
+    <button class="btn fill full" id="add-item" style="margin-top:10px">+ Lägg till sak</button>
+  </div>
+</div>
+
+<!-- ÖNSKELISTA -->
+<div class="view" id="view-wishlist">
+  <div class="section-title" style="margin-top:0">Önskelista</div>
+  <div class="soft" style="margin-bottom:8px">Allt du markerat som <b>Önskar</b>, samlat på ett ställe.</div>
+  <div class="card-panel"><div id="wish-list"></div></div>
+</div>
+
+<!-- ÖVERSIKT -->
+<div class="view" id="view-stats">
+  <div class="section-title" style="margin-top:0">Översikt</div>
+  <div class="card-panel">
+    <div class="stat-row"><span>Saker totalt</span><b id="st-items">0</b></div>
+    <div class="stat-row"><span>Samlingar</span><b id="st-colls">0</b></div>
+    <div class="stat-row"><span>Uppskattat värde</span><b id="st-value">0 kr</b></div>
+    <div class="stat-row"><span>Utlånat just nu</span><b id="st-lent">0</b></div>
+  </div>
+  <div class="section-title">Per status</div>
+  <div class="card-panel" id="st-status"></div>
+  <div class="section-title">Störst samlingar</div>
+  <div class="card-panel" id="st-colllist"></div>
+</div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" data-v="collections"><span>🗃</span>Samlingar</button>
+  <button data-v="wishlist"><span>☆</span>Önskelista</button>
+  <button data-v="stats"><span>▤</span>Översikt</button>
+</div>
+
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Synk-sheet -->
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="hint">Samlingen läser och sparar <b>samlingen-data.json</b> i ett <b>privat</b> GitHub-repo, så att telefon och dator delar samma samling. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn (ägare av data-repot)</label>
+  <input type="text" id="gh-owner" placeholder="t.ex. rebecca">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="t.ex. samlingen-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div class="status-line" id="gh-status"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+  <button class="del-link" id="gh-clear" style="display:none">Koppla från (rensa token från enheten)</button>
+</div>
+
+<!-- Sak-sheet -->
+<div class="sheet" id="item-sheet">
+  <h3 id="item-sheet-title">Ny sak</h3>
+  <label>Namn</label>
+  <input type="text" id="f-name" placeholder="T.ex. Catan, Vinröd läppstift, Ljus akrylfärg…">
+  <label>Samling</label>
+  <select id="f-coll"></select>
+  <label>Status</label>
+  <div class="chips" id="f-status"></div>
+  <label>Kategori / etikett (frivilligt)</label>
+  <input type="text" id="f-cat" placeholder="T.ex. Strategi, Läppar, Akvarell…">
+  <div class="row2">
+    <div><label>Antal</label><input type="number" id="f-qty" min="0" step="1" value="1"></div>
+    <div><label>Värde (kr)</label><input type="number" id="f-value" min="0" step="1" placeholder="–"></div>
+  </div>
+  <label>Betyg</label>
+  <div class="star-pick" id="f-rating"></div>
+  <label>Anteckning (frivilligt)</label>
+  <textarea id="f-note" rows="2" placeholder="Var den står, vem som lånat, färgnummer…"></textarea>
+  <button class="sheet-close" id="item-save">Spara</button>
+  <button class="del-link" id="item-del" style="display:none">Ta bort den här saken</button>
+</div>
+
+<!-- Samling-sheet -->
+<div class="sheet" id="coll-sheet">
+  <h3 id="coll-sheet-title">Ny samling</h3>
+  <label>Namn</label>
+  <input type="text" id="c-name" placeholder="T.ex. Böcker, Brädspel, Smink…">
+  <label>Ikon</label>
+  <div class="icon-pick" id="c-icons"></div>
+  <label>Färg</label>
+  <div class="color-pick" id="c-colors"></div>
+  <button class="sheet-close" id="coll-save">Spara</button>
+  <button class="del-link" id="coll-del" style="display:none">Ta bort samlingen och allt i den</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='samlingen_v1';
+var STATUS=[['have','Äger','var(--have)'],['wish','Önskar','var(--wish)'],['lent','Utlånad','var(--lent)'],['used','Slut','var(--used)']];
+var ICONS=['📚','🎲','🎨','💄','🎮','🎸','💿','🧶','🪙','🍷','🌱','🧩','🎬','🃏','⌚','🧴'];
+var COLORS=['#A8794E','#7A8B6F','#6E89A8','#9E7BA6','#B58A82','#5F8C82','#C09A3E','#8A8FB0'];
+
+var state={
+  collections:[
+    {id:'c1',name:'Böcker',icon:'📚',color:'#7A8B6F'},
+    {id:'c2',name:'Brädspel',icon:'🎲',color:'#6E89A8'},
+    {id:'c3',name:'Konstnärsmaterial',icon:'🎨',color:'#9E7BA6'},
+    {id:'c4',name:'Smink',icon:'💄',color:'#B58A82'}
+  ],
+  items:[
+    {id:'i1',coll:'c1',name:'Exempel: en bok du äger',cat:'Roman',status:'have',qty:1,value:'',rating:4,note:'Tryck på raden för att ändra eller ta bort.',created:Date.now()-5000},
+    {id:'i2',coll:'c2',name:'Exempel: ett spel du önskar dig',cat:'Strategi',status:'wish',qty:1,value:599,rating:0,note:'',created:Date.now()-4000}
+  ],
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{state.updated=Date.now();localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}schedulePush();}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function el(id){return document.getElementById(id);}
+function statusOf(k){for(var i=0;i<STATUS.length;i++){if(STATUS[i][0]===k)return STATUS[i];}return STATUS[0];}
+function collById(id){for(var i=0;i<state.collections.length;i++){if(state.collections[i].id===id)return state.collections[i];}return null;}
+function countIn(cid){var n=0;for(var i=0;i<state.items.length;i++){if(state.items[i].coll===cid)n++;}return n;}
+
+// ── Sheets ─────────────────────────────────────────────
+var bg=el('sheet-bg');
+function openSheet(id){bg.classList.add('open');el(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Navigationstillstånd ───────────────────────────────
+var currentColl=null,search='',sortBy='new',statusFilter='all';
+
+// ── Hem / samlingsrutnät ───────────────────────────────
+function renderHome(){
+  el('ov-items').textContent=state.items.length;
+  el('ov-colls').textContent=state.collections.length;
+  var w=0;for(var i=0;i<state.items.length;i++){if(state.items[i].status==='wish')w++;}
+  el('ov-wish').textContent=w;
+  var g=el('coll-grid');
+  if(!state.collections.length){g.innerHTML='<div class="empty-msg">Inga samlingar än.<br>Skapa din första nedan.</div>';return;}
+  var h='';
+  for(var j=0;j<state.collections.length;j++){
+    var c=state.collections[j];var n=countIn(c.id);
+    h+='<div class="coll-card" data-id="'+c.id+'" style="border-left-color:'+c.color+'">'+
+       '<div class="coll-ic">'+esc(c.icon)+'</div>'+
+       '<div class="coll-meta"><div class="coll-name">'+esc(c.name)+'</div>'+
+       '<div class="coll-sub">'+n+(n===1?' sak':' saker')+'</div></div>'+
+       '<div class="coll-arrow">›</div></div>';
+  }
+  g.innerHTML=h;
+  var cards=g.querySelectorAll('.coll-card');
+  for(var k=0;k<cards.length;k++){cards[k].onclick=function(){openCollection(this.dataset.id);};}
+}
+
+// ── Detaljvy ───────────────────────────────────────────
+function openCollection(id){
+  currentColl=id;search='';statusFilter='all';
+  el('search-in').value='';el('sort-sel').value=sortBy;
+  el('coll-home').style.display='none';
+  el('coll-detail').style.display='block';
+  var c=collById(id);
+  el('detail-title').textContent=(c?c.icon+' '+c.name:'');
+  renderFilterChips();renderItems();
+}
+function backToHome(){currentColl=null;el('coll-detail').style.display='none';el('coll-home').style.display='block';renderHome();}
+
+function renderFilterChips(){
+  var f=el('filter-chips');
+  var opts=[['all','Alla']];
+  for(var i=0;i<STATUS.length;i++)opts.push([STATUS[i][0],STATUS[i][1]]);
+  var h='';
+  for(var j=0;j<opts.length;j++){
+    h+='<button class="fchip'+(statusFilter===opts[j][0]?' sel':'')+'" data-s="'+opts[j][0]+'">'+esc(opts[j][1])+'</button>';
+  }
+  f.innerHTML=h;
+  var bs=f.querySelectorAll('.fchip');
+  for(var k=0;k<bs.length;k++){bs[k].onclick=function(){statusFilter=this.dataset.s;renderFilterChips();renderItems();};}
+}
+
+function filteredItems(){
+  var arr=[];
+  for(var i=0;i<state.items.length;i++){
+    var it=state.items[i];
+    if(it.coll!==currentColl)continue;
+    if(statusFilter!=='all'&&it.status!==statusFilter)continue;
+    if(search){
+      var hay=((it.name||'')+' '+(it.cat||'')+' '+(it.note||'')).toLowerCase();
+      if(hay.indexOf(search.toLowerCase())<0)continue;
+    }
+    arr.push(it);
+  }
+  if(sortBy==='name')arr.sort(function(a,b){return (a.name||'').localeCompare(b.name||'','sv');});
+  else if(sortBy==='rating')arr.sort(function(a,b){return (b.rating||0)-(a.rating||0);});
+  else if(sortBy==='value')arr.sort(function(a,b){return (+b.value||0)-(+a.value||0);});
+  else arr.sort(function(a,b){return (b.created||0)-(a.created||0);});
+  return arr;
+}
+
+function itemRow(it){
+  var st=statusOf(it.status);
+  var sub='';
+  if(it.cat)sub+='<span class="tag">'+esc(it.cat)+'</span>';
+  if(it.rating>0){var s='';for(var r=0;r<5;r++)s+=(r<it.rating?'★':'☆');sub+='<span class="stars">'+s+'</span>';}
+  if(it.qty&&+it.qty!==1)sub+='<span class="qty">×'+esc(it.qty)+'</span>';
+  if(it.value)sub+='<span class="qty">'+esc(it.value)+' kr</span>';
+  return '<div class="item" data-id="'+it.id+'">'+
+    '<div class="item-body"><div class="item-name'+(it.status==='used'?' used':'')+'">'+esc(it.name)+'</div>'+
+    (sub?'<div class="item-sub">'+sub+'</div>':'')+'</div>'+
+    '<span class="badge" style="background:'+st[2]+'">'+st[1]+'</span></div>';
+}
+
+function renderItems(){
+  var arr=filteredItems();var l=el('item-list');
+  if(!arr.length){
+    var any=countIn(currentColl);
+    l.innerHTML='<div class="empty-msg">'+(any?'Inget matchar filtret.':'Tomt här än — tryck på <b>Lägg till sak</b> nedan.')+'</div>';
+    return;
+  }
+  var h='';for(var i=0;i<arr.length;i++)h+=itemRow(arr[i]);
+  l.innerHTML=h;
+  var rows=l.querySelectorAll('.item');
+  for(var j=0;j<rows.length;j++){rows[j].onclick=function(){openItem(this.dataset.id);};}
+}
+
+el('coll-back').onclick=backToHome;
+el('search-in').oninput=function(){search=this.value;renderItems();};
+el('sort-sel').onchange=function(){sortBy=this.value;renderItems();};
+
+// ── Sak-redigering ─────────────────────────────────────
+var editItemId=null,tmpStatus='have',tmpRating=0;
+
+function buildStatusChips(){
+  var c=el('f-status');var h='';
+  for(var i=0;i<STATUS.length;i++){
+    var sel=STATUS[i][0]===tmpStatus;
+    h+='<button class="chip'+(sel?' sel':'')+'" data-s="'+STATUS[i][0]+'" style="'+(sel?'background:'+STATUS[i][2]+';border-color:'+STATUS[i][2]:'')+'">'+STATUS[i][1]+'</button>';
+  }
+  c.innerHTML=h;
+  var bs=c.querySelectorAll('.chip');
+  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){tmpStatus=this.dataset.s;buildStatusChips();};}
+}
+function buildRating(){
+  var c=el('f-rating');var h='';
+  for(var i=1;i<=5;i++)h+='<button data-r="'+i+'" class="'+(i<=tmpRating?'on':'')+'">'+(i<=tmpRating?'★':'☆')+'</button>';
+  c.innerHTML=h;
+  var bs=c.querySelectorAll('button');
+  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){var r=+this.dataset.r;tmpRating=(tmpRating===r?0:r);buildRating();};}
+}
+function fillCollSelect(sel){
+  var o='';for(var i=0;i<state.collections.length;i++){o+='<option value="'+state.collections[i].id+'">'+esc(state.collections[i].name)+'</option>';}
+  el('f-coll').innerHTML=o;el('f-coll').value=sel||(state.collections[0]&&state.collections[0].id)||'';
+}
+
+function openItem(id){
+  if(!state.collections.length){alert('Skapa en samling först.');return;}
+  var it=null;
+  if(id){for(var i=0;i<state.items.length;i++){if(state.items[i].id===id){it=state.items[i];break;}}}
+  editItemId=it?it.id:null;
+  el('item-sheet-title').textContent=it?'Ändra sak':'Ny sak';
+  el('f-name').value=it?it.name:'';
+  fillCollSelect(it?it.coll:currentColl);
+  tmpStatus=it?it.status:'have';buildStatusChips();
+  el('f-cat').value=it&&it.cat?it.cat:'';
+  el('f-qty').value=it&&it.qty!=null?it.qty:1;
+  el('f-value').value=it&&it.value?it.value:'';
+  tmpRating=it&&it.rating?it.rating:0;buildRating();
+  el('f-note').value=it&&it.note?it.note:'';
+  el('item-del').style.display=it?'block':'none';
+  openSheet('item-sheet');
+}
+el('item-save').onclick=function(){
+  var name=el('f-name').value.trim();
+  if(!name){el('f-name').focus();return;}
+  var data={
+    coll:el('f-coll').value,name:name,cat:el('f-cat').value.trim(),
+    status:tmpStatus,qty:el('f-qty').value===''?1:+el('f-qty').value,
+    value:el('f-value').value===''?'':+el('f-value').value,rating:tmpRating,
+    note:el('f-note').value.trim()
+  };
+  if(editItemId){for(var i=0;i<state.items.length;i++){if(state.items[i].id===editItemId){Object.assign(state.items[i],data);break;}}}
+  else{data.id=uid();data.created=Date.now();state.items.push(data);}
+  save();closeSheets();
+  if(currentColl){if(data.coll!==currentColl&&!editItemId){}renderItems();}else renderHome();
+  refreshAll();
+};
+el('item-del').onclick=function(){
+  if(!editItemId)return;
+  if(!confirm('Ta bort den här saken?'))return;
+  state.items=state.items.filter(function(x){return x.id!==editItemId;});
+  save();closeSheets();renderItems();refreshAll();
+};
+el('add-item').onclick=function(){openItem(null);};
+
+// ── Samling-redigering ─────────────────────────────────
+var editCollId=null,tmpIcon='📚',tmpColor=COLORS[0];
+
+function buildIconPick(){
+  var c=el('c-icons');var h='';
+  for(var i=0;i<ICONS.length;i++)h+='<button class="'+(ICONS[i]===tmpIcon?'sel':'')+'" data-i="'+ICONS[i]+'">'+ICONS[i]+'</button>';
+  c.innerHTML=h;
+  var bs=c.querySelectorAll('button');
+  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){tmpIcon=this.dataset.i;buildIconPick();};}
+}
+function buildColorPick(){
+  var c=el('c-colors');var h='';
+  for(var i=0;i<COLORS.length;i++)h+='<button class="'+(COLORS[i]===tmpColor?'sel':'')+'" data-c="'+COLORS[i]+'" style="background:'+COLORS[i]+'"></button>';
+  c.innerHTML=h;
+  var bs=c.querySelectorAll('button');
+  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){tmpColor=this.dataset.c;buildColorPick();};}
+}
+function openColl(id){
+  var c=id?collById(id):null;
+  editCollId=c?c.id:null;
+  el('coll-sheet-title').textContent=c?'Ändra samling':'Ny samling';
+  el('c-name').value=c?c.name:'';
+  tmpIcon=c?c.icon:ICONS[0];buildIconPick();
+  tmpColor=c?c.color:COLORS[0];buildColorPick();
+  el('coll-del').style.display=c?'block':'none';
+  openSheet('coll-sheet');
+}
+el('add-coll').onclick=function(){openColl(null);};
+el('edit-coll').onclick=function(){if(currentColl)openColl(currentColl);};
+el('coll-save').onclick=function(){
+  var name=el('c-name').value.trim();
+  if(!name){el('c-name').focus();return;}
+  if(editCollId){var c=collById(editCollId);c.name=name;c.icon=tmpIcon;c.color=tmpColor;
+    el('detail-title').textContent=c.icon+' '+c.name;}
+  else{state.collections.push({id:uid(),name:name,icon:tmpIcon,color:tmpColor});}
+  save();closeSheets();refreshAll();
+};
+el('coll-del').onclick=function(){
+  if(!editCollId)return;
+  var n=countIn(editCollId);
+  if(!confirm('Ta bort samlingen'+(n?' och dess '+n+' saker':'')+'? Det går inte att ångra.'))return;
+  state.items=state.items.filter(function(x){return x.coll!==editCollId;});
+  state.collections=state.collections.filter(function(x){return x.id!==editCollId;});
+  save();closeSheets();backToHome();refreshAll();
+};
+
+// ── Önskelista ─────────────────────────────────────────
+function renderWishlist(){
+  var l=el('wish-list');
+  var w=state.items.filter(function(x){return x.status==='wish';});
+  if(!w.length){l.innerHTML='<div class="empty-msg">Inget på önskelistan än.<br>Markera en sak som <b>Önskar</b> så dyker den upp här.</div>';return;}
+  w.sort(function(a,b){return (b.created||0)-(a.created||0);});
+  var h='';
+  for(var i=0;i<w.length;i++){
+    var it=w[i];var c=collById(it.coll);
+    h+='<div class="item" data-id="'+it.id+'"><div class="item-body">'+
+       '<div class="item-name">'+esc(it.name)+'</div>'+
+       '<div class="item-sub"><span class="tag">'+(c?esc(c.icon+' '+c.name):'—')+'</span>'+
+       (it.value?'<span class="qty">'+esc(it.value)+' kr</span>':'')+'</div></div></div>';
+  }
+  l.innerHTML=h;
+  var rows=l.querySelectorAll('.item');
+  for(var j=0;j<rows.length;j++){rows[j].onclick=function(){openItem(this.dataset.id);};}
+}
+
+// ── Översikt ───────────────────────────────────────────
+function renderStats(){
+  el('st-items').textContent=state.items.length;
+  el('st-colls').textContent=state.collections.length;
+  var val=0,lent=0,counts={};
+  for(var i=0;i<state.items.length;i++){
+    var it=state.items[i];
+    if(it.value)val+=(+it.value)*(it.qty&&+it.qty>0?+it.qty:1);
+    if(it.status==='lent')lent++;
+    counts[it.status]=(counts[it.status]||0)+1;
+  }
+  el('st-value').textContent=val.toLocaleString('sv-SE')+' kr';
+  el('st-lent').textContent=lent;
+  var total=state.items.length||1;
+  var sh='';
+  for(var s=0;s<STATUS.length;s++){
+    var n=counts[STATUS[s][0]]||0;var pct=Math.round(n/total*100);
+    sh+='<div style="padding:9px 0;border-top:1px solid var(--line)'+(s===0?';border-top:none':'')+'">'+
+        '<div class="stat-row" style="border:none;padding:0"><span>'+STATUS[s][1]+'</span><b>'+n+'</b></div>'+
+        '<div class="bar"><i style="width:'+pct+'%;background:'+STATUS[s][2]+'"></i></div></div>';
+  }
+  el('st-status').innerHTML=sh;
+  var cs=state.collections.slice().sort(function(a,b){return countIn(b.id)-countIn(a.id);});
+  var ch='';
+  if(!cs.length)ch='<div class="empty-msg">Inga samlingar än.</div>';
+  for(var k=0;k<cs.length;k++){
+    var cn=countIn(cs[k].id);
+    ch+='<div class="stat-row"><span>'+esc(cs[k].icon+' '+cs[k].name)+'</span><b>'+cn+'</b></div>';
+  }
+  el('st-colllist').innerHTML=ch;
+}
+
+function refreshAll(){
+  renderHome();
+  if(el('view-wishlist').classList.contains('active'))renderWishlist();
+  if(el('view-stats').classList.contains('active'))renderStats();
+}
+
+// ── Export / Import ────────────────────────────────────
+el('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='samlingen-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+};
+el('import-btn').onclick=function(){el('import-file').click();};
+el('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.collections&&d.items){state=Object.assign(state,d);save();backToHome();refreshAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ───────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#26231C':'#F3EFE7';
+  var b=el('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+el('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ────────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var b=0;b<navBtns.length;b++){
+  navBtns[b].onclick=function(){
+    for(var x=0;x<navBtns.length;x++)navBtns[x].classList.remove('active');
+    this.classList.add('active');
+    var views=document.querySelectorAll('.view');
+    for(var v=0;v<views.length;v++)views[v].classList.remove('active');
+    el('view-'+this.dataset.v).classList.add('active');
+    if(this.dataset.v==='wishlist')renderWishlist();
+    if(this.dataset.v==='stats')renderStats();
+    if(this.dataset.v==='collections'&&!currentColl)renderHome();
+  };
+}
+
+// ── Synk via GitHub (samma mönster som jobb-appen) ─────
+var SYNC_KEY='samlingen_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+var pushTimer=null;
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSyncCfg(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/samlingen-data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(stateClass,msg){var b=el('sync-badge');b.textContent=msg;b.className='sync-badge'+(stateClass?(' '+stateClass):' offline');}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('','Hämtar…');
+  return ghGet().then(function(data){
+    if(data&&data.collections&&data.items){
+      if(!state.updated||(data.updated||0)>=state.updated){
+        state=Object.assign(state,data);
+        try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+        backToHome();refreshAll();
+      }
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('','Sparar…');
+  var content=b64enc(JSON.stringify(Object.assign({},state,{updated:Date.now()})));
+  function doPut(){
+    var body={message:'Uppdatering via Samlingen',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function schedulePush(){
+  if(!syncOn())return;
+  if(pushTimer)clearTimeout(pushTimer);
+  pushTimer=setTimeout(function(){ghPush();},1200);
+}
+
+function setGhStatus(msg,type){var e=el('gh-status');e.textContent=msg;e.className='status-line show '+type;}
+el('sync-setup').onclick=function(){
+  el('gh-owner').value=sync.owner;el('gh-repo').value=sync.repo;el('gh-token').value=sync.token;
+  el('gh-status').className='status-line';el('gh-clear').style.display=syncOn()?'block':'none';
+  openSheet('sync-sheet');
+};
+el('sync-now').onclick=function(){if(syncOn())ghPull();else{el('sync-setup').onclick();}};
+el('gh-save').onclick=function(){
+  sync.owner=el('gh-owner').value.trim();sync.repo=el('gh-repo').value.trim();sync.token=el('gh-token').value.trim();sync.sha=null;
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSyncCfg();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){setGhStatus('✓ Ansluten — hämtar samlingen…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten — repot är tomt, laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1100);})
+    .catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera användarnamn, reponamn och att token har Contents-behörighet.','err');});
+};
+el('gh-clear').onclick=function(){
+  if(!confirm('Koppla från synk och radera token från den här enheten?'))return;
+  sync={owner:'',repo:'',token:'',sha:null};try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  setBadge('','Lokal');closeSheets();
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Start ──────────────────────────────────────────────
+loadSync();
+renderHome();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn()){setBadge('','Synkad');ghPull();}else{setBadge('','Lokal');}
+</script>
+</body>
+</html>
