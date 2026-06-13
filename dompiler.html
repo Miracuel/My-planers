@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dompiler">
+<meta name="theme-color" content="#F3EFE8">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Dompiler","short_name":"Dompiler","display":"standalone","background_color":"%23F3EFE8","theme_color":"%23F3EFE8","start_url":"."}'>
+<title>Dompiler</title>
+<style>
+:root{
+  --bg:#F3EFE8;--panel:#FBF8F2;--panel2:#ECE5DA;--line:#DDD4C5;
+  --ink:#3D362D;--muted:#897F70;--accent:#B5764E;--accent-soft:#EBDCCD;
+  --aktiv:#7A8B6F;--aktiv-soft:#DCE3D3;--planerad:#C2954E;--planerad-soft:#F0E5CC;
+  --klar:#A89D8C;--klar-soft:#E6E0D5;
+  --navbg:rgba(243,239,232,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.block{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+textarea{resize:vertical}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Stat-rad */
+.stats{display:flex;gap:8px;margin-bottom:4px}
+.stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 8px;text-align:center}
+.stat b{font-family:Georgia,serif;font-weight:400;font-size:26px;display:block;color:var(--accent)}
+.stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+/* Dompile-kort */
+.pile{padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.pile:first-child{border-top:none}
+.pile-head{display:flex;align-items:center;gap:8px}
+.pile-name{flex:1;font-size:15px;font-weight:600}
+.badge{font-size:10px;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.badge.planerad{background:var(--planerad-soft);color:#7C5A1E}
+.badge.aktiv{background:var(--aktiv-soft);color:#3F4A38}
+.badge.klar{background:var(--klar-soft);color:#6B6253}
+.pile-meta{font-size:12px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.pile-meta .due.soon{color:var(--planerad);font-weight:600}
+.pile-meta .due.late{color:var(--accent);font-weight:600}
+.pile-contents{font-size:13px;color:var(--ink);margin-top:5px;line-height:1.5;opacity:.85}
+
+/* Filterchips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:7px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip small{color:var(--muted);margin-left:4px}
+.chip.sel small{color:rgba(255,255,255,.8)}
+
+.search{margin-bottom:6px}
+
+/* Statusväljare i editorn */
+.segs{display:flex;gap:8px;margin:4px 0 2px}
+.segs .chip{flex:1;text-align:center}
+
+/* Rum-grupp */
+.room-head{font-family:Georgia,serif;font-size:15px;margin:16px 0 6px;color:var(--ink);display:flex;align-items:center;justify-content:space-between}
+.room-head small{font-family:-apple-system,sans-serif;font-size:11px;color:var(--muted);font-weight:400}
+
+/* Edit-lista (rum) */
+.edit-item{display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(61,54,45,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.sheet-del{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--muted);font-size:13px;cursor:pointer;margin-top:8px}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#221F1A;--panel:#2B2823;--panel2:#33302A;--line:#43403A;
+  --ink:#E6E0D5;--muted:#9C9285;--accent:#C68A5E;--accent-soft:#3E342B;
+  --aktiv:#8FA383;--aktiv-soft:#3A4434;--planerad:#CCA968;--planerad-soft:#3E371F;
+  --klar:#B0A593;--klar-soft:#3A352D;--navbg:rgba(34,31,26,.95);
+}
+html[data-theme=dark] .badge.planerad{color:#E7CF9C}
+html[data-theme=dark] .badge.aktiv{color:#D2DEC5}
+html[data-theme=dark] .badge.klar{color:#CFC6B6}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">📦 Dompiler</h1>
+
+<!-- ÖVERSIKT -->
+<div class="view active" id="view-overview">
+  <div class="stats">
+    <div class="stat"><b id="st-total">0</b><span>totalt</span></div>
+    <div class="stat"><b id="st-aktiv">0</b><span>aktiva</span></div>
+    <div class="stat"><b id="st-snart">0</b><span>denna vecka</span></div>
+  </div>
+  <button class="btn fill block" id="new-pile" style="margin-top:10px">+ Ny dompile</button>
+
+  <div class="section-title">Aktiva nu</div>
+  <div class="card-panel" id="ov-aktiva"></div>
+
+  <div class="section-title">På gång</div>
+  <div class="card-panel" id="ov-snart"></div>
+
+  <div class="section-title">Synk <span id="sync-badge" class="badge klar">Lokal</span></div>
+  <div class="card-panel">
+    <div class="soft">Synka dina dompiler mellan telefon och dator via ett privat GitHub-repo. Token sparas bara på den här enheten.</div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn" id="sync-now">↻ Synka nu</button>
+      <button class="btn ghost" id="sync-settings">Inställningar</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas lokalt i din enhet. Synk är frivilligt och går via ditt egna privata GitHub-repo. 📦</div>
+</div>
+
+<!-- ALLA -->
+<div class="view" id="view-all">
+  <div class="section-title" style="margin-top:0">Alla dompiler <button class="btn ghost" id="new-pile2">+ Ny</button></div>
+  <input type="text" class="search" id="search" placeholder="Sök namn eller innehåll…">
+  <div class="chips" id="filter-status"></div>
+  <div class="chips" id="filter-room"></div>
+  <div class="card-panel" id="all-list" style="margin-top:10px"></div>
+</div>
+
+<!-- RUM -->
+<div class="view" id="view-rooms">
+  <div class="section-title" style="margin-top:0">Per rum <button class="btn ghost" id="manage-rooms">Hantera rum</button></div>
+  <div id="rooms-wrap"></div>
+</div>
+
+<!-- PLAN -->
+<div class="view" id="view-plan">
+  <div class="section-title" style="margin-top:0">Planerat framåt</div>
+  <div id="plan-wrap"></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="overview"><span>📋</span>Översikt</button>
+  <button data-v="all"><span>▦</span>Alla</button>
+  <button data-v="rooms"><span>⌂</span>Rum</button>
+  <button data-v="plan"><span>◴</span>Plan</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="pile-sheet">
+  <h3 id="pile-sheet-title">Ny dompile</h3>
+  <label>Namn</label>
+  <input type="text" id="f-namn" placeholder="T.ex. Vinterkläder att sortera">
+  <label>Innehåll</label>
+  <textarea id="f-innehall" rows="2" placeholder="Vad finns i den här dompilen?"></textarea>
+  <label>Status</label>
+  <div class="segs" id="f-status"></div>
+  <label>Rum</label>
+  <select id="f-rum"></select>
+  <label>Låda</label>
+  <input type="text" id="f-lada" placeholder="T.ex. Låda 3 / blå backen">
+  <label>Planeras göras</label>
+  <input type="date" id="f-nar">
+  <label>Anteckning</label>
+  <textarea id="f-anteckning" rows="2" placeholder="Frivilligt"></textarea>
+  <button class="sheet-close" id="pile-save">Spara</button>
+  <button class="sheet-del" id="pile-del" style="display:none">Ta bort dompile</button>
+</div>
+
+<div class="sheet" id="rooms-sheet">
+  <h3>Hantera rum</h3>
+  <div class="soft">Rum du sorterar dina dompiler i.</div>
+  <div id="rooms-list" style="margin-top:8px"></div>
+  <div class="add-row"><input type="text" id="room-in" placeholder="Nytt rum…"><button id="room-add">+</button></div>
+  <button class="sheet-close" id="rooms-done">Klar</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <b>dompiler.json</b> i ett <b>privat</b> GitHub-repo, så att telefon och dator visar samma dompiler. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn (ägare av data-repot)</label>
+  <input type="text" id="gh-owner" placeholder="mittnamn" autocapitalize="off" autocorrect="off">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="dompiler-data" autocapitalize="off" autocorrect="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:8px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till endast data-repot, med <b>Contents: Read and write</b>.</div>
+  <div id="gh-status" style="display:none;margin-top:10px;font-size:12px;padding:9px 12px;border-radius:10px;line-height:1.5"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+  <button class="sheet-del" id="gh-disconnect" style="display:none">Koppla från synk</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+const KEY='dompiler_v1';
+let state={
+  piles:[],
+  rooms:['Aktivt rum','Förråd','Sovrum','Vardagsrum'],
+  theme:'auto'
+};
+try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+
+// ── GitHub-synk (samma modell som jobbplaneringen) ────
+const SYNC_KEY='dompilersync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/dompiler.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+function setBadge(st,msg){const b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='badge '+(st==='ok'?'aktiv':st==='err'?'planerad':'klar');}
+async function ghGet(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    const data=await ghGet();
+    if(data){
+      if(Array.isArray(data.piles))state.piles=data.piles;
+      if(Array.isArray(data.rooms))state.rooms=data.rooms;
+      suppressPush=true;save();suppressPush=false;renderAll();
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  const content=b64enc(JSON.stringify({piles:state.piles,rooms:state.rooms,updated:new Date().toISOString()}));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Dompiler',content},sync.sha?{sha:sync.sha}:{}))});
+  let r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+let pushTimer=null;
+function schedulePush(){if(!syncOn())return;clearTimeout(pushTimer);pushTimer=setTimeout(()=>{ghPush().catch(()=>{});},800);}
+
+let suppressPush=false;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}if(syncOn()&&!suppressPush)schedulePush();}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const pad=n=>String(n).padStart(2,'0');
+const toISO=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayKey=()=>toISO(new Date());
+
+const MONTHS=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+const MONTHS_LONG=['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'];
+const WD=['sön','mån','tis','ons','tor','fre','lör'];
+const STATUSES=[['planerad','Planerad'],['aktiv','Aktiv'],['klar','Klar']];
+function statusLabel(s){const f=STATUSES.find(x=>x[0]===s);return f?f[1]:s;}
+
+function fmtDate(iso){
+  if(!iso)return '';
+  const d=new Date(iso+'T00:00:00');
+  if(isNaN(d))return iso;
+  return WD[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()];
+}
+function daysUntil(iso){
+  if(!iso)return null;
+  const d=new Date(iso+'T00:00:00');
+  const t=new Date(todayKey()+'T00:00:00');
+  return Math.round((d-t)/86400000);
+}
+function dueText(iso){
+  const n=daysUntil(iso);
+  if(n===null)return '';
+  if(n<0)return 'försenad '+(-n)+' d';
+  if(n===0)return 'idag';
+  if(n===1)return 'imorgon';
+  return 'om '+n+' d';
+}
+function dueClass(iso,status){
+  if(status==='klar')return '';
+  const n=daysUntil(iso);
+  if(n===null)return '';
+  if(n<0)return 'late';
+  if(n<=7)return 'soon';
+  return '';
+}
+
+// ── Sheets ────────────────────────────────────────────
+const bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+bg.onclick=closeSheets;
+
+// ── Dompile-kort ──────────────────────────────────────
+function pileCard(p){
+  let meta=[];
+  if(p.rum)meta.push('<span>⌂ '+esc(p.rum)+'</span>');
+  if(p.lada)meta.push('<span>📦 '+esc(p.lada)+'</span>');
+  if(p.nar)meta.push('<span class="due '+dueClass(p.nar,p.status)+'">◴ '+esc(fmtDate(p.nar))+(p.status!=='klar'?' · '+dueText(p.nar):'')+'</span>');
+  let html='<div class="pile" data-id="'+p.id+'">';
+  html+='<div class="pile-head"><div class="pile-name">'+esc(p.namn||'(utan namn)')+'</div><span class="badge '+p.status+'">'+statusLabel(p.status)+'</span></div>';
+  if(meta.length)html+='<div class="pile-meta">'+meta.join('')+'</div>';
+  if(p.innehall)html+='<div class="pile-contents">'+esc(p.innehall)+'</div>';
+  html+='</div>';
+  return html;
+}
+function bindCards(container){
+  container.querySelectorAll('.pile').forEach(el=>{el.onclick=()=>openPile(el.dataset.id);});
+}
+
+// ── Editor ────────────────────────────────────────────
+let editingId=null,editStatus='planerad';
+function renderStatusSegs(){
+  const el=document.getElementById('f-status');
+  el.innerHTML=STATUSES.map(s=>'<button class="chip'+(s[0]===editStatus?' sel':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>').join('');
+  el.querySelectorAll('.chip').forEach(b=>{b.onclick=()=>{editStatus=b.dataset.s;renderStatusSegs();};});
+}
+function fillRoomSelect(sel){
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— inget rum —</option>'+state.rooms.map(r=>'<option value="'+esc(r)+'">'+esc(r)+'</option>').join('');
+  if(cur)sel.value=cur;
+}
+function openPile(id){
+  editingId=id;
+  const p=id?state.piles.find(x=>x.id===id):null;
+  document.getElementById('pile-sheet-title').textContent=p?'Redigera dompile':'Ny dompile';
+  document.getElementById('f-namn').value=p?p.namn||'':'';
+  document.getElementById('f-innehall').value=p?p.innehall||'':'';
+  editStatus=p?p.status||'planerad':'planerad';
+  renderStatusSegs();
+  const rsel=document.getElementById('f-rum');
+  fillRoomSelect(rsel);
+  rsel.value=p&&p.rum?p.rum:'';
+  document.getElementById('f-lada').value=p?p.lada||'':'';
+  document.getElementById('f-nar').value=p?p.nar||'':'';
+  document.getElementById('f-anteckning').value=p?p.anteckning||'':'';
+  document.getElementById('pile-del').style.display=p?'block':'none';
+  openSheet('pile-sheet');
+}
+document.getElementById('pile-save').onclick=()=>{
+  const namn=document.getElementById('f-namn').value.trim();
+  if(!namn){document.getElementById('f-namn').focus();return;}
+  const data={
+    namn:namn,
+    innehall:document.getElementById('f-innehall').value.trim(),
+    status:editStatus,
+    rum:document.getElementById('f-rum').value,
+    lada:document.getElementById('f-lada').value.trim(),
+    nar:document.getElementById('f-nar').value,
+    anteckning:document.getElementById('f-anteckning').value.trim()
+  };
+  if(editingId){
+    const p=state.piles.find(x=>x.id===editingId);
+    if(p)Object.assign(p,data);
+  }else{
+    state.piles.push(Object.assign({id:uid(),skapad:todayKey()},data));
+  }
+  save();closeSheets();renderAll();
+};
+document.getElementById('pile-del').onclick=()=>{
+  if(!editingId)return;
+  if(!confirm('Ta bort den här dompilen?'))return;
+  state.piles=state.piles.filter(x=>x.id!==editingId);
+  save();closeSheets();renderAll();
+};
+document.getElementById('new-pile').onclick=()=>openPile(null);
+document.getElementById('new-pile2').onclick=()=>openPile(null);
+
+// ── Översikt ──────────────────────────────────────────
+function renderOverview(){
+  const piles=state.piles;
+  document.getElementById('st-total').textContent=piles.length;
+  document.getElementById('st-aktiv').textContent=piles.filter(p=>p.status==='aktiv').length;
+  document.getElementById('st-snart').textContent=piles.filter(p=>{const n=daysUntil(p.nar);return p.status!=='klar'&&n!==null&&n>=0&&n<=7;}).length;
+
+  const aktiva=piles.filter(p=>p.status==='aktiv');
+  const av=document.getElementById('ov-aktiva');
+  av.innerHTML=aktiva.length?aktiva.map(pileCard).join(''):'<div class="empty-msg">Inga aktiva dompiler just nu.</div>';
+  bindCards(av);
+
+  const snart=piles.filter(p=>p.status!=='klar'&&p.nar).sort((a,b)=>a.nar.localeCompare(b.nar)).slice(0,8);
+  const sv=document.getElementById('ov-snart');
+  sv.innerHTML=snart.length?snart.map(pileCard).join(''):'<div class="empty-msg">Inget planerat med datum ännu.</div>';
+  bindCards(sv);
+}
+
+// ── Alla (sök + filter) ───────────────────────────────
+let fStatus='',fRoom='',fSearch='';
+function renderFilters(){
+  const fs=document.getElementById('filter-status');
+  let opts=[['','Alla']].concat(STATUSES);
+  fs.innerHTML=opts.map(o=>'<button class="chip'+(o[0]===fStatus?' sel':'')+'" data-s="'+o[0]+'">'+o[1]+'</button>').join('');
+  fs.querySelectorAll('.chip').forEach(b=>{b.onclick=()=>{fStatus=b.dataset.s;renderAllList();renderFilters();};});
+
+  const fr=document.getElementById('filter-room');
+  let rooms=[''].concat(state.rooms);
+  fr.innerHTML=rooms.map(r=>'<button class="chip'+(r===fRoom?' sel':'')+'" data-r="'+esc(r)+'">'+(r?esc(r):'Alla rum')+'</button>').join('');
+  fr.querySelectorAll('.chip').forEach(b=>{b.onclick=()=>{fRoom=b.dataset.r;renderAllList();renderFilters();};});
+}
+function renderAllList(){
+  let list=state.piles.slice();
+  if(fStatus)list=list.filter(p=>p.status===fStatus);
+  if(fRoom)list=list.filter(p=>p.rum===fRoom);
+  if(fSearch){const q=fSearch.toLowerCase();list=list.filter(p=>(p.namn||'').toLowerCase().includes(q)||(p.innehall||'').toLowerCase().includes(q)||(p.lada||'').toLowerCase().includes(q));}
+  const order={aktiv:0,planerad:1,klar:2};
+  list.sort((a,b)=>(order[a.status]-order[b.status])||((a.nar||'9999').localeCompare(b.nar||'9999')));
+  const el=document.getElementById('all-list');
+  el.innerHTML=list.length?list.map(pileCard).join(''):'<div class="empty-msg">Inga dompiler matchar.</div>';
+  bindCards(el);
+}
+document.getElementById('search').oninput=e=>{fSearch=e.target.value.trim();renderAllList();};
+
+// ── Rum ───────────────────────────────────────────────
+function renderRooms(){
+  const wrap=document.getElementById('rooms-wrap');
+  let html='';
+  const groups=state.rooms.slice();
+  groups.forEach(r=>{
+    const inRoom=state.piles.filter(p=>p.rum===r);
+    html+='<div class="room-head">⌂ '+esc(r)+'<small>'+inRoom.length+' st</small></div>';
+    html+='<div class="card-panel">'+(inRoom.length?inRoom.map(pileCard).join(''):'<div class="empty-msg">Tomt</div>')+'</div>';
+  });
+  const noRoom=state.piles.filter(p=>!p.rum);
+  if(noRoom.length){
+    html+='<div class="room-head">○ Utan rum<small>'+noRoom.length+' st</small></div>';
+    html+='<div class="card-panel">'+noRoom.map(pileCard).join('')+'</div>';
+  }
+  if(!groups.length&&!noRoom.length)html='<div class="card-panel"><div class="empty-msg">Lägg till rum via Hantera rum.</div></div>';
+  wrap.innerHTML=html;
+  bindCards(wrap);
+}
+
+// Hantera rum
+function renderRoomsEditor(){
+  const el=document.getElementById('rooms-list');
+  el.innerHTML=state.rooms.map((r,i)=>'<div class="edit-item"><span>'+esc(r)+'</span><button data-i="'+i+'">×</button></div>').join('')||'<div class="empty-msg">Inga rum ännu</div>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{
+    const i=+b.dataset.i,name=state.rooms[i];
+    const used=state.piles.filter(p=>p.rum===name).length;
+    if(used&&!confirm(used+' dompil(er) ligger i "'+name+'". Ta bort rummet ändå? De blir utan rum.'))return;
+    state.rooms.splice(i,1);
+    state.piles.forEach(p=>{if(p.rum===name)p.rum='';});
+    save();renderRoomsEditor();renderAll();
+  };});
+}
+document.getElementById('manage-rooms').onclick=()=>{renderRoomsEditor();openSheet('rooms-sheet');};
+document.getElementById('room-add').onclick=()=>{
+  const inp=document.getElementById('room-in');
+  const v=inp.value.trim();
+  if(!v)return;
+  if(!state.rooms.includes(v))state.rooms.push(v);
+  inp.value='';save();renderRoomsEditor();renderAll();
+};
+document.getElementById('room-in').onkeydown=e=>{if(e.key==='Enter')document.getElementById('room-add').onclick();};
+document.getElementById('rooms-done').onclick=closeSheets;
+
+// ── Plan ──────────────────────────────────────────────
+function renderPlan(){
+  const wrap=document.getElementById('plan-wrap');
+  const dated=state.piles.filter(p=>p.nar&&p.status!=='klar').sort((a,b)=>a.nar.localeCompare(b.nar));
+  let html='';
+  let curKey='';
+  dated.forEach(p=>{
+    const d=new Date(p.nar+'T00:00:00');
+    const k=d.getFullYear()+'-'+d.getMonth();
+    if(k!==curKey){
+      if(curKey!=='')html+='</div>';
+      html+='<div class="room-head">'+MONTHS_LONG[d.getMonth()]+' '+d.getFullYear()+'</div><div class="card-panel">';
+      curKey=k;
+    }
+    html+=pileCard(p);
+  });
+  if(curKey!=='')html+='</div>';
+  const undated=state.piles.filter(p=>!p.nar&&p.status!=='klar');
+  if(undated.length){
+    html+='<div class="room-head">Utan datum<small>'+undated.length+' st</small></div>';
+    html+='<div class="card-panel">'+undated.map(pileCard).join('')+'</div>';
+  }
+  if(!dated.length&&!undated.length)html='<div class="card-panel"><div class="empty-msg">Inget planerat just nu.</div></div>';
+  wrap.innerHTML=html;
+  bindCards(wrap);
+}
+
+// ── Export/import ─────────────────────────────────────
+document.getElementById('export-btn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='dompiler-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&Array.isArray(d.piles)){state=Object.assign(state,d);save();renderAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto';
+  const h=new Date().getHours();
+  const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#221F1A':'#F3EFE8';
+  const b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=()=>{
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    const v=b.dataset.v;
+    if(v==='overview')renderOverview();
+    if(v==='all'){renderFilters();renderAllList();}
+    if(v==='rooms')renderRooms();
+    if(v==='plan')renderPlan();
+  };
+});
+
+// Renderar om allt som är synligt
+function renderAll(){
+  renderOverview();
+  renderFilters();renderAllList();
+  renderRooms();
+  renderPlan();
+}
+
+// ── Synk-UI ───────────────────────────────────────────
+function setGhStatus(msg,type){
+  const el=document.getElementById('gh-status');
+  el.style.display='block';
+  el.style.background=type==='ok'?'var(--aktiv-soft)':type==='err'?'#FBEAE6':'var(--accent-soft)';
+  el.style.color=type==='ok'?'#3F4A38':type==='err'?'#9A3B28':'var(--ink)';
+  el.textContent=msg;
+}
+document.getElementById('sync-settings').onclick=()=>{
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('gh-disconnect').style.display=syncOn()?'block':'none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  setGhStatus('Testar anslutning…','info');
+  try{
+    const data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din lokala data…','ok');await ghPush();}
+    document.getElementById('gh-disconnect').style.display='block';
+    setTimeout(closeSheets,1100);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-disconnect').onclick=()=>{
+  sync={owner:'',repo:'',token:'',sha:null};saveSync();
+  setBadge('','Lokal');closeSheets();
+};
+document.getElementById('sync-now').onclick=()=>{if(syncOn())ghPull();else document.getElementById('sync-settings').onclick();};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+
+loadSync();
+renderAll();
+setBadge(syncOn()?'ok':'','Lokal');
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

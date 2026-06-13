@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23EEF1EB'/%3E%3Cpath d='M50 22 L78 46 H70 V76 H56 V58 H44 V76 H30 V46 H22 Z' fill='%237A8B6F'/%3E%3C/svg%3E">
+<title>Hemkomst — dator</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--sun:#D9C27E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 24px 60px}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.topbar h1{font-family:Georgia,serif;font-weight:400;font-size:24px;letter-spacing:.03em;flex:1}
+.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tbtn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:10px;padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .2s}
+.tbtn:hover{background:var(--panel2);color:var(--ink)}
+.sp-badge{font-size:12px;padding:4px 11px;border-radius:11px;background:var(--moss-soft);color:#3B6D11;font-weight:500}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px}
+.card h2{font-family:Georgia,serif;font-weight:400;font-size:17px;margin-bottom:12px}
+.soft{font-size:12.5px;color:var(--muted);line-height:1.6}
+
+/* Idag */
+.welcome b{font-family:Georgia,serif;font-weight:400;font-size:21px;display:block}
+.home-btn{width:100%;margin:14px 0 4px;border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:13px;padding:12px;font-size:15px;cursor:pointer;font-family:inherit;transition:background .2s}
+.home-btn:hover{background:#6b7c61}
+.home-btn.set{background:var(--moss-soft);border-color:var(--moss-soft);color:var(--ink);cursor:default}
+.progress-line{font-size:12.5px;color:var(--muted);margin:12px 0 6px}
+.bar{height:9px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-bottom:8px}
+.bar-fill{height:100%;background:var(--moss);transition:width .35s ease;border-radius:6px}
+.task{padding:11px 0;border-top:1px solid var(--line)}
+.task:first-child{border-top:none}
+.task-head{display:flex;align-items:center;gap:12px}
+.task-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--moss);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:15px;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.task-check.done{background:var(--moss)}
+.task-title{flex:1;font-size:15px}
+.task-title.done{text-decoration:line-through;color:var(--muted)}
+.task-day{font-size:10px;color:var(--clay);border:1px solid var(--line);border-radius:8px;padding:2px 6px;margin-left:6px}
+.done-banner{font-family:Georgia,serif;font-size:16px;color:var(--moss);padding:10px 0 2px;text-align:center}
+.last-card{background:var(--moss-soft);border:1px solid var(--moss);border-radius:16px;padding:14px 16px;font-size:13.5px;line-height:1.6;color:#3F4A38}
+.last-card b{font-family:Georgia,serif;font-weight:400}
+.last-card ul{margin:6px 0 0 18px}
+
+/* Kalender */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-head button{background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:17px;width:38px;height:38px;cursor:pointer}
+.cal-head button:hover{background:var(--panel2)}
+.cal-title{font-family:Georgia,serif;font-size:18px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-wd{text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:2px 0}
+.cal-cell{min-height:66px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:7px 8px;cursor:pointer;position:relative;transition:transform .1s}
+.cal-cell:hover{transform:translateY(-1px)}
+.cal-cell.empty{border:none;background:none;cursor:default}
+.cal-cell.empty:hover{transform:none}
+.cal-num{font-size:13px;font-weight:500}
+.cal-meta{position:absolute;bottom:6px;left:8px;font-size:10px;opacity:.85}
+.cal-cell.today{outline:2px solid var(--moss);outline-offset:-2px}
+.cal-cell.full{background:var(--moss);color:#fff;border-color:var(--moss)}
+.cal-cell.part{background:var(--sun);color:var(--ink);border-color:var(--sun)}
+.cal-cell.seen{background:var(--panel)}
+.cal-legend{display:flex;gap:18px;margin-top:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.cal-legend span{display:flex;align-items:center;gap:6px}
+.lg{width:13px;height:13px;border-radius:4px;display:inline-block}
+
+/* Detalj */
+#detail-card h2{margin-bottom:4px}
+.detail-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.detail-row:first-child{border-top:none}
+.detail-mark{width:20px;text-align:center}
+.detail-mark.ok{color:var(--moss)}
+.detail-mark.no{color:var(--clay)}
+.detail-row.no span{color:var(--muted)}
+
+/* Rutin-editor */
+.edit-item{padding:11px 0;border-top:1px solid var(--line)}
+.edit-item:first-child{border-top:none}
+.edit-top{display:flex;gap:8px;align-items:center}
+.edit-top input{flex:1}
+.edit-top button{background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--muted);cursor:pointer;font-size:14px;width:32px;height:32px;flex-shrink:0}
+.edit-top button:hover{background:var(--panel2)}
+input,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 11px;font-family:inherit;outline:none}
+input:focus{border-color:var(--moss)}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+.daychips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.daychip{border:1.5px solid var(--line);background:var(--panel);border-radius:9px;padding:6px 10px;font-size:11.5px;color:var(--muted);cursor:pointer;font-family:inherit}
+.daychip:hover{background:var(--panel2)}
+.daychip.on{background:var(--moss);border-color:var(--moss);color:#fff}
+.add-row{display:flex;gap:8px;margin-top:14px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:10px;padding:0 18px;cursor:pointer;font-size:20px}
+.add-row button:hover{background:#6b7c61}
+.empty-msg{font-size:12.5px;color:var(--muted);padding:8px 0;text-align:center}
+
+/* Overlay (synk) */
+.overlay{position:fixed;inset:0;background:rgba(60,66,55,.4);display:flex;align-items:center;justify-content:center;z-index:100}
+.overlay.hidden{display:none}
+.settings-box{background:var(--panel);border-radius:16px;border:1px solid var(--line);padding:24px 26px;width:480px;max-width:94vw}
+.settings-box h2{font-family:Georgia,serif;font-weight:400;font-size:18px;margin-bottom:6px}
+.settings-box p{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.settings-box input{width:100%;margin-bottom:10px}
+.hint{font-size:11.5px;color:var(--muted);background:var(--panel2);padding:6px 10px;border-radius:8px;margin:-4px 0 12px;line-height:1.5}
+.settings-row{display:flex;gap:8px;margin-top:6px}
+.btn-primary{flex:1;border:none;background:var(--moss);color:#fff;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn-primary:hover{background:#6b7c61}
+.btn-secondary{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:11px;padding:11px 18px;font-size:14px;cursor:pointer;font-family:inherit}
+.privacy{text-align:center;font-size:11px;color:var(--muted);opacity:.85;margin-top:10px}
+
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --clay:#C2A38B;--sun:#C2AC6B;
+}
+html[data-theme=dark] .cal-cell.part{color:#22251F}
+html[data-theme=dark] .sp-badge{color:#CFE0BF}
+html[data-theme=dark] .sp-badge.offline{color:var(--muted)}
+html{background:var(--bg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <h1>🏠 Hemkomst</h1>
+    <div class="tools">
+      <span id="sync-badge" class="sp-badge offline">Lokal</span>
+      <button class="tbtn" id="sync-btn">↻ Synka</button>
+      <button class="tbtn" id="sync-settings">⚙ Synk</button>
+      <button class="tbtn" id="export-btn">Exportera</button>
+      <button class="tbtn" id="import-btn">Importera</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+      <button class="tbtn" id="theme-btn" title="Tema">◐</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section>
+      <div class="card">
+        <div class="welcome">
+          <b id="welcome-title"></b>
+          <div class="soft" id="welcome-sub"></div>
+        </div>
+        <button class="home-btn" id="home-btn">Jag är hemma</button>
+        <div class="progress-line" id="prog-text"></div>
+        <div class="bar"><div class="bar-fill" id="prog-bar"></div></div>
+        <div id="routine-list"></div>
+        <div class="done-banner" id="done-banner" style="display:none">Allt på plats. Sätt dig ner nu. 🌿</div>
+      </div>
+      <div id="last-wrap"></div>
+    </section>
+
+    <section>
+      <div class="card">
+        <div class="cal-head">
+          <button id="cal-prev">‹</button>
+          <div class="cal-title" id="cal-title"></div>
+          <button id="cal-next">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-legend">
+          <span><i class="lg" style="background:var(--moss)"></i>Allt</span>
+          <span><i class="lg" style="background:var(--sun)"></i>Delvis</span>
+          <span><i class="lg" style="background:var(--panel)"></i>Hemma</span>
+        </div>
+      </div>
+
+      <div class="card" id="detail-card" style="display:none">
+        <h2 id="detail-title"></h2>
+        <div class="soft" id="detail-arrived" style="margin-bottom:8px"></div>
+        <div id="detail-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Hemkomstrutin</h2>
+        <div class="soft" style="margin-bottom:8px">Ordningen styr listan till vänster. Tagga ett steg till vissa veckodagar om det inte behöver göras varje dag.</div>
+        <div id="edit-list"></div>
+        <div class="add-row">
+          <input id="edit-in" placeholder="Nytt steg…" maxlength="60">
+          <button id="edit-add">+</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="privacy">Synkar mot samma privata GitHub-repo som mobilappen. Token sparas bara lokalt i den här webbläsaren.</div>
+</div>
+
+<div class="overlay hidden" id="sync-overlay">
+  <div class="settings-box">
+    <h2>⚙ Synk via GitHub</h2>
+    <p>Datorn läser och sparar <code>data.json</code> i ditt privata GitHub-repo — samma som mobilappen — så att telefon och dator delar rutin och historik.</p>
+    <label>GitHub-användarnamn (ägare av repot)</label>
+    <input type="text" id="gh-owner" placeholder="dittnamn">
+    <label>Namn på data-repot (privat)</label>
+    <input type="text" id="gh-repo" placeholder="hemkomst-data">
+    <label>Fine-grained token</label>
+    <input type="password" id="gh-token" placeholder="github_pat_…">
+    <div class="hint">github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+    <div id="gh-status" style="display:none;margin-bottom:10px;font-size:12.5px;padding:8px 12px;border-radius:8px"></div>
+    <div class="settings-row">
+      <button class="btn-primary" id="gh-save">Spara &amp; synka</button>
+      <button class="btn-secondary" id="gh-close">Stäng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State (samma nycklar och struktur som mobilappen) ─
+var KEY='hemkomst_v1';
+var WD=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+var MONTHS=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+var state={
+  steps:[
+    {id:'a1',text:'Skor och ytterkläder av',days:[]},
+    {id:'a2',text:'Nycklar och telefon på sin plats',days:[]},
+    {id:'a3',text:'Töm väskan',days:[]},
+    {id:'a4',text:'Byt till sköna hemkläder',days:[]},
+    {id:'a5',text:'Ett glas vatten',days:[]},
+    {id:'a6',text:'Töm dagens skräp och kolla posten',days:[]},
+    {id:'a7',text:'Sätt dig 5 min innan något mer',days:[]}
+  ],
+  days:{},
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var wd=function(d){return (d.getDay()+6)%7;};
+var uid=function(){return Math.random().toString(36).slice(2,8);};
+function rec(k){if(!state.days[k])state.days[k]={done:[],arrived:null};var r=state.days[k];r.done=r.done||[];return r;}
+function applicable(dateObj){var w=wd(dateObj);return state.steps.filter(function(st){return !st.days||!st.days.length||st.days.indexOf(w)>=0;});}
+function nowHM(){var d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+
+// ── Synk (GitHub — samma repo/struktur som mobilappen) ─
+var SYNC_KEY='hemkomstsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':' offline');}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){
+      if(Array.isArray(data.steps))state.steps=data.steps;
+      if(data.days&&typeof data.days==='object')state.days=Object.assign({},state.days,data.days);
+      save();renderAll();
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({steps:state.steps,days:state.days,updated:new Date().toISOString()}));
+  var doPut=function(){var body={message:'Uppdatering via Hemkomst (dator)',content:content};if(sync.sha)body.sha=sync.sha;return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});};
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json();
+  }).then(function(j){if(j&&j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+}
+var pushTimer=null;
+function persist(){save();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1400);}}
+function renderAll(){renderHome();renderCal();renderEdit();if(detailKey)openDetail(detailKey);}
+
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'#EAF3DE':type==='err'?'#FEF0F0':'#E6F1FB';
+  el.style.color=type==='ok'?'#3B6D11':type==='err'?'#A32D2D':'#185FA5';
+  el.textContent=msg;
+}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('sync-overlay').classList.remove('hidden');
+};
+document.getElementById('gh-close').onclick=function(){document.getElementById('sync-overlay').classList.add('hidden');};
+document.getElementById('sync-overlay').onclick=function(e){if(e.target.id==='sync-overlay')document.getElementById('sync-overlay').classList.add('hidden');};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){setGhStatus('✓ Ansluten! Hämtar din data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(function(){document.getElementById('sync-overlay').classList.add('hidden');},1100);})
+  .catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');});
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Idag ──────────────────────────────────────────────
+function greet(){var h=new Date().getHours();return h<10?'God morgon':h<22?'Välkommen hem':'Sköna att vara hemma';}
+function lastVisit(){var keys=Object.keys(state.days).filter(function(k){var r=state.days[k];return k<todayKey()&&(r.arrived||(r.done&&r.done.length));});keys.sort();return keys.length?keys[keys.length-1]:null;}
+function prettyDate(k){var p=k.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);var diff=Math.round((new Date(todayKey())-new Date(k))/86400000);if(diff===1)return 'igår';if(diff<7)return 'i '+WD[wd(d)].toLowerCase()+'s';return d.getDate()+'/'+(d.getMonth()+1);}
+function renderLast(){
+  var w=document.getElementById('last-wrap');var lk=lastVisit();
+  if(!lk){w.innerHTML='';return;}
+  var p=lk.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  var app=applicable(d);var r=state.days[lk];
+  var missed=app.filter(function(st){return r.done.indexOf(st.id)<0;});
+  var html='<div class="card last-card"><b>Förra gången ('+prettyDate(lk)+')</b>';
+  if(!missed.length){html+='<div style="margin-top:4px">Du hann hela rutinen. 🌿</div>';}
+  else{html+='<div style="margin-top:4px">Det här blev kvar:</div><ul>';for(var i=0;i<missed.length;i++)html+='<li>'+esc(missed[i].text)+'</li>';html+='</ul>';}
+  html+='</div>';w.innerHTML=html;
+}
+function renderHome(){
+  document.getElementById('welcome-title').textContent=greet();
+  var r=rec(todayKey());var sub=document.getElementById('welcome-sub');var btn=document.getElementById('home-btn');
+  if(r.arrived){sub.textContent='Hemma sedan kl '+r.arrived;btn.textContent='Hemma kl '+r.arrived+' ✓';btn.classList.add('set');}
+  else{sub.textContent='Klicka när du kommit in så börjar rutinen.';btn.textContent='Jag är hemma';btn.classList.remove('set');}
+  var app=applicable(new Date());var el=document.getElementById('routine-list');var html='';
+  for(var i=0;i<app.length;i++){
+    var st=app[i];var done=r.done.indexOf(st.id)>=0;
+    var tag=(st.days&&st.days.length)?'<span class="task-day">'+st.days.map(function(x){return WD[x];}).join(' ')+'</span>':'';
+    html+='<div class="task"><div class="task-head"><button class="task-check'+(done?' done':'')+'" data-id="'+st.id+'">'+(done?'✓':'')+'</button><div class="task-title'+(done?' done':'')+'">'+esc(st.text)+tag+'</div></div></div>';
+  }
+  el.innerHTML=html||'<div class="empty-msg">Inga steg för idag — lägg till nedan.</div>';
+  var checks=el.querySelectorAll('.task-check');for(var j=0;j<checks.length;j++)checks[j].onclick=toggleStep;
+  var doneCount=app.filter(function(st){return r.done.indexOf(st.id)>=0;}).length;
+  var pct=app.length?Math.round(doneCount/app.length*100):0;
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('prog-text').textContent=doneCount+' av '+app.length+' klart';
+  document.getElementById('done-banner').style.display=(app.length&&doneCount===app.length)?'block':'none';
+  renderLast();
+}
+function toggleStep(){
+  var id=this.dataset.id;var r=rec(todayKey());var ix=r.done.indexOf(id);
+  if(ix>=0)r.done.splice(ix,1);else{r.done.push(id);if(!r.arrived)r.arrived=nowHM();}
+  persist();renderHome();renderCal();
+}
+document.getElementById('home-btn').onclick=function(){var r=rec(todayKey());if(!r.arrived){r.arrived=nowHM();persist();renderHome();renderCal();}};
+
+// ── Kalender ──────────────────────────────────────────
+var calY,calM,detailKey=null;
+(function(){var n=new Date();calY=n.getFullYear();calM=n.getMonth();})();
+function dayClass(k,dateObj){
+  var r=state.days[k];if(!r)return '';
+  var app=applicable(dateObj);var dc=app.filter(function(st){return r.done.indexOf(st.id)>=0;}).length;
+  if(app.length&&dc===app.length)return 'full';
+  if(dc>0)return 'part';
+  if(r.arrived||r.done.length)return 'seen';
+  return '';
+}
+function renderCal(){
+  document.getElementById('cal-title').textContent=MONTHS[calM]+' '+calY;
+  var grid=document.getElementById('cal-grid');var html='';
+  for(var w=0;w<7;w++)html+='<div class="cal-wd">'+WD[w]+'</div>';
+  var first=new Date(calY,calM,1);var offset=wd(first);var dim=new Date(calY,calM+1,0).getDate();
+  for(var o=0;o<offset;o++)html+='<div class="cal-cell empty"></div>';
+  for(var dn=1;dn<=dim;dn++){
+    var dObj=new Date(calY,calM,dn);var k=toISO(dObj);var cls=dayClass(k,dObj);var isToday=(k===todayKey());
+    var r=state.days[k];var meta='';
+    if(r){var app=applicable(dObj);var dc=app.filter(function(st){return r.done.indexOf(st.id)>=0;}).length;if(app.length)meta='<span class="cal-meta">'+dc+'/'+app.length+'</span>';}
+    html+='<div class="cal-cell '+cls+(isToday?' today':'')+'" data-k="'+k+'"><span class="cal-num">'+dn+'</span>'+meta+'</div>';
+  }
+  grid.innerHTML=html;
+  var cells=grid.querySelectorAll('.cal-cell[data-k]');for(var i=0;i<cells.length;i++)cells[i].onclick=function(){openDetail(this.dataset.k);};
+}
+document.getElementById('cal-prev').onclick=function(){calM--;if(calM<0){calM=11;calY--;}renderCal();};
+document.getElementById('cal-next').onclick=function(){calM++;if(calM>11){calM=0;calY++;}renderCal();};
+function openDetail(k){
+  detailKey=k;
+  var p=k.split('-');var dObj=new Date(+p[0],+p[1]-1,+p[2]);
+  document.getElementById('detail-card').style.display='block';
+  document.getElementById('detail-title').textContent=WD[wd(dObj)]+' '+dObj.getDate()+' '+MONTHS[dObj.getMonth()];
+  var r=state.days[k];
+  document.getElementById('detail-arrived').textContent=(r&&r.arrived)?'Hemma kl '+r.arrived:'Ingen hemkomst noterad.';
+  var app=applicable(dObj);var el=document.getElementById('detail-list');
+  if(!app.length){el.innerHTML='<div class="empty-msg">Inga steg den dagen.</div>';return;}
+  var html='';
+  for(var i=0;i<app.length;i++){var st=app[i];var done=r&&r.done.indexOf(st.id)>=0;html+='<div class="detail-row'+(done?'':' no')+'"><span class="detail-mark '+(done?'ok':'no')+'">'+(done?'✓':'○')+'</span><span>'+esc(st.text)+'</span></div>';}
+  el.innerHTML=html;
+}
+
+// ── Rutin-editor ──────────────────────────────────────
+function renderEdit(){
+  var el=document.getElementById('edit-list');var html='';
+  for(var i=0;i<state.steps.length;i++){
+    var st=state.steps[i];
+    html+='<div class="edit-item"><div class="edit-top">'
+      +'<button data-act="up" data-i="'+i+'"'+(i===0?' disabled style="opacity:.3"':'')+'>▲</button>'
+      +'<button data-act="down" data-i="'+i+'"'+(i===state.steps.length-1?' disabled style="opacity:.3"':'')+'>▼</button>'
+      +'<input data-act="text" data-i="'+i+'" value="'+esc(st.text)+'" maxlength="60">'
+      +'<button data-act="del" data-i="'+i+'">×</button></div><div class="daychips">';
+    for(var w=0;w<7;w++){var on=st.days&&st.days.indexOf(w)>=0;html+='<button class="daychip'+(on?' on':'')+'" data-act="day" data-i="'+i+'" data-w="'+w+'">'+WD[w]+'</button>';}
+    html+='</div>'+(st.days&&st.days.length?'':'<div class="soft" style="margin-top:5px">Varje dag</div>')+'</div>';
+  }
+  el.innerHTML=html||'<div class="empty-msg">Inga steg ännu.</div>';
+  var btns=el.querySelectorAll('[data-act]');for(var b=0;b<btns.length;b++)btns[b].onclick=btns[b].oninput=editAction;
+}
+function editAction(e){
+  var act=this.dataset.act,i=+this.dataset.i,st=state.steps[i];
+  if(act==='text'){st.text=this.value;persist();return;}
+  if(act==='del'){if(confirm('Ta bort steget?')){state.steps.splice(i,1);persist();renderEdit();renderHome();renderCal();}return;}
+  if(act==='up'&&i>0){var t=state.steps[i-1];state.steps[i-1]=st;state.steps[i]=t;persist();renderEdit();renderHome();return;}
+  if(act==='down'&&i<state.steps.length-1){var t2=state.steps[i+1];state.steps[i+1]=st;state.steps[i]=t2;persist();renderEdit();renderHome();return;}
+  if(act==='day'){var w=+this.dataset.w;st.days=st.days||[];var ix=st.days.indexOf(w);if(ix>=0)st.days.splice(ix,1);else st.days.push(w);st.days.sort(function(a,b){return a-b;});persist();renderEdit();renderHome();renderCal();return;}
+}
+document.getElementById('edit-add').onclick=function(){var inp=document.getElementById('edit-in');var v=inp.value.trim();if(!v)return;state.steps.push({id:uid(),text:v,days:[]});inp.value='';persist();renderEdit();renderHome();renderCal();};
+document.getElementById('edit-in').onkeydown=function(e){if(e.key==='Enter')document.getElementById('edit-add').onclick();};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='hemkomst-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.steps){state=Object.assign(state,d);persist();renderAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Init ──────────────────────────────────────────────
+loadSync();
+renderHome();renderCal();renderEdit();
+applyTheme();
+setBadge(syncOn()?'ok':'off',syncOn()?'Synkad':'Lokal');
+if(syncOn())ghPull();
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
