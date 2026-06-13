@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Projekt">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Projektplanering","short_name":"Projekt","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<title>Projekt – dator</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--sun:#D9C27E;
+  --jobb:#5E8C61;--jobb-soft:#E4EDE4;
+  --privat:#C2856A;--privat-soft:#F3E4DC;
+  --hog:#C08A7E;--normal:#7E8676;--lag:#A9B49C;
+  --navbg:rgba(238,241,235,.95);
+}
+[data-theme="dark"]{
+  --bg:#1A1E18;--panel:#232820;--panel2:#2C322A;--line:#3A4035;
+  --ink:#E4E8DD;--muted:#9AA391;--moss:#8FA17F;--moss-soft:#33402F;
+  --jobb:#7FB07F;--jobb-soft:#2C3A2C;
+  --privat:#D2A487;--privat-soft:#3E2F26;
+  --hog:#D29A8C;--normal:#9AA391;--lag:#7E8C72;
+  --navbg:rgba(26,30,24,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:2px 0 12px}
+.view-title{font-family:Georgia,serif;font-size:24px;font-weight:400;letter-spacing:.01em;margin:2px 0 2px}
+.view-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn:active{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff;border-color:var(--moss)}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:8px 11px}
+.btn.danger{border-color:var(--hog);color:var(--hog)}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.btn-block{width:100%;display:block;text-align:center}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--moss)}
+textarea{resize:vertical;min-height:60px}
+.empty{font-size:13px;color:var(--muted);text-align:center;padding:26px 14px;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.row{display:flex;align-items:center;gap:8px}
+.spacer{flex:1}
+
+/* badges & chips */
+.badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:8px}
+.badge.jobb{background:var(--jobb-soft);color:var(--jobb)}
+.badge.privat{background:var(--privat-soft);color:var(--privat)}
+.filter-row{display:flex;gap:7px;margin-bottom:12px}
+.filter{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:11px;padding:8px 4px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center}
+.filter.on{background:var(--moss);border-color:var(--moss);color:#fff}
+
+/* overview summary */
+.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center}
+.stat b{display:block;font-family:Georgia,serif;font-size:24px;font-weight:400;color:var(--ink)}
+.stat small{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.stat.warn b{color:var(--hog)}
+
+/* project card */
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid var(--moss)}
+.pcard.t-jobb{border-left-color:var(--jobb)}
+.pcard.t-privat{border-left-color:var(--privat)}
+.pcard:active{background:var(--panel2)}
+.pcard h3{font-family:Georgia,serif;font-weight:400;font-size:17px;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.pcard .meta{font-size:11px;color:var(--muted);margin-bottom:9px}
+.bar{height:7px;background:var(--panel2);border-radius:5px;overflow:hidden;margin:4px 0 5px}
+.bar i{display:block;height:100%;background:var(--moss);border-radius:5px;transition:width .4s}
+.t-jobb .bar i{background:var(--jobb)}
+.t-privat .bar i{background:var(--privat)}
+.bar-label{font-size:11px;color:var(--muted)}
+
+/* deadline list */
+.dl{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.dl:first-child{border-top:none}
+.dl .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--moss)}
+.dl .dt{font-size:14px;flex:1}
+.dl .dt small{display:block;font-size:11px;color:var(--muted)}
+.dl .when{font-size:11px;font-weight:600;padding:3px 8px;border-radius:8px;background:var(--moss-soft);color:var(--moss);white-space:nowrap}
+.dl .when.soon{background:var(--privat-soft);color:var(--privat)}
+.dl .when.over{background:#F3DCDC;color:#A04545}
+[data-theme="dark"] .dl .when.over{background:#3E2626;color:#E0A0A0}
+
+/* detail header */
+.det-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:4px}
+.back{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.back:active{background:var(--panel2)}
+
+/* kanban */
+.board{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 0 6px;margin:0 -14px;padding-left:14px;padding-right:14px}
+.col{flex:0 0 80%;scroll-snap-align:start;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;min-height:120px}
+.col-head{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.col-head .cnt{margin-left:auto;background:var(--panel2);border-radius:8px;padding:1px 7px;font-size:11px;color:var(--muted)}
+.col-head .swatch{width:8px;height:8px;border-radius:50%}
+.col.todo .swatch{background:var(--lag)}
+.col.doing .swatch{background:var(--sun)}
+.col.done .swatch{background:var(--moss)}
+.tcard{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px;margin-bottom:8px}
+.tcard .tt{font-size:14px;line-height:1.35;display:flex;gap:7px;align-items:flex-start}
+.tcard .pri{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.pri.hog{background:var(--hog)}
+.pri.normal{background:var(--normal);opacity:.5}
+.pri.lag{background:var(--lag)}
+.tcard.done .tt{text-decoration:line-through;color:var(--muted)}
+.tcard .trow{display:flex;align-items:center;gap:6px;margin-top:8px}
+.dl-pill{font-size:10px;font-weight:600;padding:2px 7px;border-radius:7px;background:var(--moss-soft);color:var(--moss)}
+.dl-pill.soon{background:var(--privat-soft);color:var(--privat)}
+.dl-pill.over{background:#F3DCDC;color:#A04545}
+[data-theme="dark"] .dl-pill.over{background:#3E2626;color:#E0A0A0}
+.mini{margin-left:auto;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;width:30px;height:28px;font-size:14px;cursor:pointer;font-family:inherit}
+.mini:active{background:var(--moss-soft)}
+.add-task{width:100%;border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit}
+.add-task:active{background:var(--panel2)}
+
+/* milstolpar */
+.ms{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.ms:first-child{border-top:none}
+.ms .check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
+.ms .check.on{background:var(--moss);border-color:var(--moss)}
+.ms .mt{flex:1;font-size:14px}
+.ms .mt small{display:block;font-size:11px;color:var(--muted)}
+.ms.done .mt{text-decoration:line-through;color:var(--muted)}
+
+/* timeline */
+.tl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
+.tl-track{position:relative}
+.tl-months{display:flex;border-bottom:1px solid var(--line);margin-bottom:8px;position:relative;height:22px}
+.tl-month{position:absolute;top:0;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-left:1px solid var(--line);padding-left:4px;height:22px}
+.tl-row{position:relative;height:34px;margin-bottom:6px}
+.tl-row .rlabel{position:absolute;left:0;top:7px;font-size:11px;color:var(--ink);z-index:2;background:var(--bg);padding-right:6px;max-width:42%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-bar{position:absolute;top:6px;height:20px;border-radius:7px;background:var(--moss);opacity:.9;cursor:pointer;display:flex;align-items:center;padding:0 7px;font-size:10px;color:#fff;overflow:hidden;white-space:nowrap}
+.tl-bar.t-jobb{background:var(--jobb)}
+.tl-bar.t-privat{background:var(--privat)}
+.tl-ms{position:absolute;top:3px;width:8px;height:8px;background:var(--ink);border:2px solid var(--bg);border-radius:50%;transform:translateX(-4px);z-index:3}
+.tl-today{position:absolute;top:0;bottom:0;width:2px;background:var(--hog);z-index:1;opacity:.7}
+
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--moss);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.12)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-weight:400;font-size:19px;margin-bottom:6px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;margin-top:16px;font-family:inherit}
+.seg{display:flex;gap:6px;margin-top:4px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:10px;padding:9px 4px;font-size:13px;cursor:pointer;font-family:inherit}
+.seg button.on{background:var(--moss);border-color:var(--moss);color:#fff}
+.seg.pri button.on.hog{background:var(--hog);border-color:var(--hog)}
+.seg.pri button.on.lag{background:var(--lag);border-color:var(--lag)}
+/* sync */
+.syncb{font-size:11px;font-weight:600;padding:3px 10px;border-radius:9px;background:var(--panel2);color:var(--muted)}
+.syncb.on{background:var(--moss-soft);color:var(--moss)}
+.syncb.load{background:#E2E9F2;color:#3F7FBF}
+.syncb.err{background:#F3DCDC;color:#A04545}
+[data-theme="dark"] .syncb.load{background:#23303E;color:#8FB8E0}
+[data-theme="dark"] .syncb.err{background:#3E2626;color:#E0A0A0}
+.gh-status{margin-top:12px;font-size:12px;padding:9px 12px;border-radius:10px;line-height:1.5}
+.gh-status.ok{background:var(--moss-soft);color:var(--moss)}
+.gh-status.err{background:#F3DCDC;color:#A04545}
+.gh-status.info{background:#E2E9F2;color:#3F7FBF}
+[data-theme="dark"] .gh-status.err{background:#3E2626;color:#E0A0A0}
+[data-theme="dark"] .gh-status.info{background:#23303E;color:#8FB8E0}
+.nav-brand{display:none}
+
+/* ---------- DESKTOP-LAYOUT ---------- */
+  body{padding:0}
+  h1.brand{display:none}
+  .nav{top:0;right:auto;bottom:0;width:216px;flex-direction:column;border-top:none;border-right:1px solid var(--line);padding:18px 12px;gap:4px;backdrop-filter:none;background:var(--panel)}
+  .nav-brand{display:block;font-family:Georgia,serif;font-size:22px;letter-spacing:.04em;color:var(--ink);padding:6px 12px 18px}
+  .nav button{flex:0 0 auto;display:flex;align-items:center;gap:12px;text-align:left;font-size:14px;padding:11px 14px;border-radius:12px}
+  .nav button.active{background:var(--moss-soft)}
+  .nav button span{display:inline;font-size:18px;margin:0}
+  .app{max-width:1040px;margin:0 0 0 216px;padding:30px 40px 60px}
+  .view-title{font-size:28px}
+  .summary{max-width:540px}
+  #proj-list,#ov-projects{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  #proj-list .pcard,#ov-projects .pcard{margin-bottom:0}
+  #add-proj{max-width:220px}
+  .board{flex-wrap:nowrap;overflow-x:visible;margin:0;padding:2px 0 6px;gap:14px}
+  .col{flex:1 1 0}
+  #det-ms{max-width:600px}
+  .ms .check,.tcard,.add-task,.mini{cursor:pointer}
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;width:460px;max-width:92vw;border-radius:18px;transform:translate(-50%,-46%);opacity:0;pointer-events:none;transition:transform .2s ease,opacity .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+</style>
+</head>
+<body data-theme="light">
+<div class="app">
+
+  <h1 class="brand">Projekt</h1>
+
+  <!-- ÖVERSIKT -->
+  <div class="view active" id="v-oversikt">
+    <div class="view-title" id="ov-hello">Översikt</div>
+    <div class="view-sub" id="ov-date"></div>
+    <div class="summary">
+      <div class="stat"><b id="st-proj">0</b><small>Aktiva projekt</small></div>
+      <div class="stat"><b id="st-week">0</b><small>Denna vecka</small></div>
+      <div class="stat warn"><b id="st-over">0</b><small>Försenade</small></div>
+    </div>
+    <div class="section-title">Kommande deadlines</div>
+    <div class="card" id="ov-deadlines"></div>
+    <div class="section-title">Dina projekt</div>
+    <div id="ov-projects"></div>
+  </div>
+
+  <!-- PROJEKT -->
+  <div class="view" id="v-projekt">
+    <div class="view-title">Projekt</div>
+    <div class="view-sub">Alla dina projekt</div>
+    <div class="filter-row">
+      <button class="filter on" data-filter="alla">Alla</button>
+      <button class="filter" data-filter="jobb">Jobb</button>
+      <button class="filter" data-filter="privat">Privat</button>
+    </div>
+    <div id="proj-list"></div>
+    <button class="btn fill btn-block" id="add-proj" style="margin-top:8px">+ Nytt projekt</button>
+  </div>
+
+  <!-- DETALJ -->
+  <div class="view" id="v-detalj">
+    <div class="det-head">
+      <button class="back" id="det-back">&#8249;</button>
+      <div style="flex:1;min-width:0">
+        <div class="view-title" id="det-name" style="font-size:21px"></div>
+        <div class="view-sub" id="det-meta" style="margin-bottom:0"></div>
+      </div>
+      <button class="mini" id="det-edit" style="width:34px;height:34px;font-size:15px">&#9881;</button>
+    </div>
+    <div class="bar" style="margin-top:12px"><i id="det-bar"></i></div>
+    <div class="bar-label" id="det-barlabel"></div>
+
+    <div class="section-title">Tavla</div>
+    <div class="board" id="det-board"></div>
+
+    <div class="section-title">Milstolpar</div>
+    <div class="card" id="det-ms"></div>
+    <button class="btn ghost btn-block" id="add-ms" style="margin-top:8px">+ Milstolpe</button>
+  </div>
+
+  <!-- TIDSLINJE -->
+  <div class="view" id="v-tidslinje">
+    <div class="view-title">Tidslinje</div>
+    <div class="view-sub">Projekt över tid</div>
+    <div class="card" id="tl-card"></div>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap;gap:14px">
+      <span class="row" style="gap:6px;font-size:11px;color:var(--muted)"><i style="width:12px;height:12px;border-radius:4px;background:var(--jobb);display:inline-block"></i>Jobb</span>
+      <span class="row" style="gap:6px;font-size:11px;color:var(--muted)"><i style="width:12px;height:12px;border-radius:4px;background:var(--privat);display:inline-block"></i>Privat</span>
+      <span class="row" style="gap:6px;font-size:11px;color:var(--muted)"><i style="width:2px;height:12px;background:var(--hog);display:inline-block"></i>Idag</span>
+    </div>
+  </div>
+
+  <!-- MER -->
+  <div class="view" id="v-mer">
+    <div class="view-title">Mer</div>
+    <div class="view-sub">Inställningar &amp; data</div>
+    <div class="section-title">Statistik</div>
+    <div class="card" id="mer-stats"></div>
+    <div class="section-title">Tema</div>
+    <div class="card">
+      <div class="seg theme-seg" id="theme-seg">
+        <button data-theme-val="auto">Auto</button>
+        <button data-theme-val="light">Ljust</button>
+        <button data-theme-val="dark">Mörkt</button>
+      </div>
+      <div class="soft" style="margin-top:8px">Auto växlar till mörkt 20:00–07:00.</div>
+    </div>
+    <div class="section-title">Synk</div>
+    <div class="card">
+      <div class="row" style="margin-bottom:10px"><div style="flex:1;font-size:14px">Status</div><span id="sync-badge" class="syncb off">Lokal</span></div>
+      <button class="btn btn-block" id="sync-now" style="margin-bottom:8px">Synka nu</button>
+      <button class="btn ghost btn-block" id="sync-settings">Synkinställningar</button>
+      <div class="soft" style="margin-top:10px">Synkar via ett privat GitHub-repo så att samma projekt finns på både mobil och dator.</div>
+    </div>
+    <div class="section-title">Data</div>
+    <div class="card">
+      <button class="btn btn-block" id="export-btn" style="margin-bottom:8px">Exportera (JSON)</button>
+      <button class="btn btn-block" id="import-btn">Importera (JSON)</button>
+      <input type="file" id="import-file" accept="application/json,.json" style="display:none">
+      <div class="soft" style="margin-top:10px">All data sparas lokalt i din webbläsare.</div>
+    </div>
+    <div class="section-title">Rensa</div>
+    <div class="card">
+      <button class="btn danger btn-block" id="clear-btn">Radera all data</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-brand">Projekt</div>
+  <button class="active" data-view="oversikt"><span>&#9776;</span>Översikt</button>
+  <button data-view="projekt"><span>&#128193;</span>Projekt</button>
+  <button data-view="tidslinje"><span>&#128197;</span>Tidslinje</button>
+  <button data-view="mer"><span>&#8943;</span>Mer</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="proj-sheet">
+  <h3 id="ps-title">Nytt projekt</h3>
+  <label>Namn</label>
+  <input type="text" id="ps-name" placeholder="T.ex. Migrering till nya systemet">
+  <label>Typ</label>
+  <div class="seg" id="ps-type">
+    <button data-val="jobb" class="on">Jobb</button>
+    <button data-val="privat">Privat</button>
+  </div>
+  <label>Beskrivning (valfritt)</label>
+  <textarea id="ps-desc" placeholder="Kort om projektet…"></textarea>
+  <div class="btn-row">
+    <div style="flex:1"><label>Startdatum</label><input type="date" id="ps-start"></div>
+    <div style="flex:1"><label>Slutdatum</label><input type="date" id="ps-end"></div>
+  </div>
+  <button class="btn danger btn-block" id="ps-delete" style="margin-top:14px;display:none">Radera projekt</button>
+  <button class="sheet-close" id="ps-save">Spara</button>
+</div>
+
+<div class="sheet" id="task-sheet">
+  <h3 id="ts-title">Ny uppgift</h3>
+  <label>Vad ska göras?</label>
+  <input type="text" id="ts-name" placeholder="Beskriv uppgiften">
+  <label>Status</label>
+  <div class="seg" id="ts-status">
+    <button data-val="todo" class="on">Att göra</button>
+    <button data-val="doing">Pågår</button>
+    <button data-val="done">Klart</button>
+  </div>
+  <label>Prioritet</label>
+  <div class="seg pri" id="ts-pri">
+    <button data-val="lag">Låg</button>
+    <button data-val="normal" class="on">Normal</button>
+    <button data-val="hog">Hög</button>
+  </div>
+  <label>Deadline (valfritt)</label>
+  <input type="date" id="ts-deadline">
+  <label>Anteckning (valfritt)</label>
+  <textarea id="ts-note" placeholder="Detaljer…"></textarea>
+  <button class="btn danger btn-block" id="ts-delete" style="margin-top:14px;display:none">Radera uppgift</button>
+  <button class="sheet-close" id="ts-save">Spara</button>
+</div>
+
+<div class="sheet" id="ms-sheet">
+  <h3 id="mss-title">Ny milstolpe</h3>
+  <label>Namn</label>
+  <input type="text" id="mss-name" placeholder="T.ex. Lansering">
+  <label>Datum</label>
+  <input type="date" id="mss-date">
+  <button class="btn danger btn-block" id="mss-delete" style="margin-top:14px;display:none">Radera milstolpe</button>
+  <button class="sheet-close" id="mss-save">Spara</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>&#9881; Synk via GitHub</h3>
+  <div class="soft" style="margin-bottom:6px">Appen läser och sparar <b>projekt.json</b> i ett <b>privat</b> GitHub-repo, så att samma data finns på alla dina enheter. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="dittnamn" autocapitalize="off" autocorrect="off">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="projekt-data" autocapitalize="off" autocorrect="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:6px">Skapas på github.com → Settings → Developer settings → Fine-grained tokens. Ge åtkomst till ENDAST data-repot med <b>Contents: Read and write</b>.</div>
+  <div id="gh-status" class="gh-status" style="display:none"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<script>
+/* ---------- state ---------- */
+var STORE='projektplanering_v1';
+var state={projects:[],settings:{theme:'auto'}};
+var currentFilter='alla';
+var currentProjectId=null;
+
+function load(){
+  try{
+    var raw=localStorage.getItem(STORE);
+    if(raw){ var d=JSON.parse(raw); if(d&&d.projects){ state=d; } }
+  }catch(e){}
+  if(!state.settings){ state.settings={theme:'auto'}; }
+  if(!state.projects){ state.projects=[]; }
+}
+var applyingRemote=false, pushTimer=null;
+function save(){
+  try{ localStorage.setItem(STORE,JSON.stringify(state)); }catch(e){}
+  if(!applyingRemote && syncOn()){ schedulePush(); }
+}
+function schedulePush(){
+  if(pushTimer) clearTimeout(pushTimer);
+  pushTimer=setTimeout(function(){ ghPush().catch(function(){}); }, 900);
+}
+
+/* ---------- GitHub-synk (samma mönster som jobbappen) ---------- */
+var SYNC_KEY='projektsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){ try{ var s=localStorage.getItem(SYNC_KEY); if(s){ var d=JSON.parse(s); sync.owner=d.owner||''; sync.repo=d.repo||''; sync.token=d.token||''; } }catch(e){} }
+function saveSync(){ try{ localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token})); }catch(e){} }
+function syncOn(){ return !!(sync.owner&&sync.repo&&sync.token); }
+function ghUrl(){ return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/projekt.json'; }
+function ghHeaders(){ return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'}; }
+function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64dec(s){ return decodeURIComponent(escape(atob(s.replace(/\s/g,'')))); }
+
+function setBadge(statev,msg){
+  var b=document.getElementById('sync-badge'); if(!b) return;
+  b.textContent=msg;
+  b.className='syncb '+(statev==='ok'?'on':(statev==='err'?'err':(statev==='load'?'load':'off')));
+}
+function applyRemote(data){
+  applyingRemote=true;
+  if(data && Array.isArray(data.projects)) state.projects=data.projects;
+  if(data && data.settings) state.settings=data.settings;
+  save();
+  applyingRemote=false;
+  applyTheme();
+  refreshAll();
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){ sync.sha=null; return null; }
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){ sync.sha=j.sha; return JSON.parse(b64dec(j.content)); });
+  });
+}
+function ghPull(){
+  if(!syncOn()) return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data) applyRemote(data);
+    setBadge('ok','Synkad');
+  }).catch(function(){ setBadge('err','Synkfel'); });
+}
+function ghPush(){
+  if(!syncOn()) return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({projects:state.projects,settings:state.settings,updated:new Date().toISOString()}));
+  function doPut(){
+    var body={message:'Uppdatering via appen',content:content};
+    if(sync.sha) body.sha=sync.sha;
+    var h=ghHeaders(); h['Content-Type']='application/json';
+    return fetch(ghUrl(),{method:'PUT',headers:h,body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){ return ghGet().catch(function(){}).then(doPut); }
+    return r;
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){
+    if(j.content&&j.content.sha) sync.sha=j.content.sha;
+    setBadge('ok','Synkad');
+  }).catch(function(){ setBadge('err','Synkfel'); });
+}
+
+/* ---------- helpers ---------- */
+function uid(p){ return (p||'id')+Date.now().toString(36)+Math.floor(Math.random()*1000).toString(36); }
+function esc(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function todayISO(){ var d=new Date(); return ymd(d); }
+function ymd(d){ var m=d.getMonth()+1, day=d.getDate(); return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(day<10?'0':'')+day; }
+function parseDate(s){ if(!s) return null; var p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+var MONTHS=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+var MONTHS_LONG=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+function fmtShort(s){ var d=parseDate(s); if(!d) return ''; return d.getDate()+' '+MONTHS[d.getMonth()]; }
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+function daysUntil(s){ var d=parseDate(s); if(!d) return null; var t=parseDate(todayISO()); return daysBetween(t,d); }
+function whenLabel(n){
+  if(n===0) return 'Idag';
+  if(n===1) return 'Imorgon';
+  if(n===-1) return 'Igår';
+  if(n<0) return Math.abs(n)+' d sen';
+  return 'Om '+n+' d';
+}
+
+/* ---------- project helpers ---------- */
+function getProject(id){ for(var i=0;i<state.projects.length;i++){ if(state.projects[i].id===id) return state.projects[i]; } return null; }
+function progress(p){
+  var t=p.tasks||[]; if(!t.length) return {done:0,total:0,pct:0};
+  var d=0; for(var i=0;i<t.length;i++){ if(t[i].status==='done') d++; }
+  return {done:d,total:t.length,pct:Math.round(d/t.length*100)};
+}
+function isActive(p){
+  var pr=progress(p);
+  if(pr.total>0 && pr.done===pr.total) return false;
+  return true;
+}
+
+/* ---------- nav / views ---------- */
+function showView(v){
+  var ids=['oversikt','projekt','detalj','tidslinje','mer'];
+  for(var i=0;i<ids.length;i++){
+    document.getElementById('v-'+ids[i]).classList.toggle('active', ids[i]===v);
+  }
+  var navMap={oversikt:'oversikt',projekt:'projekt',detalj:'projekt',tidslinje:'tidslinje',mer:'mer'};
+  var btns=document.querySelectorAll('.nav button');
+  for(var j=0;j<btns.length;j++){ btns[j].classList.toggle('active', btns[j].getAttribute('data-view')===navMap[v]); }
+  window.scrollTo(0,0);
+}
+var navBtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navBtns.length;n++){
+  navBtns[n].onclick=function(){
+    var v=this.getAttribute('data-view');
+    if(v==='oversikt') renderOversikt();
+    if(v==='projekt') renderProjList();
+    if(v==='tidslinje') renderTimeline();
+    if(v==='mer') renderMer();
+    showView(v);
+  };
+}
+
+/* ---------- ÖVERSIKT ---------- */
+function renderOversikt(){
+  var d=new Date();
+  var h=d.getHours();
+  var greet = h<10?'God morgon':(h<18?'Hej':'God kväll');
+  document.getElementById('ov-hello').textContent=greet;
+  document.getElementById('ov-date').textContent=d.getDate()+' '+MONTHS_LONG[d.getMonth()]+' '+d.getFullYear();
+
+  var active=0, weekTasks=0, overdue=0;
+  var deadlines=[];
+  for(var i=0;i<state.projects.length;i++){
+    var p=state.projects[i];
+    if(isActive(p)) active++;
+    var ts=p.tasks||[];
+    for(var t=0;t<ts.length;t++){
+      var tk=ts[t];
+      if(tk.status==='done') continue;
+      if(tk.deadline){
+        var du=daysUntil(tk.deadline);
+        if(du<0) overdue++;
+        if(du>=0 && du<=7) weekTasks++;
+        deadlines.push({proj:p,task:tk,du:du});
+      }
+    }
+  }
+  document.getElementById('st-proj').textContent=active;
+  document.getElementById('st-week').textContent=weekTasks;
+  document.getElementById('st-over').textContent=overdue;
+
+  deadlines.sort(function(a,b){ return a.du-b.du; });
+  var dc=document.getElementById('ov-deadlines');
+  if(!deadlines.length){
+    dc.innerHTML='<div class="empty">Inga deadlines inlagda än.</div>';
+  }else{
+    var html='';
+    var lim=Math.min(deadlines.length,6);
+    for(var k=0;k<lim;k++){
+      var it=deadlines[k];
+      var cls = it.du<0?'over':(it.du<=3?'soon':'');
+      html+='<div class="dl" onclick="openProjekt(\''+it.proj.id+'\')">';
+      html+='<div class="dot" style="background:var(--'+(it.proj.typ)+')"></div>';
+      html+='<div class="dt">'+esc(it.task.titel)+'<small>'+esc(it.proj.namn)+'</small></div>';
+      html+='<div class="when '+cls+'">'+whenLabel(it.du)+'</div></div>';
+    }
+    dc.innerHTML=html;
+  }
+
+  var pc=document.getElementById('ov-projects');
+  var act=state.projects.filter(isActive);
+  if(!act.length){
+    pc.innerHTML='<div class="empty">Inga aktiva projekt.<br>Skapa ett under fliken Projekt.</div>';
+  }else{
+    pc.innerHTML=act.map(projectCardHtml).join('');
+  }
+}
+
+function projectCardHtml(p){
+  var pr=progress(p);
+  var meta=[];
+  if(p.start||p.slut){ meta.push((p.start?fmtShort(p.start):'')+' – '+(p.slut?fmtShort(p.slut):'')); }
+  meta.push(pr.total+' uppgifter');
+  var h='<div class="pcard t-'+p.typ+'" onclick="openProjekt(\''+p.id+'\')">';
+  h+='<h3>'+esc(p.namn)+' <span class="badge '+p.typ+'">'+(p.typ==='jobb'?'Jobb':'Privat')+'</span></h3>';
+  h+='<div class="meta">'+meta.join(' · ')+'</div>';
+  h+='<div class="bar"><i style="width:'+pr.pct+'%"></i></div>';
+  h+='<div class="bar-label">'+pr.done+' av '+pr.total+' klara ('+pr.pct+'%)</div>';
+  h+='</div>';
+  return h;
+}
+
+/* ---------- PROJEKT LIST ---------- */
+function renderProjList(){
+  var list=document.getElementById('proj-list');
+  var arr=state.projects.slice();
+  if(currentFilter!=='alla'){ arr=arr.filter(function(p){ return p.typ===currentFilter; }); }
+  arr.sort(function(a,b){ return (isActive(b)?1:0)-(isActive(a)?1:0); });
+  if(!arr.length){
+    list.innerHTML='<div class="empty">Inga projekt här än.<br>Tryck på + Nytt projekt nedan.</div>';
+  }else{
+    list.innerHTML=arr.map(projectCardHtml).join('');
+  }
+}
+var filterBtns=document.querySelectorAll('.filter');
+for(var f=0;f<filterBtns.length;f++){
+  filterBtns[f].onclick=function(){
+    currentFilter=this.getAttribute('data-filter');
+    var fb=document.querySelectorAll('.filter');
+    for(var i=0;i<fb.length;i++){ fb[i].classList.toggle('on', fb[i]===this); }
+    renderProjList();
+  };
+}
+
+/* ---------- DETALJ ---------- */
+function openProjekt(id){ currentProjectId=id; renderDetalj(); showView('detalj'); }
+function renderDetalj(){
+  var p=getProject(currentProjectId); if(!p){ showView('projekt'); return; }
+  document.getElementById('det-name').textContent=p.namn;
+  var meta=(p.typ==='jobb'?'Jobb':'Privat');
+  if(p.start||p.slut){ meta+=' · '+(p.start?fmtShort(p.start):'?')+' – '+(p.slut?fmtShort(p.slut):'?'); }
+  document.getElementById('det-meta').textContent=meta;
+  var pr=progress(p);
+  document.getElementById('det-bar').style.width=pr.pct+'%';
+  document.getElementById('det-barlabel').textContent=pr.done+' av '+pr.total+' uppgifter klara ('+pr.pct+'%)';
+
+  var cols=[['todo','Att göra'],['doing','Pågår'],['done','Klart']];
+  var board='';
+  for(var c=0;c<cols.length;c++){
+    var key=cols[c][0], titel=cols[c][1];
+    var tasks=(p.tasks||[]).filter(function(t){ return t.status===key; });
+    board+='<div class="col '+key+'"><div class="col-head"><span class="swatch"></span>'+titel+'<span class="cnt">'+tasks.length+'</span></div>';
+    for(var t=0;t<tasks.length;t++){ board+=taskCardHtml(tasks[t],key); }
+    if(key==='todo'){ board+='<button class="add-task" onclick="openTask(null)">+ Uppgift</button>'; }
+    board+='</div>';
+  }
+  document.getElementById('det-board').innerHTML=board;
+
+  var msc=document.getElementById('det-ms');
+  var ms=(p.milstolpar||[]).slice().sort(function(a,b){ return (a.datum||'').localeCompare(b.datum||''); });
+  if(!ms.length){
+    msc.innerHTML='<div class="empty" style="padding:14px">Inga milstolpar än.</div>';
+  }else{
+    var mh='';
+    for(var m=0;m<ms.length;m++){
+      var mm=ms[m];
+      mh+='<div class="ms '+(mm.klar?'done':'')+'">';
+      mh+='<div class="check '+(mm.klar?'on':'')+'" onclick="toggleMs(\''+mm.id+'\')">'+(mm.klar?'&#10003;':'')+'</div>';
+      mh+='<div class="mt" onclick="openMs(\''+mm.id+'\')">'+esc(mm.titel)+'<small>'+(mm.datum?fmtShort(mm.datum):'inget datum')+'</small></div>';
+      mh+='</div>';
+    }
+    msc.innerHTML=mh;
+  }
+}
+function taskCardHtml(t,key){
+  var h='<div class="tcard '+(key==='done'?'done':'')+'">';
+  h+='<div class="tt" onclick="openTask(\''+t.id+'\')"><span class="pri '+t.prioritet+'"></span><span>'+esc(t.titel)+'</span></div>';
+  h+='<div class="trow">';
+  if(t.deadline){
+    var du=daysUntil(t.deadline);
+    var cls = key==='done'?'':(du<0?'over':(du<=3?'soon':''));
+    h+='<span class="dl-pill '+cls+'">'+fmtShort(t.deadline)+'</span>';
+  }
+  if(key!=='done'){
+    var next = key==='todo'?'doing':'done';
+    h+='<button class="mini" onclick="moveTask(\''+t.id+'\',\''+next+'\')">&#8250;</button>';
+  }else{
+    h+='<button class="mini" onclick="moveTask(\''+t.id+'\',\'todo\')">&#8634;</button>';
+  }
+  h+='</div></div>';
+  return h;
+}
+function moveTask(tid,status){
+  var p=getProject(currentProjectId); if(!p) return;
+  for(var i=0;i<p.tasks.length;i++){ if(p.tasks[i].id===tid){ p.tasks[i].status=status; break; } }
+  save(); renderDetalj();
+}
+document.getElementById('det-back').onclick=function(){ renderProjList(); showView('projekt'); };
+document.getElementById('det-edit').onclick=function(){ openProjSheet(currentProjectId); };
+
+/* ---------- PROJECT SHEET ---------- */
+var editingProj=null;
+function openProjSheet(id){
+  editingProj=id;
+  var del=document.getElementById('ps-delete');
+  if(id){
+    var p=getProject(id);
+    document.getElementById('ps-title').textContent='Redigera projekt';
+    document.getElementById('ps-name').value=p.namn||'';
+    document.getElementById('ps-desc').value=p.beskrivning||'';
+    document.getElementById('ps-start').value=p.start||'';
+    document.getElementById('ps-end').value=p.slut||'';
+    setSeg('ps-type', p.typ||'jobb');
+    del.style.display='block';
+  }else{
+    document.getElementById('ps-title').textContent='Nytt projekt';
+    document.getElementById('ps-name').value='';
+    document.getElementById('ps-desc').value='';
+    document.getElementById('ps-start').value='';
+    document.getElementById('ps-end').value='';
+    setSeg('ps-type','jobb');
+    del.style.display='none';
+  }
+  openSheet('proj-sheet');
+}
+document.getElementById('add-proj').onclick=function(){ openProjSheet(null); };
+document.getElementById('ps-save').onclick=function(){
+  var name=document.getElementById('ps-name').value.trim();
+  if(!name){ document.getElementById('ps-name').focus(); return; }
+  var typ=getSeg('ps-type');
+  var desc=document.getElementById('ps-desc').value.trim();
+  var start=document.getElementById('ps-start').value;
+  var end=document.getElementById('ps-end').value;
+  if(editingProj){
+    var p=getProject(editingProj);
+    p.namn=name; p.typ=typ; p.beskrivning=desc; p.start=start; p.slut=end;
+  }else{
+    state.projects.push({id:uid('p'),namn:name,typ:typ,beskrivning:desc,start:start,slut:end,tasks:[],milstolpar:[]});
+  }
+  save(); closeSheets();
+  if(editingProj){ renderDetalj(); } else { renderProjList(); showView('projekt'); }
+};
+document.getElementById('ps-delete').onclick=function(){
+  if(!editingProj) return;
+  if(!confirm('Radera projektet och alla dess uppgifter?')) return;
+  state.projects=state.projects.filter(function(p){ return p.id!==editingProj; });
+  save(); closeSheets(); renderProjList(); showView('projekt');
+};
+
+/* ---------- TASK SHEET ---------- */
+var editingTask=null;
+function openTask(id){
+  editingTask=id;
+  var del=document.getElementById('ts-delete');
+  if(id){
+    var p=getProject(currentProjectId); var t=null;
+    for(var i=0;i<p.tasks.length;i++){ if(p.tasks[i].id===id){ t=p.tasks[i]; break; } }
+    document.getElementById('ts-title').textContent='Redigera uppgift';
+    document.getElementById('ts-name').value=t.titel||'';
+    document.getElementById('ts-deadline').value=t.deadline||'';
+    document.getElementById('ts-note').value=t.anteckning||'';
+    setSeg('ts-status',t.status||'todo');
+    setSeg('ts-pri',t.prioritet||'normal');
+    del.style.display='block';
+  }else{
+    document.getElementById('ts-title').textContent='Ny uppgift';
+    document.getElementById('ts-name').value='';
+    document.getElementById('ts-deadline').value='';
+    document.getElementById('ts-note').value='';
+    setSeg('ts-status','todo');
+    setSeg('ts-pri','normal');
+    del.style.display='none';
+  }
+  openSheet('task-sheet');
+}
+document.getElementById('ts-save').onclick=function(){
+  var name=document.getElementById('ts-name').value.trim();
+  if(!name){ document.getElementById('ts-name').focus(); return; }
+  var p=getProject(currentProjectId); if(!p) return;
+  var status=getSeg('ts-status'), pri=getSeg('ts-pri');
+  var deadline=document.getElementById('ts-deadline').value;
+  var note=document.getElementById('ts-note').value.trim();
+  if(editingTask){
+    for(var i=0;i<p.tasks.length;i++){ if(p.tasks[i].id===editingTask){
+      var t=p.tasks[i]; t.titel=name; t.status=status; t.prioritet=pri; t.deadline=deadline; t.anteckning=note; break;
+    }}
+  }else{
+    p.tasks.push({id:uid('t'),titel:name,status:status,prioritet:pri,deadline:deadline,anteckning:note,skapad:todayISO()});
+  }
+  save(); closeSheets(); renderDetalj();
+};
+document.getElementById('ts-delete').onclick=function(){
+  if(!editingTask) return;
+  var p=getProject(currentProjectId);
+  p.tasks=p.tasks.filter(function(t){ return t.id!==editingTask; });
+  save(); closeSheets(); renderDetalj();
+};
+
+/* ---------- MILSTOLPE SHEET ---------- */
+var editingMs=null;
+function openMs(id){
+  editingMs=id;
+  var del=document.getElementById('mss-delete');
+  if(id){
+    var p=getProject(currentProjectId); var m=null;
+    for(var i=0;i<p.milstolpar.length;i++){ if(p.milstolpar[i].id===id){ m=p.milstolpar[i]; break; } }
+    document.getElementById('mss-title').textContent='Redigera milstolpe';
+    document.getElementById('mss-name').value=m.titel||'';
+    document.getElementById('mss-date').value=m.datum||'';
+    del.style.display='block';
+  }else{
+    document.getElementById('mss-title').textContent='Ny milstolpe';
+    document.getElementById('mss-name').value='';
+    document.getElementById('mss-date').value='';
+    del.style.display='none';
+  }
+  openSheet('ms-sheet');
+}
+document.getElementById('add-ms').onclick=function(){ openMs(null); };
+document.getElementById('mss-save').onclick=function(){
+  var name=document.getElementById('mss-name').value.trim();
+  if(!name){ document.getElementById('mss-name').focus(); return; }
+  var p=getProject(currentProjectId); if(!p) return;
+  if(!p.milstolpar) p.milstolpar=[];
+  var date=document.getElementById('mss-date').value;
+  if(editingMs){
+    for(var i=0;i<p.milstolpar.length;i++){ if(p.milstolpar[i].id===editingMs){ p.milstolpar[i].titel=name; p.milstolpar[i].datum=date; break; } }
+  }else{
+    p.milstolpar.push({id:uid('m'),titel:name,datum:date,klar:false});
+  }
+  save(); closeSheets(); renderDetalj();
+};
+document.getElementById('mss-delete').onclick=function(){
+  if(!editingMs) return;
+  var p=getProject(currentProjectId);
+  p.milstolpar=p.milstolpar.filter(function(m){ return m.id!==editingMs; });
+  save(); closeSheets(); renderDetalj();
+};
+function toggleMs(id){
+  var p=getProject(currentProjectId); if(!p) return;
+  for(var i=0;i<p.milstolpar.length;i++){ if(p.milstolpar[i].id===id){ p.milstolpar[i].klar=!p.milstolpar[i].klar; break; } }
+  save(); renderDetalj();
+}
+
+/* ---------- TIMELINE ---------- */
+function renderTimeline(){
+  var card=document.getElementById('tl-card');
+  var arr=state.projects.filter(function(p){ return p.start && p.slut; });
+  if(!arr.length){
+    card.innerHTML='<div class="empty">Lägg till start- och slutdatum på projekt för att se dem på tidslinjen.</div>';
+    return;
+  }
+  var minD=null,maxD=null;
+  for(var i=0;i<arr.length;i++){
+    var s=parseDate(arr[i].start), e=parseDate(arr[i].slut);
+    if(!minD||s<minD) minD=s;
+    if(!maxD||e>maxD) maxD=e;
+  }
+  var today=parseDate(todayISO());
+  if(today<minD) minD=today;
+  if(today>maxD) maxD=today;
+  // pad to month boundaries
+  var start=new Date(minD.getFullYear(),minD.getMonth(),1);
+  var end=new Date(maxD.getFullYear(),maxD.getMonth()+1,0);
+  var totalDays=daysBetween(start,end)+1;
+  var pxPerDay=Math.max(3, Math.min(7, Math.round(900/totalDays)));
+  var trackW=totalDays*pxPerDay;
+  var labelW=Math.round(trackW*0.0); // bars start at 0; labels overlay
+
+  // months header
+  var monthsHtml='';
+  var cur=new Date(start.getFullYear(),start.getMonth(),1);
+  while(cur<=end){
+    var off=daysBetween(start,cur)*pxPerDay;
+    monthsHtml+='<div class="tl-month" style="left:'+off+'px">'+MONTHS[cur.getMonth()]+' '+(cur.getFullYear()+'').slice(2)+'</div>';
+    cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  }
+
+  var rows='';
+  for(var r=0;r<arr.length;r++){
+    var p=arr[r];
+    var s=parseDate(p.start), e=parseDate(p.slut);
+    var left=daysBetween(start,s)*pxPerDay;
+    var w=Math.max(14,(daysBetween(s,e)+1)*pxPerDay);
+    rows+='<div class="tl-row">';
+    rows+='<div class="tl-bar t-'+p.typ+'" style="left:'+left+'px;width:'+w+'px" onclick="openProjekt(\''+p.id+'\')">'+esc(p.namn)+'</div>';
+    var ms=(p.milstolpar||[]);
+    for(var m=0;m<ms.length;m++){
+      if(!ms[m].datum) continue;
+      var md=parseDate(ms[m].datum);
+      var ml=daysBetween(start,md)*pxPerDay;
+      rows+='<div class="tl-ms" style="left:'+ml+'px;top:7px" title="'+esc(ms[m].titel)+'"></div>';
+    }
+    rows+='</div>';
+  }
+  var todayLeft=daysBetween(start,today)*pxPerDay;
+  var todayLine='<div class="tl-today" style="left:'+todayLeft+'px"></div>';
+
+  card.innerHTML='<div class="tl-wrap"><div class="tl-track" style="width:'+trackW+'px">'
+    +'<div class="tl-months">'+monthsHtml+'</div>'
+    +todayLine+rows+'</div></div>';
+}
+
+/* ---------- MER ---------- */
+function renderMer(){
+  var totalProj=state.projects.length;
+  var totalTasks=0, doneTasks=0, totalMs=0;
+  for(var i=0;i<state.projects.length;i++){
+    var ts=state.projects[i].tasks||[];
+    totalTasks+=ts.length;
+    for(var t=0;t<ts.length;t++){ if(ts[t].status==='done') doneTasks++; }
+    totalMs+=(state.projects[i].milstolpar||[]).length;
+  }
+  document.getElementById('mer-stats').innerHTML=
+    statLine('Projekt',totalProj)+
+    statLine('Uppgifter totalt',totalTasks)+
+    statLine('Uppgifter klara',doneTasks)+
+    statLine('Milstolpar',totalMs);
+  var tb=document.querySelectorAll('#theme-seg button');
+  for(var b=0;b<tb.length;b++){ tb[b].classList.toggle('on', tb[b].getAttribute('data-theme-val')===state.settings.theme); }
+}
+function statLine(label,val){
+  return '<div class="dl"><div class="dt">'+label+'</div><div class="when" style="background:var(--panel2);color:var(--ink)">'+val+'</div></div>';
+}
+
+/* theme */
+function applyTheme(){
+  var mode=state.settings.theme||'auto';
+  var eff=mode;
+  if(mode==='auto'){ var h=new Date().getHours(); eff=(h>=20||h<7)?'dark':'light'; }
+  document.body.setAttribute('data-theme',eff);
+  document.querySelector('meta[name=theme-color]').setAttribute('content', eff==='dark'?'#1A1E18':'#EEF1EB');
+}
+var themeBtns=document.querySelectorAll('#theme-seg button');
+for(var tbi=0;tbi<themeBtns.length;tbi++){
+  themeBtns[tbi].onclick=function(){
+    state.settings.theme=this.getAttribute('data-theme-val');
+    save(); applyTheme(); renderMer();
+  };
+}
+
+/* export / import / clear */
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='projektplanering-'+todayISO()+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); },500);
+};
+document.getElementById('import-btn').onclick=function(){ document.getElementById('import-file').click(); };
+document.getElementById('import-file').onchange=function(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var d=JSON.parse(ev.target.result);
+      if(d&&d.projects){ state=d; if(!state.settings) state.settings={theme:'auto'}; save(); applyTheme(); renderMer(); renderOversikt(); alert('Importerat!'); }
+      else{ alert('Filen ser inte ut som en giltig export.'); }
+    }catch(err){ alert('Kunde inte läsa filen.'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+};
+document.getElementById('clear-btn').onclick=function(){
+  if(!confirm('Radera ALL data permanent? Detta går inte att ångra.')) return;
+  state={projects:[],settings:{theme:state.settings.theme}};
+  save(); renderMer(); renderOversikt(); renderProjList();
+  alert('All data raderad.');
+};
+
+/* ---------- sheet plumbing ---------- */
+var sheetBg=document.getElementById('sheet-bg');
+function openSheet(id){ sheetBg.classList.add('open'); document.getElementById(id).classList.add('open'); }
+function closeSheets(){ sheetBg.classList.remove('open'); var s=document.querySelectorAll('.sheet'); for(var i=0;i<s.length;i++){ s[i].classList.remove('open'); } }
+sheetBg.onclick=closeSheets;
+function setSeg(segId,val){
+  var b=document.querySelectorAll('#'+segId+' button');
+  for(var i=0;i<b.length;i++){
+    var on=b[i].getAttribute('data-val')===val;
+    b[i].classList.toggle('on',on);
+    b[i].classList.remove('hog','lag');
+    if(on && segId==='ts-pri'){ b[i].classList.add(val); }
+  }
+}
+function getSeg(segId){
+  var b=document.querySelectorAll('#'+segId+' button');
+  for(var i=0;i<b.length;i++){ if(b[i].classList.contains('on')) return b[i].getAttribute('data-val'); }
+  return b[0].getAttribute('data-val');
+}
+// wire up generic seg buttons
+['ps-type','ts-status','ts-pri'].forEach(function(id){
+  var b=document.querySelectorAll('#'+id+' button');
+  for(var i=0;i<b.length;i++){
+    b[i].onclick=function(){ setSeg(id, this.getAttribute('data-val')); };
+  }
+});
+
+/* ---------- sync UI ---------- */
+function refreshAll(){
+  renderOversikt();
+  renderProjList();
+  renderTimeline();
+  renderMer();
+  if(currentProjectId && document.getElementById('v-detalj').classList.contains('active')) renderDetalj();
+}
+function openSyncSheet(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+}
+document.getElementById('sync-settings').onclick=openSyncSheet;
+document.getElementById('sync-now').onclick=function(){ if(!syncOn()){ openSyncSheet(); return; } ghPull(); };
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  var st=document.getElementById('gh-status');
+  if(!syncOn()){ st.style.display='block'; st.className='gh-status err'; st.textContent='Fyll i alla tre fälten.'; return; }
+  saveSync();
+  st.style.display='block'; st.className='gh-status info'; st.textContent='Testar anslutning…';
+  ghGet().then(function(data){
+    if(data){ st.className='gh-status ok'; st.textContent='✓ Ansluten! Hämtar data…'; applyRemote(data); }
+    else{ st.className='gh-status ok'; st.textContent='✓ Ansluten! Repot är tomt — laddar upp din data…'; return ghPush(); }
+  }).then(function(){
+    setTimeout(closeSheets,1100);
+  }).catch(function(e){
+    st.className='gh-status err'; st.textContent='Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.';
+  });
+};
+document.addEventListener('visibilitychange',function(){ if(!document.hidden && syncOn()) ghPull(); });
+
+/* ---------- init ---------- */
+load();
+loadSync();
+applyTheme();
+renderOversikt();
+if(syncOn()) ghPull();
+</script>
+</body>
+</html>
