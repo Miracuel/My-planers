@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Notan">
+<meta name="theme-color" content="#F2EDE4">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C7A75'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle' fill='%23F2EDE4'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Notan","short_name":"Notan","display":"standalone","background_color":"%23F2EDE4","theme_color":"%23F2EDE4","start_url":"."}'>
+<title>Notan</title>
+<style>
+:root{
+  --bg:#F2EDE4;--panel:#FBF8F2;--panel2:#ECE5D8;--line:#DDD3C2;
+  --ink:#33302A;--muted:#837C6E;
+  --accent:#2C7A75;--accent-soft:#D5E5E2;
+  --pos:#3C8C5A;--pos-soft:#D8E8DD;
+  --neg:#C0654E;--neg-soft:#F0DDD5;
+  --gift:#C2922F;--gift-soft:#F0E6CC;
+  --navbg:rgba(242,237,228,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s;width:100%}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px;width:auto}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:16px;padding:10px;font-family:inherit;width:100%;outline:none}
+input:focus{border-color:var(--accent)}
+.empty-msg{font-size:12px;color:var(--muted);padding:14px 0;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Saldo-hero */
+.net-hero{text-align:center;padding:8px 0 12px}
+.net-hero .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.net-hero .amt{font-family:Georgia,serif;font-size:40px;line-height:1.1;margin:6px 0 2px}
+.net-hero .amt.pos{color:var(--pos)}
+.net-hero .amt.neg{color:var(--neg)}
+.net-hero .amt.zero{color:var(--muted)}
+.net-hero .sub{font-size:12px;color:var(--muted)}
+.stat-row{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;text-align:center;background:var(--panel2);border-radius:14px;padding:10px 6px}
+.stat .n{font-size:17px;font-weight:600}
+.stat .n.pos{color:var(--pos)}
+.stat .n.neg{color:var(--neg)}
+.stat .n.gift{color:var(--gift)}
+.stat .t{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+/* Person-kort */
+.person-card{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.person-card:first-child{border-top:none}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex-shrink:0;font-family:Georgia,serif}
+.pc-main{flex:1;min-width:0}
+.pc-name{font-size:14px;font-weight:500}
+.pc-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.pc-amt{font-size:15px;font-weight:600;white-space:nowrap}
+.pc-amt.pos{color:var(--pos)}
+.pc-amt.neg{color:var(--neg)}
+.pc-amt.zero{color:var(--muted)}
+
+/* Filter */
+.filter-tabs{display:flex;gap:6px;margin:4px 0 6px}
+.filter-tab{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:7px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.filter-tab.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Poster */
+.entry{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.entry:first-child{border-top:none}
+.entry-main{flex:1;min-width:0}
+.entry-top{display:flex;align-items:center;gap:6px}
+.entry-name{font-size:14px;font-weight:500}
+.entry-note{font-size:12px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry-date{font-size:10px;color:var(--muted);margin-top:2px}
+.entry-right{text-align:right;white-space:nowrap}
+.entry-amt{font-size:15px;font-weight:600}
+.entry-amt.pos{color:var(--pos)}
+.entry-amt.neg{color:var(--neg)}
+.entry-amt.gift{color:var(--gift)}
+.entry-amt.done{color:var(--muted);text-decoration:line-through}
+.badge{font-size:10px;padding:2px 7px;border-radius:8px;white-space:nowrap}
+.badge.mig{background:var(--pos-soft);color:var(--pos)}
+.badge.dem{background:var(--neg-soft);color:var(--neg)}
+.badge.gav{background:var(--gift-soft);color:var(--gift)}
+.badge.fick{background:var(--accent-soft);color:var(--accent)}
+.badge.done{background:var(--panel2);color:var(--muted)}
+.prog{height:4px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;background:var(--accent);border-radius:3px}
+
+/* Segmented */
+.seg{display:flex;gap:6px;margin:4px 0 4px}
+.seg button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:11px 6px;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit;line-height:1.3}
+.seg button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg button.sel.mig{background:var(--pos);border-color:var(--pos)}
+.seg button.sel.dem{background:var(--neg);border-color:var(--neg)}
+.seg button.sel.gav{background:var(--gift);border-color:var(--gift)}
+
+/* Översikt */
+.settle-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+.settle-row:first-child{border-top:none}
+.settle-row .nm{flex:1}
+.settle-row .vv{font-weight:600;white-space:nowrap}
+.settle-row .vv.pos{color:var(--pos)}
+.settle-row .vv.neg{color:var(--neg)}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(51,48,42,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:18px;margin-bottom:4px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.sheet-del{width:100%;padding:11px;border-radius:12px;border:1px solid var(--neg);background:none;color:var(--neg);font-size:13px;cursor:pointer;margin-top:8px}
+.hint{font-size:11px;color:var(--muted);margin:4px 0 2px;line-height:1.5}
+.hint code{font-family:monospace;background:var(--panel2);padding:1px 5px;border-radius:5px}
+.sync-status{font-size:12px;padding:9px 12px;border-radius:10px;margin-top:8px;display:none}
+.badge-sync{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);font-weight:500}
+.badge-sync.ok{background:var(--pos-soft);color:var(--pos)}
+.badge-sync.err{background:var(--neg-soft);color:var(--neg)}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#23211C;--panel:#2B2A24;--panel2:#33312A;--line:#43413A;
+  --ink:#E8E3D8;--muted:#9C9588;
+  --accent:#4FA39C;--accent-soft:#264643;
+  --pos:#6FB587;--pos-soft:#2E4636;--neg:#D08A76;--neg-soft:#4A352E;
+  --gift:#D4B566;--gift-soft:#473D27;--navbg:rgba(35,33,28,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+<style id="notan-desktop">
+/* ── Desktop-overrides (≥760px). JS, KEY och synk identiska med mobilen. ── */
+@media(min-width:760px){
+  h1.brand{display:none}
+  .theme-btn{top:18px;right:24px}
+  .app{margin:0 0 0 224px;max-width:820px;padding:34px clamp(28px,5vw,76px) 64px}
+
+  /* Bottennav -> fast sidofält */
+  .nav{top:0;bottom:0;left:0;right:auto;width:224px;max-width:224px;margin:0;
+    flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px;
+    border-top:none;border-right:1px solid var(--line);background:var(--panel);
+    backdrop-filter:none;padding:80px 14px 20px}
+  .nav::before{content:"\01F9FE  Notan";position:absolute;top:24px;left:20px;
+    font-family:Georgia,serif;font-size:19px;letter-spacing:.04em;color:var(--ink)}
+  .nav button{flex:none;display:flex;align-items:center;gap:12px;text-align:left;
+    font-size:14px;padding:11px 14px;border-radius:12px;transition:background .12s}
+  .nav button span{display:inline;font-size:18px;margin:0}
+  .nav button.active{background:var(--accent-soft)}
+  .nav button:hover{background:var(--panel2)}
+
+  /* Hover-affordans */
+  .btn{transition:background .15s,filter .15s}
+  .btn:hover{background:var(--accent-soft)}
+  .btn.fill:hover{filter:brightness(1.06)}
+  .filter-tab{transition:background .12s}
+  .filter-tab:hover{background:var(--panel2)}
+  .person-card,.entry{padding-left:8px;padding-right:8px;border-radius:10px;transition:background .12s}
+  .person-card:hover,.entry:hover{background:var(--panel2)}
+  .settle-row{padding-left:6px;padding-right:6px;border-radius:8px;transition:background .12s}
+  .settle-row:hover{background:var(--panel2)}
+
+  /* Bottom-sheets -> centrerade modaler */
+  .sheet-bg{background:rgba(51,48,42,.5)}
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;width:460px;max-width:92vw;
+    border-radius:18px;max-height:86vh;
+    transform:translate(-50%,-46%) scale(.97);opacity:0;pointer-events:none;
+    transition:transform .2s ease,opacity .2s ease;
+    box-shadow:0 24px 60px rgba(0,0,0,.22)}
+  .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+  .sheet-close{position:static}
+
+  .net-hero .amt{font-size:46px}
+  .net-hero .amt.zero{font-size:40px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🧾 Notan</h1>
+
+<!-- SALDO -->
+<div class="view active" id="view-saldo">
+  <div class="card-panel">
+    <div class="net-hero">
+      <div class="lbl">Nettosaldo</div>
+      <div class="amt zero" id="net-amt">0 kr</div>
+      <div class="sub" id="net-sub">Allt är jämnt</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><div class="n pos" id="st-in">0 kr</div><div class="t">Att få in</div></div>
+      <div class="stat"><div class="n neg" id="st-out">0 kr</div><div class="t">Att betala</div></div>
+    </div>
+  </div>
+  <div class="section-title">Personer</div>
+  <div class="card-panel" id="people-list"></div>
+</div>
+
+<!-- SKULDER -->
+<div class="view" id="view-skulder">
+  <button class="btn fill" id="open-debt">+ Ny skuld</button>
+  <div class="filter-tabs" id="debt-filter" style="margin-top:12px">
+    <button class="filter-tab sel" data-f="open">Öppna</button>
+    <button class="filter-tab" data-f="done">Avklarade</button>
+    <button class="filter-tab" data-f="all">Alla</button>
+  </div>
+  <div class="card-panel" id="debt-list"></div>
+</div>
+
+<!-- BJUDNINGAR -->
+<div class="view" id="view-bjuda">
+  <div class="card-panel">
+    <div class="stat-row" style="margin-top:0">
+      <div class="stat"><div class="n gift" id="bj-month">0 kr</div><div class="t" id="bj-month-t">Bjudit i mån</div></div>
+      <div class="stat"><div class="n gift" id="bj-total">0 kr</div><div class="t">Totalt bjudit</div></div>
+      <div class="stat"><div class="n" id="bj-fick">0 kr</div><div class="t">Blivit bjuden</div></div>
+    </div>
+  </div>
+  <button class="btn fill" id="open-treat" style="margin-top:12px">+ Ny bjudning</button>
+  <div class="section-title">Historik</div>
+  <div class="card-panel" id="treat-list"></div>
+</div>
+
+<!-- ÖVERSIKT -->
+<div class="view" id="view-oversikt">
+  <div class="section-title">Att göra upp</div>
+  <div class="card-panel" id="settle-list"></div>
+  <div class="section-title">Bjudet per person</div>
+  <div class="card-panel" id="gift-people"></div>
+  <div class="section-title">Synk &amp; data <span class="badge-sync" id="sync-badge">Lokal</span></div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn ghost" id="sync-pull" style="flex:1">↻ Synka nu</button>
+      <button class="btn ghost" id="open-sync" style="flex:1">⚙ Synkinställning</button>
+    </div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn ghost" id="export-btn" style="flex:1">💾 Exportera</button>
+      <button class="btn ghost" id="import-btn" style="flex:1">Importera</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+    <div class="soft" style="text-align:center;margin-top:10px">Allt sparas lokalt. Synk via privat GitHub-repo är valfritt.</div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="saldo"><span>💰</span>Saldo</button>
+  <button data-v="skulder"><span>🧾</span>Skulder</button>
+  <button data-v="bjuda"><span>🎁</span>Bjudningar</button>
+  <button data-v="oversikt"><span>〰</span>Översikt</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Ny / redigera skuld -->
+<div class="sheet" id="debt-sheet">
+  <h3 id="debt-sheet-title">Ny skuld</h3>
+  <label>Person</label>
+  <input type="text" id="d-person" placeholder="Namn" list="people-dl" autocomplete="off">
+  <datalist id="people-dl"></datalist>
+  <label>Vem är skyldig vem?</label>
+  <div class="seg" id="d-dir">
+    <button data-d="mig" class="sel mig">De är skyldig dig</button>
+    <button data-d="dem">Du är skyldig dem</button>
+  </div>
+  <label>Belopp (kr)</label>
+  <input type="text" id="d-amount" inputmode="decimal" placeholder="0">
+  <label>Vad gäller det? (valfritt)</label>
+  <input type="text" id="d-note" placeholder="t.ex. lunch, biljett, lån">
+  <label>Datum</label>
+  <input type="date" id="d-date">
+  <button class="sheet-close" id="d-save">Spara</button>
+</div>
+
+<!-- Skulddetalj / betalning -->
+<div class="sheet" id="pay-sheet">
+  <h3 id="pay-title">Skuld</h3>
+  <div class="soft" id="pay-info"></div>
+  <div class="prog" style="margin-top:12px"><div class="prog-fill" id="pay-prog"></div></div>
+  <div class="soft" id="pay-prog-txt" style="margin-top:6px"></div>
+  <label>Registrera betalning (kr)</label>
+  <input type="text" id="pay-amount" inputmode="decimal" placeholder="0">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="pay-do" style="flex:1">Registrera</button>
+    <button class="btn" id="pay-full" style="flex:1">Markera betald</button>
+  </div>
+  <button class="sheet-del" id="pay-del">Ta bort posten</button>
+  <button class="sheet-close" id="pay-close">Stäng</button>
+</div>
+
+<!-- Ny bjudning -->
+<div class="sheet" id="treat-sheet">
+  <h3>Ny bjudning</h3>
+  <div class="soft">Något du bjöd på utan att vänta dig tillbaka — eller blev bjuden på. Räknas inte som skuld.</div>
+  <label>Person</label>
+  <input type="text" id="t-person" placeholder="Namn" list="people-dl" autocomplete="off">
+  <label>Riktning</label>
+  <div class="seg" id="t-dir">
+    <button data-d="gav" class="sel gav">Jag bjöd</button>
+    <button data-d="fick">Blev bjuden</button>
+  </div>
+  <label>Belopp (kr)</label>
+  <input type="text" id="t-amount" inputmode="decimal" placeholder="0">
+  <label>Vad? (valfritt)</label>
+  <input type="text" id="t-note" placeholder="t.ex. fika, present, middag">
+  <label>Datum</label>
+  <input type="date" id="t-date">
+  <button class="sheet-close" id="t-save">Spara</button>
+</div>
+
+<!-- Persondetalj -->
+<div class="sheet" id="person-sheet">
+  <h3 id="ps-name">Person</h3>
+  <div class="net-hero" style="padding:4px 0 8px">
+    <div class="amt zero" id="ps-net" style="font-size:30px">0 kr</div>
+    <div class="sub" id="ps-sub"></div>
+  </div>
+  <div class="soft" id="ps-gift" style="text-align:center;margin-bottom:8px"></div>
+  <div id="ps-entries"></div>
+  <button class="sheet-close" id="ps-close">Stäng</button>
+</div>
+
+<!-- Synkinställning -->
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <code>data.json</code> i ett <strong>privat</strong> GitHub-repo så att dina enheter ser samma siffror. Token sparas bara lokalt på den här enheten.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="miracuel" autocomplete="off">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="notan-data" autocomplete="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Ge åtkomst till ENDAST data-repot, med <code>Contents: Read and write</code>.</div>
+  <div class="sync-status" id="gh-status"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+  <button class="sheet-del" id="gh-clear" style="border-color:var(--line);color:var(--muted)">Koppla bort synk</button>
+</div>
+
+<script>
+// ── Data ───────────────────────────────────────────────────────────
+const KEY='notan_v1';
+let state={debts:[],treats:[],theme:'auto'};
+function load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(Array.isArray(d.debts))state.debts=d.debts;if(Array.isArray(d.treats))state.treats=d.treats;if(d.theme)state.theme=d.theme;}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const toISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayISO=()=>toISO(new Date());
+const num=v=>{v=String(v==null?'':v).replace(/\s/g,'').replace(',','.');const n=parseFloat(v);return isNaN(n)?0:n;};
+const fmt=n=>{const r=Math.round(n*100)/100;return r.toLocaleString('sv-SE',{maximumFractionDigits:2})+' kr';};
+const MONTHS=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+function niceDate(iso){if(!iso)return '';const p=iso.split('-');if(p.length<3)return iso;return parseInt(p[2],10)+' '+(MONTHS[parseInt(p[1],10)-1]||'').slice(0,3);}
+const initials=nm=>{const w=String(nm).trim().split(/\s+/);return ((w[0]||'?')[0]+((w[1]||'')[0]||'')).toUpperCase();};
+
+const remaining=d=>Math.max(0,(d.amount||0)-(d.paid||0));
+const isOpen=d=>remaining(d)>0.0001;
+
+function people(){
+  const set={};
+  state.debts.forEach(d=>{if(d.person)set[d.person.toLowerCase()]=d.person;});
+  state.treats.forEach(t=>{if(t.person)set[t.person.toLowerCase()]=t.person;});
+  return Object.values(set).sort((a,b)=>a.localeCompare(b,'sv'));
+}
+// Nettosaldo per person: + = de skyldig dig, - = du skyldig dem
+function personNet(name){
+  let n=0;
+  state.debts.forEach(d=>{if(d.person===name&&isOpen(d))n+=(d.dir==='mig'?1:-1)*remaining(d);});
+  return n;
+}
+function giftNet(name){
+  let n=0;
+  state.treats.forEach(t=>{if(t.person===name)n+=(t.dir==='gav'?1:-1)*(t.amount||0);});
+  return n;
+}
+
+// ── Sheets ────────────────────────────────────────────
+const bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+bg.onclick=closeSheets;
+function refreshDatalist(){
+  document.getElementById('people-dl').innerHTML=people().map(p=>'<option value="'+esc(p)+'">').join('');
+}
+
+// ── Saldo ─────────────────────────────────────────────
+function renderSaldo(){
+  let inn=0,out=0;
+  state.debts.forEach(d=>{if(isOpen(d)){if(d.dir==='mig')inn+=remaining(d);else out+=remaining(d);}});
+  const net=inn-out;
+  const ae=document.getElementById('net-amt');
+  ae.textContent=(net>0?'+':'')+fmt(net);
+  ae.className='amt '+(net>0.0001?'pos':net<-0.0001?'neg':'zero');
+  document.getElementById('net-sub').textContent=net>0.0001?'Du har mer ute än du är skyldig':net<-0.0001?'Du är skyldig mer än du har ute':'Allt är jämnt';
+  document.getElementById('st-in').textContent=fmt(inn);
+  document.getElementById('st-out').textContent=fmt(out);
+
+  const ppl=people().map(p=>({name:p,net:personNet(p)})).filter(x=>Math.abs(x.net)>0.0001||state.debts.some(d=>d.person===x.name)||state.treats.some(t=>t.person===x.name));
+  ppl.sort((a,b)=>Math.abs(b.net)-Math.abs(a.net)||a.name.localeCompare(b.name,'sv'));
+  const el=document.getElementById('people-list');
+  if(!ppl.length){el.innerHTML='<div class="empty-msg">Inga personer än.<br>Lägg till en skuld eller bjudning så dyker de upp här.</div>';return;}
+  el.innerHTML=ppl.map(x=>{
+    const cls=x.net>0.0001?'pos':x.net<-0.0001?'neg':'zero';
+    const sub=x.net>0.0001?'Skyldig dig':x.net<-0.0001?'Du är skyldig':'Jämnt';
+    return '<div class="person-card" data-p="'+esc(x.name)+'">'
+      +'<div class="avatar">'+esc(initials(x.name))+'</div>'
+      +'<div class="pc-main"><div class="pc-name">'+esc(x.name)+'</div><div class="pc-sub">'+sub+'</div></div>'
+      +'<div class="pc-amt '+cls+'">'+(x.net>0?'+':'')+fmt(x.net)+'</div></div>';
+  }).join('');
+  el.querySelectorAll('.person-card').forEach(c=>c.onclick=()=>openPerson(c.dataset.p));
+}
+
+// ── Skulder ───────────────────────────────────────────
+let debtFilter='open';
+function renderDebts(){
+  let list=state.debts.slice();
+  if(debtFilter==='open')list=list.filter(isOpen);
+  else if(debtFilter==='done')list=list.filter(d=>!isOpen(d));
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0));
+  const el=document.getElementById('debt-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga poster här.</div>';return;}
+  el.innerHTML=list.map(d=>renderEntry(d)).join('');
+  el.querySelectorAll('.entry').forEach(e=>e.onclick=()=>openPay(e.dataset.id));
+}
+function renderEntry(d){
+  const open=isOpen(d);
+  const rem=remaining(d);
+  const cls=!open?'done':d.dir==='mig'?'pos':'neg';
+  const badge=!open?'<span class="badge done">Betald</span>':d.dir==='mig'?'<span class="badge mig">Skyldig dig</span>':'<span class="badge dem">Du är skyldig</span>';
+  let prog='';
+  if(open&&(d.paid||0)>0.0001){
+    const pct=Math.min(100,Math.round((d.paid/d.amount)*100));
+    prog='<div class="prog"><div class="prog-fill" style="width:'+pct+'%"></div></div><div class="entry-date">Betalt '+fmt(d.paid)+' av '+fmt(d.amount)+'</div>';
+  }
+  return '<div class="entry" data-id="'+d.id+'">'
+    +'<div class="entry-main"><div class="entry-top"><span class="entry-name">'+esc(d.person)+'</span>'+badge+'</div>'
+    +(d.note?'<div class="entry-note">'+esc(d.note)+'</div>':'')
+    +'<div class="entry-date">'+niceDate(d.date)+'</div>'+prog+'</div>'
+    +'<div class="entry-right"><div class="entry-amt '+cls+'">'+fmt(open?rem:d.amount)+'</div></div></div>';
+}
+
+// debt sheet
+let editingDebt=null,dDir='mig';
+function openDebtSheet(prefillPerson){
+  editingDebt=null;dDir='mig';
+  document.getElementById('debt-sheet-title').textContent='Ny skuld';
+  document.getElementById('d-person').value=prefillPerson||'';
+  document.getElementById('d-amount').value='';
+  document.getElementById('d-note').value='';
+  document.getElementById('d-date').value=todayISO();
+  setSeg('d-dir','mig');
+  refreshDatalist();openSheet('debt-sheet');
+}
+function setSeg(segId,val){
+  document.querySelectorAll('#'+segId+' button').forEach(b=>{
+    const on=b.dataset.d===val;b.classList.toggle('sel',on);
+  });
+}
+document.querySelectorAll('#d-dir button').forEach(b=>b.onclick=()=>{dDir=b.dataset.d;setSeg('d-dir',dDir);});
+document.getElementById('open-debt').onclick=()=>openDebtSheet('');
+document.getElementById('d-save').onclick=()=>{
+  const person=document.getElementById('d-person').value.trim();
+  const amount=num(document.getElementById('d-amount').value);
+  if(!person||amount<=0){if(!person)document.getElementById('d-person').focus();return;}
+  state.debts.push({id:uid(),person,dir:dDir,amount,paid:0,note:document.getElementById('d-note').value.trim(),date:document.getElementById('d-date').value||todayISO(),ts:Date.now()});
+  persist();closeSheets();renderAll();
+};
+
+// pay sheet
+let payId=null;
+function openPay(id){
+  const d=state.debts.find(x=>x.id===id);if(!d)return;
+  payId=id;
+  document.getElementById('pay-title').textContent=(d.dir==='mig'?d.person+' är skyldig dig':'Du är skyldig '+d.person);
+  document.getElementById('pay-info').textContent=fmt(d.amount)+(d.note?' · '+d.note:'')+' · '+niceDate(d.date);
+  const pct=Math.min(100,Math.round(((d.paid||0)/d.amount)*100));
+  document.getElementById('pay-prog').style.width=pct+'%';
+  document.getElementById('pay-prog-txt').textContent=isOpen(d)?('Kvar: '+fmt(remaining(d))+(d.paid>0?' (betalt '+fmt(d.paid)+')':'')):'Fullt betald ✓';
+  document.getElementById('pay-amount').value='';
+  openSheet('pay-sheet');
+}
+document.getElementById('pay-do').onclick=()=>{
+  const d=state.debts.find(x=>x.id===payId);if(!d)return;
+  const amt=num(document.getElementById('pay-amount').value);
+  if(amt<=0)return;
+  d.paid=Math.min(d.amount,(d.paid||0)+amt);
+  persist();closeSheets();renderAll();
+};
+document.getElementById('pay-full').onclick=()=>{
+  const d=state.debts.find(x=>x.id===payId);if(!d)return;
+  d.paid=d.amount;persist();closeSheets();renderAll();
+};
+document.getElementById('pay-del').onclick=()=>{
+  state.debts=state.debts.filter(x=>x.id!==payId);
+  persist();closeSheets();renderAll();
+};
+document.getElementById('pay-close').onclick=closeSheets;
+
+// filter
+document.querySelectorAll('#debt-filter .filter-tab').forEach(b=>b.onclick=()=>{
+  debtFilter=b.dataset.f;
+  document.querySelectorAll('#debt-filter .filter-tab').forEach(x=>x.classList.toggle('sel',x===b));
+  renderDebts();
+});
+
+// ── Bjudningar ────────────────────────────────────────
+let tDir='gav';
+document.querySelectorAll('#t-dir button').forEach(b=>b.onclick=()=>{tDir=b.dataset.d;setSeg('t-dir',tDir);
+  document.querySelectorAll('#t-dir button').forEach(x=>{x.classList.toggle('gav',x.dataset.d==='gav');});});
+function openTreatSheet(prefillPerson){
+  tDir='gav';
+  document.getElementById('t-person').value=prefillPerson||'';
+  document.getElementById('t-amount').value='';
+  document.getElementById('t-note').value='';
+  document.getElementById('t-date').value=todayISO();
+  setSeg('t-dir','gav');
+  refreshDatalist();openSheet('treat-sheet');
+}
+document.getElementById('open-treat').onclick=()=>openTreatSheet('');
+document.getElementById('t-save').onclick=()=>{
+  const person=document.getElementById('t-person').value.trim();
+  const amount=num(document.getElementById('t-amount').value);
+  if(!person||amount<=0){if(!person)document.getElementById('t-person').focus();return;}
+  state.treats.push({id:uid(),person,dir:tDir,amount,note:document.getElementById('t-note').value.trim(),date:document.getElementById('t-date').value||todayISO(),ts:Date.now()});
+  persist();closeSheets();renderAll();
+};
+function renderTreats(){
+  const now=new Date();const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  let mTot=0,gTot=0,fTot=0;
+  state.treats.forEach(t=>{
+    if(t.dir==='gav'){gTot+=t.amount||0;if((t.date||'').slice(0,7)===ym)mTot+=t.amount||0;}
+    else fTot+=t.amount||0;
+  });
+  document.getElementById('bj-month').textContent=fmt(mTot);
+  document.getElementById('bj-month-t').textContent='Bjudit i '+MONTHS[now.getMonth()].slice(0,3);
+  document.getElementById('bj-total').textContent=fmt(gTot);
+  document.getElementById('bj-fick').textContent=fmt(fTot);
+  const list=state.treats.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0));
+  const el=document.getElementById('treat-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga bjudningar än.</div>';return;}
+  el.innerHTML=list.map(t=>{
+    const badge=t.dir==='gav'?'<span class="badge gav">Jag bjöd</span>':'<span class="badge fick">Blev bjuden</span>';
+    return '<div class="entry" data-id="'+t.id+'">'
+      +'<div class="entry-main"><div class="entry-top"><span class="entry-name">'+esc(t.person)+'</span>'+badge+'</div>'
+      +(t.note?'<div class="entry-note">'+esc(t.note)+'</div>':'')
+      +'<div class="entry-date">'+niceDate(t.date)+'</div></div>'
+      +'<div class="entry-right"><div class="entry-amt gift">'+fmt(t.amount)+'</div></div></div>';
+  }).join('');
+  el.querySelectorAll('.entry').forEach(e=>e.onclick=()=>{
+    if(confirm('Ta bort denna bjudning?')){state.treats=state.treats.filter(x=>x.id!==e.dataset.id);persist();renderAll();}
+  });
+}
+
+// ── Persondetalj ──────────────────────────────────────
+function openPerson(name){
+  document.getElementById('ps-name').textContent=name;
+  const net=personNet(name);
+  const ne=document.getElementById('ps-net');
+  ne.textContent=(net>0?'+':'')+fmt(net);
+  ne.className='amt '+(net>0.0001?'pos':net<-0.0001?'neg':'zero');
+  document.getElementById('ps-sub').textContent=net>0.0001?(name+' är skyldig dig'):net<-0.0001?('Du är skyldig '+name):'Inga öppna skulder';
+  const g=giftNet(name);
+  document.getElementById('ps-gift').textContent=g!==0?('Bjudningar: '+(g>0?'du har bjudit '+fmt(g)+' netto':'du har blivit bjuden '+fmt(-g)+' netto')):'';
+  const ds=state.debts.filter(d=>d.person===name).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const ts=state.treats.filter(t=>t.person===name).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let html='';
+  html+='<div class="btn-row" style="margin:6px 0 10px"><button class="btn ghost" id="ps-add-debt" style="flex:1">+ Skuld</button><button class="btn ghost" id="ps-add-treat" style="flex:1">+ Bjudning</button></div>';
+  if(ds.length){html+='<div class="section-title" style="margin:8px 0 4px">Skulder</div>'+ds.map(renderEntry).join('');}
+  if(ts.length){html+='<div class="section-title" style="margin:12px 0 4px">Bjudningar</div>'+ts.map(t=>{
+    const badge=t.dir==='gav'?'<span class="badge gav">Jag bjöd</span>':'<span class="badge fick">Blev bjuden</span>';
+    return '<div class="entry"><div class="entry-main"><div class="entry-top"><span class="entry-name">'+esc(t.note||'Bjudning')+'</span>'+badge+'</div><div class="entry-date">'+niceDate(t.date)+'</div></div><div class="entry-right"><div class="entry-amt gift">'+fmt(t.amount)+'</div></div></div>';
+  }).join('');}
+  if(!ds.length&&!ts.length)html+='<div class="empty-msg">Inga poster.</div>';
+  document.getElementById('ps-entries').innerHTML=html;
+  const adb=document.getElementById('ps-add-debt');if(adb)adb.onclick=()=>{closeSheets();setTimeout(()=>openDebtSheet(name),260);};
+  const atb=document.getElementById('ps-add-treat');if(atb)atb.onclick=()=>{closeSheets();setTimeout(()=>openTreatSheet(name),260);};
+  document.getElementById('ps-entries').querySelectorAll('.entry[data-id]').forEach(e=>e.onclick=()=>{closeSheets();setTimeout(()=>openPay(e.dataset.id),260);});
+  openSheet('person-sheet');
+}
+document.getElementById('ps-close').onclick=closeSheets;
+
+// ── Översikt ──────────────────────────────────────────
+function renderOversikt(){
+  const ppl=people().map(p=>({name:p,net:personNet(p)})).filter(x=>Math.abs(x.net)>0.0001);
+  ppl.sort((a,b)=>b.net-a.net);
+  const sl=document.getElementById('settle-list');
+  if(!ppl.length){sl.innerHTML='<div class="empty-msg">Inga öppna skulder att göra upp 🎉</div>';}
+  else sl.innerHTML=ppl.map(x=>{
+    const cls=x.net>0?'pos':'neg';
+    const txt=x.net>0?'ska betala dig':'du ska betala';
+    return '<div class="settle-row"><div class="avatar" style="width:30px;height:30px;font-size:12px">'+esc(initials(x.name))+'</div><span class="nm">'+esc(x.name)+' '+txt+'</span><span class="vv '+cls+'">'+fmt(Math.abs(x.net))+'</span></div>';
+  }).join('');
+
+  const gifts=people().map(p=>({name:p,g:0})).reduce((acc,o)=>{acc[o.name]=0;return acc;},{});
+  state.treats.forEach(t=>{if(t.dir==='gav')gifts[t.person]=(gifts[t.person]||0)+(t.amount||0);});
+  const garr=Object.keys(gifts).map(n=>({name:n,g:gifts[n]})).filter(x=>x.g>0).sort((a,b)=>b.g-a.g);
+  const gp=document.getElementById('gift-people');
+  if(!garr.length){gp.innerHTML='<div class="empty-msg">Inga bjudningar registrerade.</div>';}
+  else gp.innerHTML=garr.map(x=>'<div class="settle-row"><div class="avatar" style="width:30px;height:30px;font-size:12px">'+esc(initials(x.name))+'</div><span class="nm">'+esc(x.name)+'</span><span class="vv" style="color:var(--gift)">'+fmt(x.g)+'</span></div>').join('');
+}
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=()=>{
+  const blob=new Blob([JSON.stringify({debts:state.debts,treats:state.treats},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='notan-backup-'+todayISO()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    if(d&&(Array.isArray(d.debts)||Array.isArray(d.treats))){
+      if(Array.isArray(d.debts))state.debts=d.debts;
+      if(Array.isArray(d.treats))state.treats=d.treats;
+      persist();renderAll();alert('Importerat!');
+    }else alert('Filen verkar inte vara en giltig Notan-backup.');
+  }catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);e.target.value='';
+};
+
+// ── GitHub-synk (samma motor som jobb.html) ───────────
+const SYNC_KEY='notansync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+function setBadge(stt,msg){const b=document.getElementById('sync-badge');b.textContent=msg;b.className='badge-sync'+(stt==='ok'?' ok':stt==='err'?' err':'');}
+async function ghGet(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');
+    const data=await ghGet();
+    if(data){if(Array.isArray(data.debts))state.debts=data.debts;if(Array.isArray(data.treats))state.treats=data.treats;save();renderAll();}
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  const content=b64enc(JSON.stringify({debts:state.debts,treats:state.treats,updated:new Date().toISOString()}));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Uppdatering via Notan',content,...(sync.sha?{sha:sync.sha}:{})})});
+  let r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+function persist(){save();if(syncOn())ghPush().catch(()=>{});}
+
+function setGhStatus(msg,type){const el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--pos-soft)':type==='err'?'var(--neg-soft)':'var(--accent-soft)';
+  el.style.color=type==='ok'?'var(--pos)':type==='err'?'var(--neg)':'var(--accent)';el.textContent=msg;}
+document.getElementById('open-sync').onclick=()=>{
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{const data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar din data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp lokal data…','ok');await ghPush();}
+    setTimeout(closeSheets,1100);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kolla namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-clear').onclick=()=>{
+  sync={owner:'',repo:'',token:'',sha:null};saveSync();setBadge('','Lokal');closeSheets();
+};
+document.getElementById('sync-pull').onclick=()=>ghPull();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto';const h=new Date().getHours();
+  const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#23211C':'#F2EDE4';
+  const b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=()=>{
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+b.dataset.v).classList.add('active');
+  if(b.dataset.v==='oversikt')renderOversikt();
+});
+
+function renderAll(){renderSaldo();renderDebts();renderTreats();renderOversikt();refreshDatalist();}
+
+// ── Init ──────────────────────────────────────────────
+loadSync();
+load();
+applyTheme();
+setInterval(applyTheme,60000);
+setBadge('',syncOn()?'Synkad':'Lokal');
+renderAll();
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kompassen Desktop">
+<meta name="theme-color" content="#EDEFF2">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Kompassen","short_name":"Kompassen","display":"standalone","background_color":"%23EDEFF2","theme_color":"%23EDEFF2","start_url":"."}'>
+<title>Kompassen — Desktop</title>
+<style>
+:root{
+  --bg:#EDEFF2;--panel:#F7F8FA;--panel2:#E4E8EE;--line:#D2D8E0;
+  --ink:#283142;--muted:#7A8294;
+  --accent:#2F6F7E;--accent-soft:#D6E6E6;--copper:#B5703B;
+  --navbg:rgba(237,239,242,.95);
+  --green:#3E7D5A;--yellow:#B8923E;--red:#B5605A;
+  /* DISC */
+  --d:#B5605A;--i:#C79A3E;--s:#3E7D5A;--c:#3E6E8C;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s}
+html{background:var(--bg)}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em}
+.section-title:first-child{margin-top:4px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.fill:active{background:var(--accent)}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.p{font-size:14px;line-height:1.65;margin:6px 0}
+.tag{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:8px;background:var(--accent-soft);color:var(--accent)}
+
+/* Progress */
+.prog-wrap{margin:10px 0 2px}
+.pbar-bg{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .5s}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+
+/* Lär / lessons */
+.theme-head{display:flex;align-items:center;gap:8px;margin:18px 0 6px}
+.theme-head .ic{font-size:18px}
+.theme-head .tt{font-family:Georgia,serif;font-size:15px;flex:1}
+.theme-head .ct{font-size:11px;color:var(--muted)}
+.lesson{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-bottom:8px;overflow:hidden}
+.lesson-head{display:flex;align-items:center;gap:10px;padding:12px 13px;cursor:pointer}
+.lesson-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--accent);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.lesson-check.done{background:var(--accent)}
+.lesson-title{flex:1;font-size:14px;font-weight:500}
+.lesson-title.done{color:var(--muted)}
+.lesson-arrow{color:var(--muted);font-size:12px;transition:transform .2s}
+.lesson.open .lesson-arrow{transform:rotate(90deg)}
+.lesson-body{display:none;padding:0 13px 13px}
+.lesson.open .lesson-body{display:block}
+.reflekt{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;margin-top:8px;color:var(--ink)}
+.reflekt b{font-family:Georgia,serif;font-weight:400;display:block;margin-bottom:3px;font-size:13px}
+
+/* Modeller */
+.model{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-bottom:8px;overflow:hidden}
+.model-head{display:flex;align-items:center;gap:10px;padding:13px;cursor:pointer}
+.model-ic{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.model-meta{flex:1}
+.model-name{font-size:14px;font-weight:600}
+.model-tag{font-size:11px;color:var(--muted);margin-top:1px}
+.model-arrow{color:var(--muted);font-size:12px;transition:transform .2s}
+.model.open .model-arrow{transform:rotate(90deg)}
+.model-body{display:none;padding:0 14px 14px;font-size:13px;line-height:1.65}
+.model.open .model-body{display:block}
+.model-body h4{font-family:Georgia,serif;font-weight:400;font-size:14px;margin:12px 0 4px;color:var(--accent)}
+.model-body ul{margin:4px 0 4px 4px;list-style:none}
+.model-body li{padding:3px 0 3px 16px;position:relative}
+.model-body li::before{content:'–';position:absolute;left:0;color:var(--muted)}
+.model-body li b{color:var(--ink)}
+.qstyle{display:flex;gap:8px;margin:6px 0}
+.qbadge{width:26px;height:26px;border-radius:8px;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Analys */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.ai-box{background:var(--accent-soft);border-radius:12px;padding:12px 13px;font-size:13px;line-height:1.7;margin-top:10px;white-space:pre-wrap}
+.ai-lbl{display:block;font-family:Georgia,serif;font-size:13px;color:var(--accent);margin-bottom:6px;letter-spacing:.03em}
+.hist-item{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-bottom:8px;overflow:hidden}
+.hist-head{display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer}
+.hist-head .ht{flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-head time{font-size:10px;color:var(--muted);white-space:nowrap}
+.hist-head .del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.hist-body{display:none;padding:0 12px 12px;font-size:13px;line-height:1.6}
+.hist-item.open .hist-body{display:block}
+.hist-body .sit{font-style:italic;color:var(--muted);margin-bottom:6px}
+
+/* Test (DISC) */
+.q-card{margin-bottom:6px}
+.q-num{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.q-text{font-size:14px;margin:4px 0 8px;font-weight:500}
+.opt{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:7px;cursor:pointer;font-size:14px;transition:border-color .15s,background .15s}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex-shrink:0}
+.opt.sel .dot{border-color:var(--accent);background:var(--accent)}
+.disc-bar-row{display:flex;align-items:center;gap:10px;margin:9px 0}
+.disc-bar-row .lt{width:78px;font-size:12px;font-weight:600}
+.disc-bar-row .bg{flex:1;height:14px;background:var(--panel2);border-radius:7px;overflow:hidden}
+.disc-bar-row .fl{height:100%;border-radius:7px;transition:width .6s}
+.disc-bar-row .vv{width:36px;text-align:right;font-size:12px;color:var(--muted)}
+
+/* Nav + sheets (suite standard) */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+.sheet-bg{position:fixed;inset:0;background:rgba(40,49,66,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:12px}
+
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:5px 9px;background:var(--panel)}
+.sync-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sync-badge.ok .dot{background:var(--green)}
+.sync-badge.err .dot{background:var(--red)}
+.sync-badge.load .dot{background:var(--yellow)}
+.gh-status{font-size:12px;border-radius:10px;padding:9px 11px;margin-top:10px;display:none;line-height:1.5}
+.foot{display:flex;gap:14px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:12px;line-height:1.6}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+html[data-theme=dark]{
+  --bg:#1B2026;--panel:#232932;--panel2:#2C333D;--line:#3A434F;
+  --ink:#E2E7EE;--muted:#8C95A4;
+  --accent:#5BA0AC;--accent-soft:#2A3A3D;--copper:#C98A57;
+  --navbg:rgba(27,32,38,.95);
+  --green:#6FA585;--yellow:#C2A35E;--red:#C98279;
+  --d:#C98279;--i:#C2A35E;--s:#6FA585;--c:#6C9CBE;
+}
+</style>
+
+<style>
+/* ── Desktop-överlägg (delar JS + kompassen.json med mobilversionen) ── */
+@media(min-width:760px){
+  body{padding-left:228px}
+  .app{max-width:980px;margin:0 auto;padding:34px 36px 60px}
+  h1.brand{text-align:left;font-size:24px;margin:2px 0 2px}
+  .brand-sub{text-align:left;margin-bottom:20px}
+
+  /* Bottennav -> fast sidofält */
+  .nav{position:fixed;left:0;top:0;bottom:0;right:auto;width:228px;flex-direction:column;
+       align-items:stretch;border-top:none;border-right:1px solid var(--line);
+       background:var(--panel);backdrop-filter:none;padding:22px 14px;gap:5px;margin:0;z-index:60}
+  .nav::before{content:'🧭  Kompassen';font-family:Georgia,serif;font-size:16px;color:var(--ink);
+       padding:6px 12px 16px;letter-spacing:.03em}
+  .nav button{flex:0 0 auto;display:flex;align-items:center;gap:13px;text-align:left;
+       font-size:14px;padding:12px 14px;border-radius:12px;transition:background .15s,color .15s}
+  .nav button span{display:inline-block;font-size:20px;margin:0;width:24px;text-align:center}
+  .nav button.active{background:var(--accent-soft)}
+  .nav button:hover{color:var(--accent)}
+
+  /* Sheets -> centrerade modaler */
+  .sheet-bg{background:rgba(40,49,66,.45)}
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;width:480px;max-width:90vw;
+       border-radius:18px;max-height:85vh;transform:translate(-50%,-50%) scale(.97);
+       box-shadow:0 24px 70px rgba(0,0,0,.28)}
+  .sheet.open{transform:translate(-50%,-50%) scale(1)}
+  .sheet-close{position:static}
+
+  /* Bredare ytor + tvåspaltig modell-lista */
+  #model-root{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:start}
+  #model-search,#an-chips{max-width:640px}
+  .view#view-analys .card-panel,.view#view-test .card-panel{max-width:680px}
+
+  /* Hover-tillstånd (touch saknar dessa) */
+  .btn:hover{background:var(--accent-soft)}
+  .btn.fill:hover{filter:brightness(1.06)}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .chip:hover{border-color:var(--accent)}
+  .lesson-head:hover,.model-head:hover,.hist-head:hover{background:var(--panel2)}
+  .opt:hover{border-color:var(--accent)}
+  .lesson-check:hover{filter:brightness(.96)}
+  .theme-btn{top:22px;right:28px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🧭 Kompassen</h1>
+<div class="brand-sub">Ledarskap · modeller · analys</div>
+
+<!-- ════ LÄR ════ -->
+<div class="view active" id="view-lar">
+  <div class="prog-wrap">
+    <div class="pbar-bg"><div class="pbar-fill" id="lar-bar" style="width:0%"></div></div>
+    <div class="prog-lbl"><span id="lar-lbl">0 av 0 lektioner</span><span id="lar-pct">0%</span></div>
+  </div>
+  <div id="lar-root"></div>
+</div>
+
+<!-- ════ MODELLER ════ -->
+<div class="view" id="view-modeller">
+  <input id="model-search" placeholder="Sök modell…" style="margin-bottom:10px">
+  <div id="model-root"></div>
+</div>
+
+<!-- ════ ANALYS ════ -->
+<div class="view" id="view-analys">
+  <div class="section-title">Analysera en situation</div>
+  <div class="card-panel">
+    <p class="soft">Beskriv en konkret situation – t.ex. en svår medarbetare, en grupp som inte fungerar, eller ett samtal du har framför dig. Välj vilka modeller AI:n ska titta genom.</p>
+    <label>Din roll (valfritt)</label>
+    <input id="an-role" placeholder="t.ex. teamledare, projektledare, chef">
+    <label>Situation</label>
+    <textarea id="an-sit" rows="5" placeholder="Beskriv vad som händer, vilka som är inblandade och vad du vill uppnå…"></textarea>
+    <label>Modeller att analysera genom</label>
+    <div class="chips" id="an-chips"></div>
+    <button class="btn fill" id="an-run" style="margin-top:14px;width:100%">✨ Analysera situationen</button>
+    <div id="an-out"></div>
+  </div>
+  <div class="section-title">Tidigare analyser</div>
+  <div id="an-hist"></div>
+</div>
+
+<!-- ════ TEST ════ -->
+<div class="view" id="view-test">
+  <div class="section-title">DISC-självskattning</div>
+  <div id="test-intro" class="card-panel">
+    <p class="p">En kort skattning som ger en <b>indikation</b> på din kommunikationsstil enligt DISC. För varje rad väljer du det ord som <b>stämmer bäst</b> in på dig.</p>
+    <p class="soft">Detta är ett självreflektionsverktyg, inte ett validerat test. ~3 min.</p>
+    <button class="btn fill" id="test-start" style="margin-top:12px;width:100%">Starta skattningen</button>
+    <div id="test-prev"></div>
+  </div>
+  <div id="test-run" style="display:none"></div>
+  <div id="test-result" style="display:none"></div>
+</div>
+
+<!-- ════ MER ════ -->
+<div class="view" id="view-mer">
+  <div class="section-title">Synk</div>
+  <div class="card-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span class="sync-badge" id="sync-badge"><span class="dot"></span><span id="sync-txt">Ej synkad</span></span>
+      <button class="btn ghost" id="sync-now">Hämta nu</button>
+    </div>
+    <button class="btn" id="open-sync" style="width:100%;margin-top:10px">Inställningar för GitHub-synk</button>
+  </div>
+  <div class="section-title">AI</div>
+  <div class="card-panel">
+    <p class="soft" id="ai-state">Ingen API-nyckel sparad.</p>
+    <button class="btn" id="open-ai" style="width:100%;margin-top:10px">Ange Anthropic API-nyckel</button>
+  </div>
+  <div class="section-title">Data</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn ghost" id="export-btn">Exportera</button>
+      <button class="btn ghost" id="import-btn">Importera</button>
+    </div>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+  </div>
+  <p class="privacy">All data sparas lokalt i din webbläsare. Synk och AI är frivilligt och sker bara om du fyller i uppgifter ovan.</p>
+</div>
+
+<div class="foot"></div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button data-v="lar" class="active"><span>📖</span>Lär</button>
+  <button data-v="modeller"><span>📚</span>Modeller</button>
+  <button data-v="analys"><span>✨</span>Analys</button>
+  <button data-v="test"><span>🧪</span>Test</button>
+  <button data-v="mer"><span>⚙️</span>Mer</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>GitHub-synk</h3>
+  <p class="soft">Synkar mellan dina enheter via ett privat GitHub-repo. Använd en fine-grained token med Contents-behörighet (läs &amp; skriv).</p>
+  <label>Användarnamn (owner)</label>
+  <input id="gh-owner" autocapitalize="off" autocorrect="off">
+  <label>Repo</label>
+  <input id="gh-repo" autocapitalize="off" autocorrect="off">
+  <label>Token</label>
+  <input id="gh-token" type="password" autocapitalize="off" autocorrect="off">
+  <div class="gh-status" id="gh-status"></div>
+  <button class="btn fill" id="gh-save" style="width:100%;margin-top:12px">Spara &amp; testa</button>
+  <button class="sheet-close" data-close>Stäng</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>Anthropic API-nyckel</h3>
+  <p class="soft">Behövs för AI-analysen. Nyckeln sparas bara lokalt på den här enheten. Skapa en nyckel på console.anthropic.com.</p>
+  <label>API-nyckel</label>
+  <input id="ai-key" type="password" placeholder="sk-ant-…" autocapitalize="off" autocorrect="off">
+  <button class="btn fill" id="ai-save" style="width:100%;margin-top:12px">Spara</button>
+  <button class="sheet-close" data-close>Stäng</button>
+</div>
+
+<script>
+// ── Hjälpare ──────────────────────────────────────────
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function fmtDate(iso){try{return new Date(iso).toLocaleDateString('sv-SE',{day:'numeric',month:'short'});}catch(e){return iso;}}
+
+// ── Modeller (referens + AI-sammanfattningar) ─────────
+var MODELS=[
+ {id:'disc',ic:'🎯',name:'DISC',tag:'Kommunikations- och beteendestilar',
+  sum:'DISC beskriver fyra beteendestilar: D (Dominans) – direkt, resultatdriven, otålig; I (Inflytande) – social, entusiastisk, relationsdriven; S (Stabilitet) – lugn, lojal, tycker illa om snabba förändringar; C (Konformitet/Noggrannhet) – analytisk, faktadriven, kvalitetsfokuserad. Anpassa kommunikationen efter mottagarens stil.',
+  html:'<p>Fyra grundläggande beteendestilar. Ingen stil är bättre än någon annan – nyckeln är att anpassa sig efter den man möter.</p>'+
+   '<div class="qstyle"><div class="qbadge" style="background:var(--d)">D</div><div><b>Dominans</b> – direkt, snabb, resultatfokuserad. Vill ha kontroll och raka besked. Möt med: var kortfattad, fokusera på vad och resultat.</div></div>'+
+   '<div class="qstyle"><div class="qbadge" style="background:var(--i)">I</div><div><b>Inflytande</b> – social, entusiastisk, övertygande. Drivs av relationer och erkännande. Möt med: visa energi, ge utrymme, bekräfta.</div></div>'+
+   '<div class="qstyle"><div class="qbadge" style="background:var(--s)">S</div><div><b>Stabilitet</b> – lugn, lojal, tålmodig. Värdesätter trygghet och tydlighet. Möt med: ge tid, var personlig, förklara förändringar.</div></div>'+
+   '<div class="qstyle"><div class="qbadge" style="background:var(--c)">C</div><div><b>Konformitet</b> – analytisk, noggrann, kvalitetsmedveten. Vill ha fakta och struktur. Möt med: ge underlag, var saklig, undvik press.</div></div>'+
+   '<h4>Som ledare</h4><ul><li>Hög D vill ha autonomi och utmaningar.</li><li>Hög I vill ha synlighet och variation.</li><li>Hög S vill ha stabilitet och uppskattning.</li><li>Hög C vill ha precision och tid att tänka.</li></ul>'},
+ {id:'firo',ic:'🔄',name:'FIRO',tag:'Gruppens utvecklingsfaser (Schutz)',
+  sum:'FIRO (Schutz) beskriver tre faser en grupp pendlar mellan: Tillhörande (vågar jag vara med? vem är vi?), Rollsökning/Kontroll (vem bestämmer? min plats i hackordningen, konflikter), och Öppenhet/Samhörighet (närhet, tillit, full effektivitet). Mellan rollsökning och öppenhet finns en kort idyllfas (gemyt). Grupper backar tillbaka vid förändring, nya medlemmar eller ny chef.',
+  html:'<p>FIRO (Fundamental Interpersonal Relations Orientation) beskriver tre faser en grupp rör sig mellan. En grupp kan backa till en tidigare fas när något ändras.</p>'+
+   '<h4>1. Tillhörandefasen</h4><ul><li>Frågan: <b>Vill jag vara med? Är jag accepterad?</b></li><li>Artigt, försiktigt, söker sin plats.</li><li>Ledaren: skapa trygghet, tydliga ramar, lär känna varandra.</li></ul>'+
+   '<h4>2. Rollsökningsfasen</h4><ul><li>Frågan: <b>Vilken roll har jag? Vem bestämmer?</b></li><li>Konflikter, maktkamp, ifrågasättande – jobbig men nödvändig.</li><li>Ledaren: tål konflikt, tydliggör roller och mandat, undvik att fly.</li></ul>'+
+   '<h4>Idyll (gemyt)</h4><ul><li>Kort lättnadsfas efter rollsökningen – "äntligen sams". Risk att fastna i trivsel.</li></ul>'+
+   '<h4>3. Öppenhetsfasen</h4><ul><li>Frågan: <b>Hur nära vill vi vara?</b></li><li>Tillit, rak feedback, hög effektivitet och kreativitet.</li><li>Ledaren: kan delegera mer, fokusera på utveckling.</li></ul>'+
+   '<p style="margin-top:8px"><span class="tag">Obs</span> Ny chef, ny medlem eller omorganisation gör att gruppen ofta backar till tillhörande- eller rollsökningsfasen.</p>'},
+ {id:'sit',ic:'🎚️',name:'Situationsanpassat ledarskap',tag:'Hersey & Blanchard',
+  sum:'Situationsanpassat ledarskap: anpassa stil efter medarbetarens kompetens och engagemang för uppgiften. S1 Instruerande (låg kompetens, hög vilja) – styr mycket. S2 Coachande (viss kompetens, vacklande vilja) – styr + stöttar. S3 Stödjande (hög kompetens, vacklande vilja) – stöttar, låter dem äga. S4 Delegerande (hög kompetens, hög vilja) – ge ansvar och kliv ur vägen.',
+  html:'<p>Ledarstilen ska matcha medarbetarens <b>mognad för den specifika uppgiften</b> (kompetens + engagemang), inte personen i stort.</p>'+
+   '<h4>S1 – Instruerande</h4><ul><li>Ny/osäker men motiverad. Mycket styrning, lite stöd. Visa hur.</li></ul>'+
+   '<h4>S2 – Coachande</h4><ul><li>Lite erfarenhet, sviker i motivation. Hög styrning + högt stöd. Förklara varför.</li></ul>'+
+   '<h4>S3 – Stödjande</h4><ul><li>Kan men tvekar/saknar självförtroende. Lågt styrande, högt stöd. Lyssna och uppmuntra.</li></ul>'+
+   '<h4>S4 – Delegerande</h4><ul><li>Kompetent och motiverad. Lågt styrande, lågt stöd. Ge ansvar och förtroende.</li></ul>'+
+   '<p style="margin-top:8px">Vanligt misstag: att leda alla i S1 (mikromanagement) eller alla i S4 (övergivande).</p>'},
+ {id:'tuckman',ic:'📈',name:'Tuckmans faser',tag:'Forming–Storming–Norming–Performing',
+  sum:'Tuckmans faser för teamutveckling: Forming (osäkerhet, beroende av ledaren), Storming (konflikt, motstånd, kamp om position), Norming (normer och samarbete sätter sig), Performing (självgående, högpresterande), Adjourning (avslut). Konfliktfasen är normal och nödvändig.',
+  html:'<ul><li><b>Forming</b> – orientering, artighet, beroende av ledaren. Mål och roller oklara.</li>'+
+   '<li><b>Storming</b> – friktion, motstånd, kamp om inflytande. Här testas ledarskapet.</li>'+
+   '<li><b>Norming</b> – gemensamma normer, samarbete och tillit byggs.</li>'+
+   '<li><b>Performing</b> – självgående, fokus på resultat, hög tillit.</li>'+
+   '<li><b>Adjourning</b> – avslut, reflektion, avsked.</li></ul>'+
+   '<p style="margin-top:6px">Liknar FIRO men är mer linjär. Konfliktfasen (storming) ska man inte fly från – den bygger gruppen.</p>'},
+ {id:'johari',ic:'🪟',name:'Johari-fönstret',tag:'Självinsikt & feedback',
+  sum:'Johari-fönstret: fyra rutor utifrån vad jag vet/inte vet om mig själv och vad andra vet/inte vet. Öppna (känt av alla), Dolda (jag vet, andra inte), Blinda (andra ser, jag inte), Okända. Feedback krymper den blinda rutan; självavslöjande krymper den dolda. Mer öppen ruta = bättre samarbete.',
+  html:'<p>Fyra rutor som beskriver självinsikt i relation till andra:</p>'+
+   '<ul><li><b>Öppna rutan</b> – känt av både dig och andra.</li>'+
+   '<li><b>Dolda rutan</b> – du vet, andra inte. Krymper genom <b>att dela/öppna upp</b>.</li>'+
+   '<li><b>Blinda rutan</b> – andra ser, du inte. Krymper genom <b>att ta emot feedback</b>.</li>'+
+   '<li><b>Okända rutan</b> – varken du eller andra vet ännu.</li></ul>'+
+   '<p style="margin-top:6px">Större öppen ruta ger mer tillit och effektivare samarbete. Som ledare: be aktivt om feedback och våga dela egna tankar.</p>'},
+ {id:'grow',ic:'🌱',name:'GROW',tag:'Coachande samtalsmodell',
+  sum:'GROW är en coachande samtalsstruktur: G Mål (vad vill du uppnå?), R Verklighet (hur ser läget ut nu, fakta?), O Möjligheter (vilka vägar finns?), W Vägval/vilja (vad gör du, när, vad behövs?). Ledaren ställer öppna frågor istället för att ge svar.',
+  html:'<p>En struktur för coachande samtal. Ställ frågor, ge inte svaren.</p>'+
+   '<ul><li><b>G – Mål:</b> Vad vill du uppnå? Hur vet du att du lyckats?</li>'+
+   '<li><b>R – Verklighet:</b> Hur ser det ut nu? Vad har du provat?</li>'+
+   '<li><b>O – Möjligheter:</b> Vilka alternativ finns? Vad mer skulle kunna fungera?</li>'+
+   '<li><b>W – Vägval/vilja:</b> Vad gör du, och när? Vad behöver du av mig?</li></ul>'+
+   '<p style="margin-top:6px">Coachande ledarskap bygger ägarskap – personen kommer fram till lösningen själv.</p>'},
+ {id:'feedback',ic:'💬',name:'Feedbacktrappan & SBI',tag:'Ge och ta emot feedback',
+  sum:'Feedbacktrappan beskriver hur mottagaren reagerar: Förkasta, Försvara, Förklara, Förstå, Förändra – målet är att nå förändring. SBI-modellen ger struktur: Situation (när/var), Beteende (vad jag konkret såg, inte tolkning), Inverkan (effekten det fick). Ge specifik, beteendebaserad feedback.',
+  html:'<h4>Feedbacktrappan (mottagarens reaktion)</h4><ul><li><b>Förkasta</b> – "det där stämmer inte".</li><li><b>Försvara</b> – bortförklarar.</li><li><b>Förklara</b> – ger sin bild.</li><li><b>Förstå</b> – tar in budskapet.</li><li><b>Förändra</b> – agerar på det.</li></ul>'+
+   '<p>Ge mottagaren tid – de flesta börjar längst ner på trappan.</p>'+
+   '<h4>SBI – ge feedback konkret</h4><ul><li><b>Situation:</b> "På mötet i tisdags…"</li><li><b>Beteende:</b> "…avbröt du Anna tre gånger." (observerbart, ej tolkning)</li><li><b>Inverkan:</b> "…och hon slutade dela sina idéer."</li></ul>'},
+ {id:'conflict',ic:'⚔️',name:'Konflikthantering',tag:'Thomas–Kilmann, fem stilar',
+  sum:'Thomas-Kilmanns fem konfliktstilar utifrån grad av bestämdhet och samarbetsvilja: Konkurrera (vinna), Anpassa (ge efter), Undvika (dra sig undan), Kompromissa (mötas halvvägs), Samarbeta (hitta lösning som möter bådas behov). Samarbeta är ofta idealet men alla stilar har sin plats beroende på situation och hur viktig sak respektive relation är.',
+  html:'<p>Fem sätt att hantera konflikt, beroende på hur viktig <b>saken</b> respektive <b>relationen</b> är:</p>'+
+   '<ul><li><b>Konkurrera</b> – hög egen vinst. Bra vid kris/principfrågor.</li>'+
+   '<li><b>Anpassa</b> – ge efter. Bra när relationen väger tyngst.</li>'+
+   '<li><b>Undvika</b> – skjuta upp. Bra när frågan är trivial eller läget för hett.</li>'+
+   '<li><b>Kompromissa</b> – mötas halvvägs. Snabb men sällan optimal.</li>'+
+   '<li><b>Samarbeta</b> – möt bådas behov. Tar tid, ger bäst hållbar lösning.</li></ul>'+
+   '<p style="margin-top:6px">Skilj på <b>sakkonflikt</b> (lättare) och <b>relationskonflikt</b> (kräver att man pratar om relationen).</p>'},
+ {id:'maslow',ic:'🔺',name:'Maslows behovstrappa',tag:'Motivation',
+  sum:'Maslows behovshierarki: fysiologiska behov, trygghet, gemenskap, uppskattning, självförverkligande. Lägre behov behöver i stort vara tillgodosedda för att högre ska driva. I arbetslivet: otrygg anställning eller dålig arbetsmiljö gör det svårt att motivera med utveckling och mening.',
+  html:'<ul><li><b>Självförverkligande</b> – växa, mening, potential.</li><li><b>Uppskattning</b> – erkännande, status, respekt.</li><li><b>Gemenskap</b> – tillhörighet, relationer.</li><li><b>Trygghet</b> – säkerhet, stabilitet.</li><li><b>Fysiologiska</b> – grundläggande behov.</li></ul>'+
+   '<p style="margin-top:6px">I arbetslivet: går inte att motivera med "mening" om grundtryggheten (anställning, arbetsmiljö) saknas.</p>'},
+ {id:'herzberg',ic:'⚖️',name:'Herzbergs tvåfaktorteori',tag:'Vad motiverar?',
+  sum:'Herzberg skiljer på hygienfaktorer (lön, arbetsmiljö, trygghet, relationer, policyer) som skapar missnöje om de saknas men inte motiverar i sig, och motivationsfaktorer (ansvar, erkännande, utveckling, meningsfullt arbete, prestation) som driver verklig motivation. Fixa hygienen först, motivera sedan.',
+  html:'<h4>Hygienfaktorer</h4><ul><li>Lön, arbetsmiljö, trygghet, relationer, regler.</li><li>Skapar <b>missnöje om de saknas</b> – men motiverar inte i sig.</li></ul>'+
+   '<h4>Motivationsfaktorer</h4><ul><li>Ansvar, erkännande, utveckling, mening, prestation.</li><li>Skapar <b>verklig motivation</b>.</li></ul>'+
+   '<p style="margin-top:6px">Höj inte bara lönen och vänta dig engagemang – det tar bort missnöje, inte mer.</p>'},
+ {id:'belbin',ic:'🧩',name:'Belbins teamroller',tag:'Roller i ett team',
+  sum:'Belbins nio teamroller, indelade i tankeroller (Idéspruta, Analytiker, Specialist), sociala roller (Samordnare, Lagspelare, Kontaktskapare) och handlingsroller (Pådrivare, Genomförare, Avslutare). Balanserade team har spridning över rollerna; varje roll har en tillåten svaghet.',
+  html:'<h4>Tankeroller</h4><ul><li><b>Idéspruta</b> – kreativ, löser problem.</li><li><b>Analytiker</b> – kritisk, väger alternativ.</li><li><b>Specialist</b> – djup expertis.</li></ul>'+
+   '<h4>Sociala roller</h4><ul><li><b>Samordnare</b> – leder, klargör mål.</li><li><b>Lagspelare</b> – smörjmedel, samarbete.</li><li><b>Kontaktskapare</b> – nätverkar utåt.</li></ul>'+
+   '<h4>Handlingsroller</h4><ul><li><b>Pådrivare</b> – driver framåt under press.</li><li><b>Genomförare</b> – omsätter idéer i handling.</li><li><b>Avslutare</b> – kvalitet och detaljer i mål.</li></ul>'+
+   '<p style="margin-top:6px">Ett team som saknar t.ex. avslutare missar detaljer; ett utan idéspruta fastnar.</p>'},
+ {id:'transform',ic:'✨',name:'Transformativt ledarskap',tag:'Transformativt vs transaktionellt',
+  sum:'Transaktionellt ledarskap bygger på utbyte: prestation mot belöning/korrigering, styrning och kontroll. Transformativt ledarskap inspirerar genom vision, förebild (idealiserad påverkan), intellektuell stimulans, individuell omtanke och motiverande mening. Effektiva ledare använder båda men lutar mot det transformativa för långsiktigt engagemang.',
+  html:'<h4>Transaktionellt</h4><ul><li>Utbyte: prestation mot belöning eller korrigering.</li><li>Tydligt, fungerar för rutin och drift.</li></ul>'+
+   '<h4>Transformativt</h4><ul><li><b>Vision</b> – ge riktning och mening.</li><li><b>Förebild</b> – lev som du lär.</li><li><b>Intellektuell stimulans</b> – utmana och uppmuntra nytänkande.</li><li><b>Individuell omtanke</b> – se varje person.</li></ul>'+
+   '<p style="margin-top:6px">Drift behöver det transaktionella; förändring och engagemang kräver det transformativa.</p>'}
+];
+
+// ── Lektioner (träning) ───────────────────────────────
+var THEMES=[
+ {t:'Självledarskap',ic:'🧭',lessons:[
+   {id:'sl1',title:'Vad är ledarskap egentligen?',body:'<p class="p">Ledarskap är inte en titel utan en relation. Det handlar om att skapa riktning, engagemang och samordning hos andra. Chefskap är en formell roll – ledarskap är något du gör (eller inte gör) varje dag, oavsett mandat.</p>',reflekt:'Tänk på en ledare du respekterat. Vad gjorde hen konkret som skapade förtroende?'},
+   {id:'sl2',title:'Känn dina egna mönster',body:'<p class="p">Din ledarstil färgas av dina egna preferenser (jämför DISC). Det du själv tycker är "rätt" sätt att kommunicera kan kännas fel för någon med en annan stil. Självinsikt är första steget till att kunna anpassa sig.</p>',reflekt:'I vilken typ av situation tappar du tålamodet snabbast? Vad säger det om din stil?'},
+   {id:'sl3',title:'Energi och återhämtning',body:'<p class="p">Ledarskap är emotionellt arbete. Att hålla ihop en grupp, ta beslut under osäkerhet och bära andras oro tär. Hållbara ledare bygger in återhämtning och vet skillnaden mellan vad de kan påverka och inte.</p>',reflekt:'Vad dränerar mest energi i din vecka – och vad av det kan du faktiskt påverka?'}
+ ]},
+ {t:'Kommunikation & feedback',ic:'💬',lessons:[
+   {id:'kf1',title:'Anpassa budskapet efter mottagaren',body:'<p class="p">Samma budskap landar olika beroende på vem som lyssnar. En resultatdriven person (hög D) vill ha kärnan direkt; en relationsdriven (hög I) vill ha sammanhang och energi; en noggrann (hög C) vill ha underlaget. Att anpassa är inte manipulation – det är respekt.</p>',reflekt:'Tänk på någon du har svårt att nå fram till. Vilken stil har de, och hur skulle du kunna möta den?'},
+   {id:'kf2',title:'Ge feedback som landar',body:'<p class="p">Bra feedback är specifik och beteendebaserad. Använd SBI: beskriv Situationen, det konkreta Beteendet (det du faktiskt såg, inte din tolkning) och Inverkan det fick. Då blir det svårare att avfärda och lättare att ta till sig.</p>',reflekt:'Formulera en feedback du velat ge enligt SBI. Märks skillnaden mot hur du först tänkte säga det?'},
+   {id:'kf3',title:'Ta emot feedback',body:'<p class="p">Feedbacktrappan visar att de flesta börjar med att förkasta eller försvara. Det gäller dig också. Träna på att andas, tacka och fråga "kan du ge ett exempel?" innan du svarar. Att ta emot väl är en av de tydligaste signalerna på trygghet i en ledare.</p>',reflekt:'När fick du senast kritik? Var på trappan landade du – och hur länge stannade du där?'}
+ ]},
+ {t:'Grupp & team',ic:'👥',lessons:[
+   {id:'gt1',title:'Grupper utvecklas i faser',body:'<p class="p">Enligt FIRO och Tuckman går grupper genom faser: först tillhörighet och försiktighet, sedan en stökig roll- och konfliktfas, och först därefter verklig öppenhet och hög prestation. Konfliktfasen är inte ett misslyckande – den är vägen framåt.</p>',reflekt:'Vilken fas befinner sig din grupp i just nu? Vilket beteende från dig hjälper den vidare?'},
+   {id:'gt2',title:'Leda olika lagom mycket',body:'<p class="p">Situationsanpassat ledarskap säger att du ska styra mer för den som är ny på en uppgift och delegera mer för den som behärskar den. Samma person kan behöva instruktion i en sak och frihet i en annan.</p>',reflekt:'Välj en medarbetare och en uppgift. Vilken stil (S1–S4) borde du egentligen använda?'},
+   {id:'gt3',title:'Roller i teamet',body:'<p class="p">Belbins teamroller påminner om att ett välfungerande team behöver olika styrkor – idésprutor, pådrivare, avslutare och lagspelare. Friktion uppstår ofta inte trots olikheterna utan för att de inte är synliggjorda.</p>',reflekt:'Vilken roll tar du oftast själv? Vilken roll saknas i ditt team?'}
+ ]},
+ {t:'Motivation',ic:'🔥',lessons:[
+   {id:'mo1',title:'Hygien först, sedan motivation',body:'<p class="p">Herzberg visar att lön, arbetsmiljö och trygghet är hygienfaktorer – saknas de skapas missnöje, men de motiverar inte i sig. Verklig motivation kommer av ansvar, erkännande, utveckling och mening. Fixa grunden, motivera sedan.</p>',reflekt:'Är ditt teams motivationsproblem egentligen ett hygienproblem i förklädnad?'},
+   {id:'mo2',title:'Coacha istället för att lösa',body:'<p class="p">Det snabbaste är ofta att ge svaret – men det bygger beroende. GROW-modellen (Mål, Verklighet, Möjligheter, Vägval) hjälper dig ställa frågor så att personen själv hittar lösningen och äger den.</p>',reflekt:'Tänk på en fråga du brukar lösa åt andra. Vilken öppen fråga kunde du ställa istället?'}
+ ]},
+ {t:'Svåra samtal & konflikt',ic:'⚔️',lessons:[
+   {id:'sv1',title:'Förbered det svåra samtalet',body:'<p class="p">Svåra samtal blir svårare när vi skjuter upp dem. Förbered: vad är ditt syfte, vilka fakta har du (inte tolkningar), och vilket utfall vill du ha? Börja samtalet med att vara tydlig med varför ni sitter där.</p>',reflekt:'Vilket samtal undviker du just nu – och vad är priset för att vänta?'},
+   {id:'sv2',title:'Välj konfliktstil medvetet',body:'<p class="p">Enligt Thomas-Kilmann finns fem sätt att hantera konflikt: konkurrera, samarbeta, kompromissa, undvika och anpassa. Inget är alltid rätt. Fråga dig hur viktig saken är kontra relationen – det styr vilken stil som passar.</p>',reflekt:'I din senaste konflikt: vilken stil använde du, och var den medvetet vald?'}
+ ]}
+];
+
+// ── DISC-test ─────────────────────────────────────────
+var DISC_Q=[
+ ['Bestämd','Entusiastisk','Tålmodig','Noggrann'],
+ ['Direkt','Övertygande','Lugn','Analytisk'],
+ ['Tävlingsinriktad','Social','Lojal','Försiktig'],
+ ['Resultatfokuserad','Optimistisk','Stödjande','Systematisk'],
+ ['Modig','Pratglad','Avslappnad','Korrekt'],
+ ['Initiativrik','Inspirerande','Eftertänksam','Strukturerad'],
+ ['Otålig','Spontan','Stabil','Eftersinnande'],
+ ['Viljestark','Charmig','Vänlig','Reserverad'],
+ ['Snabb i beslut','Övertalande','Samarbetsvillig','Frågvis'],
+ ['Krävande','Utåtriktad','Trygg','Perfektionistisk'],
+ ['Självständig','Engagerande','Hjälpsam','Logisk'],
+ ['Rakt på sak','Energisk','Lyssnande','Detaljorienterad'],
+ ['Riskbenägen','Generös med ord','Försonande','Kvalitetsmedveten'],
+ ['Kontrollerande','Övertygad','Lojal','Saklig']
+];
+var DISC_INFO={
+ D:{n:'Dominans',c:'var(--d)',t:'Direkt, resultatdriven, gillar utmaningar och att ha kontroll. Kan uppfattas som otålig. Drivs av: vinst, autonomi, fart.'},
+ I:{n:'Inflytande',c:'var(--i)',t:'Social, entusiastisk, övertygande, relationsdriven. Kan tappa detaljer. Drivs av: erkännande, gemenskap, variation.'},
+ S:{n:'Stabilitet',c:'var(--s)',t:'Lugn, lojal, tålmodig, gillar trygghet och förutsägbarhet. Ogillar snabba förändringar. Drivs av: trygghet, samarbete, uppskattning.'},
+ C:{n:'Konformitet',c:'var(--c)',t:'Analytisk, noggrann, kvalitetsmedveten, vill ha fakta och struktur. Kan bli perfektionistisk. Drivs av: precision, ordning, kompetens.'}
+};
+
+// ── State ─────────────────────────────────────────────
+var STORE='kompassen_v1';
+var state={progress:{},analyses:[],discHistory:[]};
+function save(){try{localStorage.setItem(STORE,JSON.stringify(state));}catch(e){}}
+function load(){try{var s=localStorage.getItem(STORE);if(s){var d=JSON.parse(s);state=Object.assign({progress:{},analyses:[],discHistory:[]},d);}}catch(e){}}
+
+// ── GitHub-synk (suite-standard) ──────────────────────
+var SYNC_KEY='kompassen_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/kompassen.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+
+function setBadge(stt,msg){
+  var b=document.getElementById('sync-badge');
+  document.getElementById('sync-txt').textContent=msg;
+  b.className='sync-badge'+(stt==='ok'?' ok':stt==='err'?' err':stt==='load'?' load':'');
+}
+
+// Union-merge så att analyser/progress från flera enheter inte skrivs över
+function mergeRemote(rs){
+  if(!rs)return;
+  var ids={};(state.analyses||[]).forEach(function(a){ids[a.id]=true;});
+  (rs.analyses||[]).forEach(function(a){if(a&&a.id&&!ids[a.id])state.analyses.push(a);});
+  state.analyses.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+  rs.progress=rs.progress||{};
+  Object.keys(rs.progress).forEach(function(k){if(rs.progress[k])state.progress[k]=true;});
+  // disc-historik: behåll union på datum
+  var seen={};(state.discHistory||[]).forEach(function(h){seen[h.date]=true;});
+  (rs.discHistory||[]).forEach(function(h){if(h&&h.date&&!seen[h.date])state.discHistory.push(h);});
+  state.discHistory.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+}
+
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data&&data.state){mergeRemote(data.state);save();renderAll();}
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({state:state,updated:new Date().toISOString()}));
+  var body={message:'Uppdatering via Kompassen',content:content};if(sync.sha)body.sha=sync.sha;
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{var rem=await ghGet();if(rem&&rem.state)mergeRemote(rem.state);body.sha=sync.sha;body.content=b64enc(JSON.stringify({state:state,updated:new Date().toISOString()}));}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+var pushTimer=null;
+function persist(){save();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}}
+
+// ── AI ────────────────────────────────────────────────
+var AI_KEY='kompassen_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1100,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+bg.onclick=closeSheets;
+document.querySelectorAll('[data-close]').forEach(function(b){b.onclick=closeSheets;});
+
+// ── Render: Lär ───────────────────────────────────────
+function allLessonIds(){var a=[];THEMES.forEach(function(th){th.lessons.forEach(function(l){a.push(l.id);});});return a;}
+function renderLar(){
+  var root=document.getElementById('lar-root');var html='';
+  THEMES.forEach(function(th){
+    var done=th.lessons.filter(function(l){return state.progress[l.id];}).length;
+    html+='<div class="theme-head"><span class="ic">'+th.ic+'</span><span class="tt">'+esc(th.t)+'</span><span class="ct">'+done+'/'+th.lessons.length+'</span></div>';
+    th.lessons.forEach(function(l){
+      var d=!!state.progress[l.id];
+      html+='<div class="lesson" data-id="'+l.id+'">'+
+        '<div class="lesson-head">'+
+          '<button class="lesson-check'+(d?' done':'')+'" data-check="'+l.id+'">'+(d?'✓':'')+'</button>'+
+          '<span class="lesson-title'+(d?' done':'')+'">'+esc(l.title)+'</span>'+
+          '<span class="lesson-arrow">▶</span>'+
+        '</div>'+
+        '<div class="lesson-body">'+l.body+
+          '<div class="reflekt"><b>Reflektion</b>'+esc(l.reflekt)+'</div>'+
+        '</div>'+
+      '</div>';
+    });
+  });
+  root.innerHTML=html;
+  root.querySelectorAll('.lesson-head').forEach(function(h){
+    h.onclick=function(e){if(e.target.closest('[data-check]'))return;h.parentElement.classList.toggle('open');};
+  });
+  root.querySelectorAll('[data-check]').forEach(function(b){
+    b.onclick=function(e){e.stopPropagation();var id=b.dataset.check;if(state.progress[id])delete state.progress[id];else state.progress[id]=true;persist();renderLar();};
+  });
+  var ids=allLessonIds();var total=ids.length;var done=ids.filter(function(i){return state.progress[i];}).length;
+  var pct=total?Math.round(done/total*100):0;
+  document.getElementById('lar-bar').style.width=pct+'%';
+  document.getElementById('lar-lbl').textContent=done+' av '+total+' lektioner';
+  document.getElementById('lar-pct').textContent=pct+'%';
+}
+
+// ── Render: Modeller ──────────────────────────────────
+function renderModels(filter){
+  filter=(filter||'').toLowerCase();
+  var root=document.getElementById('model-root');var html='';
+  MODELS.forEach(function(m){
+    if(filter&&(m.name+' '+m.tag).toLowerCase().indexOf(filter)<0)return;
+    html+='<div class="model" data-id="'+m.id+'">'+
+      '<div class="model-head">'+
+        '<div class="model-ic">'+m.ic+'</div>'+
+        '<div class="model-meta"><div class="model-name">'+esc(m.name)+'</div><div class="model-tag">'+esc(m.tag)+'</div></div>'+
+        '<span class="model-arrow">▶</span>'+
+      '</div>'+
+      '<div class="model-body">'+m.html+'</div>'+
+    '</div>';
+  });
+  root.innerHTML=html||'<div class="empty-msg">Ingen modell matchar sökningen</div>';
+  root.querySelectorAll('.model-head').forEach(function(h){h.onclick=function(){h.parentElement.classList.toggle('open');};});
+}
+document.getElementById('model-search').oninput=function(e){renderModels(e.target.value);};
+
+// ── Render: Analys ────────────────────────────────────
+var anSel={};
+function renderAnChips(){
+  var el=document.getElementById('an-chips');var html='';
+  MODELS.forEach(function(m){html+='<button class="chip'+(anSel[m.id]?' sel':'')+'" data-m="'+m.id+'">'+esc(m.name)+'</button>';});
+  el.innerHTML=html;
+  el.querySelectorAll('.chip').forEach(function(c){c.onclick=function(){var id=c.dataset.m;if(anSel[id])delete anSel[id];else anSel[id]=true;renderAnChips();};});
+}
+function anPrompt(role,sit,ids){
+  var parts=['Du är en erfaren, jordnära ledarskapshandledare. Analysera situationen nedan på svenska genom de angivna ledarskapsmodellerna. Var konkret och praktisk, inte akademisk.'];
+  parts.push('\n\nLedarens roll: '+(role||'ej angiven'));
+  parts.push('\nSituation: '+sit);
+  parts.push('\n\nModeller att använda:');
+  ids.forEach(function(id){var m=MODELS.find(function(x){return x.id===id;});if(m)parts.push('\n• '+m.name+': '+m.sum);});
+  parts.push('\n\nStruktur på svaret (använd dessa rubriker, ingen inledande pratstund):');
+  parts.push('\nVad som händer – kort tolkning av situationen.');
+  parts.push('\nGenom modellerna – för varje vald modell: vad den belyser här (1–3 meningar).');
+  parts.push('\nKonkreta nästa steg – 3–4 punkter du som ledare kan göra.');
+  parts.push('\nEn reflektionsfråga – avsluta med en fråga att fundera vidare på.');
+  parts.push('\n\nHåll det fokuserat, max ca 350 ord.');
+  return parts.join('');
+}
+document.getElementById('an-run').onclick=async function(){
+  var role=document.getElementById('an-role').value.trim();
+  var sit=document.getElementById('an-sit').value.trim();
+  var ids=Object.keys(anSel);
+  if(!sit){alert('Beskriv situationen först.');return;}
+  if(!ids.length){alert('Välj minst en modell.');return;}
+  var btn=this;var orig=btn.textContent;btn.textContent='✨ Analyserar…';btn.disabled=true;
+  var out=document.getElementById('an-out');out.innerHTML='';
+  try{
+    var text=await aiCall(anPrompt(role,sit,ids));
+    out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Analys</span>'+esc(text)+'</div>';
+    var names=ids.map(function(id){var m=MODELS.find(function(x){return x.id===id;});return m?m.name:id;});
+    state.analyses.unshift({id:uid(),date:new Date().toISOString(),role:role,situation:sit,models:names,result:text});
+    persist();renderAnHist();
+  }catch(e){
+    if(e.message!=='NOKEY')out.innerHTML='<div class="ai-box" style="background:#F4E4E2;color:#6E3A33"><span class="ai-lbl">Kunde inte analysera</span>'+esc(e.message)+'</div>';
+  }finally{btn.textContent=orig;btn.disabled=false;}
+};
+function renderAnHist(){
+  var el=document.getElementById('an-hist');
+  if(!state.analyses.length){el.innerHTML='<div class="empty-msg">Inga sparade analyser ännu</div>';return;}
+  var html='';
+  state.analyses.forEach(function(a){
+    var title=a.situation.length>46?a.situation.slice(0,46)+'…':a.situation;
+    html+='<div class="hist-item" data-id="'+a.id+'">'+
+      '<div class="hist-head"><span class="ht">'+esc(title)+'</span><time>'+fmtDate(a.date)+'</time><button class="del" data-del="'+a.id+'">×</button></div>'+
+      '<div class="hist-body">'+
+        '<div class="sit">'+esc(a.situation)+'</div>'+
+        '<div class="soft" style="margin-bottom:6px">Modeller: '+esc((a.models||[]).join(', '))+'</div>'+
+        '<div class="ai-box" style="margin-top:0"><span class="ai-lbl">✨ Analys</span>'+esc(a.result)+'</div>'+
+      '</div>'+
+    '</div>';
+  });
+  el.innerHTML=html;
+  el.querySelectorAll('.hist-head').forEach(function(h){h.onclick=function(e){if(e.target.closest('[data-del]'))return;h.parentElement.classList.toggle('open');};});
+  el.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(e){e.stopPropagation();if(!confirm('Ta bort analysen?'))return;state.analyses=state.analyses.filter(function(x){return x.id!==b.dataset.del;});persist();renderAnHist();};});
+}
+
+// ── Test (DISC) ───────────────────────────────────────
+var testAns={};
+function renderTestPrev(){
+  var el=document.getElementById('test-prev');
+  if(!state.discHistory||!state.discHistory.length){el.innerHTML='';return;}
+  var last=state.discHistory[0];
+  el.innerHTML='<div class="soft" style="margin-top:12px">Senaste resultat ('+fmtDate(last.date)+'): '+
+    'D '+last.D+'% · I '+last.I+'% · S '+last.S+'% · C '+last.C+'%</div>';
+}
+document.getElementById('test-start').onclick=function(){
+  testAns={};
+  document.getElementById('test-intro').style.display='none';
+  document.getElementById('test-result').style.display='none';
+  document.getElementById('test-run').style.display='block';
+  renderTestRun();
+};
+function renderTestRun(){
+  var dims=['D','I','S','C'];var html='';
+  DISC_Q.forEach(function(words,qi){
+    html+='<div class="card-panel q-card"><div class="q-num">Rad '+(qi+1)+' av '+DISC_Q.length+'</div><div class="q-text">Vilket ord stämmer bäst på dig?</div>';
+    words.forEach(function(w,oi){
+      var sel=testAns[qi]===oi;
+      html+='<div class="opt'+(sel?' sel':'')+'" data-q="'+qi+'" data-o="'+oi+'"><span class="dot"></span><span>'+esc(w)+'</span></div>';
+    });
+    html+='</div>';
+  });
+  html+='<button class="btn fill" id="test-finish" style="width:100%;margin:6px 0 4px">Visa resultat</button>'+
+        '<button class="btn ghost" id="test-cancel" style="width:100%">Avbryt</button>';
+  var run=document.getElementById('test-run');run.innerHTML=html;
+  run.querySelectorAll('.opt').forEach(function(o){o.onclick=function(){testAns[+o.dataset.q]=+o.dataset.o;renderTestRun();};});
+  document.getElementById('test-cancel').onclick=backToIntro;
+  document.getElementById('test-finish').onclick=function(){
+    if(Object.keys(testAns).length<DISC_Q.length){alert('Svara på alla rader först ('+Object.keys(testAns).length+'/'+DISC_Q.length+').');return;}
+    var sc={D:0,I:0,S:0,C:0};
+    Object.keys(testAns).forEach(function(qi){sc[dims[testAns[qi]]]++;});
+    var tot=DISC_Q.length;
+    var res={date:new Date().toISOString(),D:Math.round(sc.D/tot*100),I:Math.round(sc.I/tot*100),S:Math.round(sc.S/tot*100),C:Math.round(sc.C/tot*100)};
+    state.discHistory.unshift(res);if(state.discHistory.length>20)state.discHistory.pop();persist();
+    showTestResult(res);
+  };
+}
+function backToIntro(){
+  document.getElementById('test-run').style.display='none';
+  document.getElementById('test-result').style.display='none';
+  document.getElementById('test-intro').style.display='block';
+  renderTestPrev();
+}
+function showTestResult(res){
+  document.getElementById('test-run').style.display='none';
+  var el=document.getElementById('test-result');el.style.display='block';
+  var dims=['D','I','S','C'];
+  var top=dims.slice().sort(function(a,b){return res[b]-res[a];})[0];
+  var html='<div class="section-title">Ditt resultat</div><div class="card-panel">';
+  dims.forEach(function(k){
+    var info=DISC_INFO[k];
+    html+='<div class="disc-bar-row"><span class="lt" style="color:'+info.c+'">'+k+' '+info.n+'</span>'+
+      '<span class="bg"><span class="fl" style="width:'+res[k]+'%;background:'+info.c+'"></span></span>'+
+      '<span class="vv">'+res[k]+'%</span></div>';
+  });
+  html+='<p class="p" style="margin-top:12px"><b>Tydligast stil: '+DISC_INFO[top].n+' ('+top+')</b></p>'+
+        '<p class="soft">'+esc(DISC_INFO[top].t)+'</p>'+
+        '<p class="soft" style="margin-top:10px">De flesta är en blandning. Titta på dina två högsta värden – de beskriver oftast din vardagsstil bäst. Läs mer under <b>Modeller → DISC</b>.</p>';
+  html+='</div><div class="btn-row"><button class="btn ghost" id="test-again">Gör om</button><button class="btn ghost" id="test-back">Klar</button></div>';
+  el.innerHTML=html;
+  document.getElementById('test-again').onclick=function(){testAns={};document.getElementById('test-result').style.display='none';document.getElementById('test-run').style.display='block';renderTestRun();};
+  document.getElementById('test-back').onclick=backToIntro;
+}
+
+// ── Mer: sync/ai/data ─────────────────────────────────
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'#E2EFE6':type==='err'?'#F4E4E2':'#E2ECF0';
+  el.style.color=type==='ok'?'#2C5C3E':type==='err'?'#8A3A33':'#2F6F7E';
+  el.textContent=msg;
+}
+document.getElementById('open-sync').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar data…','ok');if(data.state)mergeRemote(data.state);save();renderAll();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt – laddar upp din data…','ok');await ghPush();}
+    setBadge('ok','Synkad');
+    setTimeout(closeSheets,1100);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera owner, repo och att token har Contents-behörighet.','err');setBadge('err','Synkfel');}
+};
+document.getElementById('sync-now').onclick=function(){ghPull();};
+
+document.getElementById('open-ai').onclick=function(){document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-save').onclick=function(){var k=document.getElementById('ai-key').value.trim();if(k)localStorage.setItem(AI_KEY,k);else localStorage.removeItem(AI_KEY);refreshAiState();closeSheets();};
+function refreshAiState(){document.getElementById('ai-state').textContent=getAiKey()?'✓ API-nyckel sparad på den här enheten.':'Ingen API-nyckel sparad.';}
+
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var d=new Date();a.download='kompassen-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.progress||d.analyses||d.discHistory)){state=Object.assign({progress:{},analyses:[],discHistory:[]},d);persist();renderAll();alert('Importerat.');}else alert('Filen verkar inte vara en giltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+var THEME_KEY='kompassen_theme';
+function applyTheme(){
+  var t=localStorage.getItem(THEME_KEY);
+  if(!t){var h=new Date().getHours();t=(h>=20||h<6)?'dark':'light';}
+  document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');
+  document.getElementById('theme-btn').textContent=t==='dark'?'☀':'◐';
+}
+document.getElementById('theme-btn').onclick=function(){
+  var cur=document.documentElement.getAttribute('data-theme');
+  var next=cur==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,next);applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    window.scrollTo(0,0);
+  };
+});
+
+function renderAll(){renderLar();renderModels('');renderAnHist();renderTestPrev();refreshAiState();}
+
+// ── Init ──────────────────────────────────────────────
+load();loadSync();
+applyTheme();
+renderAnChips();
+renderAll();
+if(syncOn())ghPull();else setBadge('','Ej synkad');
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>

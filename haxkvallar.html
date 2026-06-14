@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HäxKvällar">
+<meta name="theme-color" content="#161022">
+<link rel="manifest" href='data:application/manifest+json,{"name":"HäxKvällar","short_name":"HäxKvällar","display":"standalone","background_color":"%23161022","theme_color":"%23161022","start_url":"."}'>
+<title>HäxKvällar</title>
+<style>
+:root{
+  --bg:#161022;--panel:#1F1733;--panel2:#2A2042;--line:#3A2F55;
+  --ink:#ECE6F2;--muted:#9A8FB5;--accent:#C8A2E8;--accent-dim:#7E5DA8;--gold:#E0B978;
+  --green:#6FB58A;--red:#E09AA2;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(1100px 560px at 50% -8%,#241A3D 0%,var(--bg) 60%) fixed,var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+.topbar{display:flex;align-items:center;justify-content:center;position:relative;margin:4px 0 2px}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:22px;color:var(--accent);letter-spacing:.04em;text-align:center}
+.sync-badge{position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:10px;padding:3px 8px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer}
+.sync-badge.ok{color:var(--green);border-color:#37563f}
+.sync-badge.err{color:var(--red);border-color:#5a3a40}
+.sync-badge.load{color:var(--gold);border-color:#5a4a2a}
+.moon-line{text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:17px;color:var(--accent);margin:16px 0 8px;letter-spacing:.03em;display:flex;align-items:center;justify-content:space-between}
+.section-title .mini-link{font-size:11px;color:var(--muted);font-family:-apple-system,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card-panel + .card-panel{margin-top:8px}
+.btn{border:1px solid var(--accent-dim);background:linear-gradient(180deg,#2C2347,#1F1733);color:var(--accent);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn:active{background:#2C2347}
+.btn.gold{border-color:#7a6433;color:var(--gold);background:linear-gradient(160deg,#2B2440,#211a33)}
+.btn.ghost{border-color:var(--line);color:var(--muted);background:transparent;font-size:12px;padding:7px 10px}
+.btn.full{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.btn-wrap{display:flex;flex-wrap:wrap;gap:8px}
+
+input[type=text],input[type=date],input[type=time],input[type=number],textarea,select,input[type=password]{
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:13px;padding:8px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent-dim)}
+textarea{resize:vertical;line-height:1.5}
+label.fld{display:block;margin-top:10px}
+label.fld span{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;letter-spacing:.02em}
+.row2{display:flex;gap:8px}
+.row2 > *{flex:1}
+
+/* next evening hero */
+.hero-date{font-family:Georgia,serif;font-size:15px;color:var(--gold)}
+.hero-theme{font-family:Georgia,serif;font-size:20px;color:var(--ink);margin:3px 0 4px}
+.hero-meta{font-size:12px;color:var(--muted);line-height:1.6}
+.pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);margin:3px 4px 0 0}
+
+/* checklist */
+.chk-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.chk-item:first-child{border-top:none}
+.chk-box{width:18px;height:18px;border-radius:6px;border:1px solid var(--accent-dim);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--accent)}
+.chk-box.on{background:var(--accent-dim);color:#fff}
+.chk-text{flex:1}
+.chk-text.done{text-decoration:line-through;color:var(--muted)}
+.del-x{color:var(--muted);font-size:16px;cursor:pointer;background:none;border:none;padding:0 4px}
+.add-line{display:flex;gap:8px;margin-top:10px}
+.add-line input{flex:1}
+.add-line .btn{padding:8px 12px}
+
+/* list items */
+.row-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.row-item:first-child{border-top:none}
+.row-icon{font-size:17px;width:24px;text-align:center;flex-shrink:0}
+.row-main{flex:1;min-width:0}
+.row-title{font-family:Georgia,serif;font-size:14px;color:var(--ink)}
+.row-sub{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-tag{font-size:10px;color:var(--gold);white-space:nowrap}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+
+/* theme chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:12px;padding:6px 11px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer}
+.chip:active{border-color:var(--accent-dim)}
+
+/* attendee */
+.att{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
+.att:first-child{border-top:none}
+.att-head{display:flex;align-items:center;gap:9px}
+.att-name{flex:1;font-size:13px;color:var(--ink)}
+.att-name small{color:var(--red);font-size:10px}
+.att-brings{width:100%}
+.tog{font-size:11px;padding:4px 9px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+.tog.on{background:#23402e;border-color:#37563f;color:var(--green)}
+
+/* calendar */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-title{font-family:Georgia,serif;font-size:19px;color:var(--ink)}
+.nav-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--accent);font-size:17px;cursor:pointer}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-head{font-size:10px;color:var(--muted);text-align:center;padding-bottom:3px}
+.dc{aspect-ratio:1;border-radius:9px;background:var(--panel2);border:1px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted);cursor:pointer;position:relative}
+.dc.other{opacity:.28}
+.dc.today{border-color:var(--accent);color:var(--accent);font-weight:600}
+.dc-marks{display:flex;gap:1px;font-size:8px;line-height:1;height:9px}
+.dc-dot{position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}
+.cal-legend span b{color:var(--ink);font-weight:500}
+
+/* ai + local box */
+.out-box{border:1px solid var(--accent-dim);background:linear-gradient(160deg,#241B3D,#1A1430);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.out-box .out-lbl{font-family:Georgia,serif;color:var(--accent);font-size:12px;display:block;margin-bottom:5px}
+.out-box .copy{font-size:11px;color:var(--gold);cursor:pointer;float:right;text-decoration:underline;text-underline-offset:2px}
+
+.foot{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:18px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.7;margin-top:8px}
+
+/* bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(22,16,34,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent)}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(8,5,16,.62);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(103%);transition:transform .22s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:18px;color:var(--accent);margin-bottom:4px}
+.sheet .sub{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:11px;border:1px solid var(--accent-dim);background:var(--panel2);color:var(--accent);font-size:14px;cursor:pointer;margin-top:14px}
+.sheet-status{font-size:11px;border-radius:9px;padding:7px 10px;margin-top:8px;display:none;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+  <h1 class="brand">✦ HäxKvällar ✦</h1>
+  <div class="sync-badge" id="sync-badge">Synk av</div>
+</div>
+<div class="moon-line" id="moon-line"></div>
+
+<!-- STARTSIDA -->
+<div class="view active" id="view-home">
+  <div class="section-title">Nästa häxkväll</div>
+  <div class="card-panel" id="home-next"></div>
+
+  <div class="section-title">Att förbereda</div>
+  <div class="card-panel" id="home-prep"></div>
+
+  <div class="section-title">Material &amp; vem tar med vad</div>
+  <div class="card-panel" id="home-material"></div>
+
+  <div class="section-title">Månen &amp; kommande högtider</div>
+  <div class="card-panel" id="home-moon"></div>
+
+  <div class="section-title">Snabba anteckningar</div>
+  <div class="card-panel">
+    <textarea id="home-notes" rows="4" placeholder="Tankar, idéer, att-komma-ihåg…"></textarea>
+  </div>
+
+  <div class="foot">
+    <button id="ai-set-btn">✨ AI-inställningar</button>
+    <button id="sync-set-btn">☁ Synk</button>
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Data sparas lokalt i din enhet och synkas bara om du kopplar GitHub.</div>
+</div>
+
+<!-- KVÄLLAR -->
+<div class="view" id="view-evenings">
+  <div class="btn-row" style="margin-bottom:6px">
+    <button class="btn full" id="new-evening-btn">+ Ny häxkväll</button>
+    <button class="btn ghost" id="members-btn" style="flex:0 0 auto">☾ Deltagare</button>
+  </div>
+  <div class="section-title" style="margin-top:10px">Kommande</div>
+  <div class="card-panel"><div id="evenings-upcoming"></div></div>
+  <div class="section-title">Tidigare</div>
+  <div class="card-panel"><div id="evenings-past"></div></div>
+</div>
+
+<!-- TEMAN -->
+<div class="view" id="view-themes">
+  <div class="section-title" style="margin-top:0">Temabank</div>
+  <div class="card-panel"><div id="themes-list"></div></div>
+  <div class="section-title">Lägg till eget tema</div>
+  <div class="card-panel">
+    <input type="text" id="theme-name" placeholder="Temanamn">
+    <textarea id="theme-desc" rows="2" placeholder="Kort beskrivning (valfritt)" style="margin-top:8px"></textarea>
+    <button class="btn full" id="theme-add" style="margin-top:10px">Lägg till tema</button>
+  </div>
+</div>
+
+<!-- PLANERING -->
+<div class="view" id="view-plan">
+  <div class="cal-nav">
+    <button class="nav-btn" id="cal-prev">‹</button>
+    <div class="cal-title" id="cal-title"></div>
+    <button class="nav-btn" id="cal-next">›</button>
+  </div>
+  <div class="card-panel">
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><b style="color:var(--accent)">●</b> Häxkväll</span>
+      <span>🌕 Fullmåne</span>
+      <span>🌑 Nymåne</span>
+      <span>✶ Sabbat</span>
+    </div>
+  </div>
+</div>
+
+<!-- MATERIAL -->
+<div class="view" id="view-material">
+  <div class="section-title" style="margin-top:0">Snabbtillägg</div>
+  <div class="card-panel"><div class="chips" id="mat-chips"></div></div>
+  <div class="section-title">Lägg till</div>
+  <div class="card-panel">
+    <div class="add-line">
+      <input type="text" id="mat-name" placeholder="Vad behövs?">
+      <button class="btn" id="mat-add">Lägg till</button>
+    </div>
+  </div>
+  <div class="section-title">Inköpslista</div>
+  <div class="card-panel"><div id="mat-list"></div></div>
+</div>
+</div>
+
+<!-- Bottom nav -->
+<div class="nav">
+  <button class="active" data-v="home"><span>✦</span>Start</button>
+  <button data-v="evenings"><span>☾</span>Kvällar</button>
+  <button data-v="themes"><span>✶</span>Teman</button>
+  <button data-v="plan"><span>🗓</span>Planering</button>
+  <button data-v="material"><span>🕯</span>Material</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Evening detail -->
+<div class="sheet" id="ev-sheet">
+  <h3 id="ev-title">Häxkväll</h3>
+  <div class="row2">
+    <label class="fld"><span>Datum</span><input type="date" id="ev-date"></label>
+    <label class="fld"><span>Tid</span><input type="text" id="ev-time" placeholder="18:30–21:00"></label>
+  </div>
+  <label class="fld"><span>Plats</span><input type="text" id="ev-place" placeholder="Hemma hos…"></label>
+  <label class="fld"><span>Tema</span><input type="text" id="ev-theme" list="theme-options" placeholder="Välj eller skriv"></label>
+  <datalist id="theme-options"></datalist>
+  <label class="fld"><span>Ledare / värd</span><input type="text" id="ev-host" placeholder="Vem håller i kvällen?"></label>
+  <label class="fld"><span>Klädsel / stämning</span><input type="text" id="ev-mood" placeholder="T.ex. mysigt, mörka färger, ljus"></label>
+
+  <div class="section-title" style="font-size:15px;margin:16px 0 6px">Deltagare &amp; vem tar med vad</div>
+  <div id="ev-attendees"></div>
+
+  <div class="section-title" style="font-size:15px;margin:16px 0 6px">Att förbereda</div>
+  <div id="ev-prep"></div>
+  <div class="add-line">
+    <input type="text" id="ev-prep-input" placeholder="Lägg till förberedelse">
+    <button class="btn" id="ev-prep-add">+</button>
+  </div>
+
+  <label class="fld"><span>Ritual / övning</span><textarea id="ev-ritual" rows="3" placeholder="Kvällens ritual eller övning"></textarea></label>
+  <label class="fld"><span>Fika / mat</span><textarea id="ev-food" rows="2" placeholder="Vad bjuds det på?"></textarea></label>
+  <label class="fld"><span>Material</span><textarea id="ev-materials" rows="2" placeholder="Ljus, kort, örter…"></textarea></label>
+  <label class="fld"><span>Efteranteckningar</span><textarea id="ev-after" rows="3" placeholder="Hur blev kvällen? Reflektioner."></textarea></label>
+
+  <div class="section-title" style="font-size:15px;margin:16px 0 6px">✨ AI-hjälp</div>
+  <div class="btn-wrap">
+    <button class="btn gold" id="ai-plan">Skapa upplägg</button>
+    <button class="btn gold" id="ai-ritual">Föreslå ritual</button>
+    <button class="btn gold" id="ai-invite">Skriv inbjudan</button>
+    <button class="btn gold" id="ai-matlist">Materiallista</button>
+    <button class="btn gold" id="ai-reflect">Reflektionsfrågor</button>
+  </div>
+  <div id="ev-ai-out"></div>
+
+  <button class="btn ghost full" id="ev-delete" style="margin-top:14px;color:var(--red);border-color:#5a3a40">Radera häxkväll</button>
+  <button class="sheet-close" id="ev-close">Klar</button>
+</div>
+
+<!-- Day sheet -->
+<div class="sheet" id="day-sheet">
+  <h3 id="day-title"></h3>
+  <div id="day-body"></div>
+  <button class="btn full" id="day-new" style="margin-top:12px">+ Skapa häxkväll denna dag</button>
+  <button class="sheet-close" id="day-close">Stäng</button>
+</div>
+
+<!-- Members sheet -->
+<div class="sheet" id="mem-sheet">
+  <h3>Deltagare</h3>
+  <div class="sub">Gruppens medlemmar, allergier/behov, kontaktpreferenser och närvarohistorik.</div>
+  <div id="mem-list"></div>
+  <div class="section-title" style="font-size:15px;margin:14px 0 6px">Lägg till medlem</div>
+  <input type="text" id="mem-name" placeholder="Namn">
+  <input type="text" id="mem-allerg" placeholder="Allergier / behov (valfritt)" style="margin-top:8px">
+  <input type="text" id="mem-contact" placeholder="Kontaktpreferens (t.ex. sms, signal)" style="margin-top:8px">
+  <button class="btn full" id="mem-add" style="margin-top:10px">Lägg till</button>
+  <button class="sheet-close" id="mem-close">Klar</button>
+</div>
+
+<!-- AI helper sheet (key) -->
+<div class="sheet" id="ai-sheet">
+  <h3>✨ AI-inställningar</h3>
+  <div class="sub">AI-hjälpen drivs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt i din enhet och följer inte med i säkerhetskopior. Varje förfrågan kostar några ören.</div>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<!-- Sync sheet -->
+<div class="sheet" id="sync-sheet">
+  <h3>☁ GitHub-synk</h3>
+  <div class="sub">Synka mellan dina enheter (och med cirkeln) via ett privat GitHub-repo. Skapa en fine-grained token med <b style="color:var(--ink)">Contents: Read and write</b> för repot. Allt sparas annars bara lokalt.</div>
+  <label class="fld"><span>Användarnamn (owner)</span><input type="text" id="gh-owner" autocomplete="off"></label>
+  <label class="fld"><span>Repo</span><input type="text" id="gh-repo" autocomplete="off"></label>
+  <label class="fld"><span>Token</span><input type="password" id="gh-token" autocomplete="off"></label>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn" id="gh-save">Anslut &amp; synka</button>
+    <button class="btn ghost" id="gh-pull">Hämta nu</button>
+  </div>
+  <div class="sheet-status" id="gh-status"></div>
+  <button class="sheet-close" id="sync-close">Stäng</button>
+</div>
+
+<script>
+// ── Helpers ───────────────────────────────────────────
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var WD=['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+var MN=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+function fmtDate(iso){
+  if(!iso)return '';
+  var p=iso.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  return WD[d.getDay()]+' '+(+p[2])+' '+MN[+p[1]-1];
+}
+function fmtDateShort(iso){var p=iso.split('-');return (+p[2])+'/'+(+p[1]);}
+
+// ── Moon ──────────────────────────────────────────────
+var SYN=29.53058867;
+var MOON_REF=Date.UTC(2000,0,6,18,14);
+function moonIndex(d){
+  var days=((d.getTime()-MOON_REF)/86400000)%SYN;
+  if(days<0)days+=SYN;
+  return Math.floor(days/SYN*8+0.5)%8;
+}
+var MOON_NAMES=['Nymåne','Växande skära','Första kvarteret','Växande måne','Fullmåne','Avtagande måne','Sista kvarteret','Avtagande skära'];
+var MOON_ICONS=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'];
+function moonInfo(d){var i=moonIndex(d);return MOON_ICONS[i]+' '+MOON_NAMES[i];}
+// upcoming new/full moons from a date
+function upcomingMoons(from,count){
+  var out=[];var k=Math.floor((from.getTime()-MOON_REF)/(SYN*86400000))-1;
+  for(var i=k;out.length<count*2+2&&i<k+count*2+4;i++){
+    var nm=MOON_REF+i*SYN*86400000;
+    var fm=MOON_REF+(i+0.5)*SYN*86400000;
+    if(nm>=from.getTime())out.push({t:'new',ms:nm});
+    if(fm>=from.getTime())out.push({t:'full',ms:fm});
+  }
+  out.sort(function(a,b){return a.ms-b.ms;});
+  return out.slice(0,count);
+}
+function moonsInMonth(year,month){
+  var start=new Date(year,month,1).getTime();
+  var end=new Date(year,month+1,1).getTime();
+  var map={};var k=Math.floor((start-MOON_REF)/(SYN*86400000))-2;
+  for(var i=k;i<k+4;i++){
+    var nm=MOON_REF+i*SYN*86400000;
+    var fm=MOON_REF+(i+0.5)*SYN*86400000;
+    [['new',nm],['full',fm]].forEach(function(p){
+      if(p[1]>=start&&p[1]<end){map[toISO(new Date(p[1]))]=p[0];}
+    });
+  }
+  return map;
+}
+
+// ── Sabbater ──────────────────────────────────────────
+function sabbats(year){
+  return [
+    {name:'Imbolc',iso:year+'-02-01',icon:'🕯️',desc:'Ljusets återkomst, rening och nya frön.'},
+    {name:'Ostara · vårdagjämning',iso:year+'-03-20',icon:'🌱',desc:'Balans, växt och nystart.'},
+    {name:'Valborg · Beltane',iso:year+'-04-30',icon:'🔥',desc:'Livskraft, eld och fruktbarhet.'},
+    {name:'Litha · midsommar',iso:year+'-06-21',icon:'☀️',desc:'Solens höjdpunkt, glädje och kraft.'},
+    {name:'Lughnasad',iso:year+'-08-01',icon:'🌾',desc:'Första skörden och tacksamhet.'},
+    {name:'Mabon · höstdagjämning',iso:year+'-09-22',icon:'🍂',desc:'Skörd, balans och eftertanke.'},
+    {name:'Samhain',iso:year+'-10-31',icon:'🎃',desc:'Slöjan är tunn, anor och förfäder.'},
+    {name:'Yule · vintersolstånd',iso:year+'-12-21',icon:'❄️',desc:'Mörkrets vändpunkt och ljusets löfte.'}
+  ];
+}
+function sabbatsInMonth(year,month){
+  var map={};
+  sabbats(year).forEach(function(s){var p=s.iso.split('-');if(+p[1]-1===month)map[s.iso]=s;});
+  return map;
+}
+function upcomingSabbats(from,count){
+  var list=sabbats(from.getFullYear()).concat(sabbats(from.getFullYear()+1));
+  var f=toISO(from);
+  return list.filter(function(s){return s.iso>=f;}).slice(0,count);
+}
+
+// ── Default themes ────────────────────────────────────
+var DEFAULT_THEMES=[
+  {name:'Fullmåneritual',desc:'Släppande, tacksamhet och laddning under fullmånen.'},
+  {name:'Nymåne och intentioner',desc:'Plantera frön och sätt intentioner för cykeln.'},
+  {name:'Tarotkväll',desc:'Dragningar, läggningar och tolkning tillsammans.'},
+  {name:'Örtmagi',desc:'Örters egenskaper, teer och magiska påsar.'},
+  {name:'Kristaller',desc:'Rengöring, laddning och kristallnät.'},
+  {name:'Skyddsmagi',desc:'Skydd för hem, kropp och energi.'},
+  {name:'Skuggarbete',desc:'Möta och integrera det omedvetna.'},
+  {name:'Årshjulet',desc:'Hjulets gång och säsongernas magi.'},
+  {name:'Sabbater',desc:'Fira årets åtta sabbater.'},
+  {name:'Nordisk folktro',desc:'Väsen, sed och gammal magi.'},
+  {name:'Runor',desc:'Runornas betydelse och bruk.'},
+  {name:'Meditation och energi',desc:'Jordning, centrering och energiarbete.'}
+];
+var MAT_SUGGEST=['Ljus','Örter','Rökelse','Kristaller','Kortlekar','Dukar','Skålar','Anteckningsböcker','Fika','Dekorationer'];
+
+// ── State ─────────────────────────────────────────────
+var STORE='haxkvallar_v1';
+var state={evenings:[],themes:[],members:[],materials:[],notes:''};
+function load(){
+  try{var s=localStorage.getItem(STORE);if(s){var d=JSON.parse(s);
+    state.evenings=Array.isArray(d.evenings)?d.evenings:[];
+    state.themes=Array.isArray(d.themes)?d.themes:[];
+    state.members=Array.isArray(d.members)?d.members:[];
+    state.materials=Array.isArray(d.materials)?d.materials:[];
+    state.notes=typeof d.notes==='string'?d.notes:'';
+  }}catch(e){}
+  if(!state.themes.length)state.themes=DEFAULT_THEMES.map(function(t){return {name:t.name,desc:t.desc};});
+}
+function saveLocal(){try{localStorage.setItem(STORE,JSON.stringify(state));}catch(e){}}
+function persist(){saveLocal();if(syncOn())ghPush().catch(function(){});}
+
+// ── GitHub-synk (mönster från jobb.html) ──────────────
+var SYNC_KEY='haxkvallarsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/haxkvallar.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sync-badge'+(st?' '+st:'');}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+function mergeIn(data){
+  if(Array.isArray(data.evenings))state.evenings=data.evenings;
+  if(Array.isArray(data.themes))state.themes=data.themes;
+  if(Array.isArray(data.members))state.members=data.members;
+  if(Array.isArray(data.materials))state.materials=data.materials;
+  if(typeof data.notes==='string')state.notes=data.notes;
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data){mergeIn(data);saveLocal();renderAll();}
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({evenings:state.evenings,themes:state.themes,members:state.members,materials:state.materials,notes:state.notes,updated:new Date().toISOString()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via HäxKvällar',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();
+  if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Evenings ──────────────────────────────────────────
+function sortedEvenings(){
+  return state.evenings.slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+}
+function nextEvening(){
+  var today=toISO(new Date());
+  var up=sortedEvenings().filter(function(e){return (e.date||'')>=today;});
+  return up[0]||null;
+}
+function newEvening(date){
+  var e={id:uid(),date:date||'',time:'',place:'',theme:'',host:'',mood:'',
+    attendees:[],prep:[],ritual:'',food:'',materials:'',after:'',ai:{}};
+  state.evenings.push(e);persist();
+  return e;
+}
+
+var curEv=null;
+function openEvening(id){
+  curEv=state.evenings.find(function(e){return e.id===id;});
+  if(!curEv)return;
+  if(!curEv.ai)curEv.ai={};
+  document.getElementById('ev-date').value=curEv.date||'';
+  document.getElementById('ev-time').value=curEv.time||'';
+  document.getElementById('ev-place').value=curEv.place||'';
+  document.getElementById('ev-theme').value=curEv.theme||'';
+  document.getElementById('ev-host').value=curEv.host||'';
+  document.getElementById('ev-mood').value=curEv.mood||'';
+  document.getElementById('ev-ritual').value=curEv.ritual||'';
+  document.getElementById('ev-food').value=curEv.food||'';
+  document.getElementById('ev-materials').value=curEv.materials||'';
+  document.getElementById('ev-after').value=curEv.after||'';
+  document.getElementById('ev-ai-out').innerHTML='';
+  renderThemeOptions();
+  renderEvAttendees();
+  renderEvPrep();
+  openSheet('ev-sheet');
+}
+function bindEvField(id,key){
+  document.getElementById(id).oninput=function(){if(!curEv)return;curEv[key]=this.value;persist();
+    if(key==='date'||key==='theme'){renderEvenings();renderHome();}};
+}
+['ev-date','date','ev-time','time','ev-place','place','ev-theme','theme','ev-host','host','ev-mood','mood','ev-ritual','ritual','ev-food','food','ev-materials','materials','ev-after','after']
+  .reduce(function(acc,v,i){if(i%2===0)acc.push(v);else bindEvField(acc.pop(),v);return acc;},[]);
+
+function renderEvAttendees(){
+  var el=document.getElementById('ev-attendees');
+  if(!state.members.length){el.innerHTML='<div class="empty-msg">Lägg till deltagare under fliken Kvällar → Deltagare.</div>';return;}
+  el.innerHTML=state.members.map(function(m){
+    var att=curEv.attendees.find(function(a){return a.name===m.name;});
+    var on=!!att;
+    var brings=att?att.brings||'':'';
+    return '<div class="att">'+
+      '<div class="att-head">'+
+        '<button class="tog'+(on?' on':'')+'" data-name="'+esc(m.name)+'" data-act="attend">'+(on?'✓ Med':'+ Med')+'</button>'+
+        '<div class="att-name">'+esc(m.name)+(m.allergies?' <small>('+esc(m.allergies)+')</small>':'')+'</div>'+
+        (on?'<button class="tog'+(att.present?' on':'')+'" data-name="'+esc(m.name)+'" data-act="present">'+(att.present?'✓ Närvar':'Närvar?')+'</button>':'')+
+      '</div>'+
+      (on?'<input class="att-brings" type="text" placeholder="Tar med…" data-name="'+esc(m.name)+'" value="'+esc(brings)+'">':'')+
+    '</div>';
+  }).join('');
+  var togs=el.querySelectorAll('.tog');
+  for(var i=0;i<togs.length;i++){togs[i].onclick=function(){
+    var name=this.dataset.name,act=this.dataset.act;
+    var idx=curEv.attendees.findIndex(function(a){return a.name===name;});
+    if(act==='attend'){
+      if(idx>=0)curEv.attendees.splice(idx,1);
+      else curEv.attendees.push({name:name,brings:'',present:false});
+    }else if(act==='present'&&idx>=0){
+      curEv.attendees[idx].present=!curEv.attendees[idx].present;
+    }
+    persist();renderEvAttendees();renderHome();
+  };}
+  var ins=el.querySelectorAll('.att-brings');
+  for(var k=0;k<ins.length;k++){ins[k].oninput=function(){
+    var a=curEv.attendees.find(function(x){return x.name===this.dataset.name;}.bind(this));
+    if(a){a.brings=this.value;persist();renderHome();}
+  };}
+}
+
+function renderEvPrep(){
+  var el=document.getElementById('ev-prep');
+  if(!curEv.prep.length){el.innerHTML='<div class="empty-msg">Inga förberedelser ännu.</div>';return;}
+  el.innerHTML=curEv.prep.map(function(p,i){
+    return '<div class="chk-item">'+
+      '<div class="chk-box'+(p.done?' on':'')+'" data-i="'+i+'">'+(p.done?'✓':'')+'</div>'+
+      '<div class="chk-text'+(p.done?' done':'')+'">'+esc(p.text)+'</div>'+
+      '<button class="del-x" data-del="'+i+'">×</button>'+
+    '</div>';
+  }).join('');
+  var boxes=el.querySelectorAll('.chk-box');
+  for(var i=0;i<boxes.length;i++){boxes[i].onclick=function(){var n=+this.dataset.i;curEv.prep[n].done=!curEv.prep[n].done;persist();renderEvPrep();renderHome();};}
+  var dels=el.querySelectorAll('.del-x');
+  for(var k=0;k<dels.length;k++){dels[k].onclick=function(){curEv.prep.splice(+this.dataset.del,1);persist();renderEvPrep();renderHome();};}
+}
+document.getElementById('ev-prep-add').onclick=function(){
+  var inp=document.getElementById('ev-prep-input');var v=inp.value.trim();if(!v)return;
+  curEv.prep.push({text:v,done:false});inp.value='';persist();renderEvPrep();renderHome();
+};
+document.getElementById('ev-prep-input').onkeydown=function(e){if(e.key==='Enter')document.getElementById('ev-prep-add').click();};
+
+document.getElementById('ev-delete').onclick=function(){
+  if(!curEv)return;
+  if(!confirm('Radera denna häxkväll?'))return;
+  state.evenings=state.evenings.filter(function(e){return e.id!==curEv.id;});
+  persist();closeSheets();renderEvenings();renderHome();renderCal();
+};
+document.getElementById('ev-close').onclick=closeSheets;
+
+function renderEvenings(){
+  var today=toISO(new Date());
+  var up=sortedEvenings().filter(function(e){return (e.date||'9999')>=today;});
+  var past=sortedEvenings().filter(function(e){return (e.date||'9999')<today;}).reverse();
+  function row(e){
+    var sub=[e.time,e.place].filter(Boolean).join(' · ');
+    return '<div class="row-item" data-id="'+e.id+'">'+
+      '<div class="row-icon">☾</div>'+
+      '<div class="row-main"><div class="row-title">'+esc(e.theme||'Häxkväll')+'</div>'+
+        '<div class="row-sub">'+esc(sub||'Inga detaljer än')+'</div></div>'+
+      '<div class="row-tag">'+(e.date?fmtDateShort(e.date):'')+'</div>'+
+    '</div>';
+  }
+  document.getElementById('evenings-upcoming').innerHTML=up.length?up.map(row).join(''):'<div class="empty-msg">Inga kommande kvällar.</div>';
+  document.getElementById('evenings-past').innerHTML=past.length?past.map(row).join(''):'<div class="empty-msg">Inga tidigare kvällar.</div>';
+  bindRows('evenings-upcoming');bindRows('evenings-past');
+}
+function bindRows(containerId){
+  var rows=document.getElementById(containerId).querySelectorAll('.row-item');
+  for(var i=0;i<rows.length;i++){rows[i].onclick=function(){openEvening(this.dataset.id);};}
+}
+document.getElementById('new-evening-btn').onclick=function(){var e=newEvening(toISO(new Date()));renderEvenings();openEvening(e.id);};
+
+// ── Home ──────────────────────────────────────────────
+function renderHome(){
+  var e=nextEvening();
+  var nextEl=document.getElementById('home-next');
+  if(e){
+    var meta=[];
+    if(e.time)meta.push(e.time);
+    if(e.place)meta.push(esc(e.place));
+    if(e.host)meta.push('Värd: '+esc(e.host));
+    if(e.mood)meta.push('Stämning: '+esc(e.mood));
+    nextEl.innerHTML='<div class="hero-date">'+esc(fmtDate(e.date))+'</div>'+
+      '<div class="hero-theme">'+esc(e.theme||'Häxkväll')+'</div>'+
+      '<div class="hero-meta">'+meta.join('<br>')+'</div>'+
+      (e.ritual?'<div style="margin-top:8px;font-size:12px;color:var(--muted)">Ritual: '+esc(e.ritual)+'</div>':'')+
+      '<button class="btn full" id="home-open-ev" style="margin-top:12px">Öppna kvällen</button>';
+    document.getElementById('home-open-ev').onclick=function(){openEvening(e.id);};
+  }else{
+    nextEl.innerHTML='<div class="empty-msg">Ingen planerad häxkväll. Skapa en under fliken Kvällar.</div>';
+  }
+  // prep
+  var prepEl=document.getElementById('home-prep');
+  if(e&&e.prep&&e.prep.length){
+    prepEl.innerHTML=e.prep.map(function(p,i){
+      return '<div class="chk-item">'+
+        '<div class="chk-box'+(p.done?' on':'')+'" data-i="'+i+'">'+(p.done?'✓':'')+'</div>'+
+        '<div class="chk-text'+(p.done?' done':'')+'">'+esc(p.text)+'</div></div>';
+    }).join('');
+    var boxes=prepEl.querySelectorAll('.chk-box');
+    for(var i=0;i<boxes.length;i++){boxes[i].onclick=function(){var n=+this.dataset.i;e.prep[n].done=!e.prep[n].done;persist();renderHome();};}
+  }else{prepEl.innerHTML='<div class="empty-msg">Inget att förbereda än.</div>';}
+  // material + brings
+  var matEl=document.getElementById('home-material');
+  var parts='';
+  if(e&&e.materials)parts+='<div style="font-size:12px;color:var(--muted);margin-bottom:6px"><b style="color:var(--ink)">Material:</b> '+esc(e.materials)+'</div>';
+  if(e&&e.attendees){
+    var brings=e.attendees.filter(function(a){return a.brings&&a.brings.trim();});
+    if(brings.length){
+      parts+='<div style="font-size:12px;color:var(--muted)"><b style="color:var(--ink)">Tar med:</b></div>';
+      parts+=brings.map(function(a){return '<div class="pill">'+esc(a.name)+': '+esc(a.brings)+'</div>';}).join('');
+    }
+  }
+  var openMat=state.materials.filter(function(m){return !m.done;});
+  if(openMat.length){
+    parts+='<div style="font-size:12px;color:var(--muted);margin-top:8px"><b style="color:var(--ink)">Inköp kvar:</b> '+openMat.map(function(m){return esc(m.name);}).join(', ')+'</div>';
+  }
+  matEl.innerHTML=parts||'<div class="empty-msg">Inget material registrerat än.</div>';
+  // moon + sabbats
+  var now=new Date();
+  var moons=upcomingMoons(now,4);
+  var sabs=upcomingSabbats(now,3);
+  var mhtml='<div style="font-size:13px;color:var(--ink);margin-bottom:8px">'+moonInfo(now)+' <span style="color:var(--muted)">just nu</span></div>';
+  mhtml+='<div style="font-size:12px;color:var(--muted);line-height:1.8">';
+  mhtml+=moons.map(function(m){return (m.t==='full'?'🌕 Fullmåne':'🌑 Nymåne')+' — '+fmtDate(toISO(new Date(m.ms)));}).join('<br>');
+  mhtml+='</div>';
+  mhtml+='<div style="font-size:12px;color:var(--muted);line-height:1.8;margin-top:8px"><b style="color:var(--ink)">Kommande högtider:</b><br>';
+  mhtml+=sabs.map(function(s){return s.icon+' '+esc(s.name)+' — '+fmtDate(s.iso);}).join('<br>');
+  mhtml+='</div>';
+  document.getElementById('home-moon').innerHTML=mhtml;
+}
+document.getElementById('home-notes').oninput=function(){state.notes=this.value;persist();};
+
+// ── Themes ────────────────────────────────────────────
+function renderThemes(){
+  var el=document.getElementById('themes-list');
+  el.innerHTML=state.themes.map(function(t,i){
+    return '<div class="row-item" data-i="'+i+'">'+
+      '<div class="row-icon">✶</div>'+
+      '<div class="row-main"><div class="row-title">'+esc(t.name)+'</div>'+
+        (t.desc?'<div class="row-sub">'+esc(t.desc)+'</div>':'')+'</div>'+
+      '<button class="del-x" data-del="'+i+'">×</button>'+
+    '</div>';
+  }).join('');
+  var rows=el.querySelectorAll('.row-item');
+  for(var i=0;i<rows.length;i++){rows[i].onclick=function(ev){
+    if(ev.target.classList.contains('del-x'))return;
+    var t=state.themes[+this.dataset.i];
+    if(confirm('Skapa en ny häxkväll med temat "'+t.name+'"?')){
+      var e=newEvening(toISO(new Date()));e.theme=t.name;persist();
+      switchView('evenings');renderEvenings();openEvening(e.id);
+    }
+  };}
+  var dels=el.querySelectorAll('.del-x');
+  for(var k=0;k<dels.length;k++){dels[k].onclick=function(ev){ev.stopPropagation();var n=+this.dataset.del;
+    if(confirm('Ta bort temat?')){state.themes.splice(n,1);persist();renderThemes();}};}
+}
+document.getElementById('theme-add').onclick=function(){
+  var n=document.getElementById('theme-name').value.trim();
+  if(!n)return;
+  var d=document.getElementById('theme-desc').value.trim();
+  state.themes.push({name:n,desc:d});
+  document.getElementById('theme-name').value='';document.getElementById('theme-desc').value='';
+  persist();renderThemes();
+};
+function renderThemeOptions(){
+  document.getElementById('theme-options').innerHTML=state.themes.map(function(t){return '<option value="'+esc(t.name)+'">';}).join('');
+}
+
+// ── Calendar ──────────────────────────────────────────
+var calYear,calMonth;
+(function(){var n=new Date();calYear=n.getFullYear();calMonth=n.getMonth();})();
+function renderCal(){
+  document.getElementById('cal-title').textContent=MN[calMonth].charAt(0).toUpperCase()+MN[calMonth].slice(1)+' '+calYear;
+  var grid=document.getElementById('cal-grid');
+  var heads=['M','T','O','T','F','L','S'];
+  var html=heads.map(function(h){return '<div class="cal-head">'+h+'</div>';}).join('');
+  var first=new Date(calYear,calMonth,1);
+  var startDow=(first.getDay()+6)%7;
+  var daysIn=new Date(calYear,calMonth+1,0).getDate();
+  var prevDays=new Date(calYear,calMonth,0).getDate();
+  var moons=moonsInMonth(calYear,calMonth);
+  var sabs=sabbatsInMonth(calYear,calMonth);
+  var evMap={};
+  state.evenings.forEach(function(e){if(e.date)evMap[e.date]=true;});
+  var todayISO=toISO(new Date());
+  var cells=[];
+  for(var i=0;i<startDow;i++){cells.push({d:prevDays-startDow+1+i,other:true,m:calMonth-1,y:calYear});}
+  for(var d=1;d<=daysIn;d++){cells.push({d:d,other:false,m:calMonth,y:calYear});}
+  while(cells.length%7!==0){cells.push({d:cells.length-startDow-daysIn+1,other:true,m:calMonth+1,y:calYear});}
+  html+=cells.map(function(c){
+    var dt=new Date(c.y,c.m,c.d);var iso=toISO(dt);
+    var marks='';
+    if(moons[iso])marks+=(moons[iso]==='full'?'🌕':'🌑');
+    if(sabs[iso])marks+='✶';
+    var cls='dc'+(c.other?' other':'')+(iso===todayISO?' today':'');
+    return '<div class="'+cls+'" data-iso="'+iso+'">'+
+      '<div>'+c.d+'</div>'+
+      '<div class="dc-marks">'+marks+'</div>'+
+      (evMap[iso]?'<div class="dc-dot"></div>':'')+
+    '</div>';
+  }).join('');
+  grid.innerHTML=html;
+  var dcs=grid.querySelectorAll('.dc');
+  for(var i=0;i<dcs.length;i++){dcs[i].onclick=function(){openDay(this.dataset.iso);};}
+}
+document.getElementById('cal-prev').onclick=function(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();};
+document.getElementById('cal-next').onclick=function(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();};
+
+var dayISO=null;
+function openDay(iso){
+  dayISO=iso;
+  document.getElementById('day-title').textContent=fmtDate(iso);
+  var parts=[];
+  var moons=moonsInMonth(+iso.split('-')[0],+iso.split('-')[1]-1);
+  if(moons[iso])parts.push('<div class="card-panel" style="margin-bottom:8px">'+(moons[iso]==='full'?'🌕 Fullmåne':'🌑 Nymåne')+'</div>');
+  var sabs=sabbatsInMonth(+iso.split('-')[0],+iso.split('-')[1]-1);
+  if(sabs[iso])parts.push('<div class="card-panel" style="margin-bottom:8px">'+sabs[iso].icon+' '+esc(sabs[iso].name)+'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+esc(sabs[iso].desc)+'</div></div>');
+  var evs=state.evenings.filter(function(e){return e.date===iso;});
+  if(evs.length){
+    parts.push(evs.map(function(e){
+      return '<div class="row-item" data-id="'+e.id+'"><div class="row-icon">☾</div>'+
+        '<div class="row-main"><div class="row-title">'+esc(e.theme||'Häxkväll')+'</div>'+
+        '<div class="row-sub">'+esc([e.time,e.place].filter(Boolean).join(' · ')||'Inga detaljer')+'</div></div></div>';
+    }).join(''));
+  }else if(!moons[iso]&&!sabs[iso]){parts.push('<div class="empty-msg">Inget planerat denna dag.</div>');}
+  document.getElementById('day-body').innerHTML=parts.join('');
+  var rows=document.getElementById('day-body').querySelectorAll('.row-item');
+  for(var i=0;i<rows.length;i++){rows[i].onclick=function(){closeSheets();openEvening(this.dataset.id);};}
+  openSheet('day-sheet');
+}
+document.getElementById('day-new').onclick=function(){
+  var e=newEvening(dayISO);closeSheets();renderEvenings();renderCal();openEvening(e.id);
+};
+document.getElementById('day-close').onclick=closeSheets;
+
+// ── Members ───────────────────────────────────────────
+function attendCount(name){
+  return state.evenings.filter(function(e){return (e.attendees||[]).some(function(a){return a.name===name&&a.present;});}).length;
+}
+function renderMembers(){
+  var el=document.getElementById('mem-list');
+  if(!state.members.length){el.innerHTML='<div class="empty-msg">Inga medlemmar än.</div>';return;}
+  el.innerHTML=state.members.map(function(m,i){
+    var sub=[];
+    if(m.allergies)sub.push('Allergier: '+esc(m.allergies));
+    if(m.contact)sub.push('Kontakt: '+esc(m.contact));
+    sub.push('Närvarit: '+attendCount(m.name)+' ggr');
+    return '<div class="row-item" style="cursor:default"><div class="row-icon">☾</div>'+
+      '<div class="row-main"><div class="row-title">'+esc(m.name)+'</div>'+
+      '<div class="row-sub" style="white-space:normal">'+sub.join(' · ')+'</div></div>'+
+      '<button class="del-x" data-del="'+i+'">×</button></div>';
+  }).join('');
+  var dels=el.querySelectorAll('.del-x');
+  for(var k=0;k<dels.length;k++){dels[k].onclick=function(){if(confirm('Ta bort medlem?')){state.members.splice(+this.dataset.del,1);persist();renderMembers();}};}
+}
+document.getElementById('members-btn').onclick=function(){renderMembers();openSheet('mem-sheet');};
+document.getElementById('mem-add').onclick=function(){
+  var n=document.getElementById('mem-name').value.trim();if(!n)return;
+  state.members.push({name:n,allergies:document.getElementById('mem-allerg').value.trim(),contact:document.getElementById('mem-contact').value.trim()});
+  document.getElementById('mem-name').value='';document.getElementById('mem-allerg').value='';document.getElementById('mem-contact').value='';
+  persist();renderMembers();
+};
+document.getElementById('mem-close').onclick=closeSheets;
+
+// ── Material ──────────────────────────────────────────
+function renderMaterial(){
+  var chips=document.getElementById('mat-chips');
+  chips.innerHTML=MAT_SUGGEST.map(function(s){return '<div class="chip" data-n="'+esc(s)+'">'+esc(s)+'</div>';}).join('');
+  var cs=chips.querySelectorAll('.chip');
+  for(var i=0;i<cs.length;i++){cs[i].onclick=function(){addMaterial(this.dataset.n);};}
+  var list=document.getElementById('mat-list');
+  if(!state.materials.length){list.innerHTML='<div class="empty-msg">Listan är tom.</div>';return;}
+  list.innerHTML=state.materials.map(function(m,i){
+    return '<div class="chk-item">'+
+      '<div class="chk-box'+(m.done?' on':'')+'" data-i="'+i+'">'+(m.done?'✓':'')+'</div>'+
+      '<div class="chk-text'+(m.done?' done':'')+'">'+esc(m.name)+'</div>'+
+      '<button class="del-x" data-del="'+i+'">×</button></div>';
+  }).join('');
+  var boxes=list.querySelectorAll('.chk-box');
+  for(var b=0;b<boxes.length;b++){boxes[b].onclick=function(){var n=+this.dataset.i;state.materials[n].done=!state.materials[n].done;persist();renderMaterial();renderHome();};}
+  var dels=list.querySelectorAll('.del-x');
+  for(var k=0;k<dels.length;k++){dels[k].onclick=function(){state.materials.splice(+this.dataset.del,1);persist();renderMaterial();renderHome();};}
+}
+function addMaterial(name){
+  if(!name)return;
+  state.materials.push({name:name,done:false});persist();renderMaterial();renderHome();
+}
+document.getElementById('mat-add').onclick=function(){var v=document.getElementById('mat-name').value.trim();if(!v)return;document.getElementById('mat-name').value='';addMaterial(v);};
+document.getElementById('mat-name').onkeydown=function(e){if(e.key==='Enter')document.getElementById('mat-add').click();};
+
+// ── AI ────────────────────────────────────────────────
+var AI_KEY='haxkvallar_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function evContext(){
+  var e=curEv;var lines=[];
+  if(e.theme)lines.push('Tema: '+e.theme);
+  if(e.time)lines.push('Tid: '+e.time);
+  if(e.place)lines.push('Plats: '+e.place);
+  if(e.mood)lines.push('Stämning/klädsel: '+e.mood);
+  var att=(e.attendees||[]).filter(function(a){return a;});
+  lines.push('Antal deltagare: '+att.length);
+  var allerg=att.map(function(a){var m=state.members.find(function(x){return x.name===a.name;});return m&&m.allergies?m.name+' ('+m.allergies+')':null;}).filter(Boolean);
+  if(allerg.length)lines.push('Allergier/behov: '+allerg.join(', '));
+  if(e.ritual)lines.push('Tänkt ritual: '+e.ritual);
+  return lines.join('\n');
+}
+var AI_INTRO='Du är en varm, jordnära och kunnig planerare för häxkvällar och magiska cirklar. Stämningen ska vara magisk, trygg, lågprestige och mysig. Svara på svenska, utan engelska, och utan att hitta på farliga eller skadliga instruktioner.';
+function aiPrompts(kind){
+  var ctx=evContext();
+  if(kind==='plan')return AI_INTRO+'\n\nSkapa ett tydligt kvällsupplägg som en numrerad lista med ungefärliga tider. Börja med en kort välkomstmening. Anpassa efter detaljerna nedan.\n\n'+ctx;
+  if(kind==='ritual')return AI_INTRO+'\n\nFöreslå en enkel, vacker ritual eller övning som passar temat och gruppen. Beskriv steg för steg, max 200 ord. Håll det säkert (var försiktig med eld) och inkluderande.\n\n'+ctx;
+  if(kind==='invite')return AI_INTRO+'\n\nSkriv en kort, varm inbjudan (max 120 ord) som går att skicka i ett meddelande. Nämn tema, tid och plats om de finns, och en mysig avslutande hälsning.\n\n'+ctx;
+  if(kind==='matlist')return AI_INTRO+'\n\nGör en praktisk materiallista (punktlista) för kvällen utifrån temat. Gruppera gärna i Ritual, Fika och Stämning. Håll det enkelt att få tag på.\n\n'+ctx;
+  if(kind==='reflect')return AI_INTRO+'\n\nSkriv 5–6 mjuka reflektionsfrågor som passar kvällens tema, att använda vid incheckning eller avslutning. Punktlista.\n\n'+ctx;
+  return ctx;
+}
+function showAiOut(label,text){
+  document.getElementById('ev-ai-out').innerHTML='<div class="out-box"><span class="copy" data-copy="1">kopiera</span><span class="out-lbl">✨ '+esc(label)+'</span>'+esc(text)+'</div>';
+  var c=document.querySelector('#ev-ai-out .copy');
+  if(c)c.onclick=function(){navigator.clipboard&&navigator.clipboard.writeText(text);this.textContent='kopierat ✓';};
+}
+async function runAi(kind,label,btn){
+  if(!curEv)return;
+  var orig=btn.textContent;btn.textContent='✨ Arbetar…';btn.disabled=true;
+  try{
+    var text=await aiCall(aiPrompts(kind));
+    if(!curEv.ai)curEv.ai={};curEv.ai[kind]=text;persist();
+    showAiOut(label,text);
+  }catch(e){if(e.message!=='NOKEY')alert('Kunde inte hämta från AI: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+}
+document.getElementById('ai-plan').onclick=function(){runAi('plan','Kvällsupplägg',this);};
+document.getElementById('ai-ritual').onclick=function(){runAi('ritual','Ritualförslag',this);};
+document.getElementById('ai-invite').onclick=function(){runAi('invite','Inbjudan',this);};
+document.getElementById('ai-matlist').onclick=function(){runAi('matlist','Materiallista',this);};
+document.getElementById('ai-reflect').onclick=function(){runAi('reflect','Reflektionsfrågor',this);};
+document.getElementById('ai-set-btn').onclick=function(){document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+
+// ── Backup ────────────────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var d=new Date();
+  a.download='haxkvallar-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
+  a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{var d=JSON.parse(r.result);
+      if(d&&(Array.isArray(d.evenings)||Array.isArray(d.themes))){mergeIn(d);persist();renderAll();alert('Importerat.');}
+      else alert('Filen verkar inte vara en giltig säkerhetskopia.');
+    }catch(err){alert('Kunde inte läsa filen.');}
+  };
+  r.readAsText(f);
+};
+
+// ── Sync UI ───────────────────────────────────────────
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'#1E3326':type==='err'?'#3A1E22':'#241B3D';
+  el.style.color=type==='ok'?'#8FCF9A':type==='err'?'#E09AA2':'#C8A2E8';
+  el.textContent=msg;
+}
+function openSync(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+}
+document.getElementById('sync-set-btn').onclick=openSync;
+document.getElementById('sync-badge').onclick=openSync;
+document.getElementById('sync-close').onclick=closeSheets;
+document.getElementById('gh-pull').onclick=function(){ghPull();};
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPush();}
+    setTimeout(closeSheets,1200);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Nav ───────────────────────────────────────────────
+function switchView(v){
+  var btns=document.querySelectorAll('.nav button');
+  for(var i=0;i<btns.length;i++){btns[i].classList.toggle('active',btns[i].dataset.v===v);}
+  var views=document.querySelectorAll('.view');
+  for(var k=0;k<views.length;k++)views[k].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='home')renderHome();
+  if(v==='evenings')renderEvenings();
+  if(v==='themes')renderThemes();
+  if(v==='plan')renderCal();
+  if(v==='material')renderMaterial();
+}
+(function(){var btns=document.querySelectorAll('.nav button');for(var i=0;i<btns.length;i++){btns[i].onclick=function(){switchView(this.dataset.v);};}})();
+
+// ── Init ──────────────────────────────────────────────
+function renderAll(){
+  document.getElementById('moon-line').textContent=moonInfo(new Date());
+  document.getElementById('home-notes').value=state.notes;
+  renderHome();renderEvenings();renderThemes();renderCal();renderMaterial();renderThemeOptions();
+}
+loadSync();
+load();
+if(syncOn())setBadge('','Synk på');
+renderAll();
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

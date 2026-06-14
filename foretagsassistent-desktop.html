@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Företag DT">
+<meta name="theme-color" content="#F1F3EF">
+<link rel="manifest" href='data:application/manifest+json,{"name":"FöretagsAssistent","short_name":"Företag","display":"standalone","background_color":"%23F1F3EF","theme_color":"%23F1F3EF","start_url":"."}'>
+<title>FöretagsAssistent — Desktop</title>
+<style>
+:root{
+  --bg:#F1F3EF;--panel:#FAFBF8;--panel2:#E9ECE4;--line:#D7DCD0;
+  --ink:#2B3340;--muted:#79808C;
+  --blue:#185FA5;--blue-soft:#DCE8F3;
+  --green:#3B6D11;--green-soft:#EAF3DE;
+  --yellow:#7A6000;--yellow-soft:#FBF3D8;
+  --red:#A32D2D;--red-soft:#FAE3E3;
+  --navbg:rgba(241,243,239,.95);
+}
+[data-theme=dark]{
+  --bg:#181C16;--panel:#21261E;--panel2:#2B3127;--line:#3A4234;
+  --ink:#E6E9E1;--muted:#9AA293;
+  --blue:#6FA8DC;--blue-soft:#23344A;
+  --green:#9BCB6A;--green-soft:#26331C;
+  --yellow:#D9C27E;--yellow-soft:#33301C;
+  --red:#D9938C;--red-soft:#3A2422;
+  --navbg:rgba(24,28,22,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin:2px 0 12px}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:20px;color:var(--ink);letter-spacing:.03em}
+.brand small{display:block;font-family:-apple-system,sans-serif;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:2px}
+.gear{background:none;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:16px;width:36px;height:36px;cursor:pointer}
+.sync-cluster{display:flex;align-items:center;gap:6px}
+.sync-mini{background:none;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:15px;width:36px;height:36px;cursor:pointer}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--green-soft);color:var(--green);font-weight:600;white-space:nowrap}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:var(--red-soft);color:var(--red)}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.section-title:first-of-type{margin-top:4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.card h3{font-family:Georgia,serif;font-weight:400;font-size:15px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.muted{color:var(--muted)}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.btn{border:1px solid var(--blue);background:var(--panel);color:var(--blue);border-radius:13px;padding:10px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn:active{background:var(--blue-soft)}
+.btn.fill{background:var(--blue);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 11px}
+.btn.full{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--blue)}
+.row2{display:flex;gap:8px}
+.row2>*{flex:1}
+
+/* segments */
+.seg{display:flex;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:4px;margin-bottom:12px}
+.seg button{flex:1;border:none;background:none;color:var(--muted);font-size:13px;font-weight:500;padding:8px 4px;border-radius:9px;cursor:pointer;font-family:inherit}
+.seg button.active{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+/* stat tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:11px}
+.tile .n{font-family:Georgia,serif;font-size:22px;color:var(--ink)}
+.tile .l{font-size:11px;color:var(--muted);margin-top:1px}
+.tile.blue .n{color:var(--blue)}
+.tile.red .n{color:var(--red)}
+.tile.green .n{color:var(--green)}
+
+/* list rows */
+.item{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:none}
+.item .body{flex:1;min-width:0}
+.item .t{font-size:14px;color:var(--ink);line-height:1.35}
+.item .t.done{text-decoration:line-through;color:var(--muted)}
+.item .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.item .del{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;line-height:1;padding:0 2px}
+.item .chev{color:var(--muted);font-size:15px;align-self:center}
+.tap{cursor:pointer}
+
+/* badges + dots */
+.badge{font-size:10px;padding:2px 8px;border-radius:9px;font-weight:600;white-space:nowrap;display:inline-block}
+.b-todo{background:var(--panel2);color:var(--muted)}
+.b-doing{background:var(--blue-soft);color:var(--blue)}
+.b-wait{background:var(--yellow-soft);color:var(--yellow)}
+.b-done{background:var(--green-soft);color:var(--green)}
+.b-red{background:var(--red-soft);color:var(--red)}
+.b-blue{background:var(--blue-soft);color:var(--blue)}
+.b-green{background:var(--green-soft);color:var(--green)}
+.prio{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.p-hog{background:var(--red)}.p-mellan{background:var(--yellow)}.p-lag{background:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.wl-gron{background:var(--green)}.wl-gul{background:var(--yellow)}.wl-rod{background:var(--red)}
+
+/* pipeline */
+.pipe{display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.pipe .st{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:7px 10px;text-align:center;min-width:62px}
+.pipe .st .c{font-family:Georgia,serif;font-size:18px;color:var(--blue)}
+.pipe .st .n{font-size:9px;color:var(--muted);margin-top:1px}
+
+/* insight */
+.insight{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
+.insight:first-child{border-top:none}
+.insight .ic{flex-shrink:0}
+
+/* mer menu */
+.menu-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:9px;cursor:pointer}
+.menu-card .e{font-size:20px;width:26px;text-align:center}
+.menu-card .m{flex:1}
+.menu-card .m .ti{font-size:14px;color:var(--ink)}
+.menu-card .m .de{font-size:11px;color:var(--muted);margin-top:1px}
+.menu-card .chev{color:var(--muted);font-size:16px}
+
+/* AI chat */
+.chat{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.bubble{padding:11px 13px;border-radius:14px;font-size:13px;line-height:1.55;max-width:90%;white-space:pre-wrap}
+.bubble.u{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bubble.a{background:var(--panel2);color:var(--ink);align-self:flex-start;border-bottom-left-radius:4px}
+.ask-row{display:flex;gap:8px}
+.ask-row input{flex:1}
+.ask-row button{flex:0 0 auto}
+
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--blue);font-weight:600}
+.nav button span{display:block;font-size:17px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+
+/* sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(20,24,18,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.12)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-weight:400;font-size:17px;margin-bottom:10px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--blue);color:#fff;font-size:14px;cursor:pointer;margin-top:14px;font-family:inherit}
+.sheet-x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+.hint{font-size:11px;color:var(--muted);font-family:monospace;background:var(--panel2);padding:5px 8px;border-radius:7px;margin-top:6px;line-height:1.5}
+</style>
+
+<style id="desktop-overrides">
+/* ── DESKTOP-OVERRIDES (genereras av build_desktop.py) ── */
+body{padding:0}
+.app{max-width:1100px;margin:0 auto;padding:30px 34px 50px 244px}
+.topbar{margin:0 0 22px}
+h1.brand{font-size:25px}
+h1.brand small{font-size:12px}
+
+/* Sidomeny istället för bottennav */
+.nav{position:fixed;left:0;top:0;bottom:0;width:212px;max-width:212px;margin:0;flex-direction:column;align-items:stretch;gap:4px;
+  border-top:none;border-right:1px solid var(--line);background:var(--panel);backdrop-filter:none;
+  padding:calc(26px + env(safe-area-inset-top)) 12px 26px;z-index:40}
+.nav::before{content:'FöretagsAssistent';font-family:Georgia,serif;font-size:16px;color:var(--ink);padding:0 12px 18px;letter-spacing:.02em}
+.nav button{flex:0 0 auto;display:flex;align-items:center;gap:12px;text-align:left;font-size:14px;padding:12px 14px;border-radius:12px}
+.nav button span{display:inline;font-size:18px;margin:0}
+.nav button:hover{background:var(--panel2)}
+.nav button.active{background:var(--blue-soft);color:var(--blue)}
+
+/* Bredare innehåll: fler kolumner */
+.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+.view{max-width:820px}
+
+/* Centrerade modaler istället för bottom-sheets */
+.sheet{left:50%;top:50%;right:auto;bottom:auto;width:560px;max-width:92vw;max-height:88vh;
+  border-radius:18px;transform:translate(-50%,-48%) scale(.98);opacity:0;pointer-events:none;
+  transition:transform .2s ease,opacity .2s ease;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.sheet-close{position:static}
+
+/* Pekvänliga ytor får hover-pekare på desktop */
+.menu-card:hover,.item .body.tap:hover{background:var(--panel2)}
+.item .body.tap{border-radius:8px;margin:-4px -6px;padding:4px 6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1 class="brand">FöretagsAssistent<small id="co-name">Ditt företag</small></h1>
+    <div class="sync-cluster">
+      <span id="sync-badge" class="sp-badge offline">Lokal</span>
+      <button class="sync-mini" id="sync-now" title="Hämta senaste">&#10227;</button>
+      <button class="gear" id="open-settings" aria-label="Inställningar">⚙</button>
+    </div>
+  </div>
+
+  <!-- HEM -->
+  <div class="view active" id="v-hem">
+    <div class="card">
+      <h3 id="greet">God dag</h3>
+      <div class="tiles" id="today-tiles"></div>
+    </div>
+    <div class="card">
+      <h3>Företagets hälsa</h3>
+      <div class="tiles" id="health-tiles"></div>
+    </div>
+    <div class="card">
+      <h3>AI-insikter <button class="btn ghost" id="ai-from-hem">Fråga AI</button></h3>
+      <div id="insights"></div>
+    </div>
+  </div>
+
+  <!-- ARBETE -->
+  <div class="view" id="v-arbete">
+    <div class="seg" id="seg-arbete">
+      <button data-t="uppg" class="active">Uppgifter</button>
+      <button data-t="proj">Projekt</button>
+    </div>
+    <div id="arbete-uppg">
+      <button class="btn fill full" id="add-task" style="margin-bottom:12px">+ Ny uppgift</button>
+      <div id="task-list"></div>
+    </div>
+    <div id="arbete-proj" style="display:none">
+      <button class="btn fill full" id="add-proj" style="margin-bottom:12px">+ Nytt projekt</button>
+      <div id="proj-list"></div>
+    </div>
+  </div>
+
+  <!-- CRM -->
+  <div class="view" id="v-crm">
+    <div class="pipe" id="pipe"></div>
+    <button class="btn fill full" id="add-cust" style="margin-bottom:12px">+ Ny kund / lead</button>
+    <div id="cust-list"></div>
+  </div>
+
+  <!-- EKONOMI -->
+  <div class="view" id="v-ekonomi">
+    <div class="seg" id="seg-ek">
+      <button data-t="fakt" class="active">Fakturor</button>
+      <button data-t="utg">Utgifter</button>
+    </div>
+    <div id="ek-fakt">
+      <div class="card"><div class="tiles" id="fakt-tiles"></div></div>
+      <button class="btn fill full" id="add-fakt" style="margin-bottom:12px">+ Ny faktura</button>
+      <div id="fakt-list"></div>
+    </div>
+    <div id="ek-utg" style="display:none">
+      <div class="card"><div class="tiles" id="utg-tiles"></div></div>
+      <button class="btn fill full" id="add-utg" style="margin-bottom:12px">+ Ny utgift</button>
+      <div id="utg-list"></div>
+    </div>
+  </div>
+
+  <!-- MER -->
+  <div class="view" id="v-mer">
+    <div id="mer-menu">
+      <div class="section-title">Moduler</div>
+      <div class="menu-card" data-go="personal"><div class="e">👥</div><div class="m"><div class="ti">Personal</div><div class="de">Medarbetare & arbetsbelastning</div></div><div class="chev">›</div></div>
+      <div class="menu-card" data-go="dok"><div class="e">📄</div><div class="m"><div class="ti">Dokumentcenter</div><div class="de">Policys, rutiner & avtal</div></div><div class="chev">›</div></div>
+      <div class="menu-card" data-go="ai"><div class="e">🤖</div><div class="m"><div class="ti">AI-företagscoach</div><div class="de">Fråga om allt i din verksamhet</div></div><div class="chev">›</div></div>
+    </div>
+    <div id="mer-personal" style="display:none">
+      <button class="btn ghost" data-back="1" style="margin-bottom:10px">‹ Tillbaka</button>
+      <button class="btn fill full" id="add-staff" style="margin-bottom:12px">+ Ny medarbetare</button>
+      <div id="staff-list"></div>
+    </div>
+    <div id="mer-dok" style="display:none">
+      <button class="btn ghost" data-back="1" style="margin-bottom:10px">‹ Tillbaka</button>
+      <button class="btn fill full" id="add-doc" style="margin-bottom:12px">+ Nytt dokument</button>
+      <div id="doc-list"></div>
+    </div>
+    <div id="mer-ai" style="display:none">
+      <button class="btn ghost" data-back="1" style="margin-bottom:10px">‹ Tillbaka</button>
+      <div class="chat" id="chat"></div>
+      <div class="ask-row">
+        <input type="text" id="ai-input" placeholder="Vad borde jag fokusera på idag?">
+        <button class="btn fill" id="ai-send">Fråga</button>
+      </div>
+      <div class="soft" id="ai-hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav" id="nav">
+  <button data-v="hem" class="active"><span>🏠</span>Hem</button>
+  <button data-v="arbete"><span>✓</span>Arbete</button>
+  <button data-v="crm"><span>👥</span>CRM</button>
+  <button data-v="ekonomi"><span>💰</span>Ekonomi</button>
+  <button data-v="mer"><span>⋯</span>Mer</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="sh-task">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3 id="sh-task-h">Ny uppgift</h3>
+  <input type="hidden" id="task-id">
+  <label>Titel</label><input type="text" id="task-title" placeholder="Vad ska göras?">
+  <label>Beskrivning</label><textarea id="task-desc" rows="2"></textarea>
+  <div class="row2">
+    <div><label>Prioritet</label><select id="task-prio"><option value="lag">Låg</option><option value="mellan">Mellan</option><option value="hog">Hög</option></select></div>
+    <div><label>Deadline</label><input type="date" id="task-deadline"></div>
+  </div>
+  <div class="row2">
+    <div><label>Ansvarig</label><input type="text" id="task-owner"></div>
+    <div><label>Status</label><select id="task-status"><option value="todo">Inte påbörjad</option><option value="doing">Pågående</option><option value="wait">Väntar</option><option value="done">Klar</option></select></div>
+  </div>
+  <button class="sheet-close" id="task-save">Spara</button>
+</div>
+
+<div class="sheet" id="sh-proj">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3 id="sh-proj-h">Nytt projekt</h3>
+  <input type="hidden" id="proj-id">
+  <label>Namn</label><input type="text" id="proj-name">
+  <label>Mål</label><textarea id="proj-goal" rows="2"></textarea>
+  <div class="row2">
+    <div><label>Budget (kr)</label><input type="number" id="proj-budget"></div>
+    <div><label>Status</label><select id="proj-status"><option value="todo">Att göra</option><option value="doing">Pågående</option><option value="wait">Väntar</option><option value="done">Klart</option></select></div>
+  </div>
+  <div class="row2">
+    <div><label>Start</label><input type="date" id="proj-start"></div>
+    <div><label>Deadline</label><input type="date" id="proj-end"></div>
+  </div>
+  <label>Anteckningar</label><textarea id="proj-notes" rows="2"></textarea>
+  <button class="sheet-close" id="proj-save">Spara</button>
+</div>
+
+<div class="sheet" id="sh-cust">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3 id="sh-cust-h">Ny kund / lead</h3>
+  <input type="hidden" id="cust-id">
+  <label>Företag</label><input type="text" id="cust-company">
+  <label>Kontaktperson</label><input type="text" id="cust-contact">
+  <div class="row2">
+    <div><label>Telefon</label><input type="text" id="cust-phone"></div>
+    <div><label>E-post</label><input type="text" id="cust-email"></div>
+  </div>
+  <label>Steg i pipeline</label>
+  <select id="cust-stage">
+    <option value="ny">Ny lead</option><option value="kontaktad">Kontaktad</option>
+    <option value="behov">Behovsanalys</option><option value="offert">Offert</option>
+    <option value="forhandling">Förhandling</option><option value="kund">Kund</option>
+  </select>
+  <label>Anteckningar</label><textarea id="cust-notes" rows="2"></textarea>
+  <div id="cust-activities"></div>
+  <button class="sheet-close" id="cust-save">Spara</button>
+</div>
+
+<div class="sheet" id="sh-act">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3>Logga aktivitet</h3>
+  <input type="hidden" id="act-cust">
+  <label>Typ</label>
+  <select id="act-type"><option>Samtal</option><option>Möte</option><option>Mail</option><option>Anteckning</option></select>
+  <label>Vad hände?</label><textarea id="act-text" rows="2"></textarea>
+  <button class="sheet-close" id="act-save">Spara aktivitet</button>
+</div>
+
+<div class="sheet" id="sh-fakt">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3 id="sh-fakt-h">Ny faktura</h3>
+  <input type="hidden" id="fakt-id">
+  <div class="row2">
+    <div><label>Fakturanr</label><input type="text" id="fakt-number"></div>
+    <div><label>Belopp (kr)</label><input type="number" id="fakt-amount"></div>
+  </div>
+  <label>Kund</label><input type="text" id="fakt-customer">
+  <div class="row2">
+    <div><label>Fakturadatum</label><input type="date" id="fakt-issued"></div>
+    <div><label>Förfaller</label><input type="date" id="fakt-due"></div>
+  </div>
+  <label>Status</label>
+  <select id="fakt-status"><option value="utkast">Utkast</option><option value="skickad">Skickad</option><option value="betald">Betald</option><option value="forfallen">Förfallen</option></select>
+  <button class="sheet-close" id="fakt-save">Spara</button>
+</div>
+
+<div class="sheet" id="sh-utg">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3 id="sh-utg-h">Ny utgift</h3>
+  <input type="hidden" id="utg-id">
+  <label>Leverantör</label><input type="text" id="utg-supplier">
+  <div class="row2">
+    <div><label>Belopp (kr)</label><input type="number" id="utg-amount"></div>
+    <div><label>Varav moms</label><input type="number" id="utg-vat"></div>
+  </div>
+  <div class="row2">
+    <div><label>Datum</label><input type="date" id="utg-date"></div>
+    <div><label>Kategori</label><input type="text" id="utg-cat" placeholder="T.ex. Programvara"></div>
+  </div>
+  <button class="sheet-close" id="utg-save">Spara</button>
+</div>
+
+<div class="sheet" id="sh-staff">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3 id="sh-staff-h">Ny medarbetare</h3>
+  <input type="hidden" id="staff-id">
+  <label>Namn</label><input type="text" id="staff-name">
+  <div class="row2">
+    <div><label>Roll</label><input type="text" id="staff-role"></div>
+    <div><label>Startdatum</label><input type="date" id="staff-start"></div>
+  </div>
+  <label>E-post</label><input type="text" id="staff-email">
+  <label>Arbetsbelastning</label>
+  <select id="staff-workload"><option value="gron">🟢 Bra</option><option value="gul">🟡 Hög belastning</option><option value="rod">🔴 Risknivå</option></select>
+  <button class="sheet-close" id="staff-save">Spara</button>
+</div>
+
+<div class="sheet" id="sh-doc">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3 id="sh-doc-h">Nytt dokument</h3>
+  <input type="hidden" id="doc-id">
+  <label>Titel</label><input type="text" id="doc-title">
+  <label>Kategori</label><input type="text" id="doc-cat" placeholder="Policy, Rutin, Avtal…">
+  <label>Innehåll</label><textarea id="doc-body" rows="8"></textarea>
+  <button class="sheet-close" id="doc-save">Spara</button>
+</div>
+
+<div class="sheet" id="sh-settings">
+  <button class="sheet-x" data-close="1">✕</button>
+  <h3>Inställningar</h3>
+  <label>Företagsnamn</label><input type="text" id="set-company">
+  <label>Tema</label>
+  <select id="set-theme"><option value="auto">Automatiskt</option><option value="light">Ljust</option><option value="dark">Mörkt</option></select>
+  <label>Anthropic API-nyckel (för AI-coach)</label>
+  <input type="password" id="set-apikey" placeholder="sk-ant-…">
+  <div class="hint">Nyckeln sparas bara lokalt i din webbläsare och skickas direkt till Anthropic.</div>
+  <label>Synk (privat GitHub-repo)</label>
+  <input type="text" id="gh-owner" placeholder="github-användarnamn">
+  <input type="text" id="gh-repo" placeholder="data-repo (privat)" style="margin-top:6px">
+  <input type="password" id="gh-token" placeholder="github_pat_…" style="margin-top:6px">
+  <div class="hint">Skapa en fine-grained token på github.com → Settings → Developer settings → Personal access tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write. Token sparas bara lokalt på den här enheten — synkar <code>data.json</code> mellan dina enheter.</div>
+  <label>Data</label>
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn" id="export-data">Exportera</button>
+    <button class="btn" id="import-data">Importera</button>
+  </div>
+  <input type="file" id="import-file" accept="application/json" style="display:none">
+  <button class="sheet-close" id="set-save">Spara</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='foretagsassistent_v1';
+var state={
+  company:'Ditt företag',
+  tasks:[], projects:[], customers:[], invoices:[], expenses:[], staff:[], docs:[],
+  chat:[], apiKey:'', theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}if(typeof syncOn==='function'&&syncOn()){clearTimeout(_pushTimer);_pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayISO=function(){return toISO(new Date());};
+var kr=function(n){return (Math.round(Number(n)||0)).toLocaleString('sv-SE')+' kr';};
+var daysBetween=function(a,b){return Math.round((b-a)/86400000);};
+
+// ── Sync (GitHub Contents API — kanonisk motor från sviten) ──
+var SYNC_KEY='foretagsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+var _pushTimer=null;
+var SYNC_DATA_KEYS=['company','tasks','projects','customers','invoices','expenses','staff','docs','chat'];
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' offline');}
+function collectData(){var o={};SYNC_DATA_KEYS.forEach(function(k){o[k]=state[k];});o.updated=new Date().toISOString();return o;}
+function mergeData(d){SYNC_DATA_KEYS.forEach(function(k){if(d[k]!=null)state[k]=d[k];});}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){mergeData(data);try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}applyTheme();renderAll();}
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(collectData()));
+  var doPut=function(){var h=Object.assign({'Content-Type':'application/json'},ghHeaders());var body={message:'Uppdatering via appen',content:content};if(sync.sha)body.sha=sync.sha;return fetch(ghUrl(),{method:'PUT',headers:h,body:JSON.stringify(body)});};
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+loadSync();
+
+// ── Theme ─────────────────────────────────────────────
+function applyTheme(){
+  var t=state.theme;
+  if(t==='auto'){var h=new Date().getHours();t=(h>=20||h<7)?'dark':'light';}
+  document.documentElement.setAttribute('data-theme',t);
+}
+
+// ── Sheets ────────────────────────────────────────────
+var sbg=document.getElementById('sheet-bg');
+function openSheet(id){applyTheme();sbg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){sbg.classList.remove('open');var l=document.querySelectorAll('.sheet');for(var i=0;i<l.length;i++)l[i].classList.remove('open');}
+sbg.onclick=closeSheets;
+document.addEventListener('click',function(e){if(e.target.getAttribute&&e.target.getAttribute('data-close'))closeSheets();});
+
+// ── Nav ───────────────────────────────────────────────
+document.getElementById('nav').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var v=b.getAttribute('data-v');
+  var nb=document.querySelectorAll('#nav button');for(var i=0;i<nb.length;i++)nb[i].classList.remove('active');
+  b.classList.add('active');
+  var vw=document.querySelectorAll('.view');for(var j=0;j<vw.length;j++)vw[j].classList.remove('active');
+  document.getElementById('v-'+v).classList.add('active');
+  if(v==='mer')showMer('menu');
+  renderAll();
+});
+
+// ── Labels ────────────────────────────────────────────
+var STATUS={todo:['Inte påbörjad','b-todo'],doing:['Pågående','b-doing'],wait:['Väntar','b-wait'],done:['Klar','b-done']};
+var PSTATUS={todo:['Att göra','b-todo'],doing:['Pågående','b-doing'],wait:['Väntar','b-wait'],done:['Klart','b-done']};
+var STAGES=[['ny','Ny lead'],['kontaktad','Kontaktad'],['behov','Behovsanalys'],['offert','Offert'],['forhandling','Förhandling'],['kund','Kund']];
+var STAGEMAP={};STAGES.forEach(function(x){STAGEMAP[x[0]]=x[1];});
+var FSTATUS={utkast:['Utkast','b-todo'],skickad:['Skickad','b-blue'],betald:['Betald','b-green'],forfallen:['Förfallen','b-red']};
+var WL={gron:['🟢 Bra','wl-gron'],gul:['🟡 Hög belastning','wl-gul'],rod:['🔴 Risknivå','wl-rod']};
+
+// ── HEM ───────────────────────────────────────────────
+function renderHem(){
+  var h=new Date().getHours();
+  document.getElementById('greet').textContent=(h<10?'God morgon':h<18?'God dag':'God kväll')+' 👋';
+  document.getElementById('co-name').textContent=state.company||'Ditt företag';
+  var today=todayISO();
+  var dueToday=state.tasks.filter(function(t){return t.status!=='done'&&t.deadline===today;}).length;
+  var overdue=state.tasks.filter(function(t){return t.status!=='done'&&t.deadline&&t.deadline<today;}).length;
+  var toSend=state.invoices.filter(function(f){return f.status==='utkast';}).length;
+  var fakturaForfall=state.invoices.filter(function(f){return f.status==='skickad'&&f.due&&f.due<today;}).length;
+  document.getElementById('today-tiles').innerHTML=
+    tile(dueToday,'Uppgifter idag','blue')+
+    tile(overdue,'Försenade','red')+
+    tile(toSend,'Fakturor att skicka','')+
+    tile(fakturaForfall,'Fakturor förfaller','red');
+
+  var now=new Date();var mStart=new Date(now.getFullYear(),now.getMonth(),1);
+  var oms=state.invoices.filter(function(f){return f.status==='betald'&&f.issued&&new Date(f.issued)>=mStart;}).reduce(function(a,f){return a+(Number(f.amount)||0);},0);
+  var kostnad=state.expenses.filter(function(x){return x.date&&new Date(x.date)>=mStart;}).reduce(function(a,x){return a+(Number(x.amount)||0);},0);
+  var utestaende=state.invoices.filter(function(f){return f.status==='skickad';}).reduce(function(a,f){return a+(Number(f.amount)||0);},0);
+  var risk=state.staff.filter(function(p){return p.workload==='rod';}).length;
+  document.getElementById('health-tiles').innerHTML=
+    tile(kr(oms),'Omsättning (mån)','green')+
+    tile(kr(kostnad),'Kostnader (mån)','')+
+    tile(kr(utestaende),'Utestående','blue')+
+    tile(risk,'Personal i risk','red');
+
+  document.getElementById('insights').innerHTML=insights().map(function(t){
+    return '<div class="insight"><span class="ic">'+t[0]+'</span><span>'+esc(t[1])+'</span></div>';
+  }).join('')||'<div class="empty-msg">Allt ser lugnt ut just nu.</div>';
+}
+function tile(n,l,cls){return '<div class="tile '+(cls||'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
+function insights(){
+  var out=[];var today=todayISO();
+  var stale=state.customers.filter(function(c){
+    if(c.stage==='kund')return false;
+    var last=(c.activities&&c.activities.length)?c.activities[c.activities.length-1].t:null;
+    if(!last)return true;
+    return daysBetween(new Date(last),new Date())>=30;
+  });
+  if(stale.length)out.push(['📞',stale.length+' kund'+(stale.length>1?'er':'')+' har inte kontaktats på 30+ dagar.']);
+  var late=state.projects.filter(function(p){return p.status!=='done'&&p.end&&p.end<today;});
+  if(late.length)out.push(['⚠️','Projekt "'+(late[0].name||'')+'"'+(late.length>1?' m.fl.':'')+' har passerat sin deadline.']);
+  var forf=state.invoices.filter(function(f){return f.status==='skickad'&&f.due&&f.due<today;});
+  if(forf.length)out.push(['💰',forf.length+' skickad faktura'+(forf.length>1?'or':'')+' har förfallit utan betalning.']);
+  var draft=state.invoices.filter(function(f){return f.status==='utkast';});
+  if(draft.length)out.push(['🧾',draft.length+' faktura'+(draft.length>1?'or':'')+' ligger som utkast och väntar på att skickas.']);
+  var risk=state.staff.filter(function(p){return p.workload==='rod';});
+  if(risk.length)out.push(['🦺',risk.length+' medarbetare ligger på risknivå för arbetsbelastning.']);
+  return out;
+}
+
+// ── ARBETE ────────────────────────────────────────────
+document.getElementById('seg-arbete').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;segActive(this,b);
+  var t=b.getAttribute('data-t');
+  document.getElementById('arbete-uppg').style.display=t==='uppg'?'':'none';
+  document.getElementById('arbete-proj').style.display=t==='proj'?'':'none';
+});
+function segActive(seg,b){var l=seg.querySelectorAll('button');for(var i=0;i<l.length;i++)l[i].classList.remove('active');b.classList.add('active');}
+
+function renderTasks(){
+  var c=document.getElementById('task-list');
+  if(!state.tasks.length){c.innerHTML='<div class="empty-msg">Inga uppgifter än.</div>';return;}
+  var order={doing:0,wait:1,todo:2,done:3};
+  var arr=state.tasks.slice().sort(function(a,b){return (order[a.status]-order[b.status])||((a.deadline||'~').localeCompare(b.deadline||'~'));});
+  c.innerHTML=arr.map(function(t){
+    var st=STATUS[t.status]||STATUS.todo;
+    var sub=[];if(t.deadline)sub.push('📅 '+t.deadline);if(t.owner)sub.push('👤 '+esc(t.owner));
+    return '<div class="item"><span class="prio p-'+t.prio+'"></span>'+
+      '<div class="body tap" data-edit-task="'+t.id+'"><div class="t'+(t.status==='done'?' done':'')+'">'+esc(t.title)+'</div>'+
+      (sub.length?'<div class="sub">'+sub.join(' · ')+'</div>':'')+'</div>'+
+      '<span class="badge '+st[1]+'" data-cycle-task="'+t.id+'">'+st[0]+'</span>'+
+      '<button class="del" data-del-task="'+t.id+'">×</button></div>';
+  }).join('');
+}
+function renderProjects(){
+  var c=document.getElementById('proj-list');
+  if(!state.projects.length){c.innerHTML='<div class="empty-msg">Inga projekt än.</div>';return;}
+  c.innerHTML=state.projects.map(function(p){
+    var st=PSTATUS[p.status]||PSTATUS.todo;
+    var sub=[];if(p.end)sub.push('📅 '+p.end);if(p.budget)sub.push('💰 '+kr(p.budget));
+    return '<div class="item"><div class="body tap" data-edit-proj="'+p.id+'"><div class="t">'+esc(p.name)+'</div>'+
+      (p.goal?'<div class="sub">'+esc(p.goal)+'</div>':'')+
+      (sub.length?'<div class="sub">'+sub.join(' · ')+'</div>':'')+'</div>'+
+      '<span class="badge '+st[1]+'">'+st[0]+'</span>'+
+      '<button class="del" data-del-proj="'+p.id+'">×</button></div>';
+  }).join('');
+}
+
+// ── CRM ───────────────────────────────────────────────
+function renderCrm(){
+  var counts={};STAGES.forEach(function(x){counts[x[0]]=0;});
+  state.customers.forEach(function(c){if(counts[c.stage]!=null)counts[c.stage]++;});
+  document.getElementById('pipe').innerHTML=STAGES.map(function(x){
+    return '<div class="st"><div class="c">'+counts[x[0]]+'</div><div class="n">'+x[1]+'</div></div>';
+  }).join('');
+  var c=document.getElementById('cust-list');
+  if(!state.customers.length){c.innerHTML='<div class="empty-msg">Inga kunder eller leads än.</div>';return;}
+  var today=new Date();
+  c.innerHTML=state.customers.map(function(k){
+    var last=(k.activities&&k.activities.length)?k.activities[k.activities.length-1].t:null;
+    var since=last?daysBetween(new Date(last),today):null;
+    var warn=k.stage!=='kund'&&(since===null||since>=30);
+    var sub=k.contact?esc(k.contact):'';
+    if(last)sub+=(sub?' · ':'')+'Senast: '+since+' dgr sedan';else sub+=(sub?' · ':'')+'Ingen aktivitet';
+    return '<div class="item"><div class="body tap" data-edit-cust="'+k.id+'"><div class="t">'+esc(k.company)+(warn?' ⚠️':'')+'</div>'+
+      '<div class="sub">'+sub+'</div></div>'+
+      '<span class="badge b-blue">'+esc(STAGEMAP[k.stage]||'')+'</span>'+
+      '<button class="del" data-del-cust="'+k.id+'">×</button></div>';
+  }).join('');
+}
+
+// ── EKONOMI ───────────────────────────────────────────
+document.getElementById('seg-ek').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;segActive(this,b);
+  var t=b.getAttribute('data-t');
+  document.getElementById('ek-fakt').style.display=t==='fakt'?'':'none';
+  document.getElementById('ek-utg').style.display=t==='utg'?'':'none';
+});
+function renderEkonomi(){
+  var today=todayISO();var now=new Date();var mStart=new Date(now.getFullYear(),now.getMonth(),1);
+  var betaldMan=state.invoices.filter(function(f){return f.status==='betald'&&f.issued&&new Date(f.issued)>=mStart;}).reduce(function(a,f){return a+(Number(f.amount)||0);},0);
+  var skickat=state.invoices.filter(function(f){return f.status==='skickad';}).reduce(function(a,f){return a+(Number(f.amount)||0);},0);
+  var forf=state.invoices.filter(function(f){return f.status==='skickad'&&f.due&&f.due<today;}).length;
+  document.getElementById('fakt-tiles').innerHTML=
+    tile(kr(betaldMan),'Betalt (mån)','green')+tile(kr(skickat),'Utestående','blue')+
+    tile(state.invoices.filter(function(f){return f.status==='utkast';}).length,'Utkast','')+
+    tile(forf,'Förfallna','red');
+  var c=document.getElementById('fakt-list');
+  c.innerHTML=state.invoices.length?state.invoices.slice().reverse().map(function(f){
+    var st=FSTATUS[f.status]||FSTATUS.utkast;
+    return '<div class="item"><div class="body tap" data-edit-fakt="'+f.id+'"><div class="t">'+esc(f.number||'(utan nr)')+' · '+kr(f.amount)+'</div>'+
+      '<div class="sub">'+esc(f.customer||'')+(f.due?' · förfaller '+f.due:'')+'</div></div>'+
+      '<span class="badge '+st[1]+'" data-cycle-fakt="'+f.id+'">'+st[0]+'</span>'+
+      '<button class="del" data-del-fakt="'+f.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga fakturor än.</div>';
+
+  var utgMan=state.expenses.filter(function(x){return x.date&&new Date(x.date)>=mStart;}).reduce(function(a,x){return a+(Number(x.amount)||0);},0);
+  var momsMan=state.expenses.filter(function(x){return x.date&&new Date(x.date)>=mStart;}).reduce(function(a,x){return a+(Number(x.vat)||0);},0);
+  document.getElementById('utg-tiles').innerHTML=
+    tile(kr(utgMan),'Utgifter (mån)','red')+tile(kr(momsMan),'Varav moms','')+
+    tile(state.expenses.length,'Poster totalt','blue')+tile(kr(betaldMan-utgMan),'Netto (mån)','green');
+  var u=document.getElementById('utg-list');
+  u.innerHTML=state.expenses.length?state.expenses.slice().reverse().map(function(x){
+    return '<div class="item"><div class="body tap" data-edit-utg="'+x.id+'"><div class="t">'+esc(x.supplier||'')+' · '+kr(x.amount)+'</div>'+
+      '<div class="sub">'+(x.cat?esc(x.cat):'')+(x.date?' · '+x.date:'')+'</div></div>'+
+      '<button class="del" data-del-utg="'+x.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga utgifter än.</div>';
+}
+
+// ── MER ───────────────────────────────────────────────
+function showMer(which){
+  ['menu','personal','dok','ai'].forEach(function(m){
+    document.getElementById('mer-'+m).style.display=(m===which)?'':'none';
+  });
+  if(which==='personal')renderStaff();
+  if(which==='dok')renderDocs();
+  if(which==='ai')renderChat();
+}
+document.getElementById('mer-menu').addEventListener('click',function(e){
+  var card=e.target.closest('.menu-card');if(!card)return;showMer(card.getAttribute('data-go'));
+});
+document.querySelectorAll('#v-mer [data-back]').forEach(function(b){b.onclick=function(){showMer('menu');};});
+
+function renderStaff(){
+  var c=document.getElementById('staff-list');
+  c.innerHTML=state.staff.length?state.staff.map(function(p){
+    var w=WL[p.workload]||WL.gron;
+    return '<div class="item"><div class="body tap" data-edit-staff="'+p.id+'"><div class="t"><span class="dot '+w[1]+'"></span>'+esc(p.name)+'</div>'+
+      '<div class="sub">'+esc(p.role||'')+(p.email?' · '+esc(p.email):'')+'</div></div>'+
+      '<button class="del" data-del-staff="'+p.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga medarbetare än.</div>';
+}
+function renderDocs(){
+  var c=document.getElementById('doc-list');
+  c.innerHTML=state.docs.length?state.docs.map(function(d){
+    return '<div class="item"><div class="body tap" data-edit-doc="'+d.id+'"><div class="t">'+esc(d.title)+'</div>'+
+      '<div class="sub">'+esc(d.cat||'Dokument')+'</div></div>'+
+      '<button class="del" data-del-doc="'+d.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga dokument än.</div>';
+}
+
+// ── AI coach ──────────────────────────────────────────
+function renderChat(){
+  var c=document.getElementById('chat');
+  c.innerHTML=state.chat.map(function(m){return '<div class="bubble '+(m.role==='user'?'u':'a')+'">'+esc(m.text)+'</div>';}).join('');
+  document.getElementById('ai-hint').textContent=state.apiKey?'':'Lägg till din Anthropic API-nyckel i ⚙ Inställningar för att aktivera AI-coachen.';
+  c.scrollTop=c.scrollHeight;
+}
+function dataSummary(){
+  var today=todayISO();
+  var L=[];
+  L.push('Företag: '+(state.company||'okänt')+'. Dagens datum: '+today+'.');
+  L.push('Uppgifter: '+state.tasks.length+' totalt, '+state.tasks.filter(function(t){return t.status!=='done'&&t.deadline&&t.deadline<today;}).length+' försenade.');
+  L.push('Projekt: '+state.projects.length+' totalt, '+state.projects.filter(function(p){return p.status!=='done'&&p.end&&p.end<today;}).length+' över deadline.');
+  L.push('Kunder/leads: '+state.customers.length+'. Pipeline-steg: '+STAGES.map(function(x){return STAGEMAP[x[0]]+'='+state.customers.filter(function(c){return c.stage===x[0];}).length;}).join(', ')+'.');
+  L.push('Fakturor: '+state.invoices.filter(function(f){return f.status==='utkast';}).length+' utkast, '+state.invoices.filter(function(f){return f.status==='skickad';}).length+' skickade, '+state.invoices.filter(function(f){return f.status==='skickad'&&f.due&&f.due<today;}).length+' förfallna.');
+  L.push('Personal: '+state.staff.length+' medarbetare, '+state.staff.filter(function(p){return p.workload==='rod';}).length+' på risknivå.');
+  var stale=state.customers.filter(function(c){if(c.stage==='kund')return false;var last=(c.activities&&c.activities.length)?c.activities[c.activities.length-1].t:null;return !last||daysBetween(new Date(last),new Date())>=30;});
+  if(stale.length)L.push('Ej kontaktade på 30+ dgr: '+stale.map(function(c){return c.company;}).join(', ')+'.');
+  return L.join('\n');
+}
+function askAI(q){
+  if(!q)return;
+  if(!state.apiKey){renderChat();document.getElementById('ai-hint').textContent='Du behöver lägga in en API-nyckel i ⚙ Inställningar först.';return;}
+  state.chat.push({role:'user',text:q});state.chat.push({role:'assistant',text:'…tänker'});save();renderChat();
+  var msgs=state.chat.filter(function(m){return m.text!=='…tänker';}).map(function(m){return {role:m.role,content:m.text};});
+  var sys='Du är en hjälpsam svensk företagscoach inbyggd i appen FöretagsAssistent. Svara kort, konkret och handlingsinriktat på svenska. Här är aktuell data om användarens verksamhet:\n'+dataSummary();
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':state.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:700,system:sys,messages:msgs})
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt='';
+    if(d&&d.content)txt=d.content.map(function(b){return b.type==='text'?b.text:'';}).join('').trim();
+    if(!txt&&d&&d.error)txt='Fel: '+(d.error.message||'okänt fel');
+    state.chat[state.chat.length-1]={role:'assistant',text:txt||'Inget svar.'};save();renderChat();
+  }).catch(function(){
+    state.chat[state.chat.length-1]={role:'assistant',text:'Kunde inte nå API:t. Kontrollera nyckel och anslutning.'};save();renderChat();
+  });
+}
+document.getElementById('ai-send').onclick=function(){var i=document.getElementById('ai-input');var q=i.value.trim();i.value='';askAI(q);};
+document.getElementById('ai-input').addEventListener('keydown',function(e){if(e.key==='Enter'){var q=this.value.trim();this.value='';askAI(q);}});
+document.getElementById('ai-from-hem').onclick=function(){
+  document.querySelector('#nav button[data-v="mer"]').click();showMer('ai');
+};
+
+// ── Add/edit handlers ─────────────────────────────────
+function v(id){return document.getElementById(id).value;}
+function setv(id,val){document.getElementById(id).value=(val==null?'':val);}
+
+document.getElementById('add-task').onclick=function(){openTask(null);};
+function openTask(t){
+  document.getElementById('sh-task-h').textContent=t?'Redigera uppgift':'Ny uppgift';
+  setv('task-id',t?t.id:'');setv('task-title',t?t.title:'');setv('task-desc',t?t.desc:'');
+  setv('task-prio',t?t.prio:'mellan');setv('task-deadline',t?t.deadline:'');setv('task-owner',t?t.owner:'');
+  setv('task-status',t?t.status:'todo');openSheet('sh-task');
+}
+document.getElementById('task-save').onclick=function(){
+  var t=v('task-title').trim();if(!t){closeSheets();return;}
+  var id=v('task-id');var o={id:id||uid(),title:t,desc:v('task-desc'),prio:v('task-prio'),deadline:v('task-deadline'),owner:v('task-owner'),status:v('task-status')};
+  if(id){state.tasks=state.tasks.map(function(x){return x.id===id?o:x;});}else state.tasks.push(o);
+  save();closeSheets();renderAll();
+};
+
+document.getElementById('add-proj').onclick=function(){openProj(null);};
+function openProj(p){
+  document.getElementById('sh-proj-h').textContent=p?'Redigera projekt':'Nytt projekt';
+  setv('proj-id',p?p.id:'');setv('proj-name',p?p.name:'');setv('proj-goal',p?p.goal:'');
+  setv('proj-budget',p?p.budget:'');setv('proj-status',p?p.status:'todo');
+  setv('proj-start',p?p.start:'');setv('proj-end',p?p.end:'');setv('proj-notes',p?p.notes:'');openSheet('sh-proj');
+}
+document.getElementById('proj-save').onclick=function(){
+  var n=v('proj-name').trim();if(!n){closeSheets();return;}
+  var id=v('proj-id');var o={id:id||uid(),name:n,goal:v('proj-goal'),budget:v('proj-budget'),status:v('proj-status'),start:v('proj-start'),end:v('proj-end'),notes:v('proj-notes')};
+  if(id){state.projects=state.projects.map(function(x){return x.id===id?o:x;});}else state.projects.push(o);
+  save();closeSheets();renderAll();
+};
+
+document.getElementById('add-cust').onclick=function(){openCust(null);};
+function openCust(k){
+  document.getElementById('sh-cust-h').textContent=k?'Redigera kund':'Ny kund / lead';
+  setv('cust-id',k?k.id:'');setv('cust-company',k?k.company:'');setv('cust-contact',k?k.contact:'');
+  setv('cust-phone',k?k.phone:'');setv('cust-email',k?k.email:'');setv('cust-stage',k?k.stage:'ny');setv('cust-notes',k?k.notes:'');
+  var ac=document.getElementById('cust-activities');
+  if(k){
+    var acts=(k.activities||[]).slice().reverse();
+    ac.innerHTML='<label>Aktiviteter</label>'+
+      '<button class="btn ghost full" data-add-act="'+k.id+'" style="margin-bottom:6px">+ Logga aktivitet</button>'+
+      (acts.length?acts.map(function(a){return '<div class="item"><div class="body"><div class="t" style="font-size:13px">'+esc(a.type)+': '+esc(a.text)+'</div><div class="sub">'+a.t+'</div></div></div>';}).join(''):'<div class="empty-msg">Inga aktiviteter än.</div>');
+  }else ac.innerHTML='<div class="soft" style="margin-top:10px">Spara kunden först — sedan kan du logga aktiviteter.</div>';
+  openSheet('sh-cust');
+}
+document.getElementById('cust-save').onclick=function(){
+  var c=v('cust-company').trim();if(!c){closeSheets();return;}
+  var id=v('cust-id');
+  if(id){state.customers=state.customers.map(function(x){return x.id===id?Object.assign(x,{company:c,contact:v('cust-contact'),phone:v('cust-phone'),email:v('cust-email'),stage:v('cust-stage'),notes:v('cust-notes')}):x;});}
+  else state.customers.push({id:uid(),company:c,contact:v('cust-contact'),phone:v('cust-phone'),email:v('cust-email'),stage:v('cust-stage'),notes:v('cust-notes'),activities:[]});
+  save();closeSheets();renderAll();
+};
+document.getElementById('act-save').onclick=function(){
+  var cid=v('act-cust');var txt=v('act-text').trim();if(!txt){closeSheets();return;}
+  state.customers=state.customers.map(function(x){if(x.id===cid){x.activities=x.activities||[];x.activities.push({t:todayISO(),type:v('act-type'),text:txt});}return x;});
+  save();setv('act-text','');closeSheets();renderAll();
+};
+
+document.getElementById('add-fakt').onclick=function(){openFakt(null);};
+function openFakt(f){
+  document.getElementById('sh-fakt-h').textContent=f?'Redigera faktura':'Ny faktura';
+  setv('fakt-id',f?f.id:'');setv('fakt-number',f?f.number:'F'+(state.invoices.length+1));setv('fakt-amount',f?f.amount:'');
+  setv('fakt-customer',f?f.customer:'');setv('fakt-issued',f?f.issued:todayISO());setv('fakt-due',f?f.due:'');setv('fakt-status',f?f.status:'utkast');openSheet('sh-fakt');
+}
+document.getElementById('fakt-save').onclick=function(){
+  var id=v('fakt-id');var o={id:id||uid(),number:v('fakt-number'),amount:v('fakt-amount'),customer:v('fakt-customer'),issued:v('fakt-issued'),due:v('fakt-due'),status:v('fakt-status')};
+  if(id){state.invoices=state.invoices.map(function(x){return x.id===id?o:x;});}else state.invoices.push(o);
+  save();closeSheets();renderAll();
+};
+
+document.getElementById('add-utg').onclick=function(){openUtg(null);};
+function openUtg(x){
+  document.getElementById('sh-utg-h').textContent=x?'Redigera utgift':'Ny utgift';
+  setv('utg-id',x?x.id:'');setv('utg-supplier',x?x.supplier:'');setv('utg-amount',x?x.amount:'');
+  setv('utg-vat',x?x.vat:'');setv('utg-date',x?x.date:todayISO());setv('utg-cat',x?x.cat:'');openSheet('sh-utg');
+}
+document.getElementById('utg-save').onclick=function(){
+  var id=v('utg-id');var o={id:id||uid(),supplier:v('utg-supplier'),amount:v('utg-amount'),vat:v('utg-vat'),date:v('utg-date'),cat:v('utg-cat')};
+  if(id){state.expenses=state.expenses.map(function(x){return x.id===id?o:x;});}else state.expenses.push(o);
+  save();closeSheets();renderAll();
+};
+
+document.getElementById('add-staff').onclick=function(){openStaff(null);};
+function openStaff(p){
+  document.getElementById('sh-staff-h').textContent=p?'Redigera medarbetare':'Ny medarbetare';
+  setv('staff-id',p?p.id:'');setv('staff-name',p?p.name:'');setv('staff-role',p?p.role:'');
+  setv('staff-start',p?p.start:'');setv('staff-email',p?p.email:'');setv('staff-workload',p?p.workload:'gron');openSheet('sh-staff');
+}
+document.getElementById('staff-save').onclick=function(){
+  var n=v('staff-name').trim();if(!n){closeSheets();return;}
+  var id=v('staff-id');var o={id:id||uid(),name:n,role:v('staff-role'),start:v('staff-start'),email:v('staff-email'),workload:v('staff-workload')};
+  if(id){state.staff=state.staff.map(function(x){return x.id===id?o:x;});}else state.staff.push(o);
+  save();closeSheets();renderAll();
+};
+
+document.getElementById('add-doc').onclick=function(){openDoc(null);};
+function openDoc(d){
+  document.getElementById('sh-doc-h').textContent=d?'Redigera dokument':'Nytt dokument';
+  setv('doc-id',d?d.id:'');setv('doc-title',d?d.title:'');setv('doc-cat',d?d.cat:'');setv('doc-body',d?d.body:'');openSheet('sh-doc');
+}
+document.getElementById('doc-save').onclick=function(){
+  var t=v('doc-title').trim();if(!t){closeSheets();return;}
+  var id=v('doc-id');var o={id:id||uid(),title:t,cat:v('doc-cat'),body:v('doc-body')};
+  if(id){state.docs=state.docs.map(function(x){return x.id===id?o:x;});}else state.docs.push(o);
+  save();closeSheets();renderAll();
+};
+
+// ── Delegated taps (edit / delete / cycle / add-act) ──
+document.addEventListener('click',function(e){
+  var t=e.target;var id;
+  function find(at){var el=t.closest('['+at+']');return el?el.getAttribute(at):null;}
+  if((id=find('data-edit-task')))openTask(state.tasks.filter(function(x){return x.id===id;})[0]);
+  else if((id=find('data-del-task'))){if(confirm('Ta bort uppgiften?')){state.tasks=state.tasks.filter(function(x){return x.id!==id;});save();renderAll();}}
+  else if((id=find('data-cycle-task'))){var ord=['todo','doing','wait','done'];state.tasks=state.tasks.map(function(x){if(x.id===id)x.status=ord[(ord.indexOf(x.status)+1)%4];return x;});save();renderAll();}
+  else if((id=find('data-edit-proj')))openProj(state.projects.filter(function(x){return x.id===id;})[0]);
+  else if((id=find('data-del-proj'))){if(confirm('Ta bort projektet?')){state.projects=state.projects.filter(function(x){return x.id!==id;});save();renderAll();}}
+  else if((id=find('data-edit-cust')))openCust(state.customers.filter(function(x){return x.id===id;})[0]);
+  else if((id=find('data-del-cust'))){if(confirm('Ta bort kunden?')){state.customers=state.customers.filter(function(x){return x.id!==id;});save();renderAll();}}
+  else if((id=find('data-add-act'))){setv('act-cust',id);setv('act-text','');openSheet('sh-act');}
+  else if((id=find('data-edit-fakt')))openFakt(state.invoices.filter(function(x){return x.id===id;})[0]);
+  else if((id=find('data-del-fakt'))){if(confirm('Ta bort fakturan?')){state.invoices=state.invoices.filter(function(x){return x.id!==id;});save();renderAll();}}
+  else if((id=find('data-cycle-fakt'))){var fo=['utkast','skickad','betald','forfallen'];state.invoices=state.invoices.map(function(x){if(x.id===id)x.status=fo[(fo.indexOf(x.status)+1)%4];return x;});save();renderAll();}
+  else if((id=find('data-edit-utg')))openUtg(state.expenses.filter(function(x){return x.id===id;})[0]);
+  else if((id=find('data-del-utg'))){if(confirm('Ta bort utgiften?')){state.expenses=state.expenses.filter(function(x){return x.id!==id;});save();renderAll();}}
+  else if((id=find('data-edit-staff')))openStaff(state.staff.filter(function(x){return x.id===id;})[0]);
+  else if((id=find('data-del-staff'))){if(confirm('Ta bort medarbetaren?')){state.staff=state.staff.filter(function(x){return x.id!==id;});save();renderAll();}}
+  else if((id=find('data-edit-doc')))openDoc(state.docs.filter(function(x){return x.id===id;})[0]);
+  else if((id=find('data-del-doc'))){if(confirm('Ta bort dokumentet?')){state.docs=state.docs.filter(function(x){return x.id!==id;});save();renderAll();}}
+});
+
+// ── Settings ──────────────────────────────────────────
+document.getElementById('open-settings').onclick=function(){
+  setv('set-company',state.company);setv('set-theme',state.theme);setv('set-apikey',state.apiKey);
+  setv('gh-owner',sync.owner);setv('gh-repo',sync.repo);setv('gh-token',sync.token);openSheet('sh-settings');
+};
+document.getElementById('set-save').onclick=function(){
+  state.company=v('set-company')||'Ditt företag';state.theme=v('set-theme');state.apiKey=v('set-apikey');
+  var was=syncOn();
+  sync.owner=v('gh-owner').trim();sync.repo=v('gh-repo').trim();sync.token=v('gh-token').trim();
+  saveSync();save();applyTheme();closeSheets();renderAll();
+  if(syncOn()){
+    setBadge('load','Ansluter…');
+    ghGet().then(function(data){
+      if(data){return ghPull();}      // repot har data → hämta (delad sanning vinner)
+      return ghPush();                // tomt repo → ladda upp lokal data
+    }).catch(function(){setBadge('err','Synkfel');});
+  }else if(was){setBadge('offline','Lokal');}
+};
+document.getElementById('export-data').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='foretagsassistent-'+todayISO()+'.json';a.click();
+};
+document.getElementById('import-data').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{state=Object.assign(state,JSON.parse(r.result));save();applyTheme();closeSheets();renderAll();alert('Data importerad.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Render all ────────────────────────────────────────
+function renderAll(){renderHem();renderTasks();renderProjects();renderCrm();renderEkonomi();renderStaff();renderDocs();}
+document.getElementById('sync-now').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+applyTheme();renderAll();
+if(syncOn())ghPull();
+setInterval(applyTheme,600000);
+</script>
+</body>
+</html>

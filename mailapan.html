@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mailapan">
+<meta name="theme-color" content="#ECEFF3">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Mailapan","short_name":"Mailapan","display":"standalone","background_color":"%23ECEFF3","theme_color":"%23ECEFF3","start_url":"."}'>
+<title>Mailapan</title>
+<style>
+:root{
+  --bg:#ECEFF3;--panel:#F8FAFC;--panel2:#E4EAF1;--line:#D3DBE5;
+  --ink:#363D47;--muted:#7B8694;--blue:#5E7E9E;--blue-soft:#DCE6F0;
+  --p-akut:#C0796E;--p-viktigt:#C2A05E;--p-svar:#5E7E9E;
+  --p-info:#7F9682;--p-arkiv:#9AA3AE;--p-reklam:#9E8BB0;
+  --navbg:rgba(236,239,243,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(86px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--blue);background:var(--panel);color:var(--blue);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--blue-soft)}
+.btn.fill{background:var(--blue);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.danger{border-color:#D6B3AB;color:#A65A4C}
+.btn.danger:active{background:#F2E2DD}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--blue)}
+textarea{resize:vertical;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Dashboard */
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 13px}
+.stat .n{font-family:Georgia,serif;font-size:26px;line-height:1}
+.stat .l{font-size:11px;color:var(--muted);margin-top:4px}
+.stat.akut .n{color:var(--p-akut)}
+.stat.svar .n{color:var(--p-svar)}
+.next-step{background:var(--blue-soft);border:1px solid var(--blue);border-radius:16px;padding:13px 15px;margin-top:10px}
+.next-step .lbl{font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em}
+.next-step .txt{font-family:Georgia,serif;font-size:16px;margin-top:3px}
+.next-step button{margin-top:10px;width:100%}
+
+/* Kö */
+.queue-group{margin-top:6px}
+.qg-head{font-size:12px;font-weight:600;color:var(--ink);margin:14px 0 6px;display:flex;align-items:center;gap:7px}
+.qg-head .num{background:var(--blue);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.pause-card{text-align:center;padding:14px 10px}
+.pause-card .big{font-family:Georgia,serif;font-size:17px;margin-bottom:5px}
+
+/* Mailkort */
+.mail{border-top:1px solid var(--line);padding:11px 0;cursor:pointer}
+.mail:first-child{border-top:none}
+.mail-top{display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.mail-from{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail.read .mail-from{font-weight:500;color:var(--muted)}
+.mail-age{font-size:11px;color:var(--muted);white-space:nowrap}
+.mail-subj{font-size:13px;margin:3px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail-sum{font-size:12px;color:var(--muted);line-height:1.5;margin-top:3px}
+.mail-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center}
+.pbadge{font-size:10px;padding:2px 8px;border-radius:9px;color:#fff;font-weight:500}
+.tagchip{font-size:10px;padding:2px 8px;border-radius:9px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.acct-pill{font-size:10px;padding:2px 7px;border-radius:9px;color:#fff;opacity:.9}
+
+/* Filter chips */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.fchip{font-size:12px;padding:6px 11px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.fchip.sel{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* Reminders */
+.remind{background:#F6EEE9;border:1px solid #E2C9BD;border-radius:14px;padding:11px 13px;font-size:13px;line-height:1.5;color:#7A4F40;margin-bottom:8px}
+html[data-theme=dark] .remind{background:#3A2D27;border-color:#5C453B;color:#E4C6B9}
+
+/* AI box + tone */
+.ai-box{border:1px solid var(--blue);background:var(--blue-soft);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--blue);font-size:12px;display:block;margin-bottom:4px}
+.tones{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tone{font-size:12px;padding:7px 10px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;font-family:inherit}
+.tone.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* Konton */
+.acct-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line)}
+.acct-row:first-child{border-top:none}
+.acct-row .sw{width:13px;height:13px;border-radius:50%;flex-shrink:0}
+.acct-row .nm{flex:1;font-size:14px}
+.acct-row .tp{font-size:11px;color:var(--muted)}
+.acct-row button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.tag-edit{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag-edit .te{display:flex;align-items:center;gap:5px;font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:4px 6px 4px 10px}
+.tag-edit .te button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.toggle-row:first-child{border-top:none}
+.toggle-row .tt{flex:1}
+.toggle-row .tt b{font-size:14px;font-weight:600;display:block}
+.toggle-row .tt small{font-size:11px;color:var(--muted)}
+.sw-btn{width:46px;height:27px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);position:relative;cursor:pointer;flex-shrink:0;transition:background .25s}
+.sw-btn.on{background:var(--blue);border-color:var(--blue)}
+.sw-btn::after{content:'';position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:#fff;transition:left .25s}
+.sw-btn.on::after{left:21px}
+.sp-badge{font-size:10px;padding:2px 9px;border-radius:10px;background:var(--blue-soft);color:var(--blue);font-weight:500}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.hint{font-size:11px;color:var(--muted);font-family:monospace;background:var(--panel2);padding:6px 8px;border-radius:8px;line-height:1.5;margin-top:4px}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+
+/* FAB */
+.fab{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:50%;transform:translateX(124px);width:54px;height:54px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:42;font-family:inherit}
+@media(max-width:520px){.fab{left:auto;right:18px;transform:none}}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--blue);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.nav button .badge{position:absolute;margin-left:2px;margin-top:-3px;background:var(--p-akut);color:#fff;font-size:9px;border-radius:8px;padding:0 4px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(54,61,71,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--blue);color:#fff;font-size:14px;cursor:pointer;margin-top:12px}
+.seg{display:flex;gap:6px;margin-bottom:10px}
+.seg button{flex:1;font-size:13px;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-family:inherit}
+.seg button.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+.detail-block{margin-top:12px}
+.detail-block .db-t{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.tag-pick{display:flex;flex-wrap:wrap;gap:6px}
+.tag-pick .tp2{font-size:12px;padding:6px 10px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;font-family:inherit}
+.tag-pick .tp2.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+.body-box{font-size:13px;line-height:1.6;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;white-space:pre-wrap;max-height:200px;overflow-y:auto}
+
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1F242B;--panel:#272D35;--panel2:#2F3640;--line:#3D4651;
+  --ink:#DEE4EC;--muted:#94A0AE;--blue:#7E9CBC;--blue-soft:#33424F;
+  --p-akut:#C0796E;--p-viktigt:#C2A05E;--p-svar:#7E9CBC;
+  --p-info:#7F9682;--p-arkiv:#8A94A0;--p-reklam:#A294B4;
+  --navbg:rgba(31,36,43,.95);
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">📬 Mailapan</h1>
+<div class="brand-sub"><span id="sync-badge" class="sp-badge offline">Lokal</span> lugn koll på inkorgen</div>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <div class="dash" id="dash"></div>
+  <div id="next-step-wrap"></div>
+
+  <div class="section-title" style="margin-top:18px">Dagens mailkö</div>
+  <div class="card-panel" id="queue"></div>
+</div>
+
+<!-- INKORG -->
+<div class="view" id="view-inbox">
+  <div class="section-title" style="margin-top:0">Inkorg</div>
+  <div class="filters" id="acct-filters"></div>
+  <div class="filters" id="prio-filters" style="margin-top:6px;margin-bottom:10px"></div>
+  <div class="card-panel" id="inbox-list"></div>
+</div>
+
+<!-- UPPFÖLJNING -->
+<div class="view" id="view-follow">
+  <div class="section-title" style="margin-top:0">Påminnelser</div>
+  <div id="reminders"></div>
+  <div class="section-title">Väntar på svar <span class="soft">från någon annan</span></div>
+  <div class="card-panel" id="waiting-list"></div>
+  <div class="section-title">Att följa upp</div>
+  <div class="card-panel" id="followup-list"></div>
+</div>
+
+<!-- KONTON -->
+<div class="view" id="view-accounts">
+  <div class="section-title" style="margin-top:0">Mailkonton</div>
+  <div class="card-panel">
+    <div id="acct-list"></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn ghost" id="add-acct-btn">+ Lägg till konto</button>
+    </div>
+  </div>
+
+  <div class="section-title">Taggar / mappar</div>
+  <div class="card-panel">
+    <div class="tag-edit" id="tag-list"></div>
+    <div class="add-row" style="display:flex;gap:8px;margin-top:10px">
+      <input type="text" id="tag-in" placeholder="Ny tagg…">
+      <button class="btn" id="tag-add" style="padding:9px 16px">+</button>
+    </div>
+  </div>
+
+  <div class="section-title">Trygghetsläge</div>
+  <div class="card-panel">
+    <div class="toggle-row">
+      <div class="tt"><b>Fråga innan större saker</b><small>Bekräfta innan radering, arkivering av viktigt och avslutade prenumerationer.</small></div>
+      <div class="sw-btn" id="safe-toggle"></div>
+    </div>
+  </div>
+
+  <div class="section-title">AI-hjälp</div>
+  <div class="card-panel">
+    <p class="soft">Prioritering, sammanfattningar och svarsförslag görs av Claude via din egen API-nyckel.</p>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn" id="ai-set-btn">Ange API-nyckel</button>
+    </div>
+  </div>
+
+  <div class="section-title">Synk &amp; data</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn ghost" id="sync-btn">↻ Synka nu</button>
+      <button class="btn ghost" id="sync-settings">⚙ Synkinställningar</button>
+    </div>
+    <div class="foot">
+      <button id="export-btn">Säkerhetskopiera</button>
+      <button id="import-btn">Importera</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+  </div>
+  <div class="privacy">Allt sparas i din telefon (och i ditt privata GitHub-repo om du synkar). Mailapan kopplar inte upp sig mot dina riktiga mailkonton — du lägger in eller klistrar in mail själv, och appen hjälper dig sortera, sammanfatta och svara. API-nyckeln stannar lokalt och följer inte med i säkerhetskopior.</div>
+</div>
+</div>
+
+<button class="fab" id="fab">+</button>
+
+<div class="nav">
+  <button class="active" data-v="today"><span>🏠</span>Idag</button>
+  <button data-v="inbox"><span>📥</span>Inkorg</button>
+  <button data-v="follow"><span>⏰</span>Uppföljning</button>
+  <button data-v="accounts"><span>⚙</span>Konton</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Lägg till mail -->
+<div class="sheet" id="add-sheet">
+  <h3>Nytt mail</h3>
+  <div class="seg">
+    <button data-mode="quick" class="sel" id="seg-quick">Snabb</button>
+    <button data-mode="paste" id="seg-paste">Klistra in</button>
+  </div>
+  <div id="quick-form">
+    <label>Avsändare</label>
+    <input type="text" id="q-from" placeholder="t.ex. Anna Svensson">
+    <label>Ämne</label>
+    <input type="text" id="q-subj" placeholder="Ämnesrad">
+    <label>Konto</label>
+    <select id="q-acct"></select>
+    <label>Innehåll (valfritt)</label>
+    <textarea id="q-body" rows="4" placeholder="Klistra in eller skriv mailtexten…"></textarea>
+  </div>
+  <div id="paste-form" style="display:none">
+    <label>Klistra in hela mailet</label>
+    <textarea id="p-raw" rows="8" placeholder="Klistra in avsändare, ämne och text – AI plockar ut det viktiga."></textarea>
+    <label>Konto</label>
+    <select id="p-acct"></select>
+    <p class="soft" style="margin-top:8px">AI läser texten, sätter prioritet, skriver en sammanfattning och föreslår taggar.</p>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--ink);margin-top:12px">
+    <input type="checkbox" id="add-analyze" checked style="width:auto"> Analysera med AI direkt
+  </label>
+  <button class="btn fill" id="add-save" style="width:100%;margin-top:12px">Lägg till mail</button>
+  <button class="sheet-close" id="add-close" style="background:var(--panel2);color:var(--muted)">Avbryt</button>
+</div>
+
+<!-- Mail-detalj -->
+<div class="sheet" id="mail-sheet">
+  <div id="mail-detail"></div>
+  <button class="sheet-close" id="mail-close">Stäng</button>
+</div>
+
+<!-- API-nyckel -->
+<div class="sheet" id="ai-sheet">
+  <h3>✨ AI-hjälp</h3>
+  <p class="soft" style="margin-bottom:10px">Skapa en nyckel på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt och följer inte med i säkerhetskopior. Varje analys/svar kostar några ören från ditt API-saldo.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
+  </div>
+  <button class="sheet-close" id="ai-close" style="background:var(--panel2);color:var(--muted)">Stäng</button>
+</div>
+
+<!-- Synkinställningar -->
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synkinställningar</h3>
+  <p class="soft" style="margin-bottom:10px">Synka mellan dina enheter via ett privat GitHub-repo (samma mönster som dina andra appar).</p>
+  <label>GitHub-användare (owner)</label>
+  <input type="text" id="gh-owner" placeholder="ditt-användarnamn" autocomplete="off">
+  <label>Repo-namn</label>
+  <input type="text" id="gh-repo" placeholder="t.ex. app-data" autocomplete="off">
+  <label>Token (fine-grained)</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div id="gh-status" class="soft" style="margin-top:8px"></div>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="gh-save">Anslut &amp; hämta</button>
+    <button class="btn ghost" id="gh-clear">Koppla bort</button>
+  </div>
+  <button class="sheet-close" id="sync-close" style="background:var(--panel2);color:var(--muted)">Stäng</button>
+</div>
+
+<!-- Konto-redigering -->
+<div class="sheet" id="acct-sheet">
+  <h3 id="acct-sheet-title">Lägg till konto</h3>
+  <label>Namn</label>
+  <input type="text" id="ac-name" placeholder="t.ex. Jobbmail">
+  <label>Typ</label>
+  <select id="ac-type">
+    <option value="Gmail">Gmail</option>
+    <option value="Outlook">Outlook</option>
+    <option value="Jobb">Jobbmail</option>
+    <option value="Privat">Privatmail</option>
+    <option value="Förening">Föreningsmail</option>
+    <option value="Annat">Annat</option>
+  </select>
+  <label>Färg</label>
+  <div class="tag-pick" id="ac-colors"></div>
+  <button class="btn fill" id="ac-save" style="width:100%;margin-top:14px">Spara konto</button>
+  <button class="sheet-close" id="acct-close" style="background:var(--panel2);color:var(--muted)">Avbryt</button>
+</div>
+
+<script>
+// ── Hjälpare ───────────────────────────────────────────
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+var nowISO=function(){return new Date().toISOString();};
+function daysSince(iso){var d=(Date.now()-new Date(iso).getTime())/86400000;return Math.floor(d);}
+function ageLabel(iso){var d=daysSince(iso);if(d<=0)return 'idag';if(d===1)return 'igår';return d+' d sedan';}
+
+var PRIOS={
+  akut:{label:'Akut',v:'--p-akut',rank:0},
+  viktigt:{label:'Viktigt',v:'--p-viktigt',rank:1},
+  svar:{label:'Kräver svar',v:'--p-svar',rank:2},
+  info:{label:'Information',v:'--p-info',rank:3},
+  arkiv:{label:'Kan arkiveras',v:'--p-arkiv',rank:4},
+  reklam:{label:'Nyhetsbrev/reklam',v:'--p-reklam',rank:5}
+};
+var PRIO_ORDER=['akut','viktigt','svar','info','arkiv','reklam'];
+var TONES=[
+  {id:'vanligt',label:'Kort och vänligt',desc:'kort, varm och vänlig'},
+  {id:'proffs',label:'Professionellt',desc:'professionell, saklig och artig'},
+  {id:'nej',label:'Tydligt nej',desc:'ett tydligt men respektfullt nej'},
+  {id:'merinfo',label:'Behöver mer info',desc:'be vänligt om den information som saknas'},
+  {id:'aterkommer',label:'Jag återkommer',desc:'bekräfta mottaget och meddela att du återkommer'}
+];
+var ACCT_COLORS=['#5E7E9E','#7F9682','#C2A05E','#C0796E','#9E8BB0','#6FA3A0','#B07E8B','#8A94A0'];
+
+// ── Data ───────────────────────────────────────────────
+var KEY='mailapan_v1';
+var state={accounts:[],tags:[],mails:[],safeMode:true,theme:'auto'};
+function defaults(){
+  return {
+    accounts:[
+      {id:'a1',name:'Jobbmail',type:'Jobb',color:'#5E7E9E'},
+      {id:'a2',name:'Privatmail',type:'Privat',color:'#7F9682'}
+    ],
+    tags:['Jobb','Privat','Ekonomi','Bokningar','Skola','Projekt'],
+    mails:[
+      {id:'m1',accountId:'a1',from:'Anna Svensson',subject:'Faktura projekt vårkampanj',body:'Hej! Bifogar fakturan för vårkampanjen. Kan du bekräfta att den ser rätt ut och godkänna senast på fredag? Tack!',received:new Date(Date.now()-3*86400000).toISOString(),priority:'viktigt',summary:'Det här handlar om en faktura, svar behövs senast fredag.',mailTags:['Ekonomi','Projekt'],needsReply:true,deadline:'fredag',status:'inbox',waiting:false,followUp:false,read:false,reply:'',replyTone:''},
+      {id:'m2',accountId:'a2',from:'Veckans Erbjudanden',subject:'-30% på allt i helgen!',body:'Missa inte vår stora rea i helgen. Klicka här för att handla.',received:new Date(Date.now()-1*86400000).toISOString(),priority:'reklam',summary:'Det här är ett reklamutskick om en helgrea.',mailTags:[],needsReply:false,deadline:'',status:'inbox',waiting:false,followUp:false,read:false,reply:'',replyTone:''}
+    ],
+    safeMode:true,theme:'auto'
+  };
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function load(){
+  try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);state=Object.assign(defaults(),d);}else{state=defaults();}}catch(e){state=defaults();}
+}
+var pushTimer=null;
+function pushSoon(){if(!syncOn())return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(function(){pushTimer=null;ghPush().catch(function(){});},1200);}
+function flushPush(){if(pushTimer){clearTimeout(pushTimer);pushTimer=null;if(syncOn())ghPush().catch(function(){});}}
+function persist(){save();pushSoon();}
+
+// ── GitHub-synk ────────────────────────────────────────
+var SYNC_KEY='mailapansync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/mailapan-data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':' offline');}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){
+      if(Array.isArray(data.accounts))state.accounts=data.accounts;
+      if(Array.isArray(data.tags))state.tags=data.tags;
+      if(Array.isArray(data.mails))state.mails=data.mails;
+      if(typeof data.safeMode==='boolean')state.safeMode=data.safeMode;
+      save();renderAll();
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var payload={accounts:state.accounts,tags:state.tags,mails:state.mails,safeMode:state.safeMode,updated:nowISO()};
+  var content=b64enc(JSON.stringify(payload));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Mailapan',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  });
+}
+
+// ── AI ─────────────────────────────────────────────────
+var AI_KEY='mailapan_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function aiCall(prompt,maxTok){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||600,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function tagList(){return state.tags.join(', ');}
+function analyzePrompt(m){
+  return 'Du är en hjälpsam assistent som sorterar e-post åt en upptagen person som vill ha lugn och tydlig koll på inkorgen. Analysera mailet nedan och svara ENBART med ett giltigt JSON-objekt, ingen annan text, inga markdown-taggar.\n\nFält:\n- priority: en av "akut", "viktigt", "svar", "info", "arkiv", "reklam"\n- summary: en kort svensk mening enligt mönstret "Det här handlar om X" och, om relevant, "svar behövs senast Y"\n- tags: en array med 0-3 taggar valda ENBART ur denna lista: '+tagList()+'\n- needsReply: true eller false\n- deadline: kort text om en deadline nämns, annars tom sträng\n\nAvsändare: '+(m.from||'(okänd)')+'\nÄmne: '+(m.subject||'(inget ämne)')+'\nInnehåll: '+(m.body||'(ingen text)');
+}
+function parseJSON(txt){
+  var t=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+  var a=t.indexOf('{'),b=t.lastIndexOf('}');
+  if(a>=0&&b>=0)t=t.slice(a,b+1);
+  return JSON.parse(t);
+}
+function analyzeMail(m){
+  return aiCall(analyzePrompt(m),500).then(function(txt){
+    var d=parseJSON(txt);
+    if(d.priority&&PRIOS[d.priority])m.priority=d.priority;
+    if(typeof d.summary==='string')m.summary=d.summary;
+    if(Array.isArray(d.tags))m.mailTags=d.tags.filter(function(t){return state.tags.indexOf(t)>=0;}).slice(0,3);
+    if(typeof d.needsReply==='boolean')m.needsReply=d.needsReply;
+    if(typeof d.deadline==='string')m.deadline=d.deadline;
+    return m;
+  });
+}
+function parseRawPrompt(raw){
+  return 'Du får en inklistrad e-posttext. Plocka ut avsändare, ämne och brödtext, och analysera den. Svara ENBART med ett giltigt JSON-objekt, ingen annan text, inga markdown-taggar.\n\nFält:\n- from: avsändarens namn eller adress\n- subject: ämnesrad\n- body: själva mailtexten (kort, rensad)\n- priority: en av "akut", "viktigt", "svar", "info", "arkiv", "reklam"\n- summary: kort svensk mening enligt "Det här handlar om X, svar behövs senast Y"\n- tags: array 0-3 ur listan: '+tagList()+'\n- needsReply: true/false\n- deadline: kort text eller tom sträng\n\nInklistrad text:\n'+raw;
+}
+function replyPrompt(m,tone,extra){
+  var t=null;for(var i=0;i<TONES.length;i++){if(TONES[i].id===tone)t=TONES[i];}
+  var d=t?t.desc:'vänlig';
+  return 'Du skriver ett svar på svenska på mailet nedan. Tonen ska vara '+d+'. Skriv ENBART själva svarsmeddelandet (ingen förklaring, inga rubriker, ingen ämnesrad), max ca 120 ord. Du kan inleda med en hälsning och avsluta med en avslutningsfras.\n\nUrsprungligt mail:\nAvsändare: '+(m.from||'')+'\nÄmne: '+(m.subject||'')+'\nInnehåll: '+(m.body||'')+(extra&&extra.trim()?'\n\nEgen instruktion att väva in: '+extra.trim():'');
+}
+
+// ── Sheets ─────────────────────────────────────────────
+var sbg=document.getElementById('sheet-bg');
+function openSheet(id){sbg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){sbg.classList.remove('open');var els=document.querySelectorAll('.sheet');for(var i=0;i<els.length;i++)els[i].classList.remove('open');}
+sbg.onclick=closeSheets;
+
+function guard(msg,fn){if(state.safeMode){if(window.confirm(msg))fn();}else fn();}
+
+// ── Render: helpers ────────────────────────────────────
+function acctById(id){for(var i=0;i<state.accounts.length;i++)if(state.accounts[i].id===id)return state.accounts[i];return null;}
+function mailById(id){for(var i=0;i<state.mails.length;i++)if(state.mails[i].id===id)return state.mails[i];return null;}
+function inboxMails(){return state.mails.filter(function(m){return m.status==='inbox';});}
+function prioRank(m){return PRIOS[m.priority]?PRIOS[m.priority].rank:9;}
+function sortByPrio(arr){return arr.slice().sort(function(a,b){return prioRank(a)-prioRank(b)||new Date(b.received)-new Date(a.received);});}
+
+function pbadge(p){if(!p||!PRIOS[p])return '';var pr=PRIOS[p];return '<span class="pbadge" style="background:var('+pr.v+')">'+esc(pr.label)+'</span>';}
+function mailCardHTML(m){
+  var ac=acctById(m.accountId);
+  var h='<div class="mail'+(m.read?' read':'')+'" data-id="'+m.id+'">';
+  h+='<div class="mail-top">';
+  h+='<span class="dot" style="background:var('+(PRIOS[m.priority]?PRIOS[m.priority].v:'--p-arkiv')+')"></span>';
+  h+='<span class="mail-from">'+esc(m.from||'(okänd avsändare)')+'</span>';
+  h+='<span class="mail-age">'+ageLabel(m.received)+'</span></div>';
+  h+='<div class="mail-subj">'+esc(m.subject||'(inget ämne)')+'</div>';
+  if(m.summary)h+='<div class="mail-sum">'+esc(m.summary)+'</div>';
+  h+='<div class="mail-meta">';
+  if(ac)h+='<span class="acct-pill" style="background:'+ac.color+'">'+esc(ac.name)+'</span>';
+  h+=pbadge(m.priority);
+  for(var i=0;i<(m.mailTags||[]).length;i++)h+='<span class="tagchip">'+esc(m.mailTags[i])+'</span>';
+  if(m.needsReply)h+='<span class="tagchip" style="color:var(--p-svar);border-color:var(--p-svar)">↩ svar</span>';
+  h+='</div></div>';
+  return h;
+}
+function bindMailCards(container){
+  var cards=container.querySelectorAll('.mail');
+  for(var i=0;i<cards.length;i++){(function(c){c.onclick=function(){openMail(c.getAttribute('data-id'));};})(cards[i]);}
+}
+
+// ── Render: Idag (dashboard + kö) ──────────────────────
+function renderDash(){
+  var inbox=inboxMails();
+  var unread=inbox.filter(function(m){return !m.read;}).length;
+  var needReply=inbox.filter(function(m){return m.needsReply;}).length;
+  var akut=inbox.filter(function(m){return m.priority==='akut';}).length;
+  var arkiv=inbox.filter(function(m){return m.priority==='arkiv'||m.priority==='reklam';}).length;
+  var waiting=state.mails.filter(function(m){return m.waiting&&m.status!=='archived';}).length;
+  var stats=[
+    {n:unread,l:'olästa',c:''},
+    {n:needReply,l:'kräver svar',c:'svar'},
+    {n:akut,l:'akut',c:'akut'},
+    {n:arkiv,l:'kan arkiveras',c:''},
+    {n:waiting,l:'väntar på annan',c:''}
+  ];
+  var h='';
+  for(var i=0;i<stats.length;i++){var s=stats[i];h+='<div class="stat '+s.c+'"><div class="n">'+s.n+'</div><div class="l">'+s.l+'</div></div>';}
+  document.getElementById('dash').innerHTML=h;
+
+  // Nästa bästa steg
+  var cand=sortByPrio(inbox.filter(function(m){return m.needsReply;}));
+  var ns=document.getElementById('next-step-wrap');
+  if(cand.length){
+    var m=cand[0];
+    ns.innerHTML='<div class="next-step"><div class="lbl">Nästa bästa steg</div><div class="txt">Svara på mailet från '+esc(m.from||'avsändaren')+'</div><button class="btn fill" data-id="'+m.id+'" id="ns-go">Öppna mailet</button></div>';
+    document.getElementById('ns-go').onclick=function(){openMail(m.id);};
+  }else if(inbox.length){
+    ns.innerHTML='<div class="next-step"><div class="lbl">Nästa bästa steg</div><div class="txt">Inget kräver svar just nu — läs eller arkivera i lugn takt. 🌿</div></div>';
+  }else{
+    ns.innerHTML='<div class="next-step"><div class="lbl">Nästa bästa steg</div><div class="txt">Inkorgen är tom. Fint jobbat. 🌿</div></div>';
+  }
+}
+function renderQueue(){
+  var inbox=inboxMails();
+  var reply=sortByPrio(inbox.filter(function(m){return m.needsReply;})).slice(0,3);
+  var read=inbox.filter(function(m){return !m.needsReply&&!m.read&&(m.priority==='viktigt'||m.priority==='info'||m.priority==='svar');});
+  read=sortByPrio(read).slice(0,2);
+  var arch=inbox.filter(function(m){return m.priority==='arkiv'||m.priority==='reklam';});
+  var c=document.getElementById('queue');
+  var h='';
+  if(!inbox.length){c.innerHTML='<div class="empty-msg">Inga mail i kön. Lägg till ett med + nere till höger.</div>';return;}
+  h+='<div class="queue-group"><div class="qg-head"><span class="num">1</span>Svara på dessa</div>';
+  if(reply.length){for(var i=0;i<reply.length;i++)h+=mailCardHTML(reply[i]);}else h+='<div class="empty-msg">Inget som kräver svar 🎉</div>';
+  h+='</div>';
+  h+='<div class="queue-group"><div class="qg-head"><span class="num">2</span>Läs dessa</div>';
+  if(read.length){for(var j=0;j<read.length;j++)h+=mailCardHTML(read[j]);}else h+='<div class="empty-msg">Inget att läsa just nu</div>';
+  h+='</div>';
+  h+='<div class="queue-group"><div class="qg-head"><span class="num">3</span>Arkivera resten</div>';
+  if(arch.length){h+='<div class="soft" style="padding:4px 0 8px">'+arch.length+' mail kan arkiveras (reklam &amp; info utan åtgärd).</div><button class="btn ghost" id="arch-all" style="width:100%">Arkivera alla '+arch.length+'</button>';}
+  else h+='<div class="empty-msg">Inget att arkivera</div>';
+  h+='</div>';
+  h+='<div class="queue-group"><div class="qg-head"><span class="num">4</span>Ta paus</div><div class="pause-card"><div class="big">Du har gjort tillräckligt 🌿</div><div class="soft">Resten kan vänta. Stäng inkorgen med gott samvete.</div></div></div>';
+  c.innerHTML=h;
+  bindMailCards(c);
+  var ab=document.getElementById('arch-all');
+  if(ab)ab.onclick=function(){
+    guard('Arkivera '+arch.length+' mail?',function(){
+      for(var i=0;i<arch.length;i++)arch[i].status='archived';
+      persist();renderAll();
+    });
+  };
+}
+
+// ── Render: Inkorg ─────────────────────────────────────
+var filterAcct='all',filterPrio='all';
+function renderFilters(){
+  var af=document.getElementById('acct-filters');
+  var h='<button class="fchip'+(filterAcct==='all'?' sel':'')+'" data-a="all">Alla konton</button>';
+  for(var i=0;i<state.accounts.length;i++){var a=state.accounts[i];h+='<button class="fchip'+(filterAcct===a.id?' sel':'')+'" data-a="'+a.id+'">'+esc(a.name)+'</button>';}
+  af.innerHTML=h;
+  var btns=af.querySelectorAll('.fchip');
+  for(var b=0;b<btns.length;b++){(function(btn){btn.onclick=function(){filterAcct=btn.getAttribute('data-a');renderFilters();renderInbox();};})(btns[b]);}
+  var pf=document.getElementById('prio-filters');
+  var ph='<button class="fchip'+(filterPrio==='all'?' sel':'')+'" data-p="all">Alla</button>';
+  for(var k=0;k<PRIO_ORDER.length;k++){var p=PRIO_ORDER[k];ph+='<button class="fchip'+(filterPrio===p?' sel':'')+'" data-p="'+p+'">'+esc(PRIOS[p].label)+'</button>';}
+  pf.innerHTML=ph;
+  var pbtns=pf.querySelectorAll('.fchip');
+  for(var pb=0;pb<pbtns.length;pb++){(function(btn){btn.onclick=function(){filterPrio=btn.getAttribute('data-p');renderFilters();renderInbox();};})(pbtns[pb]);}
+}
+function renderInbox(){
+  var list=inboxMails();
+  if(filterAcct!=='all')list=list.filter(function(m){return m.accountId===filterAcct;});
+  if(filterPrio!=='all')list=list.filter(function(m){return m.priority===filterPrio;});
+  list=sortByPrio(list);
+  var c=document.getElementById('inbox-list');
+  if(!list.length){c.innerHTML='<div class="empty-msg">Inga mail här. Lägg till med + eller ändra filter.</div>';return;}
+  var h='';for(var i=0;i<list.length;i++)h+=mailCardHTML(list[i]);
+  c.innerHTML=h;bindMailCards(c);
+}
+
+// ── Render: Uppföljning ────────────────────────────────
+function renderFollow(){
+  var inbox=inboxMails();
+  var rem=inbox.filter(function(m){return m.needsReply&&daysSince(m.received)>=2&&(m.priority==='akut'||m.priority==='viktigt'||m.priority==='svar');});
+  rem=sortByPrio(rem);
+  var rc=document.getElementById('reminders');
+  if(rem.length){
+    var h='';
+    for(var i=0;i<rem.length;i++){var m=rem[i];h+='<div class="remind" data-id="'+m.id+'">Du fick ett '+esc(PRIOS[m.priority]?PRIOS[m.priority].label.toLowerCase():'viktigt')+' mail från <b>'+esc(m.from||'någon')+'</b> för '+daysSince(m.received)+' dagar sedan som du inte svarat på.</div>';}
+    rc.innerHTML=h;
+    var rs=rc.querySelectorAll('.remind');
+    for(var r=0;r<rs.length;r++){(function(el){el.onclick=function(){openMail(el.getAttribute('data-id'));};})(rs[r]);}
+  }else rc.innerHTML='<div class="empty-msg">Inga obesvarade viktiga mail. 🌿</div>';
+
+  var wait=state.mails.filter(function(m){return m.waiting&&m.status!=='archived';});
+  var wc=document.getElementById('waiting-list');
+  if(wait.length){var wh='';for(var w=0;w<wait.length;w++)wh+=mailCardHTML(wait[w]);wc.innerHTML=wh;bindMailCards(wc);}
+  else wc.innerHTML='<div class="empty-msg">Inget du väntar svar på.</div>';
+
+  var fu=state.mails.filter(function(m){return m.followUp&&m.status!=='archived';});
+  var fc=document.getElementById('followup-list');
+  if(fu.length){var fh='';for(var f=0;f<fu.length;f++)fh+=mailCardHTML(fu[f]);fc.innerHTML=fh;bindMailCards(fc);}
+  else fc.innerHTML='<div class="empty-msg">Inget markerat för uppföljning.</div>';
+}
+
+// ── Render: Konton ─────────────────────────────────────
+function renderAccounts(){
+  var al=document.getElementById('acct-list');
+  if(!state.accounts.length){al.innerHTML='<div class="empty-msg">Inga konton än.</div>';}
+  else{
+    var h='';
+    for(var i=0;i<state.accounts.length;i++){var a=state.accounts[i];
+      h+='<div class="acct-row"><span class="sw" style="background:'+a.color+'"></span><div class="nm">'+esc(a.name)+'<div class="tp">'+esc(a.type)+'</div></div><button data-edit="'+a.id+'">✎</button><button data-del="'+a.id+'">✕</button></div>';
+    }
+    al.innerHTML=h;
+    var eb=al.querySelectorAll('[data-edit]');
+    for(var e=0;e<eb.length;e++){(function(btn){btn.onclick=function(){editAccount(btn.getAttribute('data-edit'));};})(eb[e]);}
+    var db=al.querySelectorAll('[data-del]');
+    for(var d=0;d<db.length;d++){(function(btn){btn.onclick=function(){var id=btn.getAttribute('data-del');guard('Ta bort kontot? Mail kopplade till det blir kvar utan konto.',function(){state.accounts=state.accounts.filter(function(x){return x.id!==id;});persist();renderAll();});};})(db[d]);}
+  }
+  var tl=document.getElementById('tag-list');
+  var th='';
+  for(var t=0;t<state.tags.length;t++){th+='<span class="te">'+esc(state.tags[t])+'<button data-tag="'+esc(state.tags[t])+'">✕</button></span>';}
+  tl.innerHTML=th;
+  var tb=tl.querySelectorAll('[data-tag]');
+  for(var tt=0;tt<tb.length;tt++){(function(btn){btn.onclick=function(){var nm=btn.getAttribute('data-tag');state.tags=state.tags.filter(function(x){return x!==nm;});persist();renderAccounts();};})(tb[tt]);}
+  document.getElementById('safe-toggle').className='sw-btn'+(state.safeMode?' on':'');
+}
+
+// ── Mail-detalj ────────────────────────────────────────
+var openMailId=null,replyTone='vanligt';
+function openMail(id){
+  var m=mailById(id);if(!m)return;
+  openMailId=id;replyTone=m.replyTone||'vanligt';
+  if(!m.read){m.read=true;save();}
+  renderDetail();openSheet('mail-sheet');
+}
+function renderDetail(){
+  var m=mailById(openMailId);if(!m)return;
+  var ac=acctById(m.accountId);
+  var h='<h3>'+esc(m.subject||'(inget ämne)')+'</h3>';
+  h+='<div class="soft" style="margin-bottom:4px">Från <b style="color:var(--ink)">'+esc(m.from||'okänd')+'</b>'+(ac?' · '+esc(ac.name):'')+' · '+ageLabel(m.received)+'</div>';
+  h+='<div class="mail-meta" style="margin-bottom:10px">'+pbadge(m.priority);
+  for(var i=0;i<(m.mailTags||[]).length;i++)h+='<span class="tagchip">'+esc(m.mailTags[i])+'</span>';
+  h+='</div>';
+  if(m.summary)h+='<div class="ai-box"><span class="ai-lbl">📋 Sammanfattning</span>'+esc(m.summary)+'</div>';
+  if(m.body)h+='<div class="detail-block"><div class="db-t">Innehåll</div><div class="body-box">'+esc(m.body)+'</div></div>';
+
+  h+='<div class="detail-block"><div class="db-t">AI</div><button class="btn fill" id="d-analyze" style="width:100%">✨ Analysera (prioritet, sammanfattning, taggar)</button></div>';
+
+  h+='<div class="detail-block"><div class="db-t">Prioritet</div><select id="d-prio">';
+  for(var p=0;p<PRIO_ORDER.length;p++){var pk=PRIO_ORDER[p];h+='<option value="'+pk+'"'+(m.priority===pk?' selected':'')+'>'+esc(PRIOS[pk].label)+'</option>';}
+  h+='</select></div>';
+
+  h+='<div class="detail-block"><div class="db-t">Taggar</div><div class="tag-pick" id="d-tags">';
+  for(var t=0;t<state.tags.length;t++){var tg=state.tags[t];var on=(m.mailTags||[]).indexOf(tg)>=0;h+='<button class="tp2'+(on?' sel':'')+'" data-tag="'+esc(tg)+'">'+esc(tg)+'</button>';}
+  h+='</div></div>';
+
+  // Svarshjälp
+  h+='<div class="detail-block"><div class="db-t">Svarshjälp</div><div class="tones" id="d-tones">';
+  for(var k=0;k<TONES.length;k++){h+='<button class="tone'+(replyTone===TONES[k].id?' sel':'')+'" data-tone="'+TONES[k].id+'">'+esc(TONES[k].label)+'</button>';}
+  h+='</div>';
+  h+='<textarea id="d-extra" rows="2" placeholder="Egen instruktion (valfritt), t.ex. boka om till nästa vecka" style="margin-top:8px"></textarea>';
+  h+='<button class="btn" id="d-reply" style="width:100%;margin-top:8px">✍ Föreslå svar</button>';
+  if(m.reply)h+='<div class="ai-box" id="d-reply-box"><span class="ai-lbl">✉ Förslag ('+esc((function(){for(var z=0;z<TONES.length;z++)if(TONES[z].id===m.replyTone)return TONES[z].label;return '';})())+')</span>'+esc(m.reply)+'</div><div class="btn-row" style="margin-top:8px"><button class="btn ghost" id="d-copy">Kopiera</button><button class="btn ghost" id="d-mark-answered">Markera som svarad</button></div>';
+  h+='</div>';
+
+  // Åtgärder
+  h+='<div class="detail-block"><div class="db-t">Åtgärder</div><div class="btn-row"><button class="btn ghost" id="d-wait">'+(m.waiting?'✓ Väntar på svar':'Väntar på svar')+'</button><button class="btn ghost" id="d-follow">'+(m.followUp?'✓ Följ upp':'Följ upp')+'</button></div>';
+  h+='<div class="btn-row" style="margin-top:8px"><button class="btn ghost" id="d-reply-flag">'+(m.needsReply?'✓ Kräver svar':'Kräver svar')+'</button>';
+  h+='<button class="btn ghost" id="d-archive">Arkivera</button></div>';
+  if(m.priority==='reklam'||m.priority==='arkiv')h+='<button class="btn ghost" id="d-unsub" style="width:100%;margin-top:8px">Avsluta prenumeration</button>';
+  h+='<button class="btn danger" id="d-delete" style="width:100%;margin-top:8px">Radera mail</button>';
+  h+='</div>';
+
+  document.getElementById('mail-detail').innerHTML=h;
+
+  document.getElementById('d-analyze').onclick=function(e){
+    var b=e.target;var o=b.textContent;b.textContent='✨ Analyserar…';b.disabled=true;
+    analyzeMail(m).then(function(){persist();renderDetail();renderAll();}).catch(function(err){if(err.message!=='NOKEY')alert('Kunde inte analysera: '+err.message);b.textContent=o;b.disabled=false;});
+  };
+  document.getElementById('d-prio').onchange=function(e){m.priority=e.target.value;persist();renderAll();};
+  var dt=document.querySelectorAll('#d-tags .tp2');
+  for(var x=0;x<dt.length;x++){(function(btn){btn.onclick=function(){var tg=btn.getAttribute('data-tag');if(!m.mailTags)m.mailTags=[];var idx=m.mailTags.indexOf(tg);if(idx>=0)m.mailTags.splice(idx,1);else m.mailTags.push(tg);btn.classList.toggle('sel');persist();};})(dt[x]);}
+  var tn=document.querySelectorAll('#d-tones .tone');
+  for(var y=0;y<tn.length;y++){(function(btn){btn.onclick=function(){replyTone=btn.getAttribute('data-tone');for(var z=0;z<tn.length;z++)tn[z].classList.remove('sel');btn.classList.add('sel');};})(tn[y]);}
+  document.getElementById('d-reply').onclick=function(e){
+    var b=e.target;var o=b.textContent;b.textContent='✍ Skriver…';b.disabled=true;
+    var extra=document.getElementById('d-extra').value;
+    aiCall(replyPrompt(m,replyTone,extra),700).then(function(txt){m.reply=txt;m.replyTone=replyTone;persist();renderDetail();}).catch(function(err){if(err.message!=='NOKEY')alert('Kunde inte skriva svar: '+err.message);b.textContent=o;b.disabled=false;});
+  };
+  var cp=document.getElementById('d-copy');
+  if(cp)cp.onclick=function(){var txt=m.reply;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){cp.textContent='Kopierat ✓';setTimeout(function(){cp.textContent='Kopiera';},1500);});}else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');cp.textContent='Kopierat ✓';}catch(e){}document.body.removeChild(ta);}};
+  var ma=document.getElementById('d-mark-answered');
+  if(ma)ma.onclick=function(){guard('Markera som svarad och flytta ur kön?',function(){m.status='answered';m.needsReply=false;persist();renderAll();closeSheets();});};
+  document.getElementById('d-wait').onclick=function(){m.waiting=!m.waiting;persist();renderDetail();renderAll();};
+  document.getElementById('d-follow').onclick=function(){m.followUp=!m.followUp;persist();renderDetail();renderAll();};
+  document.getElementById('d-reply-flag').onclick=function(){m.needsReply=!m.needsReply;persist();renderDetail();renderAll();};
+  document.getElementById('d-archive').onclick=function(){
+    var imp=(m.priority==='akut'||m.priority==='viktigt');
+    guard(imp?'Detta mail är markerat som viktigt. Arkivera ändå?':'Arkivera mailet?',function(){m.status='archived';persist();renderAll();closeSheets();});
+  };
+  var us=document.getElementById('d-unsub');
+  if(us)us.onclick=function(){guard('Markera prenumerationen som avslutad och arkivera? (Mailapan kan inte avregistrera dig i din riktiga inkorg — gör det via mailets avregistreringslänk.)',function(){m.status='archived';persist();renderAll();closeSheets();});};
+  document.getElementById('d-delete').onclick=function(){guard('Radera mailet helt? Detta går inte att ångra.',function(){state.mails=state.mails.filter(function(x){return x.id!==m.id;});persist();renderAll();closeSheets();});};
+}
+
+// ── Lägg till mail ─────────────────────────────────────
+var addMode='quick';
+function fillAcctSelects(){
+  var opts='';for(var i=0;i<state.accounts.length;i++)opts+='<option value="'+state.accounts[i].id+'">'+esc(state.accounts[i].name)+'</option>';
+  document.getElementById('q-acct').innerHTML=opts;
+  document.getElementById('p-acct').innerHTML=opts;
+}
+function openAdd(){
+  if(!state.accounts.length){alert('Lägg till minst ett konto först (under Konton).');return;}
+  addMode='quick';
+  document.getElementById('seg-quick').classList.add('sel');
+  document.getElementById('seg-paste').classList.remove('sel');
+  document.getElementById('quick-form').style.display='';
+  document.getElementById('paste-form').style.display='none';
+  document.getElementById('q-from').value='';document.getElementById('q-subj').value='';document.getElementById('q-body').value='';document.getElementById('p-raw').value='';
+  fillAcctSelects();
+  openSheet('add-sheet');
+}
+document.getElementById('seg-quick').onclick=function(){addMode='quick';this.classList.add('sel');document.getElementById('seg-paste').classList.remove('sel');document.getElementById('quick-form').style.display='';document.getElementById('paste-form').style.display='none';};
+document.getElementById('seg-paste').onclick=function(){addMode='paste';this.classList.add('sel');document.getElementById('seg-quick').classList.remove('sel');document.getElementById('paste-form').style.display='';document.getElementById('quick-form').style.display='none';};
+
+document.getElementById('add-save').onclick=function(e){
+  var doAnalyze=document.getElementById('add-analyze').checked;
+  var btn=e.target;
+  if(addMode==='quick'){
+    var from=document.getElementById('q-from').value.trim();
+    var subj=document.getElementById('q-subj').value.trim();
+    if(!from&&!subj){alert('Ange åtminstone avsändare eller ämne.');return;}
+    var m={id:uid(),accountId:document.getElementById('q-acct').value,from:from,subject:subj,body:document.getElementById('q-body').value.trim(),received:nowISO(),priority:null,summary:'',mailTags:[],needsReply:false,deadline:'',status:'inbox',waiting:false,followUp:false,read:false,reply:'',replyTone:''};
+    state.mails.unshift(m);
+    if(doAnalyze&&getAiKey()){
+      btn.textContent='✨ Analyserar…';btn.disabled=true;
+      analyzeMail(m).then(function(){finishAdd();}).catch(function(){finishAdd();});
+    }else{persist();finishAdd();}
+  }else{
+    var raw=document.getElementById('p-raw').value.trim();
+    if(!raw){alert('Klistra in mailet först.');return;}
+    var acctId=document.getElementById('p-acct').value;
+    if(!getAiKey()){
+      // utan AI: spara råtext som body
+      var mm={id:uid(),accountId:acctId,from:'',subject:'(inklistrat)',body:raw,received:nowISO(),priority:null,summary:'',mailTags:[],needsReply:false,deadline:'',status:'inbox',waiting:false,followUp:false,read:false,reply:'',replyTone:''};
+      state.mails.unshift(mm);persist();finishAdd();
+      openSheet('ai-sheet');return;
+    }
+    btn.textContent='✨ Läser…';btn.disabled=true;
+    aiCall(parseRawPrompt(raw),700).then(function(txt){
+      var d=parseJSON(txt);
+      var m2={id:uid(),accountId:acctId,from:(d.from||'').toString(),subject:(d.subject||'(inget ämne)').toString(),body:(d.body||raw).toString(),received:nowISO(),priority:(PRIOS[d.priority]?d.priority:'info'),summary:(d.summary||'').toString(),mailTags:Array.isArray(d.tags)?d.tags.filter(function(t){return state.tags.indexOf(t)>=0;}).slice(0,3):[],needsReply:!!d.needsReply,deadline:(d.deadline||'').toString(),status:'inbox',waiting:false,followUp:false,read:false,reply:'',replyTone:''};
+      state.mails.unshift(m2);persist();finishAdd();
+    }).catch(function(err){
+      alert('Kunde inte tolka mailet: '+err.message+'. Sparar råtexten istället.');
+      var m3={id:uid(),accountId:acctId,from:'',subject:'(inklistrat)',body:raw,received:nowISO(),priority:null,summary:'',mailTags:[],needsReply:false,deadline:'',status:'inbox',waiting:false,followUp:false,read:false,reply:'',replyTone:''};
+      state.mails.unshift(m3);persist();finishAdd();
+    });
+  }
+};
+function finishAdd(){
+  var btn=document.getElementById('add-save');btn.textContent='Lägg till mail';btn.disabled=false;
+  closeSheets();renderAll();
+}
+
+// ── Konto-redigering ───────────────────────────────────
+var editAcctId=null,pickedColor=ACCT_COLORS[0];
+function renderColorPicker(){
+  var h='';for(var i=0;i<ACCT_COLORS.length;i++){var c=ACCT_COLORS[i];h+='<button class="tp2'+(pickedColor===c?' sel':'')+'" data-c="'+c+'" style="background:'+c+';color:#fff;border-color:'+c+'">'+(pickedColor===c?'✓':'&nbsp;')+'</button>';}
+  document.getElementById('ac-colors').innerHTML=h;
+  var b=document.querySelectorAll('#ac-colors .tp2');
+  for(var x=0;x<b.length;x++){(function(btn){btn.onclick=function(){pickedColor=btn.getAttribute('data-c');renderColorPicker();};})(b[x]);}
+}
+function openAccountSheet(){
+  editAcctId=null;pickedColor=ACCT_COLORS[state.accounts.length%ACCT_COLORS.length];
+  document.getElementById('acct-sheet-title').textContent='Lägg till konto';
+  document.getElementById('ac-name').value='';document.getElementById('ac-type').value='Gmail';
+  renderColorPicker();openSheet('acct-sheet');
+}
+function editAccount(id){
+  var a=acctById(id);if(!a)return;editAcctId=id;pickedColor=a.color;
+  document.getElementById('acct-sheet-title').textContent='Redigera konto';
+  document.getElementById('ac-name').value=a.name;document.getElementById('ac-type').value=a.type;
+  renderColorPicker();openSheet('acct-sheet');
+}
+document.getElementById('ac-save').onclick=function(){
+  var name=document.getElementById('ac-name').value.trim();
+  var type=document.getElementById('ac-type').value;
+  if(!name){alert('Ange ett namn.');return;}
+  if(editAcctId){var a=acctById(editAcctId);a.name=name;a.type=type;a.color=pickedColor;}
+  else state.accounts.push({id:uid(),name:name,type:type,color:pickedColor});
+  persist();closeSheets();renderAll();
+};
+document.getElementById('add-acct-btn').onclick=openAccountSheet;
+document.getElementById('acct-close').onclick=closeSheets;
+
+// ── Taggar ─────────────────────────────────────────────
+document.getElementById('tag-add').onclick=function(){
+  var v=document.getElementById('tag-in').value.trim();
+  if(v&&state.tags.indexOf(v)<0){state.tags.push(v);document.getElementById('tag-in').value='';persist();renderAccounts();}
+};
+document.getElementById('safe-toggle').onclick=function(){state.safeMode=!state.safeMode;persist();renderAccounts();};
+
+// ── AI-nyckel ──────────────────────────────────────────
+document.getElementById('ai-set-btn').onclick=function(){document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+
+// ── Synk-UI ────────────────────────────────────────────
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').textContent='';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  saveSync();
+  var st=document.getElementById('gh-status');
+  if(syncOn()){st.textContent='Ansluter…';ghPull().then(function(){st.textContent='✓ Ansluten och synkad.';});}
+  else st.textContent='Fyll i alla tre fält.';
+};
+document.getElementById('gh-clear').onclick=function(){sync={owner:'',repo:'',token:'',sha:null};saveSync();setBadge('off','Lokal');document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';document.getElementById('gh-status').textContent='Bortkopplad.';};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.getElementById('sync-close').onclick=closeSheets;
+document.getElementById('add-close').onclick=closeSheets;
+document.getElementById('mail-close').onclick=closeSheets;
+
+// ── Export / import ────────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mailapan-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.mails){state=Object.assign(defaults(),d);persist();renderAll();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ───────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1F242B':'#ECEFF3';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Nav ────────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navBtns.length;n++){(function(b){b.onclick=function(){
+  for(var x=0;x<navBtns.length;x++)navBtns[x].classList.remove('active');
+  b.classList.add('active');
+  var views=document.querySelectorAll('.view');for(var v=0;v<views.length;v++)views[v].classList.remove('active');
+  document.getElementById('view-'+b.dataset.v).classList.add('active');
+  renderAll();
+};})(navBtns[n]);}
+document.getElementById('fab').onclick=openAdd;
+
+// ── Render allt ────────────────────────────────────────
+function renderAll(){renderDash();renderQueue();renderFilters();renderInbox();renderFollow();renderAccounts();}
+
+// ── Init ───────────────────────────────────────────────
+load();loadSync();
+applyTheme();setInterval(applyTheme,60000);
+if(syncOn()){setBadge('off','Lokal');ghPull();}
+renderAll();
+document.addEventListener('visibilitychange',function(){if(document.hidden){flushPush();}else if(syncOn()){ghPull();}});
+</script>
+</body>
+</html>
