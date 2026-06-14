@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Häxstigen — magiskola för nybörjare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#15131F; --night-2:#1F1B2E; --night-3:#2A2540;
+  --line:#36304f; --moon:#D9DCEA; --gold:#E2B85C; --gold-dim:#B8924A;
+  --sage:#93A77E; --rose:#C98B9E; --parchment:#E9DEC4; --ink:#2A2418;
+  --text:#D6D3E2; --dim:#948FA8;
+  --pad:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(900px 500px at 80% -10%, rgba(226,184,92,.10), transparent 60%),
+    radial-gradient(700px 500px at -10% 20%, rgba(147,167,126,.08), transparent 55%),
+    var(--night);
+  color:var(--text); font-family:"Spectral",Georgia,serif; font-weight:400;
+  line-height:1.55; letter-spacing:.1px;
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:520px;margin:0 auto;min-height:100%;padding:0 0 96px;position:relative}
+.screen{display:none;padding:0 var(--pad)}
+.screen.active{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* header */
+.top{padding:26px var(--pad) 6px;display:flex;align-items:baseline;justify-content:space-between}
+.wordmark{font-family:"Cormorant Garamond",serif;font-weight:600;font-size:30px;color:var(--moon);letter-spacing:.5px;line-height:1}
+.wordmark b{color:var(--gold);font-weight:600}
+.eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);font-weight:500}
+
+/* generic */
+h2.section{font-family:"Cormorant Garamond",serif;font-weight:600;font-size:27px;color:var(--moon);margin:22px 0 4px;letter-spacing:.4px}
+.sub{color:var(--dim);font-size:14.5px;margin-bottom:14px;font-style:italic}
+.card{background:linear-gradient(180deg,var(--night-2),rgba(31,27,46,.6));border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+
+/* moon signature */
+.moonwrap{display:flex;gap:18px;align-items:center;background:linear-gradient(180deg,var(--night-2),rgba(31,27,46,.4));border:1px solid var(--line);border-radius:20px;padding:20px;margin-top:14px}
+.moondisc{position:relative;width:96px;height:96px;flex:0 0 auto;filter:drop-shadow(0 0 22px rgba(217,220,234,.18))}
+.moondisc svg{display:block}
+.moon-base{fill:#2a2740}
+.moon-lit{fill:url(#mg)}
+.moonmeta .ph{font-family:"Cormorant Garamond",serif;font-size:23px;color:var(--moon);line-height:1.1}
+.moonmeta .illum{color:var(--gold);font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+.moonmeta .hint{color:var(--dim);font-size:13.5px;margin-top:8px;font-style:italic}
+
+/* progress */
+.prog{margin-top:16px}
+.prog .bar{height:8px;border-radius:6px;background:var(--night-3);overflow:hidden;border:1px solid var(--line)}
+.prog .fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:6px;transition:width .6s ease}
+.prog .lab{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim);margin-bottom:7px;letter-spacing:.5px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#231a09;border:none;border-radius:11px;padding:13px 18px;font-family:"Spectral";font-weight:600;font-size:15px;cursor:pointer;width:100%;justify-content:center}
+.btn:active{transform:scale(.985)}
+.btn.ghost{background:transparent;color:var(--moon);border:1px solid var(--line)}
+.btn.sage{background:var(--sage);color:#1c2415}
+
+/* daily herb */
+.herb{display:flex;gap:14px;align-items:flex-start}
+.herb .leaf{font-size:30px;line-height:1;filter:saturate(.8)}
+.herb .n{font-family:"Cormorant Garamond",serif;font-size:21px;color:var(--moon)}
+.herb .u{color:var(--dim);font-size:14px;margin-top:2px}
+
+/* lessons */
+.modul{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);margin:22px 0 8px;font-weight:600}
+.lesson{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;background:var(--night-2)}
+.lesson .head{display:flex;align-items:center;gap:13px;padding:15px 16px;cursor:pointer}
+.lesson .tick{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);flex:0 0 auto;display:grid;place-items:center;color:transparent;font-size:14px;transition:.2s}
+.lesson.done .tick{background:var(--sage);border-color:var(--sage);color:#1c2415}
+.lesson .t{flex:1;font-family:"Cormorant Garamond",serif;font-size:20px;color:var(--moon)}
+.lesson.done .t{color:var(--dim)}
+.lesson .chev{color:var(--dim);transition:.25s}
+.lesson.open .chev{transform:rotate(90deg)}
+.lesson .body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.lesson.open .body{max-height:1400px}
+.lesson .inner{padding:2px 16px 18px}
+.lesson .inner p{font-size:15px;margin-bottom:12px}
+.keylist{list-style:none;margin:6px 0 14px}
+.keylist li{position:relative;padding:5px 0 5px 22px;font-size:14.5px;border-bottom:1px dashed var(--line)}
+.keylist li:last-child{border-bottom:none}
+.keylist li::before{content:"✦";position:absolute;left:0;color:var(--gold);font-size:12px;top:7px}
+.ovning{background:rgba(147,167,126,.10);border-left:3px solid var(--sage);border-radius:0 10px 10px 0;padding:11px 14px;margin-bottom:14px}
+.ovning .l{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--sage);font-weight:600}
+.ovning p{font-size:14.5px;margin:4px 0 0!important;font-style:italic}
+
+/* grimoire */
+.gnew textarea,.gnew input{width:100%;background:var(--night-2);border:1px solid var(--line);border-radius:11px;color:var(--text);font-family:"Spectral";font-size:15px;padding:12px;margin-bottom:10px;resize:vertical}
+.gnew textarea{min-height:96px}
+.gnew input::placeholder,.gnew textarea::placeholder{color:#6d6885}
+.entry{background:
+   linear-gradient(180deg,#efe6cf,var(--parchment));
+   color:var(--ink);border-radius:13px;padding:16px 17px;margin-bottom:12px;
+   box-shadow:0 1px 0 rgba(0,0,0,.25);position:relative}
+.entry h4{font-family:"Cormorant Garamond",serif;font-size:21px;margin-bottom:3px;font-weight:600}
+.entry .date{font-size:11.5px;letter-spacing:1.5px;text-transform:uppercase;color:#7a6f4f;margin-bottom:9px}
+.entry p{font-size:15px;white-space:pre-wrap;line-height:1.5}
+.entry .del{position:absolute;top:12px;right:13px;background:none;border:none;color:#8a7d57;font-size:18px;cursor:pointer;line-height:1}
+.empty{text-align:center;color:var(--dim);padding:38px 16px;font-style:italic}
+.empty .big{font-size:40px;margin-bottom:10px;filter:grayscale(.2)}
+
+/* lexikon */
+.tabs{display:flex;gap:8px;margin:6px 0 16px;flex-wrap:wrap}
+.chip{background:var(--night-2);border:1px solid var(--line);color:var(--dim);border-radius:20px;padding:8px 15px;font-size:13.5px;cursor:pointer;font-family:"Spectral"}
+.chip.on{background:var(--gold);color:#231a09;border-color:var(--gold);font-weight:600}
+.ref{display:flex;gap:13px;padding:13px 4px;border-bottom:1px solid var(--line)}
+.ref .ic{font-size:24px;flex:0 0 30px;text-align:center}
+.swatch{flex:0 0 22px;height:22px;border-radius:50%;margin-top:3px;border:1px solid rgba(255,255,255,.2)}
+.ref .nm{font-family:"Cormorant Garamond",serif;font-size:19px;color:var(--moon)}
+.ref .ds{font-size:14px;color:var(--dim)}
+
+/* profile */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.field input{width:100%;background:var(--night-2);border:1px solid var(--line);border-radius:11px;color:var(--text);font-family:"Spectral";font-size:16px;padding:13px}
+.stat{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);font-size:15px}
+.stat span:last-child{color:var(--gold);font-family:"Cormorant Garamond";font-size:20px}
+
+/* nav */
+.nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;background:rgba(21,19,31,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:20}
+.nav button{flex:1;background:none;border:none;color:var(--dim);font-family:"Spectral";font-size:10.5px;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px}
+.nav button .gi{font-size:20px;line-height:1;opacity:.7}
+.nav button.on{color:var(--gold)}
+.nav button.on .gi{opacity:1;filter:drop-shadow(0 0 8px rgba(226,184,92,.5))}
+.synced{font-size:11px;color:var(--sage);text-align:center;letter-spacing:1px;padding:14px 0 4px;opacity:.8}
+.synced::before{content:"◉ "}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="wordmark">Häx<b>stigen</b></div>
+    <div class="eyebrow">för nybörjarhäxor</div>
+  </div>
+
+  <!-- HEM -->
+  <section class="screen active" id="hem">
+    <h2 class="section" id="greet">Välkommen</h2>
+    <div class="sub">Din lilla magiskola. En sak i taget.</div>
+
+    <div class="moonwrap">
+      <div class="moondisc" id="moondisc"></div>
+      <div class="moonmeta">
+        <div class="ph" id="moonphase">—</div>
+        <div class="illum" id="moonillum"></div>
+        <div class="hint" id="moonhint"></div>
+      </div>
+    </div>
+
+    <div class="card prog">
+      <div class="lab"><span>Din väg genom skolan</span><span id="progtxt">0 / 0</span></div>
+      <div class="bar"><div class="fill" id="progfill" style="width:0%"></div></div>
+      <button class="btn" id="continue" style="margin-top:16px">Fortsätt</button>
+    </div>
+
+    <h2 class="section">Dagens ört</h2>
+    <div class="card herb" id="dailyherb"></div>
+    <div class="synced">Allt sparas automatiskt</div>
+  </section>
+
+  <!-- LEKTIONER -->
+  <section class="screen" id="lektioner">
+    <h2 class="section">Lektioner</h2>
+    <div class="sub">Tryck för att öppna. Markera klart med cirkeln.</div>
+    <div id="lessonlist"></div>
+  </section>
+
+  <!-- GRIMOIRE -->
+  <section class="screen" id="grimoire">
+    <h2 class="section">Din grimoire</h2>
+    <div class="sub">Trollboken där du samlar allt du provar och känner.</div>
+    <div class="card gnew">
+      <input id="gtitle" placeholder="Rubrik — t.ex. Min första ljusritual">
+      <textarea id="gbody" placeholder="Vad gjorde du? Hur kändes det? Vad vill du minnas?"></textarea>
+      <button class="btn sage" id="gadd">Skriv in i grimoaren</button>
+    </div>
+    <div id="entries"></div>
+  </section>
+
+  <!-- LEXIKON -->
+  <section class="screen" id="lexikon">
+    <h2 class="section">Lexikon</h2>
+    <div class="sub">Snabb uppslagsbok när du behöver den.</div>
+    <div class="tabs" id="reftabs"></div>
+    <div id="reflist"></div>
+  </section>
+
+  <!-- JAG -->
+  <section class="screen" id="jag">
+    <h2 class="section">Jag</h2>
+    <div class="sub">Din skola, dina inställningar.</div>
+    <div class="card">
+      <div class="field">
+        <label>Vad ska jag kalla dig?</label>
+        <input id="nameinput" placeholder="Ditt namn">
+      </div>
+      <button class="btn ghost" id="savename">Spara namn</button>
+    </div>
+    <div class="card">
+      <div class="stat"><span>Avklarade lektioner</span><span id="s-lessons">0</span></div>
+      <div class="stat"><span>Anteckningar i grimoaren</span><span id="s-notes">0</span></div>
+      <div class="stat" style="border:none"><span>Genomförd andel</span><span id="s-pct">0%</span></div>
+    </div>
+    <button class="btn ghost" id="reset" style="color:var(--rose);border-color:#5a3947">Nollställ alla framsteg</button>
+    <div class="synced">Synkas via samma lagring som desktop­versionen</div>
+  </section>
+</div>
+
+<nav class="nav" id="nav">
+  <button data-go="hem" class="on"><span class="gi">☾</span>Hem</button>
+  <button data-go="lektioner"><span class="gi">✶</span>Lektioner</button>
+  <button data-go="grimoire"><span class="gi">❦</span>Grimoire</button>
+  <button data-go="lexikon"><span class="gi">✦</span>Lexikon</button>
+  <button data-go="jag"><span class="gi">◑</span>Jag</button>
+</nav>
+
+<script>
+/* ---------- lagring: window.storage (Claude-synk) → localStorage → minne ---------- */
+const Store=(()=>{
+  const win = (typeof window!=="undefined" && window.storage && typeof window.storage.get==="function");
+  const mem={};
+  return {
+    async get(k){
+      if(win){try{const r=await window.storage.get(k);return r?r.value:null;}catch(e){}}
+      try{return localStorage.getItem(k);}catch(e){return mem[k]??null;}
+    },
+    async set(k,v){
+      if(win){try{await window.storage.set(k,v);return;}catch(e){}}
+      try{localStorage.setItem(k,v);}catch(e){mem[k]=v;}
+    }
+  };
+})();
+const KEY="haxstigen:state:v1";
+
+/* ---------- läroplan ---------- */
+const LESSONS=[
+ {id:"vad",modul:"Första steget",t:"Vad är modern häxkonst?",
+  body:"Häxkonst idag handlar om intention, uppmärksamhet och en personlig relation till naturen — inte om garantier eller övernaturliga löften. Du formar själv vad din praktik betyder. En vanlig grundtanke är enkel: gör det du gör medvetet, och med omtanke om andra.",
+  key:["Häxkonst är en praktik, inte en trosbekännelse — du formar den själv","Intention = din tydliga avsikt med det du gör","Grundetik: skada ingen, och börja alltid med omtanke om dig själv"],
+  ovning:"Skriv en mening om varför du vill utforska häxkonst. Låt den bli din första rad i grimoaren."},
+ {id:"jord",modul:"Första steget",t:"Jordning & skydd",
+  body:"Jordning är att landa i kroppen och i nuet innan du gör något magiskt. Skydd är att medvetet sätta en mjuk gräns. Båda är vardagliga, gratis och kräver inga verktyg alls.",
+  key:["Jordning: andas långsamt, känn fötterna mot golvet, föreställ dig rötter ner i marken","Skydd: tänk dig ett mjukt ljus runt dig och sätt avsikten att bara det goda når dig","Gör gärna båda före och efter en ritual"],
+  ovning:"Stå still en minut. Andas djupt tre gånger och känn marken bära dig."},
+ {id:"elem",modul:"Elementen",t:"De fyra elementen",
+  body:"Jord, luft, eld och vatten är ett urgammalt sätt att sortera egenskaper. De ger dig ett språk för vad du vill arbeta med — och en enkel struktur för altare, örter och ljus.",
+  key:["Jord — stabilitet, pengar, kropp, hem","Luft — tankar, kommunikation, nya idéer","Eld — vilja, mod, passion, förändring","Vatten — känslor, intuition, läkning, drömmar"],
+  ovning:"Vilket element känns starkast hos dig just nu? Notera vilket och varför."},
+ {id:"ort",modul:"Örter",t:"Nybörjarens örter",
+  body:"Du behöver inget helt apotek. Några vanliga köksörter räcker långt, och du har dem troligen redan hemma. Börja med att lära känna fem stycken ordentligt.",
+  key:["Lavendel — lugn, sömn, rening","Rosmarin — minne, skydd, klarhet","Kamomill — frid, mildhet, små stunder av tur","Salvia — rening av rum och tankar","Timjan — mod och självtillit"],
+  ovning:"Lukta på en ört du har hemma. Lägg märke till exakt hur den får dig att känna."},
+ {id:"ljus",modul:"Ljusmagi",t:"Enkel ljusmagi",
+  body:"Ett ljus är ett av de enklaste och vackraste sätten att fokusera en avsikt. Lågan blir en plats för din uppmärksamhet — resten gör du själv. Detta passar fint ihop med att rulla egna örtljus.",
+  key:["Färgen bär temat: vit = allt-i-allo, grön = växt & pengar, rosa = kärlek & omtanke, blå = lugn, gul = klarhet","Håll ljuset medan du formulerar avsikten, tänd det och sitt med lågan en stund","Säkerhet först — lämna aldrig en låga utan uppsikt"],
+  ovning:"Tänd ett ljus, säg din avsikt tyst eller högt, och sitt med lågan i två minuter."},
+ {id:"man",modul:"Månen",t:"Månens faser",
+  body:"Många följer månen som en naturlig rytm. Du behöver inte tro på något övernaturligt — det är framför allt ett vackert sätt att strukturera tid och avsikt över en månad.",
+  key:["Nymåne — börja nytt, sätt avsikter","Tilltagande måne — bygg, väx, dra till dig","Fullmåne — fira, ladda, släpp loss","Avtagande måne — släpp, rensa, vila"],
+  ovning:"Kolla dagens månfas på Hem-sidan och fundera på vad just den fasen inbjuder till."},
+ {id:"altare",modul:"Din praktik",t:"Altare & grimoire",
+  body:"Ett altare är bara en plats som är din — en fönsterbräda räcker gott. En grimoire (trollbok) är din egen anteckningsbok där du samlar det du lär dig och provar. Din egen är alltid mer värd än någon köpt bok.",
+  key:["Altare: en yta räcker — gärna något från varje element (sten, fjäder, ljus, skål vatten)","Grimoire: skriv ner ritualer, känslor och resultat","Det finns inga regler du måste följa — bara dina egna"],
+  ovning:"Skapa din första riktiga anteckning under fliken Grimoire."}
+];
+
+const HERBS=[
+ {ic:"💜",nm:"Lavendel",ds:"Lugn, sömn och rening. Lägg under kudden eller bränn torkad."},
+ {ic:"🌿",nm:"Rosmarin",ds:"Minne, skydd och klarhet. Klassiker att ha vid dörren."},
+ {ic:"🌼",nm:"Kamomill",ds:"Frid, mildhet och små stunder av tur. Te innan ritual."},
+ {ic:"🍃",nm:"Salvia",ds:"Rening av rum och tankar. Vädra ut det gamla."},
+ {ic:"🌱",nm:"Timjan",ds:"Mod och självtillit. Bär en kvist en jobbig dag."},
+ {ic:"🌸",nm:"Ros",ds:"Kärlek, självomsorg och drömmar. Torkade kronblad i en skål."},
+ {ic:"🌾",nm:"Mynta",ds:"Energi, pengar och nystart. Frisk doft som väcker."}
+];
+const COLORS=[
+ {c:"#f2f2f2",nm:"Vit",ds:"Allt-i-allo. Renhet, nystart, ersätter vilken färg som helst."},
+ {c:"#2a2a2a",nm:"Svart",ds:"Skydd och att släppa det som tär. Sätt en gräns."},
+ {c:"#c0473f",nm:"Röd",ds:"Mod, vilja, passion och energi."},
+ {c:"#d98aa6",nm:"Rosa",ds:"Kärlek, vänskap och mild självomsorg."},
+ {c:"#5f8f5a",nm:"Grön",ds:"Växt, pengar, hälsa och nya projekt."},
+ {c:"#4a6fae",nm:"Blå",ds:"Lugn, sömn, läkning och klar kommunikation."},
+ {c:"#e0c044",nm:"Gul",ds:"Klarhet, fokus, glädje och tankar."},
+ {c:"#7a5aa0",nm:"Lila",ds:"Intuition, drömmar och fördjupad praktik."}
+];
+const PHASES=[
+ {ic:"🌑",nm:"Nymåne",ds:"Börja nytt. Sätt avsikter och plantera frön."},
+ {ic:"🌒",nm:"Tilltagande skära",ds:"Bygg vidare. Ta små steg mot målet."},
+ {ic:"🌓",nm:"Första kvarteret",ds:"Bestäm dig och håll i. Pressa lite."},
+ {ic:"🌔",nm:"Tilltagande, nästan full",ds:"Finslipa och förbered det stora."},
+ {ic:"🌕",nm:"Fullmåne",ds:"Fira, ladda dina verktyg, släpp loss."},
+ {ic:"🌖",nm:"Avtagande, nästan full",ds:"Visa tacksamhet och börja vinda ner."},
+ {ic:"🌗",nm:"Sista kvarteret",ds:"Rensa, förlåt, gör dig av med skräp."},
+ {ic:"🌘",nm:"Avtagande skära",ds:"Vila, reflektera, samla kraft inför nymåne."}
+];
+
+/* ---------- state ---------- */
+let state={name:"",completed:{},grimoire:[]};
+async function load(){const r=await Store.get(KEY);if(r){try{state=Object.assign(state,JSON.parse(r));}catch(e){}}}
+async function save(){await Store.set(KEY,JSON.stringify(state));}
+
+/* ---------- månfas ---------- */
+function moonInfo(d){
+  const syn=29.530588853, knownNew=Date.UTC(2000,0,6,18,14);
+  let age=((d.getTime()-knownNew)/86400000)%syn; if(age<0)age+=syn;
+  const frac=age/syn;
+  const illum=0.5*(1-Math.cos(2*Math.PI*frac));
+  const idx=Math.round(frac*8)%8;
+  return {frac,illum,phase:PHASES[idx],idx};
+}
+function moonSVG(frac){
+  const R=46,cx=50,cy=50,top=`${cx},${cy-R}`,bottom=`${cx},${cy+R}`;
+  const m=Math.cos(frac*2*Math.PI), rx=Math.max(0.5,R*Math.abs(m)), waxing=frac<0.5;
+  const outerSweep=waxing?1:0;
+  let innerSweep; if(m>0){innerSweep=waxing?0:1;}else{innerSweep=waxing?1:0;}
+  const lit=`M ${top} A ${R} ${R} 0 0 ${outerSweep} ${bottom} A ${rx} ${R} 0 0 ${innerSweep} ${top} Z`;
+  return `<svg viewBox="0 0 100 100" width="96" height="96">
+    <defs><radialGradient id="mg" cx="40%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#fbf6e9"/><stop offset="60%" stop-color="#d9dcea"/><stop offset="100%" stop-color="#b6b9cf"/>
+    </radialGradient></defs>
+    <circle class="moon-base" cx="50" cy="50" r="46"/>
+    <path class="moon-lit" d="${lit}"/>
+  </svg>`;
+}
+
+/* ---------- render ---------- */
+function dayIndex(){const n=new Date();return Math.floor((n-new Date(n.getFullYear(),0,0))/86400000);}
+
+function renderHem(){
+  document.getElementById("greet").textContent = state.name? `Hej ${state.name}` : "Välkommen";
+  const mi=moonInfo(new Date());
+  document.getElementById("moondisc").innerHTML=moonSVG(mi.frac);
+  document.getElementById("moonphase").textContent=mi.phase.nm;
+  document.getElementById("moonillum").textContent=Math.round(mi.illum*100)+"% upplyst";
+  document.getElementById("moonhint").textContent=mi.phase.ds;
+  const total=LESSONS.length, done=LESSONS.filter(l=>state.completed[l.id]).length;
+  document.getElementById("progtxt").textContent=`${done} / ${total}`;
+  document.getElementById("progfill").style.width=(total?done/total*100:0)+"%";
+  const next=LESSONS.find(l=>!state.completed[l.id]);
+  const cont=document.getElementById("continue");
+  cont.textContent = next? `Fortsätt: ${next.t}` : "Allt avklarat — gå tillbaka och repetera ☾";
+  cont.onclick=()=>{go("lektioner"); if(next) openLesson(next.id);};
+  const h=HERBS[dayIndex()%HERBS.length];
+  document.getElementById("dailyherb").innerHTML=`<div class="leaf">${h.ic}</div><div><div class="n">${h.nm}</div><div class="u">${h.ds}</div></div>`;
+}
+
+function renderLessons(){
+  const groups=[...new Set(LESSONS.map(l=>l.modul))];
+  let html="";
+  groups.forEach(g=>{
+    html+=`<div class="modul">${g}</div>`;
+    LESSONS.filter(l=>l.modul===g).forEach(l=>{
+      const done=!!state.completed[l.id];
+      html+=`<div class="lesson ${done?'done':''}" id="ls-${l.id}">
+        <div class="head" data-toggle="${l.id}">
+          <div class="tick" data-tick="${l.id}">✓</div>
+          <div class="t">${l.t}</div><div class="chev">›</div>
+        </div>
+        <div class="body"><div class="inner">
+          <p>${l.body}</p>
+          <ul class="keylist">${l.key.map(k=>`<li>${k}</li>`).join("")}</ul>
+          <div class="ovning"><div class="l">Övning</div><p>${l.ovning}</p></div>
+          <button class="btn ${done?'ghost':''}" data-done="${l.id}">${done?'✓ Avklarad — ångra':'Markera som klar'}</button>
+        </div></div></div>`;
+    });
+  });
+  document.getElementById("lessonlist").innerHTML=html;
+}
+function openLesson(id){const el=document.getElementById("ls-"+id);if(el){el.classList.add("open");el.scrollIntoView({behavior:"smooth",block:"start"});}}
+
+function renderGrimoire(){
+  const box=document.getElementById("entries");
+  if(!state.grimoire.length){box.innerHTML=`<div class="empty"><div class="big">❦</div>Din grimoire är tom ännu.<br>Den första anteckningen är alltid den finaste.</div>`;return;}
+  box.innerHTML=state.grimoire.map(e=>`<div class="entry">
+     <button class="del" data-del="${e.id}">✕</button>
+     <h4>${esc(e.title)}</h4><div class="date">${e.date}</div><p>${esc(e.body)}</p></div>`).join("");
+}
+
+let refTab="orter";
+function renderLexikon(){
+  document.getElementById("reftabs").innerHTML=
+   [["orter","Örter"],["farger","Ljusfärger"],["faser","Månfaser"]]
+   .map(([k,n])=>`<button class="chip ${refTab===k?'on':''}" data-tab="${k}">${n}</button>`).join("");
+  let items="";
+  if(refTab==="orter")items=HERBS.map(h=>`<div class="ref"><div class="ic">${h.ic}</div><div><div class="nm">${h.nm}</div><div class="ds">${h.ds}</div></div></div>`).join("");
+  if(refTab==="farger")items=COLORS.map(c=>`<div class="ref"><div class="swatch" style="background:${c.c}"></div><div><div class="nm">${c.nm}</div><div class="ds">${c.ds}</div></div></div>`).join("");
+  if(refTab==="faser")items=PHASES.map(p=>`<div class="ref"><div class="ic">${p.ic}</div><div><div class="nm">${p.nm}</div><div class="ds">${p.ds}</div></div></div>`).join("");
+  document.getElementById("reflist").innerHTML=items;
+}
+
+function renderJag(){
+  document.getElementById("nameinput").value=state.name||"";
+  const total=LESSONS.length,done=LESSONS.filter(l=>state.completed[l.id]).length;
+  document.getElementById("s-lessons").textContent=done;
+  document.getElementById("s-notes").textContent=state.grimoire.length;
+  document.getElementById("s-pct").textContent=(total?Math.round(done/total*100):0)+"%";
+}
+
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ---------- navigation ---------- */
+function go(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.go===id));
+  if(id==="hem")renderHem(); if(id==="lektioner")renderLessons();
+  if(id==="grimoire")renderGrimoire(); if(id==="lexikon")renderLexikon(); if(id==="jag")renderJag();
+  window.scrollTo(0,0);
+}
+
+/* ---------- events ---------- */
+document.getElementById("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(b)go(b.dataset.go);});
+
+document.getElementById("lessonlist").addEventListener("click",async e=>{
+  const tg=e.target.closest("[data-toggle]"), dn=e.target.closest("[data-done]"), tk=e.target.closest("[data-tick]");
+  if(dn){const id=dn.dataset.done;state.completed[id]=!state.completed[id];if(!state.completed[id])delete state.completed[id];await save();renderLessons();const el=document.getElementById("ls-"+id);if(el)el.classList.add("open");return;}
+  if(tk){const id=tk.dataset.tick;state.completed[id]=!state.completed[id];if(!state.completed[id])delete state.completed[id];await save();renderLessons();return;}
+  if(tg){document.getElementById("ls-"+tg.dataset.toggle).classList.toggle("open");}
+});
+
+document.getElementById("gadd").addEventListener("click",async()=>{
+  const t=document.getElementById("gtitle"),b=document.getElementById("gbody");
+  if(!t.value.trim()&&!b.value.trim())return;
+  const d=new Date().toLocaleDateString("sv-SE",{year:"numeric",month:"long",day:"numeric"});
+  state.grimoire.unshift({id:Date.now().toString(),title:t.value.trim()||"Utan rubrik",body:b.value.trim(),date:d});
+  t.value="";b.value="";await save();renderGrimoire();
+});
+document.getElementById("entries").addEventListener("click",async e=>{
+  const d=e.target.closest("[data-del]");if(!d)return;
+  state.grimoire=state.grimoire.filter(x=>x.id!==d.dataset.del);await save();renderGrimoire();
+});
+document.getElementById("reftabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){refTab=b.dataset.tab;renderLexikon();}});
+
+document.getElementById("savename").addEventListener("click",async()=>{state.name=document.getElementById("nameinput").value.trim();await save();renderJag();});
+document.getElementById("reset").addEventListener("click",async()=>{
+  if(confirm("Nollställ alla lektioner och grimoire-anteckningar? Detta går inte att ångra.")){
+    state={name:state.name,completed:{},grimoire:[]};await save();go("hem");
+  }
+});
+
+/* ---------- start ---------- */
+(async()=>{await load();go("hem");})();
+</script>
+</body>
+</html>
