@@ -272,6 +272,22 @@ label.chk-item:last-child{border-bottom:none}
 .hb-top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink);margin-bottom:4px}
 .hb-track{height:10px;background:#EEEAE2;border-radius:6px;overflow:hidden}
 .hb-fill{display:block;height:100%;background:linear-gradient(90deg,var(--pagar),#7BA47E);border-radius:6px}
+/* Totalbetyg + versionhantering */
+.betyg-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:9px;background:var(--pagar-soft);color:var(--pagar-text);flex-shrink:0}
+.bt-line{margin-top:7px;font-size:13px;color:var(--pagar-text)}
+.upload-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:9px;background:var(--pagar-soft);color:var(--pagar-text);border:1px solid var(--pagar)}
+.worked-line{font-size:11px;color:var(--ink-soft);margin-top:6px}
+.ver-box{display:flex;flex-direction:column;gap:8px}
+.ver-btn{width:100%;border:none;background:var(--pagar);color:#fff;font-size:14px;font-weight:600;padding:12px;border-radius:11px;cursor:pointer;font-family:inherit}
+.ver-last{font-size:12px;color:var(--ink-soft)}
+.ver-hist{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.ver-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-variant-numeric:tabular-nums}
+.ver-x{border:none;background:none;color:var(--ink-soft);font-size:16px;cursor:pointer;font-family:inherit;padding:0 4px}
+.cal-up{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--pagar);margin-left:3px;vertical-align:middle}
+.cal-up-sec{margin-bottom:12px}
+.cal-up-h{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--pagar-text);margin:4px 0 7px}
+.cal-up-dot{width:7px;height:7px;border-radius:50%;background:var(--pagar);flex:0 0 auto}
+.cal-up-time{margin-left:auto;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 
 /* Footer */
 .foot{display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap}
@@ -422,6 +438,9 @@ label.chk-item:last-child{border-bottom:none}
     <button class="tm-btn" id="tm-toggle">Starta</button>
     <button class="tm-reset" id="tm-reset">Nollställ</button>
   </div>
+  <label>Versionhantering</label>
+  <div class="ver-box"><button class="ver-btn" id="ver-upload">📤 Markera som uppladdad nu</button><div class="ver-last" id="ver-last"></div></div>
+  <div id="ver-list"></div>
   <label>Senast ändrad i koden</label>
   <button class="chip chip-ch" id="a-changed" style="width:100%"><span class="bead"></span><span id="a-changed-txt">Markera ändrad idag</span></button>
   <label>Inkastad i</label>
@@ -616,7 +635,7 @@ function fixCounter(){let mx=0;state.ideas.forEach(i=>{if(i.no>mx)mx=i.no;});if(
 function seed(){
   if(state.seeded)return;
   const s=[['Min planering','index.html'],['Dagstavlan','dagstavlan.html'],['Jobbplanering','jobb.html'],['Batteriet','batteriet.html'],['Månen','manen.html'],['Stjärnkartan','astro.html'],['Tarotdagboken','tarot.html'],['Appkollen','appkollen.html']];
-  state.apps=s.map((a,i)=>({id:uid()+i,name:a[0],file:a[1],color:COLORS[i%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:null,cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:''}));
+  state.apps=s.map((a,i)=>({id:uid()+i,name:a[0],file:a[1],color:COLORS[i%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:null,cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:'',uploads:[]}));
   state.seeded=true;saveData();
 }
 
@@ -701,7 +720,7 @@ var CATCOL={'Produktivitet':['#E2E9F2','#3E5E88'],'Hälsa':['#E4EDE4','#3E6B41']
 function catChip(c){if(!c)return'';var col=CATCOL[c]||['#f1efe8','#8A847C'];return'<span class="cat-chip" style="background:'+col[0]+';color:'+col[1]+'">'+esc(c)+'</span>';}
 function prioScore(a){var s=a.scores||{};if(typeof s.pot!=='number'||typeof s.fun!=='number'||typeof s.nytta!=='number'||typeof s.diff!=='number')return null;return Math.round((s.pot+s.fun+s.nytta+(10-s.diff))/4*10)/10;}
 function scoreDesc(x,y){var sx=prioScore(x),sy=prioScore(y);sx=(sx==null?-1:sx);sy=(sy==null?-1:sy);return sy-sx;}
-function updatePrioscore(a){var ps=prioScore(a);var el=document.getElementById('prioscore');if(!el)return;el.innerHTML=ps!==null?('Prioriteringsscore <b>'+ps+' / 10</b><br><small>(potential + rolighet + nytta + (10−svårighet)) ÷ 4</small>'):'<small>Sätt alla fyra reglagen för att räkna ut prioriteringsscore.</small>';}
+function updatePrioscore(a){var el=document.getElementById('prioscore');if(!el)return;var ps=prioScore(a);var bt=betygTotal(a);var psHtml=ps!==null?('Prioriteringsscore <b>'+ps+' / 10</b><br><small>(potential + rolighet + nytta + (10−svårighet)) ÷ 4</small>'):'<small>Sätt alla fyra reglagen för att räkna ut prioriteringsscore.</small>';var btHtml=bt!==null?('<div class="bt-line">Totalbetyg <b>'+bt+' / 10</b> <small>(snitt av '+(a.betyg||[]).length+' betyg)</small></div>'):'';el.innerHTML=psHtml+btHtml;}
 function renderBetyg(a){var list=a.betyg||[];document.getElementById('a-betyg').innerHTML=list.map(function(b){return'<div class="betyg-row" data-bid="'+b.id+'"><span class="betyg-area">'+esc(b.area)+'</span><span class="betyg-score">'+esc(b.score||'')+'</span><button class="betyg-x" data-act="del">×</button></div>';}).join('')||'<div class="empty-items">Inga betyg än.</div>';}
 function applyView(v){
   view=v;
@@ -727,6 +746,7 @@ function renderCalendar(){
   var daysInMonth=new Date(calY,calM+1,0).getDate();
   var counts={};
   state.apps.forEach(function(a){if(a.commit){counts[a.commit]=(counts[a.commit]||0)+1;}});
+  var ups={};state.apps.forEach(function(a){(a.uploads||[]).forEach(function(t){var dd=t.slice(0,10);(ups[dd]=ups[dd]||[]).push({name:a.name,ts:t,id:a.id});});});
   var dow=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
   var head=dow.map(function(d){return'<div class="cal-dow">'+d+'</div>';}).join('');
   var cells='';
@@ -737,11 +757,14 @@ function renderCalendar(){
     if(iso===todayISO())cl+=' today';
     if(iso===calSel)cl+=' sel';
     if(n)cl+=' has';
-    cells+='<button class="'+cl+'" data-d="'+iso+'">'+d+(n?'<span class="cal-count">'+n+'</span>':'')+'</button>';
+    if(ups[iso])cl+=' has-up';
+    cells+='<button class="'+cl+'" data-d="'+iso+'">'+d+(n?'<span class="cal-count">'+n+'</span>':'')+(ups[iso]?'<span class="cal-up" title="Uppladdat"></span>':'')+'</button>';
   }
   var dayApps=state.apps.filter(function(a){return a.commit===calSel;}).slice().sort(function(x,y){return scoreDesc(x,y)||((x.prio||9)-(y.prio||9));});
-  var listHtml=dayApps.map(function(a){var ps=prioScore(a);return'<button class="cal-app" data-id="'+a.id+'"><i class="status-dot '+STATUS[effStatus(a)].c+'"></i><span class="cal-app-name">'+esc(a.name)+'</span>'+catChip(a.cat)+(a.prio?'<span class="prio-badge p'+a.prio+'">P'+a.prio+'</span>':'')+(ps!==null?'<span class="score-badge">★'+ps+'</span>':'')+'</button>';}).join('')||'<div class="empty-items">Inga appar planerade '+(calSel===todayISO()?'idag':fmt(calSel))+'.</div>';
-  wrap.innerHTML='<div class="cal-head"><button class="cal-nav" id="cal-prev">‹</button><div class="cal-title">'+monthName+'</div><button class="cal-nav" id="cal-next">›</button><button class="cal-today-btn" id="cal-today">Idag</button></div><div class="cal-grid">'+head+cells+'</div><div class="cal-daylist"><div class="cal-daylist-h">'+(calSel===todayISO()?'Gör idag':('Planerat '+fmt(calSel)))+'</div>'+listHtml+'</div>';
+  var listHtml=dayApps.map(function(a){var ps=prioScore(a);return'<button class="cal-app" data-id="'+a.id+'"><i class="status-dot '+STATUS[effStatus(a)].c+'"></i><span class="cal-app-name">'+esc(a.name)+'</span>'+catChip(a.cat)+(a.prio?'<span class="prio-badge p'+a.prio+'">P'+a.prio+'</span>':'')+(ps!==null?'<span class="score-badge">★'+ps+'</span>':'')+(betygTotal(a)!==null?'<span class="betyg-badge">\u2726'+betygTotal(a)+'</span>':'')+'</button>';}).join('')||'<div class="empty-items">Inga appar planerade '+(calSel===todayISO()?'idag':fmt(calSel))+'.</div>';
+  var upDay=(ups[calSel]||[]).slice().sort(function(x,y){return x.ts<y.ts?-1:1;});
+  var upHtml=upDay.length?('<div class="cal-up-sec"><div class="cal-up-h">\U0001F4E4 Uppladdat denna dag</div>'+upDay.map(function(u){return'<button class="cal-app up" data-id="'+u.id+'"><span class="cal-up-dot"></span><span class="cal-app-name">'+esc(u.name)+'</span><span class="cal-up-time">'+new Date(u.ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})+'</span></button>';}).join('')+'</div>'):'';
+  wrap.innerHTML='<div class="cal-head"><button class="cal-nav" id="cal-prev">‹</button><div class="cal-title">'+monthName+'</div><button class="cal-nav" id="cal-next">›</button><button class="cal-today-btn" id="cal-today">Idag</button></div><div class="cal-grid">'+head+cells+'</div><div class="cal-daylist"><div class="cal-daylist-h">'+(calSel===todayISO()?'Gör idag':('Planerat '+fmt(calSel)))+'</div>'+upHtml+listHtml+'</div>';
   document.getElementById('cal-prev').onclick=function(){calM--;if(calM<0){calM=11;calY--;}renderCalendar();};
   document.getElementById('cal-next').onclick=function(){calM++;if(calM>11){calM=0;calY++;}renderCalendar();};
   document.getElementById('cal-today').onclick=function(){var t=new Date();calY=t.getFullYear();calM=t.getMonth();calSel=todayISO();renderCalendar();};
@@ -799,6 +822,15 @@ function renderDashboard(){
     '<div class="chart-box"><div class="chart-h">Utveckling över tid</div>'+buildTimeline(apps)+'</div></div>';
   var healthHtml='<div class="health-box"><div class="chart-h">Portföljhälsa</div>'+healthBar('Färdigställandegrad',pctOf(cntKlar,tot))+healthBar('Kvalitetsgrad',nS?Math.round(avgS*10):0)+healthBar('Synkgrad',pctOf(cntTok,tot))+healthBar('Dokumentationsgrad',pctOf(cntDoc,tot))+'</div>';
   body.innerHTML=kpiHtml+chartsHtml+healthHtml;
+}
+function betygTotal(a){var L=(a.betyg||[]);var vals=[];L.forEach(function(b){var m=String(b.score||'').match(/-?\d+(\.\d+)?/);if(m)vals.push(parseFloat(m[0]));});if(!vals.length)return null;var s=0;vals.forEach(function(v){s+=v;});return Math.round(s/vals.length*10)/10;}
+function fmtDateTime(ts){var d=new Date(ts);return d.toLocaleString('sv-SE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
+function lastUpload(a){if(!a.uploads||!a.uploads.length)return null;var mx=a.uploads[0];for(var i=1;i<a.uploads.length;i++){if(a.uploads[i]>mx)mx=a.uploads[i];}return mx;}
+function renderVersions(a){
+  var last=document.getElementById('ver-last'),listEl=document.getElementById('ver-list');
+  var ups=(a.uploads||[]).slice().sort();
+  if(last)last.innerHTML=ups.length?('Senast uppladdad: <b>'+fmtDateTime(ups[ups.length-1])+'</b> \u00b7 '+ups.length+' version'+(ups.length===1?'':'er')):'Aldrig uppladdad \u00e4n.';
+  if(listEl){var recent=ups.slice(-6).reverse();listEl.innerHTML=recent.length?('<div class="ver-hist">'+recent.map(function(t){return'<div class="ver-row"><span>'+fmtDateTime(t)+'</span><button class="ver-x" data-ts="'+t+'" title="Ta bort">\u00d7</button></div>';}).join('')+'</div>'):'';}
 }
 function renderAll(){
   renderStats();renderIdeas();renderCards();renderReset();
@@ -872,11 +904,17 @@ function cardHtml(a){
     }).join('')+(a.changed?'<span class="changed-txt">Ändrad '+fmt(a.changed)+'</span>':'')+'</div>':'';
     var ps=prioScore(a);
     var scoreBadge=ps!==null?'<span class="score-badge">\u2605'+ps+'</span>':'';
+    var bt=betygTotal(a);
+    var betygBadge=bt!==null?'<span class="betyg-badge" title="Totalbetyg av manuella betyg">\u2726'+bt+'</span>':'';
     var commitBadge='';
     if(a.commit){commitBadge=a.commit===todayISO()?'<span class="commit-badge today">Gör idag</span>':'<span class="commit-badge">'+fmt(a.commit)+'</span>';}
     var tEl=appElapsed(a);
     var timeBadge=(tEl>0||timerActive(a))?'<span class="time-badge'+(timerActive(a)?' running':'')+'">\u23f1 '+fmtDur(tEl)+'</span>':'';
-    var metaParts=catChip(a.cat)+famChip(a.family)+commitBadge+timeBadge;
+    var _lu=lastUpload(a);
+    var upBadge=_lu?'<span class="upload-badge" title="Senast uppladdad">\u2191 '+fmt(_lu.slice(0,10))+'</span>':'';
+    var _wts=Math.max(a.upd||0,_lu?Date.parse(_lu):0);
+    var workedLine=_wts?'<div class="worked-line">Senast jobbad p\u00e5 '+fmt(new Date(_wts).toISOString().slice(0,10))+'</div>':'';
+    var metaParts=catChip(a.cat)+famChip(a.family)+commitBadge+timeBadge+upBadge;
     var metaHtml=metaParts?'<div class="meta-row">'+metaParts+'</div>':'';
     var linkParts='';
     if(a.link)linkParts+='<a class="card-link" href="'+esc(a.link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">\u2197 App</a>';
@@ -888,7 +926,7 @@ function cardHtml(a){
     return'<button class="card s-'+ST+(a.hidden?' hid':'')+'" data-id="'+a.id+'">'+
       '<div class="card-top"><i class="status-dot '+STATUS[ST].c+'"></i>'+
       '<div class="card-name">'+esc(a.name)+(a.file?'<small>'+esc(a.file)+'</small>':'')+'</div>'+idBadge+
-      scoreBadge+(a.prio?'<span class="prio-badge p'+a.prio+'">P'+a.prio+'</span>':'')+'<span class="chev">›</span></div>'+metaHtml+pillsHtml+chkHtml+linksHtml+aiHtml+'</button>';
+      scoreBadge+betygBadge+(a.prio?'<span class="prio-badge p'+a.prio+'">P'+a.prio+'</span>':'')+'<span class="chev">›</span></div>'+metaHtml+workedLine+pillsHtml+chkHtml+linksHtml+aiHtml+'</button>';
 }
 function renderCards(){
   let list=state.apps.filter(a=>showHidden?true:!a.hidden);
@@ -1019,6 +1057,7 @@ function syncAppSheet(){
   });
   updatePrioscore(a);
   renderBetyg(a);
+  renderVersions(a);
   var lg=document.getElementById('a-link-gpt');if(document.activeElement!==lg)lg.value=a.linkGpt||'';
   var lc=document.getElementById('a-link-claude');if(document.activeElement!==lc)lc.value=a.linkClaude||'';
   renderAppTimer(a);
@@ -1149,6 +1188,8 @@ document.getElementById('a-commit-clear').onclick=function(){var a=appById(curId
 ['pot','fun','diff','nytta'].forEach(function(k){
   document.getElementById('sc-'+k).oninput=function(e){var a=appById(curId);if(!a)return;if(!a.scores)a.scores={};a.scores[k]=+e.target.value;document.getElementById('sv-'+k).textContent=e.target.value+'/10';updatePrioscore(a);persistSoon();renderCards();};
 });
+document.getElementById('ver-upload').onclick=function(){var a=appById(curId);if(!a)return;if(!a.uploads)a.uploads=[];a.uploads.push(new Date().toISOString());persist();syncAppSheet();renderVersions(a);renderCards();if(view==='cal')renderCalendar();};
+document.getElementById('ver-list').onclick=function(e){var x=e.target.closest('.ver-x');if(!x)return;var a=appById(curId);if(!a||!a.uploads)return;a.uploads=a.uploads.filter(function(t){return t!==x.dataset.ts;});persist();syncAppSheet();renderVersions(a);renderCards();if(view==='cal')renderCalendar();};
 document.getElementById('b-add').onclick=function(){var a=appById(curId);if(!a)return;var area=document.getElementById('b-area').value.trim();var sc=document.getElementById('b-score').value.trim();if(!area)return;if(!a.betyg)a.betyg=[];a.betyg.push({id:uid(),area:area,score:sc});document.getElementById('b-area').value='';document.getElementById('b-score').value='';persist();syncAppSheet();};
 document.getElementById('b-area').onkeydown=function(e){if(e.key==='Enter')document.getElementById('b-add').click();};
 document.getElementById('b-score').onkeydown=function(e){if(e.key==='Enter')document.getElementById('b-add').click();};
@@ -1195,7 +1236,7 @@ document.getElementById('add-app').onclick=()=>{
 document.getElementById('n-create').onclick=()=>{
   const name=document.getElementById('n-name').value.trim();
   if(!name){document.getElementById('n-name').focus();return;}
-  const app={id:uid(),name:name,file:document.getElementById('n-file').value.trim(),color:COLORS[state.apps.length%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:Date.now(),cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:''};
+  const app={id:uid(),name:name,file:document.getElementById('n-file').value.trim(),color:COLORS[state.apps.length%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:Date.now(),cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:'',uploads:[]};
   app.appNo=state.nextAppId++;app.created=Date.now();
   state.apps.push(app);persist();
   newSheet.classList.remove('open');
