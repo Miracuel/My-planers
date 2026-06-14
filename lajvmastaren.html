@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="LajvMästaren">
+<meta name="theme-color" content="#F2ECE1">
+<link rel="manifest" href='data:application/manifest+json,{"name":"LajvMästaren","short_name":"Lajv","display":"standalone","background_color":"%23F2ECE1","theme_color":"%23F2ECE1","start_url":"."}'>
+<title>LajvMästaren</title>
+<style>
+:root{
+  --bg:#F2ECE1;--panel:#FBF7EF;--panel2:#EDE4D4;--line:#D9CDB8;
+  --ink:#2E2622;--muted:#857A68;
+  --wine:#7C2B3B;--wine-soft:#EADBDE;--gold:#A67C32;--gold-soft:#F0E6CE;
+  --green:#5F7A4F;--green-soft:#DDE6D3;--yellow:#B0902F;--yellow-soft:#F2E9CB;
+  --red:#A8453E;--red-soft:#F2DAD6;--blue:#3F6079;
+  --navbg:rgba(242,236,225,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--wine);letter-spacing:.03em;text-align:center;margin:2px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card-panel+.card-panel{margin-top:10px}
+.btn{border:1px solid var(--wine);background:var(--panel);color:var(--wine);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:var(--wine-soft)}
+.btn.fill{background:var(--wine);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.gold{border-color:var(--gold);color:var(--gold)}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--wine)}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+
+/* Event selector */
+.evbar{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 10px;margin-bottom:12px}
+.evbar select{border:none;background:none;font-family:Georgia,serif;font-size:15px;color:var(--wine);padding:4px 2px;font-weight:500}
+.evbar .sync-pill{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);white-space:nowrap}
+.evbar .sync-pill.ok{background:var(--green-soft);color:#3f5733}
+.evbar .sync-pill.err{background:var(--red-soft);color:var(--red)}
+.evbar .sync-pill.load{background:var(--gold-soft);color:var(--gold)}
+.icon-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
+
+/* Dashboard */
+.countdown{text-align:center;padding:6px 0 2px}
+.countdown .big{font-family:Georgia,serif;font-size:46px;color:var(--wine);line-height:1}
+.countdown .lbl{font-size:12px;color:var(--muted);letter-spacing:.05em;margin-top:2px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 12px;cursor:pointer}
+.stat .n{font-family:Georgia,serif;font-size:26px;color:var(--ink);line-height:1}
+.stat .t{font-size:11px;color:var(--muted);margin-top:3px}
+.stat.warn .n{color:var(--red)}
+.stat.good .n{color:var(--green)}
+.msg-row{display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.msg-row:first-child{border-top:none}
+.msg-row .chan{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;width:54px}
+.ai-box{background:var(--gold-soft);border:1px solid var(--gold);border-radius:14px;padding:12px 14px}
+.ai-box .ai-tip{font-size:13px;line-height:1.6;color:#5c4a26;padding:6px 0;border-top:1px solid rgba(166,124,50,.25)}
+.ai-box .ai-tip:first-of-type{border-top:none}
+.kr-btn{width:100%;margin-top:14px;background:var(--ink);color:var(--gold);border:none;border-radius:16px;padding:16px;font-family:Georgia,serif;font-size:17px;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.kr-btn:active{opacity:.85}
+
+/* Segmented */
+.seg{display:flex;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px;margin-bottom:12px;overflow-x:auto}
+.seg button{flex:1;background:none;border:none;color:var(--muted);font-size:12px;padding:7px 6px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.seg button.active{background:var(--panel);color:var(--wine);font-weight:600}
+.subview{display:none}
+.subview.active{display:block}
+
+/* List items */
+.li{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.li:first-child{border-top:none}
+.li .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.li .body{flex:1;min-width:0}
+.li .ttl{font-size:14px;color:var(--ink)}
+.li .sub{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .badge{font-size:10px;padding:2px 8px;border-radius:9px;white-space:nowrap}
+.li .del{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;flex-shrink:0}
+.li.clickable{cursor:pointer}
+.b-green{background:var(--green-soft);color:#3f5733}
+.b-yellow{background:var(--yellow-soft);color:#7a601a}
+.b-red{background:var(--red-soft);color:var(--red)}
+.b-gray{background:var(--panel2);color:var(--muted)}
+.b-gold{background:var(--gold-soft);color:var(--gold)}
+.b-wine{background:var(--wine-soft);color:var(--wine)}
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-row input,.add-row select{flex:1}
+.add-row button{border:1px solid var(--wine);background:var(--wine);color:#fff;border-radius:10px;padding:0 16px;cursor:pointer;font-size:18px;flex:0 0 auto}
+
+/* Timeline phases */
+.phase{border-top:1px solid var(--line);padding:12px 0}
+.phase:first-child{border-top:none}
+.phase-head{display:flex;align-items:center;gap:8px;cursor:pointer}
+.phase-head .ph-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--gold);flex-shrink:0}
+.phase-head.done .ph-dot{background:var(--gold)}
+.phase-head .ph-name{flex:1;font-family:Georgia,serif;font-size:15px}
+.phase-head .ph-prog{font-size:11px;color:var(--muted)}
+.phase-tasks{margin:8px 0 0 22px;display:none}
+.phase.open .phase-tasks{display:block}
+.ck{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13px}
+.ck input{width:auto;accent-color:var(--gold)}
+.ck.done span{text-decoration:line-through;color:var(--muted)}
+
+/* Budget bars */
+.bbar{margin:9px 0}
+.bbar .bb-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.bbar .bb-track{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.bbar .bb-fill{height:100%;border-radius:5px}
+.econ-sum{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.econ-sum b{font-family:Georgia,serif}
+
+/* Relations */
+.rel-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:9px;margin:3px 4px 0 0;background:var(--panel2);color:var(--ink)}
+.rel-tag .x{cursor:pointer;color:var(--muted)}
+
+/* Area map */
+.map-box{position:relative;width:100%;aspect-ratio:4/3;background:var(--green-soft);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:crosshair;background-image:radial-gradient(rgba(95,122,79,.18) 1px,transparent 1px);background-size:18px 18px}
+.marker{position:absolute;transform:translate(-50%,-100%);font-size:20px;cursor:pointer;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));text-align:center}
+.marker small{display:block;font-size:9px;color:var(--ink);background:rgba(251,247,239,.85);border-radius:5px;padding:0 3px;transform:translateY(-2px);white-space:nowrap}
+
+/* Crisis */
+.crisis-btn{width:100%;background:var(--red);color:#fff;border:none;border-radius:16px;padding:18px;font-family:Georgia,serif;font-size:18px;cursor:pointer;letter-spacing:.04em}
+.crisis-btn:active{background:#8d3730}
+
+/* Kontrollrummet (full overlay) */
+.kr{position:fixed;inset:0;background:var(--bg);z-index:60;display:none;flex-direction:column;padding:calc(12px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));overflow-y:auto}
+.kr.open{display:flex}
+.kr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.kr-top h2{font-family:Georgia,serif;font-size:19px;color:var(--wine)}
+.kr-clock{font-family:Georgia,serif;font-size:15px;color:var(--ink)}
+.kr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.kr-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.kr-card.full{grid-column:1/-1}
+.kr-card .kc-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.kr-card .kc-n{font-family:Georgia,serif;font-size:30px;line-height:1.1;margin-top:2px}
+.kr-card.alert{background:var(--red-soft);border-color:var(--red)}
+.kr-card.alert .kc-n{color:var(--red)}
+.kr-feed-row{display:flex;gap:8px;font-size:12px;padding:6px 0;border-top:1px solid var(--line)}
+.kr-feed-row:first-child{border-top:none}
+.kr-feed-row .tm{color:var(--muted);flex-shrink:0;font-variant-numeric:tabular-nums}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10.5px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--wine);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(46,38,34,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:6px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--wine);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.menu-item{display:flex;align-items:center;gap:12px;padding:13px 4px;border-top:1px solid var(--line);font-size:15px;cursor:pointer}
+.menu-item:first-child{border-top:none}
+.menu-item .mi-ico{font-size:18px;width:24px;text-align:center}
+.menu-item .mi-arr{margin-left:auto;color:var(--muted)}
+.hint{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:6px 9px;margin-top:4px;line-height:1.5}
+.status-line{font-size:12px;padding:8px 11px;border-radius:9px;margin-top:8px;display:none}
+.kb-article{padding:10px 0;border-top:1px solid var(--line)}
+.kb-article:first-child{border-top:none}
+.kb-article h4{font-family:Georgia,serif;font-size:14px;margin-bottom:4px;color:var(--wine)}
+.kb-article p{font-size:12.5px;color:var(--ink);line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#221C19;--panel:#2B2421;--panel2:#332B27;--line:#473C35;
+  --ink:#ECE3D6;--muted:#9C9080;
+  --wine:#C97A86;--wine-soft:#3E2B30;--gold:#CDA968;--gold-soft:#37301F;
+  --green:#8BA379;--green-soft:#2D3826;--yellow:#C9AC5E;--yellow-soft:#37301C;
+  --red:#C97E76;--red-soft:#3C2723;--blue:#7CA0B8;
+  --navbg:rgba(34,28,25,.95);
+}
+.theme-btn{position:fixed;top:calc(8px + env(safe-area-inset-top));right:max(12px,calc(50vw - 230px));width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🎭 LajvMästaren</h1>
+<div class="brand-sub">Allt-i-ett för lajvarrangörer</div>
+
+<div class="evbar">
+  <select id="event-select"></select>
+  <button class="icon-btn" id="event-add" title="Nytt lajv">＋</button>
+  <span class="sync-pill" id="sync-pill">Lokal</span>
+</div>
+
+<!-- ÖVERSIKT -->
+<div class="view active" id="view-dash">
+  <div class="card-panel">
+    <div class="countdown">
+      <div class="big" id="cd-days">–</div>
+      <div class="lbl" id="cd-lbl">dagar kvar till lajvet</div>
+    </div>
+  </div>
+  <div class="section-title">Läget just nu</div>
+  <div class="stat-grid" id="dash-stats"></div>
+
+  <div class="section-title">Senaste meddelanden</div>
+  <div class="card-panel"><div id="dash-msgs"></div></div>
+
+  <div class="section-title">🤖 AI-förslag</div>
+  <div class="ai-box" id="dash-ai"></div>
+
+  <button class="kr-btn" id="open-kr">🏰 Öppna LajvKontrollrummet</button>
+
+  <div style="margin-top:18px;text-align:center">
+    <span class="soft">Allt sparas lokalt. Aktivera synk för att dela med arrangörsstaben.</span>
+  </div>
+</div>
+
+<!-- DELTAGARE -->
+<div class="view" id="view-people">
+  <div class="seg" id="people-seg">
+    <button class="active" data-s="participants">Deltagare</button>
+    <button data-s="lodging">Boende</button>
+  </div>
+  <div class="subview active" id="sub-participants">
+    <div class="card-panel">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px" id="pp-filter"></div>
+      <div id="participant-list"></div>
+    </div>
+    <button class="btn fill" style="width:100%;margin-top:12px" id="add-participant">+ Lägg till deltagare</button>
+  </div>
+  <div class="subview" id="sub-lodging">
+    <div class="card-panel"><div id="lodging-list"></div></div>
+  </div>
+</div>
+
+<!-- BERÄTTELSE -->
+<div class="view" id="view-story">
+  <div class="seg" id="story-seg">
+    <button class="active" data-s="chars">Karaktärer</button>
+    <button data-s="factions">Fraktioner</button>
+    <button data-s="lore">Värld</button>
+    <button data-s="plots">Intrig</button>
+  </div>
+  <div class="subview active" id="sub-chars">
+    <div class="card-panel"><div id="char-list"></div></div>
+    <button class="btn fill" style="width:100%;margin-top:12px" id="add-char">+ Ny karaktär</button>
+  </div>
+  <div class="subview" id="sub-factions">
+    <div class="card-panel"><div id="faction-list"></div>
+      <div class="add-row"><input id="fac-name" placeholder="Fraktionens namn"><button id="fac-add">+</button></div>
+    </div>
+  </div>
+  <div class="subview" id="sub-lore">
+    <div class="card-panel"><div id="lore-list"></div></div>
+    <button class="btn fill" style="width:100%;margin-top:12px" id="add-lore">+ Lägg till i världen</button>
+  </div>
+  <div class="subview" id="sub-plots">
+    <div class="ai-box" id="plot-ai" style="margin-bottom:12px"></div>
+    <div class="card-panel"><div id="plot-list"></div></div>
+    <button class="btn fill" style="width:100%;margin-top:12px" id="add-plot">+ Ny intrig</button>
+  </div>
+</div>
+
+<!-- EKONOMI -->
+<div class="view" id="view-econ">
+  <div class="seg" id="econ-seg">
+    <button class="active" data-s="budget">Budget</button>
+    <button data-s="tickets">Biljetter</button>
+  </div>
+  <div class="subview active" id="sub-budget">
+    <div class="card-panel" id="econ-summary"></div>
+    <div class="section-title">Utgifter</div>
+    <div class="card-panel"><div id="expense-list"></div>
+      <div class="add-row"><input id="exp-label" placeholder="Post"><input id="exp-amt" type="number" placeholder="kr" style="max-width:90px"><button id="exp-add">+</button></div>
+    </div>
+    <div class="section-title">Intäkter</div>
+    <div class="card-panel"><div id="income-list"></div>
+      <div class="add-row"><input id="inc-label" placeholder="Källa"><input id="inc-amt" type="number" placeholder="kr" style="max-width:90px"><button id="inc-add">+</button></div>
+    </div>
+  </div>
+  <div class="subview" id="sub-tickets">
+    <div class="card-panel" id="ticket-summary"></div>
+    <div class="card-panel" style="margin-top:10px"><div id="ticket-list"></div></div>
+    <button class="btn fill" style="width:100%;margin-top:12px" id="add-ticket">+ Ny biljettyp</button>
+  </div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-more">
+  <div class="card-panel">
+    <div class="menu-item" data-open="planering"><span class="mi-ico">📅</span>Arrangörsplanering<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="logistik"><span class="mi-ico">🍲</span>Mat &amp; Logistik<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="omrade"><span class="mi-ico">🏕️</span>Områdeshantering<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="sakerhet"><span class="mi-ico">🛡️</span>Säkerhetscenter<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="funktionar"><span class="mi-ico">👷</span>Funktionärsportal<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="kommunikation"><span class="mi-ico">📢</span>Kommunikation<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="ai"><span class="mi-ico">🤖</span>AI-arrangör<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="statistik"><span class="mi-ico">📊</span>Statistik &amp; efteranalys<span class="mi-arr">›</span></div>
+    <div class="menu-item" data-open="kunskap"><span class="mi-ico">📚</span>Kunskapsbank<span class="mi-arr">›</span></div>
+  </div>
+  <div class="card-panel" style="margin-top:12px">
+    <div class="menu-item" data-open="synk"><span class="mi-ico">☁️</span>Synk &amp; säkerhetskopiering<span class="mi-arr">›</span></div>
+    <div class="menu-item" id="more-export"><span class="mi-ico">💾</span>Exportera backup (JSON)<span class="mi-arr">›</span></div>
+    <div class="menu-item" id="more-import"><span class="mi-ico">📥</span>Importera backup<span class="mi-arr">›</span></div>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy soft" style="text-align:center;margin-top:14px">LajvMästaren v1 · vanilla HTML · data lokalt + valfri GitHub-synk</div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" data-v="dash"><span>🏰</span>Översikt</button>
+  <button data-v="people"><span>👥</span>Deltagare</button>
+  <button data-v="story"><span>📜</span>Berättelse</button>
+  <button data-v="econ"><span>💰</span>Ekonomi</button>
+  <button data-v="more"><span>⚙️</span>Mer</button>
+</div>
+
+<!-- KONTROLLRUMMET -->
+<div class="kr" id="kr">
+  <div class="kr-top">
+    <h2>🏰 LajvKontrollrummet</h2>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="kr-clock" id="kr-clock"></span>
+      <button class="icon-btn" id="kr-close" style="font-size:22px">✕</button>
+    </div>
+  </div>
+  <div class="soft" id="kr-event"></div>
+  <div class="kr-grid" id="kr-grid"></div>
+  <div class="kr-card full" style="margin-top:10px">
+    <div class="kc-lbl">Dagens händelseflöde &amp; AI-varningar</div>
+    <div id="kr-feed" style="margin-top:6px"></div>
+  </div>
+  <button class="crisis-btn" style="margin-top:14px" id="kr-crisis">🚨 Akut hjälp</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="sheet"><div id="sheet-content"></div></div>
+
+</div>
+<script>
+// ── Helpers ──────────────────────────────────────────────────────
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function $(id){return document.getElementById(id);}
+function todayMid(){var d=new Date();d.setHours(0,0,0,0);return d;}
+function fmtKr(n){return (Math.round(n)||0).toLocaleString('sv-SE')+' kr';}
+
+// ── Data model ───────────────────────────────────────────────────
+var DB={events:[],participants:[],characters:[],factions:[],lore:[],plots:[],
+  budget:[],tickets:[],meals:[],inventory:[],areas:[],incidents:[],crew:[],messages:[],activeEvent:null};
+var settings={theme:'auto'};
+var sync={owner:'',repo:'',token:'',sha:null};
+var apiKey='';
+
+var STORE='lajvmastaren_v1';
+var SET_KEY='lajvmastaren_settings_v1';
+var SYNC_KEY='lajvmastaren_sync_v1';
+var API_KEY_STORE='lajvmastaren_apikey_v1';
+
+function loadAll(){
+  try{var s=localStorage.getItem(STORE);if(s){var d=JSON.parse(s);for(var k in DB){if(d[k]!==undefined)DB[k]=d[k];}}}catch(e){}
+  try{var st=localStorage.getItem(SET_KEY);if(st)settings=Object.assign(settings,JSON.parse(st));}catch(e){}
+  try{var sy=localStorage.getItem(SYNC_KEY);if(sy){var y=JSON.parse(sy);sync.owner=y.owner||'';sync.repo=y.repo||'';sync.token=y.token||'';}}catch(e){}
+  try{apiKey=localStorage.getItem(API_KEY_STORE)||'';}catch(e){}
+  if(!DB.events.length){seed();}
+  if(!DB.activeEvent||!DB.events.some(function(e){return e.id===DB.activeEvent;}))DB.activeEvent=DB.events[0].id;
+}
+function saveLocal(){try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}}
+function saveSettings(){try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function persist(){saveLocal();if(syncOn())ghPush().catch(function(){});}
+
+function seed(){
+  var eid=uid();
+  DB.events=[{id:eid,name:'Demolajv: Drottningens Fall',start:isoPlus(120),end:isoPlus(122),place:'Skogsborg, Värmland'}];
+  DB.activeEvent=eid;
+  DB.participants=[
+    {id:uid(),eventId:eid,name:'Anna Berg',character:'Riddar Mira',email:'anna@ex.se',phone:'070-1112233',allergies:'Nötter',medical:'',pay:'paid',group:'Hovet',lodging:'Tält A',status:'confirmed'},
+    {id:uid(),eventId:eid,name:'Johan Ek',character:'Magikern Sorn',email:'johan@ex.se',phone:'',allergies:'',medical:'',pay:'unpaid',group:'Magikergillet',lodging:'',status:'waitlist'}
+  ];
+  DB.factions=[{id:uid(),eventId:eid,name:'Hovet',desc:'Drottningens lojala krets'},{id:uid(),eventId:eid,name:'Magikergillet',desc:'Mystikens väktare'}];
+  DB.characters=[{id:uid(),eventId:eid,name:'Riddar Mira',faction:'Hovet',family:'Berg',desc:'Drottningens livvakt',relations:[]}];
+  DB.plots=[{id:uid(),eventId:eid,type:'main',title:'Förräderiet vid hovet',desc:'Någon i hovet planerar ett uppror.',chars:[],status:'planned'}];
+  DB.budget=[{id:uid(),eventId:eid,flow:'expense',label:'Lokal',amount:15000},{id:uid(),eventId:eid,flow:'income',label:'Biljetter',amount:0}];
+  DB.tickets=[{id:uid(),eventId:eid,type:'Standard',price:850,sold:0}];
+  DB.areas=[{id:uid(),eventId:eid,name:'Huvudläger',type:'läger',x:48,y:52},{id:uid(),eventId:eid,name:'Säkerhetsstation',type:'säkerhet',x:75,y:30}];
+  DB.crew=[{id:uid(),eventId:eid,name:'Lars',role:'Säkerhet',shift:'Lör 08–14',checkedIn:false}];
+}
+function isoPlus(days){var d=new Date();d.setDate(d.getDate()+days);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+// scoped getters
+function ev(){return DB.events.find(function(e){return e.id===DB.activeEvent;})||DB.events[0];}
+function scoped(arr){var id=DB.activeEvent;return DB[arr].filter(function(x){return x.eventId===id;});}
+
+// ── GitHub sync (mönster från jobb.html) ─────────────────────────
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/lajv-data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setPill(state,msg){var p=$('sync-pill');p.textContent=msg;p.className='sync-pill'+(state?' '+state:'');}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function applyRemote(data){
+  var keys=['events','participants','characters','factions','lore','plots','budget','tickets','meals','inventory','areas','incidents','crew','messages'];
+  keys.forEach(function(k){if(Array.isArray(data[k]))DB[k]=data[k];});
+  if(data.activeEvent)DB.activeEvent=data.activeEvent;
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setPill('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){applyRemote(data);saveLocal();renderAll();}
+    setPill('ok','Synkad');
+  }).catch(function(){setPill('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setPill('load','Sparar…');
+  var payload=Object.assign({},DB,{updated:new Date().toISOString()});
+  var content=b64enc(JSON.stringify(payload));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via LajvMästaren',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setPill('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json();
+  }).then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setPill('ok','Synkad');});
+}
+
+// ── Sheets ───────────────────────────────────────────────────────
+var sheetBg=$('sheet-bg');
+function openSheet(html){$('sheet-content').innerHTML=html;sheetBg.classList.add('open');$('sheet').classList.add('open');$('sheet').scrollTop=0;}
+function closeSheet(){sheetBg.classList.remove('open');$('sheet').classList.remove('open');}
+sheetBg.onclick=closeSheet;
+
+// ── Dashboard ────────────────────────────────────────────────────
+function daysLeft(){
+  var e=ev();if(!e.start)return null;
+  var t=todayMid(),s=new Date(e.start+'T00:00:00');
+  return Math.round((s-t)/86400000);
+}
+function renderDash(){
+  var e=ev();var dl=daysLeft();
+  $('cd-days').textContent=dl==null?'–':(dl>=0?dl:Math.abs(dl));
+  $('cd-lbl').textContent=dl==null?'datum saknas':(dl>0?'dagar kvar till lajvet':dl===0?'LAJVET ÄR IDAG':'dagar sedan lajvet');
+  var P=scoped('participants');
+  var confirmed=P.filter(function(p){return p.status==='confirmed';}).length;
+  var crew=scoped('crew');
+  var checkedIn=crew.filter(function(c){return c.checkedIn;}).length;
+  var unpaid=P.filter(function(p){return p.pay==='unpaid'&&p.status!=='cancelled';}).length;
+  var openInc=scoped('incidents').filter(function(i){return i.status!=='resolved';}).length;
+  var stats=[
+    {n:confirmed,t:'bekräftade deltagare',cls:'good',v:'people'},
+    {n:crew.length,t:'funktionärer ('+checkedIn+' incheckade)',cls:'',open:'funktionar'},
+    {n:unpaid,t:'obetalda avgifter',cls:unpaid?'warn':'good',v:'econ'},
+    {n:openInc,t:'öppna säkerhetsärenden',cls:openInc?'warn':'good',open:'sakerhet'}
+  ];
+  $('dash-stats').innerHTML=stats.map(function(s){
+    return '<div class="stat '+s.cls+'" data-v="'+(s.v||'')+'" data-open="'+(s.open||'')+'"><div class="n">'+s.n+'</div><div class="t">'+s.t+'</div></div>';
+  }).join('');
+  Array.prototype.forEach.call($('dash-stats').children,function(c){
+    c.onclick=function(){if(c.dataset.v)setView(c.dataset.v);else if(c.dataset.open)openMore(c.dataset.open);};
+  });
+  // messages
+  var msgs=scoped('messages').slice().reverse().slice(0,4);
+  $('dash-msgs').innerHTML=msgs.length?msgs.map(function(m){
+    return '<div class="msg-row"><span class="chan">'+esc(m.channel||'')+'</span><span>'+esc(m.text)+'</span></div>';
+  }).join(''):'<div class="empty-msg">Inga utskick än</div>';
+  // ai tips (heuristic, lokala)
+  $('dash-ai').innerHTML=aiTips().map(function(t){return '<div class="ai-tip">'+esc(t)+'</div>';}).join('');
+}
+function aiTips(){
+  var tips=[];var P=scoped('participants');var dl=daysLeft();
+  var lonelyChars=scoped('characters').filter(function(c){return !(c.relations&&c.relations.length);});
+  if(lonelyChars.length)tips.push('🎭 '+lonelyChars.length+' karaktär(er) saknar relationer till handlingen — överväg att koppla dem till en intrig.');
+  var unpaid=P.filter(function(p){return p.pay==='unpaid'&&p.status!=='cancelled';}).length;
+  if(unpaid)tips.push('💰 '+unpaid+' deltagare har obetalda avgifter. Skicka en påminnelse via Kommunikation.');
+  if(scoped('crew').length<3)tips.push('👷 Få funktionärer registrerade — säkerställ backup för säkerhet, mat och logistik.');
+  var allergies=P.filter(function(p){return p.allergies;}).length;
+  if(allergies)tips.push('🍲 '+allergies+' deltagare har allergier registrerade — stäm av menyn under Mat & Logistik.');
+  if(dl!=null&&dl<=30&&dl>0)tips.push('📅 Mindre än en månad kvar — kontrollera checklistan för fasen "1 månad kvar".');
+  if(!tips.length)tips.push('✅ Inga akuta varningar. Bra jobbat, arrangör!');
+  return tips;
+}
+
+// ── Participants ─────────────────────────────────────────────────
+var ppFilter='all';
+var STATUS={confirmed:{l:'Bekräftad',c:'b-green',dot:'var(--green)'},waitlist:{l:'Väntelista',c:'b-yellow',dot:'var(--yellow)'},cancelled:{l:'Avbokad',c:'b-red',dot:'var(--red)'}};
+function renderParticipants(){
+  var fbar=$('pp-filter');
+  var counts={all:scoped('participants').length};
+  ['confirmed','waitlist','cancelled'].forEach(function(s){counts[s]=scoped('participants').filter(function(p){return p.status===s;}).length;});
+  var fs=[['all','Alla'],['confirmed','🟢 Bekräftade'],['waitlist','🟡 Väntelista'],['cancelled','🔴 Avbokade']];
+  fbar.innerHTML=fs.map(function(f){
+    return '<button class="btn ghost'+(ppFilter===f[0]?' fill':'')+'" data-f="'+f[0]+'" style="flex:0 0 auto">'+f[1]+' '+counts[f[0]]+'</button>';
+  }).join('');
+  Array.prototype.forEach.call(fbar.children,function(b){b.onclick=function(){ppFilter=b.dataset.f;renderParticipants();};});
+  var list=scoped('participants').filter(function(p){return ppFilter==='all'||p.status===ppFilter;});
+  $('participant-list').innerHTML=list.length?list.map(function(p){
+    var st=STATUS[p.status]||STATUS.confirmed;
+    return '<div class="li clickable" data-id="'+p.id+'"><div class="dot" style="background:'+st.dot+'"></div>'+
+      '<div class="body"><div class="ttl">'+esc(p.name)+(p.character?' · <i>'+esc(p.character)+'</i>':'')+'</div>'+
+      '<div class="sub">'+esc(p.group||'—')+(p.allergies?' · ⚠ '+esc(p.allergies):'')+'</div></div>'+
+      '<span class="badge '+(p.pay==='paid'?'b-green':'b-red')+'">'+(p.pay==='paid'?'Betald':'Obetald')+'</span>'+
+      '<span class="badge '+st.c+'">'+st.l+'</span></div>';
+  }).join(''):'<div class="empty-msg">Inga deltagare i denna vy</div>';
+  Array.prototype.forEach.call($('participant-list').children,function(c){if(c.dataset.id)c.onclick=function(){participantSheet(c.dataset.id);};});
+  // lodging
+  var groups={};scoped('participants').forEach(function(p){var l=p.lodging||'Ej tilldelat';(groups[l]=groups[l]||[]).push(p);});
+  $('lodging-list').innerHTML=Object.keys(groups).map(function(l){
+    return '<div class="li"><div class="body"><div class="ttl">🏕️ '+esc(l)+'</div><div class="sub">'+groups[l].map(function(p){return esc(p.name);}).join(', ')+'</div></div><span class="badge b-gray">'+groups[l].length+'</span></div>';
+  }).join('')||'<div class="empty-msg">Inga deltagare</div>';
+}
+function participantSheet(id){
+  var p=id?DB.participants.find(function(x){return x.id===id;}):{status:'confirmed',pay:'unpaid'};
+  var isNew=!id;
+  var facs=scoped('factions').map(function(f){return f.name;});
+  var groupOpts=['']. concat(facs).map(function(g){return '<option'+(p.group===g?' selected':'')+'>'+esc(g)+'</option>';}).join('');
+  openSheet('<h3>'+(isNew?'Ny deltagare':esc(p.name))+'</h3>'+
+    '<label>Namn</label><input id="f-name" value="'+esc(p.name||'')+'">'+
+    '<label>Karaktär</label><input id="f-char" value="'+esc(p.character||'')+'">'+
+    '<div class="row"><div><label>E-post</label><input id="f-email" value="'+esc(p.email||'')+'"></div>'+
+    '<div><label>Telefon</label><input id="f-phone" value="'+esc(p.phone||'')+'"></div></div>'+
+    '<label>Allergier</label><input id="f-allergies" value="'+esc(p.allergies||'')+'">'+
+    '<label>Medicinsk info (frivilligt)</label><input id="f-medical" value="'+esc(p.medical||'')+'">'+
+    '<label>Rollgrupp / fraktion</label><select id="f-group">'+groupOpts+'</select>'+
+    '<label>Boende</label><input id="f-lodging" value="'+esc(p.lodging||'')+'">'+
+    '<div class="row"><div><label>Betalstatus</label><select id="f-pay"><option value="unpaid"'+(p.pay==='unpaid'?' selected':'')+'>Obetald</option><option value="paid"'+(p.pay==='paid'?' selected':'')+'>Betald</option></select></div>'+
+    '<div><label>Status</label><select id="f-status"><option value="confirmed"'+(p.status==='confirmed'?' selected':'')+'>🟢 Bekräftad</option><option value="waitlist"'+(p.status==='waitlist'?' selected':'')+'>🟡 Väntelista</option><option value="cancelled"'+(p.status==='cancelled'?' selected':'')+'>🔴 Avbokad</option></select></div></div>'+
+    '<button class="sheet-close" id="f-save">Spara</button>'+
+    (isNew?'':'<button class="btn ghost" style="width:100%;margin-top:8px" id="f-del">Ta bort deltagare</button>'));
+  $('f-save').onclick=function(){
+    var name=$('f-name').value.trim();if(!name)return;
+    var rec={id:p.id||uid(),eventId:DB.activeEvent,name:name,character:$('f-char').value.trim(),email:$('f-email').value.trim(),phone:$('f-phone').value.trim(),allergies:$('f-allergies').value.trim(),medical:$('f-medical').value.trim(),group:$('f-group').value,lodging:$('f-lodging').value.trim(),pay:$('f-pay').value,status:$('f-status').value};
+    if(isNew)DB.participants.push(rec);else Object.assign(p,rec);
+    persist();closeSheet();renderAll();
+  };
+  if(!isNew)$('f-del').onclick=function(){if(confirm('Ta bort '+p.name+'?')){DB.participants=DB.participants.filter(function(x){return x.id!==id;});persist();closeSheet();renderAll();}};
+}
+
+// ── Factions ─────────────────────────────────────────────────────
+function renderFactions(){
+  var list=scoped('factions');
+  $('faction-list').innerHTML=list.length?list.map(function(f){
+    var members=scoped('characters').filter(function(c){return c.faction===f.name;}).length;
+    return '<div class="li"><div class="dot" style="background:var(--wine)"></div><div class="body"><div class="ttl">'+esc(f.name)+'</div><div class="sub">'+esc(f.desc||'')+'</div></div><span class="badge b-wine">'+members+' karaktärer</span><button class="del" data-id="'+f.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga fraktioner</div>';
+  Array.prototype.forEach.call($('faction-list').querySelectorAll('.del'),function(b){b.onclick=function(){DB.factions=DB.factions.filter(function(x){return x.id!==b.dataset.id;});persist();renderAll();};});
+}
+
+// ── Characters ───────────────────────────────────────────────────
+var REL_TYPES=['Vän','Fiende','Allierad','Kärleksintresse','Hemlighet','Familj'];
+function renderChars(){
+  var list=scoped('characters');
+  $('char-list').innerHTML=list.length?list.map(function(c){
+    var rels=(c.relations||[]).length;
+    return '<div class="li clickable" data-id="'+c.id+'"><div class="dot" style="background:'+(rels?'var(--gold)':'var(--line)')+'"></div>'+
+      '<div class="body"><div class="ttl">'+esc(c.name)+'</div><div class="sub">'+esc(c.faction||'fri')+(c.family?' · '+esc(c.family):'')+'</div></div>'+
+      '<span class="badge '+(rels?'b-gold':'b-gray')+'">'+rels+' kopplingar</span></div>';
+  }).join(''):'<div class="empty-msg">Inga karaktärer</div>';
+  Array.prototype.forEach.call($('char-list').children,function(el){if(el.dataset.id)el.onclick=function(){charSheet(el.dataset.id);};});
+}
+function charSheet(id){
+  var c=id?DB.characters.find(function(x){return x.id===id;}):{relations:[]};
+  var isNew=!id;c.relations=c.relations||[];
+  var facOpts=['<option value="">fri</option>'].concat(scoped('factions').map(function(f){return '<option'+(c.faction===f.name?' selected':'')+'>'+esc(f.name)+'</option>';})).join('');
+  var others=scoped('characters').filter(function(x){return x.id!==c.id;});
+  var relHtml=c.relations.map(function(r,i){var o=DB.characters.find(function(x){return x.id===r.toId;});return '<span class="rel-tag">'+esc(r.type)+': '+esc(o?o.name:'?')+' <span class="x" data-ri="'+i+'">×</span></span>';}).join('')||'<span class="soft">Inga relationer än</span>';
+  openSheet('<h3>'+(isNew?'Ny karaktär':esc(c.name))+'</h3>'+
+    '<label>Namn</label><input id="c-name" value="'+esc(c.name||'')+'">'+
+    '<div class="row"><div><label>Fraktion</label><select id="c-faction">'+facOpts+'</select></div>'+
+    '<div><label>Familj</label><input id="c-family" value="'+esc(c.family||'')+'"></div></div>'+
+    '<label>Beskrivning</label><textarea id="c-desc">'+esc(c.desc||'')+'</textarea>'+
+    '<label>Relationsträd</label><div style="margin-bottom:6px">'+relHtml+'</div>'+
+    (others.length?('<div class="row"><select id="c-rel-type">'+REL_TYPES.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+    '<select id="c-rel-to">'+others.map(function(o){return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join('')+'</select>'+
+    '<button class="btn ghost" id="c-rel-add" style="flex:0 0 auto">+</button></div>'):'<div class="hint">Skapa fler karaktärer för att koppla relationer.</div>')+
+    '<button class="sheet-close" id="c-save">Spara</button>'+
+    (isNew?'':'<button class="btn ghost" style="width:100%;margin-top:8px" id="c-del">Ta bort karaktär</button>'));
+  function commit(){
+    var name=$('c-name').value.trim();if(!name)return false;
+    var rec={id:c.id||uid(),eventId:DB.activeEvent,name:name,faction:$('c-faction').value,family:$('c-family').value.trim(),desc:$('c-desc').value.trim(),relations:c.relations};
+    if(isNew){DB.characters.push(rec);c=rec;isNew=false;}else Object.assign(c,rec);
+    return true;
+  }
+  if($('c-rel-add'))$('c-rel-add').onclick=function(){if(!commit())return;c.relations.push({type:$('c-rel-type').value,toId:$('c-rel-to').value});persist();charSheet(c.id);};
+  Array.prototype.forEach.call($('sheet-content').querySelectorAll('.rel-tag .x'),function(x){x.onclick=function(){c.relations.splice(+x.dataset.ri,1);persist();charSheet(c.id);};});
+  $('c-save').onclick=function(){if(!commit())return;persist();closeSheet();renderAll();};
+  if(!isNew)$('c-del').onclick=function(){if(confirm('Ta bort '+c.name+'?')){DB.characters=DB.characters.filter(function(x){return x.id!==id;});persist();closeSheet();renderAll();}};
+}
+
+// ── Lore ─────────────────────────────────────────────────────────
+var LORE_TYPES=[['plats','🗺️ Plats'],['historia','📜 Historia'],['religion','✨ Religion'],['org','⚔️ Organisation'],['magi','🔮 Magisystem']];
+function renderLore(){
+  var list=scoped('lore');
+  $('lore-list').innerHTML=list.length?list.map(function(l){
+    var t=LORE_TYPES.find(function(x){return x[0]===l.type;});
+    return '<div class="li clickable" data-id="'+l.id+'"><div class="body"><div class="ttl">'+(t?t[1].split(' ')[0]:'')+' '+esc(l.title)+'</div><div class="sub">'+esc((l.body||'').slice(0,60))+'</div></div></div>';
+  }).join(''):'<div class="empty-msg">Världen är ännu tom</div>';
+  Array.prototype.forEach.call($('lore-list').children,function(el){if(el.dataset.id)el.onclick=function(){loreSheet(el.dataset.id);};});
+}
+function loreSheet(id){
+  var l=id?DB.lore.find(function(x){return x.id===id;}):{type:'plats'};var isNew=!id;
+  openSheet('<h3>'+(isNew?'Lägg till i världen':esc(l.title))+'</h3>'+
+    '<label>Typ</label><select id="l-type">'+LORE_TYPES.map(function(t){return '<option value="'+t[0]+'"'+(l.type===t[0]?' selected':'')+'>'+t[1]+'</option>';}).join('')+'</select>'+
+    '<label>Titel</label><input id="l-title" value="'+esc(l.title||'')+'">'+
+    '<label>Beskrivning</label><textarea id="l-body" style="min-height:120px">'+esc(l.body||'')+'</textarea>'+
+    '<button class="sheet-close" id="l-save">Spara</button>'+
+    (isNew?'':'<button class="btn ghost" style="width:100%;margin-top:8px" id="l-del">Ta bort</button>'));
+  $('l-save').onclick=function(){var t=$('l-title').value.trim();if(!t)return;var rec={id:l.id||uid(),eventId:DB.activeEvent,type:$('l-type').value,title:t,body:$('l-body').value.trim()};if(isNew)DB.lore.push(rec);else Object.assign(l,rec);persist();closeSheet();renderAll();};
+  if(!isNew)$('l-del').onclick=function(){DB.lore=DB.lore.filter(function(x){return x.id!==id;});persist();closeSheet();renderAll();};
+}
+
+// ── Plots ────────────────────────────────────────────────────────
+var PLOT_TYPES=[['main','Huvudintrig'],['side','Sidospår'],['quest','Uppdrag'],['secret','Hemlighet']];
+function renderPlots(){
+  var list=scoped('plots');
+  // AI plot-hole detection (heuristik)
+  var holes=[];
+  var loners=scoped('characters').filter(function(c){return !list.some(function(p){return (p.chars||[]).indexOf(c.id)>=0;})&&!(c.relations&&c.relations.length);});
+  if(loners.length)holes.push('⚠ '+loners.length+' karaktär(er) saknar koppling till handlingen.');
+  if(!list.some(function(p){return p.type==='main';}))holes.push('⚠ Ingen huvudintrig definierad ännu.');
+  var mains=list.filter(function(p){return p.type==='main';}).length;
+  if(mains>3)holes.push('⚠ Många huvudintriger ('+mains+') — risk för obalans och splittrat fokus.');
+  $('plot-ai').innerHTML='<div class="ai-tip" style="border:none;font-weight:600;color:#5c4a26">🤖 AI: Intriganalys</div>'+(holes.length?holes.map(function(h){return '<div class="ai-tip">'+esc(h)+'</div>';}).join(''):'<div class="ai-tip">✅ Inga uppenbara plot holes hittade.</div>');
+  $('plot-list').innerHTML=list.length?list.map(function(p){
+    var t=PLOT_TYPES.find(function(x){return x[0]===p.type;});
+    var cls=p.status==='done'?'b-green':p.status==='active'?'b-gold':'b-gray';
+    return '<div class="li clickable" data-id="'+p.id+'"><div class="dot" style="background:var(--wine)"></div><div class="body"><div class="ttl">'+esc(p.title)+'</div><div class="sub">'+(t?t[1]:'')+' · '+(p.chars||[]).length+' karaktärer</div></div><span class="badge '+cls+'">'+(p.status==='done'?'Klar':p.status==='active'?'Aktiv':'Planerad')+'</span></div>';
+  }).join(''):'<div class="empty-msg">Inga intriger</div>';
+  Array.prototype.forEach.call($('plot-list').children,function(el){if(el.dataset.id)el.onclick=function(){plotSheet(el.dataset.id);};});
+}
+function plotSheet(id){
+  var p=id?DB.plots.find(function(x){return x.id===id;}):{type:'main',status:'planned',chars:[]};var isNew=!id;p.chars=p.chars||[];
+  var chs=scoped('characters');
+  var chHtml=chs.length?chs.map(function(c){var on=p.chars.indexOf(c.id)>=0;return '<button class="btn ghost'+(on?' gold':'')+'" data-cid="'+c.id+'" style="flex:0 0 auto;'+(on?'background:var(--gold-soft)':'')+'">'+esc(c.name)+'</button>';}).join(''):'<span class="soft">Inga karaktärer ännu</span>';
+  openSheet('<h3>'+(isNew?'Ny intrig':esc(p.title))+'</h3>'+
+    '<label>Titel</label><input id="p-title" value="'+esc(p.title||'')+'">'+
+    '<div class="row"><div><label>Typ</label><select id="p-type">'+PLOT_TYPES.map(function(t){return '<option value="'+t[0]+'"'+(p.type===t[0]?' selected':'')+'>'+t[1]+'</option>';}).join('')+'</select></div>'+
+    '<div><label>Status</label><select id="p-status"><option value="planned"'+(p.status==='planned'?' selected':'')+'>Planerad</option><option value="active"'+(p.status==='active'?' selected':'')+'>Aktiv</option><option value="done"'+(p.status==='done'?' selected':'')+'>Klar</option></select></div></div>'+
+    '<label>Beskrivning</label><textarea id="p-desc">'+esc(p.desc||'')+'</textarea>'+
+    '<label>Inblandade karaktärer</label><div style="display:flex;flex-wrap:wrap;gap:6px">'+chHtml+'</div>'+
+    '<button class="sheet-close" id="p-save">Spara</button>'+
+    (isNew?'':'<button class="btn ghost" style="width:100%;margin-top:8px" id="p-del">Ta bort</button>'));
+  Array.prototype.forEach.call($('sheet-content').querySelectorAll('[data-cid]'),function(b){b.onclick=function(){var cid=b.dataset.cid,i=p.chars.indexOf(cid);if(i>=0)p.chars.splice(i,1);else p.chars.push(cid);b.classList.toggle('gold');b.style.background=p.chars.indexOf(cid)>=0?'var(--gold-soft)':'';};});
+  $('p-save').onclick=function(){var t=$('p-title').value.trim();if(!t)return;var rec={id:p.id||uid(),eventId:DB.activeEvent,type:$('p-type').value,status:$('p-status').value,title:t,desc:$('p-desc').value.trim(),chars:p.chars};if(isNew)DB.plots.push(rec);else Object.assign(p,rec);persist();closeSheet();renderAll();};
+  if(!isNew)$('p-del').onclick=function(){DB.plots=DB.plots.filter(function(x){return x.id!==id;});persist();closeSheet();renderAll();};
+}
+
+// ── Economy ──────────────────────────────────────────────────────
+function renderEcon(){
+  var b=scoped('budget');
+  var exp=b.filter(function(x){return x.flow==='expense';});
+  var inc=b.filter(function(x){return x.flow==='income';});
+  var ticketRev=scoped('tickets').reduce(function(a,t){return a+(t.price*t.sold);},0);
+  var totalExp=exp.reduce(function(a,x){return a+(+x.amount||0);},0);
+  var totalInc=inc.reduce(function(a,x){return a+(+x.amount||0);},0)+ticketRev;
+  var net=totalInc-totalExp;
+  $('econ-summary').innerHTML='<div class="econ-sum"><span>Intäkter (inkl. biljetter)</span><b style="color:var(--green)">'+fmtKr(totalInc)+'</b></div>'+
+    '<div class="econ-sum"><span>Utgifter</span><b style="color:var(--red)">'+fmtKr(totalExp)+'</b></div>'+
+    '<div class="econ-sum"><span>Resultat (prognos)</span><b style="color:'+(net>=0?'var(--green)':'var(--red)')+'">'+fmtKr(net)+'</b></div>';
+  var maxExp=Math.max.apply(null,exp.map(function(x){return +x.amount||0;}).concat([1]));
+  $('expense-list').innerHTML=exp.length?exp.map(function(x){
+    var pct=Math.round((+x.amount||0)/maxExp*100);
+    return '<div class="bbar"><div class="bb-top"><span>'+esc(x.label)+'</span><span>'+fmtKr(+x.amount||0)+' <button class="del" data-id="'+x.id+'" style="background:none;border:none;color:var(--muted);cursor:pointer">×</button></span></div><div class="bb-track"><div class="bb-fill" style="width:'+pct+'%;background:var(--red)"></div></div></div>';
+  }).join(''):'<div class="empty-msg">Inga utgifter</div>';
+  $('income-list').innerHTML=(inc.length?inc.map(function(x){
+    return '<div class="li"><div class="dot" style="background:var(--green)"></div><div class="body"><div class="ttl">'+esc(x.label)+'</div></div><b style="color:var(--green)">'+fmtKr(+x.amount||0)+'</b><button class="del" data-id="'+x.id+'">×</button></div>';
+  }).join(''):'')+'<div class="li"><div class="dot" style="background:var(--gold)"></div><div class="body"><div class="ttl">Biljettförsäljning</div><div class="sub">beräknas automatiskt</div></div><b style="color:var(--green)">'+fmtKr(ticketRev)+'</b></div>';
+  Array.prototype.forEach.call($('sub-budget').querySelectorAll('.del'),function(btn){btn.onclick=function(){DB.budget=DB.budget.filter(function(x){return x.id!==btn.dataset.id;});persist();renderAll();};});
+  // tickets
+  var T=scoped('tickets');
+  var soldTotal=T.reduce(function(a,t){return a+t.sold;},0);
+  $('ticket-summary').innerHTML='<div class="econ-sum"><span>Sålda biljetter</span><b>'+soldTotal+'</b></div><div class="econ-sum"><span>Total biljettintäkt</span><b style="color:var(--green)">'+fmtKr(ticketRev)+'</b></div>';
+  $('ticket-list').innerHTML=T.length?T.map(function(t){
+    return '<div class="li"><div class="body"><div class="ttl">🎟️ '+esc(t.type)+'</div><div class="sub">'+fmtKr(t.price)+' /st</div></div>'+
+      '<button class="btn ghost" data-dec="'+t.id+'" style="flex:0 0 auto;padding:4px 10px">−</button><b style="min-width:34px;text-align:center">'+t.sold+'</b><button class="btn ghost" data-inc="'+t.id+'" style="flex:0 0 auto;padding:4px 10px">+</button>'+
+      '<button class="del" data-del="'+t.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga biljettyper</div>';
+  Array.prototype.forEach.call($('ticket-list').querySelectorAll('[data-inc]'),function(b){b.onclick=function(){var t=DB.tickets.find(function(x){return x.id===b.dataset.inc;});t.sold++;persist();renderAll();};});
+  Array.prototype.forEach.call($('ticket-list').querySelectorAll('[data-dec]'),function(b){b.onclick=function(){var t=DB.tickets.find(function(x){return x.id===b.dataset.dec;});t.sold=Math.max(0,t.sold-1);persist();renderAll();};});
+  Array.prototype.forEach.call($('ticket-list').querySelectorAll('[data-del]'),function(b){b.onclick=function(){DB.tickets=DB.tickets.filter(function(x){return x.id!==b.dataset.del;});persist();renderAll();};});
+}
+
+// ── More-sections via sheets ─────────────────────────────────────
+function openMore(key){
+  if(key==='planering')return sheetPlanering();
+  if(key==='logistik')return sheetLogistik();
+  if(key==='omrade')return sheetOmrade();
+  if(key==='sakerhet')return sheetSakerhet();
+  if(key==='funktionar')return sheetFunktionar();
+  if(key==='kommunikation')return sheetKommunikation();
+  if(key==='ai')return sheetAI();
+  if(key==='statistik')return sheetStatistik();
+  if(key==='kunskap')return sheetKunskap();
+  if(key==='synk')return sheetSynk();
+}
+
+// Planering — phases with checklists
+var PHASES=[
+  {id:'p12',name:'12 månader kvar',tasks:['Boka lokal/mark','Sätt arrangörsteam','Skapa konceptdokument','Sätt preliminärt datum']},
+  {id:'p6',name:'6 månader kvar',tasks:['Öppna anmälan','Fastställ budget','Boka mat & toaletter','Påbörja världsbyggande']},
+  {id:'p3',name:'3 månader kvar',tasks:['Fördela karaktärer','Skriv huvudintriger','Rekrytera funktionärer','Säkerhetsplan klar']},
+  {id:'p1',name:'1 månad kvar',tasks:['Sista anmälningsdag','Skicka deltagarinfo','Bekräfta leveranser','Funktionärsschema klart']},
+  {id:'week',name:'Lajvvecka',tasks:['Bygg läger','Brief funktionärer','Sista incheckningar','Säkerhetsgenomgång']},
+  {id:'after',name:'Efterarbete',tasks:['Städning','Skicka enkät','Ekonomisk avstämning','Efteranalys & utvärdering']}
+];
+function getChecks(){var e=ev();e.checks=e.checks||{};return e.checks;}
+function sheetPlanering(){
+  var checks=getChecks();
+  var html='<h3>📅 Arrangörsplanering</h3><div class="soft" style="margin-bottom:8px">Automatiska checklistor per fas. Tryck för att fälla ut.</div>';
+  PHASES.forEach(function(ph){
+    var done=ph.tasks.filter(function(t){return checks[ph.id+'|'+t];}).length;
+    var open=done<ph.tasks.length&&done>0;
+    html+='<div class="phase'+(open?' open':'')+'" data-ph="'+ph.id+'">'+
+      '<div class="phase-head'+(done===ph.tasks.length?' done':'')+'"><div class="ph-dot"></div><div class="ph-name">'+ph.name+'</div><div class="ph-prog">'+done+'/'+ph.tasks.length+'</div></div>'+
+      '<div class="phase-tasks">'+ph.tasks.map(function(t){var ck=checks[ph.id+'|'+t];return '<label class="ck'+(ck?' done':'')+'"><input type="checkbox" data-k="'+esc(ph.id+'|'+t)+'"'+(ck?' checked':'')+'><span>'+esc(t)+'</span></label>';}).join('')+'</div></div>';
+  });
+  openSheet(html);
+  Array.prototype.forEach.call($('sheet-content').querySelectorAll('.phase-head'),function(h){h.onclick=function(){h.parentElement.classList.toggle('open');};});
+  Array.prototype.forEach.call($('sheet-content').querySelectorAll('input[type=checkbox]'),function(cb){cb.onclick=function(e){e.stopPropagation();checks[cb.dataset.k]=cb.checked;persist();cb.parentElement.classList.toggle('done',cb.checked);};});
+}
+
+// Logistik — meals + inventory
+function sheetLogistik(){
+  var meals=scoped('meals'),inv=scoped('inventory');
+  var allergyList=scoped('participants').filter(function(p){return p.allergies&&p.status!=='cancelled';});
+  var html='<h3>🍲 Mat &amp; Logistik</h3>'+
+    '<label>Allergier &amp; specialkost ('+allergyList.length+')</label>'+
+    '<div class="card-panel" style="margin-bottom:4px">'+(allergyList.length?allergyList.map(function(p){return '<div class="li"><div class="body"><div class="ttl">'+esc(p.name)+'</div></div><span class="badge b-red">'+esc(p.allergies)+'</span></div>';}).join(''):'<div class="empty-msg">Inga registrerade</div>')+'</div>'+
+    '<label>Menyer</label><div id="meal-list"></div>'+
+    '<div class="add-row"><input id="meal-in" placeholder="Måltid, t.ex. Lördag middag"><button id="meal-add">+</button></div>'+
+    '<label style="margin-top:14px">Lager (mat, ved, vatten, förbrukning)</label><div id="inv-list"></div>'+
+    '<div class="add-row"><input id="inv-name" placeholder="Vara"><input id="inv-qty" type="number" placeholder="antal" style="max-width:80px"><button id="inv-add">+</button></div>'+
+    '<button class="sheet-close" id="log-close">Klar</button>';
+  openSheet(html);
+  function rm(){
+    $('meal-list').innerHTML=scoped('meals').map(function(m){return '<div class="li"><div class="body"><div class="ttl">'+esc(m.name)+'</div></div><button class="del" data-id="'+m.id+'">×</button></div>';}).join('')||'<div class="empty-msg">Inga menyer</div>';
+    $('inv-list').innerHTML=scoped('inventory').map(function(i){return '<div class="li"><div class="body"><div class="ttl">'+esc(i.name)+'</div></div><span class="badge b-gray">'+esc(i.qty)+'</span><button class="del" data-id="'+i.id+'" data-inv="1">×</button></div>';}).join('')||'<div class="empty-msg">Tomt lager</div>';
+    Array.prototype.forEach.call($('sheet-content').querySelectorAll('.del'),function(b){b.onclick=function(){if(b.dataset.inv)DB.inventory=DB.inventory.filter(function(x){return x.id!==b.dataset.id;});else DB.meals=DB.meals.filter(function(x){return x.id!==b.dataset.id;});persist();rm();};});
+  }
+  rm();
+  $('meal-add').onclick=function(){var v=$('meal-in').value.trim();if(!v)return;DB.meals.push({id:uid(),eventId:DB.activeEvent,name:v});$('meal-in').value='';persist();rm();};
+  $('inv-add').onclick=function(){var v=$('inv-name').value.trim();if(!v)return;DB.inventory.push({id:uid(),eventId:DB.activeEvent,name:v,qty:$('inv-qty').value||'1'});$('inv-name').value='';$('inv-qty').value='';persist();rm();};
+  $('log-close').onclick=closeSheet;
+}
+
+// Områdeshantering — schematic map
+var AREA_TYPES=[['läger','⛺'],['sovplats','🛏️'],['toalett','🚻'],['parkering','🅿️'],['säkerhet','🛡️'],['scen','🎪'],['mat','🍲']];
+function areaIcon(t){var a=AREA_TYPES.find(function(x){return x[0]===t;});return a?a[1]:'📍';}
+function sheetOmrade(){
+  var html='<h3>🏕️ Områdeshantering</h3><div class="soft" style="margin-bottom:8px">Tryck på kartan för att placera en markör (fungerar offline).</div>'+
+    '<div class="map-box" id="map-box"></div>'+
+    '<label style="margin-top:10px">Markörer</label><div id="area-list"></div>'+
+    '<button class="sheet-close" id="area-close">Klar</button>';
+  openSheet(html);
+  function rm(){
+    var box=$('map-box');var list=scoped('areas');
+    box.innerHTML=list.map(function(a){return '<div class="marker" style="left:'+a.x+'%;top:'+a.y+'%">'+areaIcon(a.type)+'<small>'+esc(a.name)+'</small></div>';}).join('');
+    $('area-list').innerHTML=list.length?list.map(function(a){return '<div class="li"><div class="body"><div class="ttl">'+areaIcon(a.type)+' '+esc(a.name)+'</div><div class="sub">'+esc(a.type)+'</div></div><button class="del" data-id="'+a.id+'">×</button></div>';}).join(''):'<div class="empty-msg">Inga markörer</div>';
+    Array.prototype.forEach.call($('area-list').querySelectorAll('.del'),function(b){b.onclick=function(){DB.areas=DB.areas.filter(function(x){return x.id!==b.dataset.id;});persist();rm();};});
+  }
+  rm();
+  $('map-box').onclick=function(e){
+    var r=this.getBoundingClientRect();var x=Math.round((e.clientX-r.left)/r.width*100),y=Math.round((e.clientY-r.top)/r.height*100);
+    var name=prompt('Namn på platsen:');if(!name)return;
+    var typeIdx=prompt('Typ: 1=Läger 2=Sovplats 3=Toalett 4=Parkering 5=Säkerhet 6=Scen 7=Mat','1');
+    var t=AREA_TYPES[(parseInt(typeIdx,10)||1)-1]||AREA_TYPES[0];
+    DB.areas.push({id:uid(),eventId:DB.activeEvent,name:name,type:t[0],x:x,y:y});persist();rm();
+  };
+  $('area-close').onclick=closeSheet;
+}
+
+// Säkerhetscenter
+var INC_TYPES=[['skada','🩹 Skada'],['konflikt','💢 Konflikt'],['regelbrott','⚖️ Regelbrott'],['sjukdom','🤒 Sjukdom'],['ovrigt','❗ Övrigt']];
+function sheetSakerhet(){
+  var html='<h3>🛡️ Säkerhetscenter</h3>'+
+    '<button class="crisis-btn" id="crisis" style="margin-bottom:12px">🚨 Akut hjälp</button>'+
+    '<label>Snabb incidentrapport</label>'+
+    '<select id="inc-type">'+INC_TYPES.map(function(t){return '<option value="'+t[0]+'">'+t[1]+'</option>';}).join('')+'</select>'+
+    '<textarea id="inc-desc" placeholder="Vad hände? Var? Vilka är inblandade?" style="margin-top:8px"></textarea>'+
+    '<button class="btn fill" style="width:100%;margin-top:8px" id="inc-add">Rapportera incident</button>'+
+    '<label style="margin-top:14px">Incidentlogg</label><div id="inc-list"></div>'+
+    '<button class="sheet-close" id="sak-close">Stäng</button>';
+  openSheet(html);
+  function rm(){
+    var list=scoped('incidents').slice().reverse();
+    $('inc-list').innerHTML=list.length?list.map(function(i){
+      var t=INC_TYPES.find(function(x){return x[0]===i.type;});
+      return '<div class="li"><div class="dot" style="background:'+(i.status==='resolved'?'var(--green)':'var(--red)')+'"></div><div class="body"><div class="ttl">'+(t?t[1]:'')+'</div><div class="sub">'+esc(i.desc)+' · '+esc(i.time)+'</div></div><button class="btn ghost" data-toggle="'+i.id+'" style="flex:0 0 auto;padding:4px 8px">'+(i.status==='resolved'?'↺':'✓')+'</button><button class="del" data-id="'+i.id+'">×</button></div>';
+    }).join(''):'<div class="empty-msg">Inga incidenter — lugnt läge</div>';
+    Array.prototype.forEach.call($('inc-list').querySelectorAll('[data-toggle]'),function(b){b.onclick=function(){var i=DB.incidents.find(function(x){return x.id===b.dataset.toggle;});i.status=i.status==='resolved'?'open':'resolved';persist();rm();};});
+    Array.prototype.forEach.call($('inc-list').querySelectorAll('.del'),function(b){b.onclick=function(){DB.incidents=DB.incidents.filter(function(x){return x.id!==b.dataset.id;});persist();rm();};});
+  }
+  rm();
+  $('inc-add').onclick=function(){var d=$('inc-desc').value.trim();if(!d)return;DB.incidents.push({id:uid(),eventId:DB.activeEvent,type:$('inc-type').value,desc:d,time:new Date().toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}),status:'open'});$('inc-desc').value='';persist();rm();renderDash();};
+  $('crisis').onclick=triggerCrisis;
+  $('sak-close').onclick=closeSheet;
+}
+function triggerCrisis(){
+  if(navigator.vibrate)navigator.vibrate([200,100,200,100,200]);
+  var e=ev();var crew=scoped('crew').filter(function(c){return c.role==='Säkerhet';});
+  var contact=crew.length?crew[0].name:'arrangörsstaben';
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      alert('🚨 AKUT HJÄLP UTLÖST\n\nLajv: '+e.name+'\nKontakt: '+contact+'\nPosition: '+pos.coords.latitude.toFixed(5)+', '+pos.coords.longitude.toFixed(5)+'\n\nVisa detta för säkerhetsansvarig och ring 112 vid livsfara.');
+    },function(){alert('🚨 AKUT HJÄLP UTLÖST\n\nLajv: '+e.name+'\nKontakt: '+contact+'\nPosition kunde inte hämtas.\n\nRing 112 vid livsfara.');});
+  }else alert('🚨 AKUT HJÄLP UTLÖST\n\nLajv: '+e.name+'\nKontakt: '+contact+'\n\nRing 112 vid livsfara.');
+}
+
+// Funktionärsportal
+var CREW_ROLES=['Arrangör','Säkerhet','NPC-ansvarig','Matansvarig','Logistik','Övrigt'];
+function sheetFunktionar(){
+  var html='<h3>👷 Funktionärsportal</h3>'+
+    '<div id="crew-list"></div>'+
+    '<label style="margin-top:10px">Lägg till funktionär</label>'+
+    '<input id="cr-name" placeholder="Namn">'+
+    '<div class="row" style="margin-top:6px"><select id="cr-role">'+CREW_ROLES.map(function(r){return '<option>'+r+'</option>';}).join('')+'</select><input id="cr-shift" placeholder="Pass, t.ex. Lör 08–14"></div>'+
+    '<button class="btn fill" style="width:100%;margin-top:8px" id="cr-add">Lägg till</button>'+
+    '<button class="sheet-close" id="fk-close">Klar</button>';
+  openSheet(html);
+  function rm(){
+    var list=scoped('crew');
+    $('crew-list').innerHTML=list.length?list.map(function(c){
+      return '<div class="li"><div class="dot" style="background:'+(c.checkedIn?'var(--green)':'var(--line)')+'"></div><div class="body"><div class="ttl">'+esc(c.name)+'</div><div class="sub">'+esc(c.role)+(c.shift?' · '+esc(c.shift):'')+'</div></div><button class="btn ghost" data-ci="'+c.id+'" style="flex:0 0 auto;padding:4px 9px">'+(c.checkedIn?'Incheckad':'Checka in')+'</button><button class="del" data-id="'+c.id+'">×</button></div>';
+    }).join(''):'<div class="empty-msg">Inga funktionärer</div>';
+    Array.prototype.forEach.call($('crew-list').querySelectorAll('[data-ci]'),function(b){b.onclick=function(){var c=DB.crew.find(function(x){return x.id===b.dataset.ci;});c.checkedIn=!c.checkedIn;persist();rm();renderDash();};});
+    Array.prototype.forEach.call($('crew-list').querySelectorAll('.del'),function(b){b.onclick=function(){DB.crew=DB.crew.filter(function(x){return x.id!==b.dataset.id;});persist();rm();renderDash();};});
+  }
+  rm();
+  $('cr-add').onclick=function(){var n=$('cr-name').value.trim();if(!n)return;DB.crew.push({id:uid(),eventId:DB.activeEvent,name:n,role:$('cr-role').value,shift:$('cr-shift').value.trim(),checkedIn:false});$('cr-name').value='';$('cr-shift').value='';persist();rm();renderDash();};
+  $('fk-close').onclick=closeSheet;
+}
+
+// Kommunikation
+function sheetKommunikation(){
+  var groups=scoped('factions').map(function(f){return f.name;});
+  var html='<h3>📢 Kommunikation</h3>'+
+    '<label>Mottagare</label><select id="msg-aud"><option>Alla deltagare</option><option>Funktionärer</option>'+groups.map(function(g){return '<option>Fraktion: '+esc(g)+'</option>';}).join('')+'</select>'+
+    '<label>Kanal</label><select id="msg-chan"><option>Push</option><option>Mail</option><option>SMS</option></select>'+
+    '<label>Meddelande</label><textarea id="msg-text" placeholder="Skriv ditt utskick…"></textarea>'+
+    '<button class="btn fill" style="width:100%;margin-top:8px" id="msg-send">Skicka utskick</button>'+
+    '<label style="margin-top:14px">Skickat</label><div id="msg-log"></div>'+
+    '<button class="sheet-close" id="km-close">Klar</button>';
+  openSheet(html);
+  function rm(){
+    var list=scoped('messages').slice().reverse();
+    $('msg-log').innerHTML=list.length?list.map(function(m){return '<div class="li"><div class="body"><div class="ttl">'+esc(m.text)+'</div><div class="sub">'+esc(m.audience)+' · '+esc(m.channel)+' · '+esc(m.time)+'</div></div><button class="del" data-id="'+m.id+'">×</button></div>';}).join(''):'<div class="empty-msg">Inga utskick</div>';
+    Array.prototype.forEach.call($('msg-log').querySelectorAll('.del'),function(b){b.onclick=function(){DB.messages=DB.messages.filter(function(x){return x.id!==b.dataset.id;});persist();rm();renderDash();};});
+  }
+  rm();
+  $('msg-send').onclick=function(){var t=$('msg-text').value.trim();if(!t)return;DB.messages.push({id:uid(),eventId:DB.activeEvent,text:t,audience:$('msg-aud').value,channel:$('msg-chan').value,time:new Date().toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})});$('msg-text').value='';persist();rm();renderDash();};
+  $('km-close').onclick=closeSheet;
+}
+
+// AI-arrangör (Anthropic API, user key)
+var AI_PRESETS=[
+  ['Skapa konflikt','Skapa en intressant konflikt mellan två fraktioner i mitt lajv. Ge en kort titel och 3 meningar beskrivning på svenska.'],
+  ['Generera 20 bybor','Generera 20 färgglada bybor som NPC:er till ett fantasylajv. Ge varje en kort rad: namn, yrke och en personlighetsdetalj. Svenska.'],
+  ['Riskanalys','Gör en riskanalys av ett lajvarrangemang och peka ut vilka delar som ofta saknar backup. Punktlista på svenska.'],
+  ['Efteranalys','Föreslå frågor till en deltagarenkät för efteranalys av ett lajv. Svenska.']
+];
+function sheetAI(){
+  var html='<h3>🤖 AI-arrangör</h3>'+
+    (apiKey?'':'<div class="hint">Lägg in din Anthropic API-nyckel nedan för att aktivera AI. Nyckeln sparas bara lokalt på den här enheten.</div>')+
+    '<label>Snabbval</label><div style="display:flex;flex-wrap:wrap;gap:6px">'+AI_PRESETS.map(function(p,i){return '<button class="btn ghost" data-preset="'+i+'" style="flex:0 0 auto">'+esc(p[0])+'</button>';}).join('')+'</div>'+
+    '<label style="margin-top:10px">Din fråga</label><textarea id="ai-prompt" placeholder="Be AI om hjälp med intriger, NPC:er, risker…"></textarea>'+
+    '<button class="btn fill" style="width:100%;margin-top:8px" id="ai-run">Fråga AI</button>'+
+    '<div id="ai-out" class="ai-box" style="margin-top:12px;display:none"></div>'+
+    '<label style="margin-top:14px">Anthropic API-nyckel</label><input id="ai-key" type="password" value="'+esc(apiKey)+'" placeholder="sk-ant-…">'+
+    '<button class="btn ghost" style="width:100%;margin-top:6px" id="ai-key-save">Spara nyckel lokalt</button>'+
+    '<button class="sheet-close" id="ai-close">Stäng</button>';
+  openSheet(html);
+  Array.prototype.forEach.call($('sheet-content').querySelectorAll('[data-preset]'),function(b){b.onclick=function(){$('ai-prompt').value=AI_PRESETS[+b.dataset.preset][1];};});
+  $('ai-key-save').onclick=function(){apiKey=$('ai-key').value.trim();try{localStorage.setItem(API_KEY_STORE,apiKey);}catch(e){}var o=$('ai-out');o.style.display='block';o.innerHTML='<div class="ai-tip">✅ Nyckel sparad lokalt.</div>';};
+  $('ai-run').onclick=function(){
+    var key=$('ai-key').value.trim()||apiKey;
+    var prompt=$('ai-prompt').value.trim();if(!prompt)return;
+    if(!key){var o=$('ai-out');o.style.display='block';o.innerHTML='<div class="ai-tip">⚠ Ingen API-nyckel angiven.</div>';return;}
+    var e=ev();var ctx='Kontext för lajvet "'+e.name+'": '+scoped('characters').length+' karaktärer, '+scoped('factions').map(function(f){return f.name;}).join(', ')+' som fraktioner, '+scoped('plots').length+' intriger.';
+    var out=$('ai-out');out.style.display='block';out.innerHTML='<div class="ai-tip">🤖 Tänker…</div>';
+    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:ctx+'\n\n'+prompt}]})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.error){out.innerHTML='<div class="ai-tip">⚠ '+esc(d.error.message||'API-fel')+'</div>';return;}
+        var text=(d.content||[]).map(function(c){return c.text||'';}).filter(Boolean).join('\n');
+        out.innerHTML='<div class="ai-tip" style="white-space:pre-wrap">'+esc(text)+'</div>';
+      }).catch(function(err){out.innerHTML='<div class="ai-tip">⚠ Kunde inte nå API:t: '+esc(err.message)+'</div>';});
+  };
+  $('ai-close').onclick=closeSheet;
+}
+
+// Statistik & efteranalys
+function sheetStatistik(){
+  var P=scoped('participants');
+  var byGroup={};P.forEach(function(p){var g=p.group||'Ingen fraktion';byGroup[g]=(byGroup[g]||0)+1;});
+  var maxG=Math.max.apply(null,Object.keys(byGroup).map(function(k){return byGroup[k];}).concat([1]));
+  var inc=scoped('incidents');
+  var html='<h3>📊 Statistik &amp; efteranalys</h3>'+
+    '<div class="stat-grid" style="margin-bottom:12px">'+
+    '<div class="stat"><div class="n">'+P.filter(function(p){return p.status!=='cancelled';}).length+'</div><div class="t">deltagare</div></div>'+
+    '<div class="stat"><div class="n">'+inc.length+'</div><div class="t">incidenter totalt</div></div></div>'+
+    '<label>Deltagare per fraktion</label><div class="card-panel">'+
+    (Object.keys(byGroup).length?Object.keys(byGroup).map(function(k){var pct=Math.round(byGroup[k]/maxG*100);return '<div class="bbar"><div class="bb-top"><span>'+esc(k)+'</span><span>'+byGroup[k]+'</span></div><div class="bb-track"><div class="bb-fill" style="width:'+pct+'%;background:var(--gold)"></div></div></div>';}).join(''):'<div class="empty-msg">Ingen data</div>')+
+    '</div>'+
+    '<div class="hint" style="margin-top:10px">🤖 AI-efteranalys: '+esc(leastActiveFaction(byGroup))+'</div>'+
+    '<button class="sheet-close" id="stat-close">Stäng</button>';
+  openSheet(html);
+  $('stat-close').onclick=closeSheet;
+}
+function leastActiveFaction(byGroup){
+  var keys=Object.keys(byGroup);if(!keys.length)return 'Lägg till deltagare för analys.';
+  var min=keys[0];keys.forEach(function(k){if(byGroup[k]<byGroup[min])min=k;});
+  return 'Fraktionen "'+min+'" har minst deltagare ('+byGroup[min]+') — överväg fler intriger som lockar dit spelare.';
+}
+
+// Kunskapsbank
+var KB=[
+  ['🛡️ Lajvsäkerhet','Ha alltid en tydlig säkerhetsansvarig, känt off-game-ord (t.ex. "paus"), samlingsplats och uppdaterade kontaktlistor. Gå igenom rutiner med alla funktionärer innan start.'],
+  ['🎭 Arrangörsarbete','Delegera tidigt och dokumentera beslut. En gemensam checklista per fas minskar stressen ju närmare lajvet ni kommer.'],
+  ['💢 Konflikthantering','Skilj på in-game och off-game konflikter. Lyssna, validera känslan och ha en neutral arrangör som medlare. Dokumentera allvarliga händelser.'],
+  ['📜 Intrigskrivning','Ge varje karaktär minst en relation och ett mål. Bygg intriger som korsar fraktionsgränser så att fler spelare dras in i handlingen.'],
+  ['🤝 Inkludering','Var tydlig med förväntningar, erbjud trygghetsverktyg och fråga om behov i anmälan. En inkluderande gemenskap är säkrare och roligare.'],
+  ['♿ Tillgänglighet','Tänk på framkomlighet, viloplatser, ljud/ljuskänslighet och specialkost. Fråga deltagarna i förväg och planera området därefter.']
+];
+function sheetKunskap(){
+  openSheet('<h3>📚 Kunskapsbank</h3>'+KB.map(function(a){return '<div class="kb-article"><h4>'+a[0]+'</h4><p>'+esc(a[1])+'</p></div>';}).join('')+'<button class="sheet-close" id="kb-close">Stäng</button>');
+  $('kb-close').onclick=closeSheet;
+}
+
+// Synk
+function sheetSynk(){
+  openSheet('<h3>☁️ Synk via GitHub</h3>'+
+    '<div class="hint">Appen läser och sparar <b>lajv-data.json</b> i ett <b>privat</b> GitHub-repo så att hela arrangörsstaben ser samma data. Token sparas bara lokalt — aldrig i koden.</div>'+
+    '<label>GitHub-användarnamn (ägare av repot)</label><input id="gh-owner" value="'+esc(sync.owner)+'" placeholder="miracuel">'+
+    '<label>Namn på data-repot (privat)</label><input id="gh-repo" value="'+esc(sync.repo)+'" placeholder="lajv-data">'+
+    '<label>Fine-grained token</label><input id="gh-token" type="password" value="'+esc(sync.token)+'" placeholder="github_pat_…">'+
+    '<div class="hint">github.com → Settings → Developer settings → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, Contents: Read and write.</div>'+
+    '<div class="status-line" id="gh-status"></div>'+
+    '<button class="btn fill" style="width:100%;margin-top:10px" id="gh-save">Spara &amp; synka</button>'+
+    '<button class="btn ghost" style="width:100%;margin-top:8px" id="gh-pull">Hämta senaste nu</button>'+
+    '<button class="sheet-close" id="gh-close">Stäng</button>');
+  function st(msg,type){var el=$('gh-status');el.style.display='block';el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'var(--red-soft)':'var(--gold-soft)';el.style.color=type==='ok'?'#3f5733':type==='err'?'var(--red)':'var(--gold)';el.textContent=msg;}
+  $('gh-save').onclick=function(){
+    sync.owner=$('gh-owner').value.trim();sync.repo=$('gh-repo').value.trim();sync.token=$('gh-token').value.trim();
+    if(!syncOn()){st('Fyll i alla tre fälten.','err');return;}
+    saveSync();st('Testar anslutning…','info');
+    ghGet().then(function(data){
+      if(data){st('✓ Ansluten! Hämtar stabens data…','ok');return ghPull();}
+      st('✓ Ansluten! Repot tomt — laddar upp din data…','ok');return ghPush();
+    }).then(function(){setTimeout(closeSheet,1200);}).catch(function(e){st('Fel: '+e.message+'. Kontrollera uppgifter och Contents-behörighet.','err');});
+  };
+  $('gh-pull').onclick=function(){ghPull().then(function(){st('Hämtat.','ok');});};
+  $('gh-close').onclick=closeSheet;
+}
+
+// ── Kontrollrummet ───────────────────────────────────────────────
+var krTimer=null;
+function openKR(){$('kr').classList.add('open');renderKR();krTimer=setInterval(renderKR,1000*30);updateClock();var ct=setInterval(function(){if(!$('kr').classList.contains('open')){clearInterval(ct);return;}updateClock();},1000);}
+function closeKR(){$('kr').classList.remove('open');if(krTimer)clearInterval(krTimer);}
+function updateClock(){$('kr-clock').textContent=new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});}
+function renderKR(){
+  var e=ev();$('kr-event').textContent=e.name+(e.place?' · '+e.place:'');
+  var P=scoped('participants');
+  var present=P.filter(function(p){return p.status==='confirmed';}).length;
+  var crew=scoped('crew');var onDuty=crew.filter(function(c){return c.checkedIn;}).length;
+  var activePlots=scoped('plots').filter(function(p){return p.status==='active';}).length;
+  var openInc=scoped('incidents').filter(function(i){return i.status!=='resolved';}).length;
+  var dl=daysLeft();
+  var cards=[
+    {lbl:'Deltagare på plats',n:present,cls:''},
+    {lbl:'Funktionärer i tjänst',n:onDuty+'/'+crew.length,cls:''},
+    {lbl:'Aktiva intriger',n:activePlots,cls:''},
+    {lbl:'Öppna incidenter',n:openInc,cls:openInc?'alert':''}
+  ];
+  $('kr-grid').innerHTML=cards.map(function(c){return '<div class="kr-card '+c.cls+'"><div class="kc-lbl">'+c.lbl+'</div><div class="kc-n">'+c.n+'</div></div>';}).join('')+
+    '<div class="kr-card"><div class="kc-lbl">Tid till/sedan start</div><div class="kc-n">'+(dl==null?'–':(dl>0?dl+' d':dl===0?'IDAG':Math.abs(dl)+' d sen'))+'</div></div>'+
+    '<div class="kr-card" id="kr-weather"><div class="kc-lbl">Väder (Stockholm)</div><div class="kc-n" id="kr-weather-n">…</div></div>';
+  // feed: incidents + messages + ai
+  var feed=[];
+  scoped('incidents').slice(-4).forEach(function(i){feed.push({tm:i.time||'',txt:'🛡️ '+(INC_TYPES.find(function(x){return x[0]===i.type;})||[,''])[1]+': '+i.desc});});
+  scoped('messages').slice(-3).forEach(function(m){feed.push({tm:m.time||'',txt:'📢 '+m.text});});
+  aiTips().slice(0,2).forEach(function(t){feed.push({tm:'AI',txt:t});});
+  $('kr-feed').innerHTML=feed.length?feed.reverse().map(function(f){return '<div class="kr-feed-row"><span class="tm">'+esc(f.tm)+'</span><span>'+esc(f.txt)+'</span></div>';}).join(''):'<div class="empty-msg">Lugnt läge — inga händelser</div>';
+  fetchWeather();
+}
+var weatherDone=false;
+function fetchWeather(){
+  if(weatherDone)return;weatherDone=true;
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true').then(function(r){return r.json();}).then(function(d){
+    if(d&&d.current_weather){$('kr-weather-n').textContent=Math.round(d.current_weather.temperature)+'°C';}
+    else $('kr-weather-n').textContent='–';
+  }).catch(function(){var el=$('kr-weather-n');if(el)el.textContent='–';});
+}
+
+// ── Events ───────────────────────────────────────────────────────
+function renderEventSelect(){
+  $('event-select').innerHTML=DB.events.map(function(e){return '<option value="'+e.id+'"'+(e.id===DB.activeEvent?' selected':'')+'>'+esc(e.name)+'</option>';}).join('');
+}
+$('event-select').onchange=function(){DB.activeEvent=this.value;saveLocal();renderAll();};
+$('event-add').onclick=function(){
+  openSheet('<h3>Nytt lajv</h3>'+
+    '<label>Namn</label><input id="ev-name" placeholder="t.ex. Sommarlajvet 2026">'+
+    '<div class="row"><div><label>Startdatum</label><input id="ev-start" type="date"></div><div><label>Slutdatum</label><input id="ev-end" type="date"></div></div>'+
+    '<label>Plats</label><input id="ev-place" placeholder="t.ex. Skogsborg">'+
+    '<button class="sheet-close" id="ev-save">Skapa lajv</button>');
+  $('ev-save').onclick=function(){var n=$('ev-name').value.trim();if(!n)return;var id=uid();DB.events.push({id:id,name:n,start:$('ev-start').value,end:$('ev-end').value,place:$('ev-place').value.trim(),checks:{}});DB.activeEvent=id;persist();closeSheet();renderAll();};
+};
+
+// ── Export / Import ──────────────────────────────────────────────
+$('more-export').onclick=function(){
+  var blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var d=new Date();a.download='lajvmastaren-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';a.click();
+};
+$('more-import').onclick=function(){$('import-file').click();};
+$('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&Array.isArray(d.events)){for(var k in DB){if(d[k]!==undefined)DB[k]=d[k];}if(!DB.events.some(function(x){return x.id===DB.activeEvent;}))DB.activeEvent=DB.events[0]&&DB.events[0].id;persist();renderAll();}else alert('Ogiltig backupfil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Navigation / sub-tabs ────────────────────────────────────────
+function setView(v){
+  Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(b){b.classList.toggle('active',b.dataset.v===v);});
+  Array.prototype.forEach.call(document.querySelectorAll('.view'),function(el){el.classList.toggle('active',el.id==='view-'+v);});
+  window.scrollTo(0,0);
+}
+Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(b){b.onclick=function(){setView(b.dataset.v);};});
+function wireSeg(segId,prefix){
+  var seg=$(segId);
+  Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){b.onclick=function(){
+    Array.prototype.forEach.call(seg.querySelectorAll('button'),function(x){x.classList.remove('active');});b.classList.add('active');
+    var parent=seg.parentElement;
+    Array.prototype.forEach.call(parent.querySelectorAll('.subview'),function(s){s.classList.remove('active');});
+    $('sub-'+b.dataset.s).classList.add('active');
+  };});
+}
+wireSeg('people-seg');wireSeg('story-seg');wireSeg('econ-seg');
+Array.prototype.forEach.call(document.querySelectorAll('[data-open]'),function(el){if(el.classList.contains('menu-item'))el.onclick=function(){openMore(el.dataset.open);};});
+
+// buttons
+$('add-participant').onclick=function(){participantSheet(null);};
+$('add-char').onclick=function(){charSheet(null);};
+$('add-lore').onclick=function(){loreSheet(null);};
+$('add-plot').onclick=function(){plotSheet(null);};
+$('fac-add').onclick=function(){var v=$('fac-name').value.trim();if(!v)return;DB.factions.push({id:uid(),eventId:DB.activeEvent,name:v,desc:''});$('fac-name').value='';persist();renderAll();};
+$('add-ticket').onclick=function(){openSheet('<h3>Ny biljettyp</h3><label>Namn</label><input id="t-type" placeholder="t.ex. Funktionär / Standard"><label>Pris (kr)</label><input id="t-price" type="number" placeholder="0"><button class="sheet-close" id="t-save">Spara</button>');$('t-save').onclick=function(){var ty=$('t-type').value.trim();if(!ty)return;DB.tickets.push({id:uid(),eventId:DB.activeEvent,type:ty,price:+$('t-price').value||0,sold:0});persist();closeSheet();renderAll();};};
+$('exp-add').onclick=function(){var l=$('exp-label').value.trim();if(!l)return;DB.budget.push({id:uid(),eventId:DB.activeEvent,flow:'expense',label:l,amount:+$('exp-amt').value||0});$('exp-label').value='';$('exp-amt').value='';persist();renderAll();};
+$('inc-add').onclick=function(){var l=$('inc-label').value.trim();if(!l)return;DB.budget.push({id:uid(),eventId:DB.activeEvent,flow:'income',label:l,amount:+$('inc-amt').value||0});$('inc-label').value='';$('inc-amt').value='';persist();renderAll();};
+$('open-kr').onclick=openKR;
+$('kr-close').onclick=closeKR;
+$('kr-crisis').onclick=triggerCrisis;
+
+// ── Theme ────────────────────────────────────────────────────────
+function applyTheme(){
+  var m=settings.theme||'auto';var dark=m==='dark'||(m==='auto'&&(new Date().getHours()>=20||new Date().getHours()<7));
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  var b=$('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+}
+$('theme-btn').onclick=function(){settings.theme=settings.theme==='auto'?'dark':settings.theme==='dark'?'light':'auto';saveSettings();applyTheme();};
+
+// ── Render all ───────────────────────────────────────────────────
+function renderAll(){
+  renderEventSelect();renderDash();renderParticipants();renderFactions();renderChars();renderLore();renderPlots();renderEcon();
+  if($('kr').classList.contains('open'))renderKR();
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+loadAll();
+applyTheme();setInterval(applyTheme,60000);
+if(!syncOn())setPill('','Lokal');
+renderAll();
+if(syncOn())ghPull();
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>

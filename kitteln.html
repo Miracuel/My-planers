@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kitteln">
+<meta name="theme-color" content="#1A1410">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Kitteln","short_name":"Kitteln","display":"standalone","background_color":"%231A1410","theme_color":"%231A1410","start_url":"."}'>
+<title>Kitteln</title>
+<style>
+:root{
+  --bg:#1A1410;--panel:#241C16;--panel2:#2E251D;--line:#3D3127;
+  --ink:#F0E6D6;--muted:#A89377;--copper:#C8884E;--copper-dim:#9A6838;
+  --sage:#8FA06E;--sage-dim:#5F6E48;--amber:#D9B25F;
+  --warn:#C08A7E;--ok:#8FA06E;--card:#2A211A;
+  --navbg:rgba(26,20,16,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(1100px 560px at 50% -10%,#2A2016 0%,var(--bg) 62%) fixed,var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:23px;color:var(--copper);letter-spacing:.06em;text-align:center;margin:4px 0 2px}
+.moon-line{text-align:center;font-size:12px;color:var(--muted);margin-bottom:6px}
+.sync-pill{display:block;margin:0 auto 14px;font-size:10.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:3px 11px;cursor:pointer;font-family:inherit}
+.sync-pill.ok{color:var(--sage);border-color:var(--sage-dim)}
+.sync-pill.err{color:var(--warn);border-color:#6E443C}
+.section-title{font-family:Georgia,serif;font-size:17px;color:var(--copper);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.btn{border:1px solid var(--copper-dim);background:linear-gradient(180deg,#30251B,#241C16);color:var(--copper);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:#30251B}
+.btn.fill{background:var(--copper);color:#241C16;border-color:var(--copper)}
+.btn.ghost{border-color:var(--line);color:var(--muted);background:transparent;font-size:12px;padding:7px 10px}
+.btn:disabled{opacity:.55;cursor:default}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:11px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--copper-dim)}
+textarea{resize:vertical}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.view{display:none}
+.view.active{display:block}
+
+/* Filterchips */
+.filterbar{display:flex;gap:7px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+.filterbar::-webkit-scrollbar{display:none}
+.fchip{flex-shrink:0;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:6px 12px;font-size:12.5px;color:var(--muted);cursor:pointer;font-family:inherit;white-space:nowrap}
+.fchip.sel{background:var(--copper);color:#241C16;border-color:var(--copper)}
+.intent-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.ichip{border:1px solid var(--sage-dim);background:var(--panel);border-radius:14px;padding:6px 11px;font-size:12.5px;color:var(--sage);cursor:pointer;font-family:inherit}
+.ichip.sel{background:var(--sage);color:#1A1410;border-color:var(--sage)}
+
+/* Receptkort */
+.rcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden}
+.rcard::before{content:'✦';position:absolute;top:9px;right:12px;color:var(--copper-dim);font-size:12px;opacity:.6}
+.rcard h4{font-family:Georgia,serif;font-weight:400;font-size:16px;color:var(--ink);margin-bottom:3px;padding-right:18px}
+.rcard .meta{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rcard .tag{background:var(--panel2);border-radius:10px;padding:2px 8px;color:var(--sage)}
+.rcard .fav{position:absolute;bottom:11px;right:12px;font-size:15px}
+.cat-emoji{font-size:13px}
+
+/* Receptdetalj */
+.detail h2{font-family:Georgia,serif;font-weight:400;font-size:20px;color:var(--copper);margin-bottom:6px}
+.detail .dmeta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.detail .dmeta .tag{background:var(--panel2);border-radius:10px;padding:3px 9px;color:var(--sage)}
+.intention-box{background:linear-gradient(180deg,#2E251D,#241C16);border:1px solid var(--copper-dim);border-radius:12px;padding:11px 13px;font-size:13.5px;line-height:1.6;color:var(--amber);font-style:italic;margin-bottom:14px}
+.ing{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line)}
+.ing:first-child{border-top:none}
+.ing .dot{width:7px;height:7px;border-radius:50%;background:var(--copper);margin-top:6px;flex-shrink:0}
+.ing .iname{font-size:14px;color:var(--ink)}
+.ing .iqty{font-size:12px;color:var(--muted)}
+.ing .isym{font-size:11.5px;color:var(--sage);font-style:italic;margin-top:2px;line-height:1.5}
+.steps-ol{counter-reset:s;list-style:none;margin-top:4px}
+.steps-ol li{position:relative;padding:8px 0 8px 34px;font-size:14px;line-height:1.55;border-top:1px solid var(--line)}
+.steps-ol li:first-child{border-top:none}
+.steps-ol li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:8px;width:23px;height:23px;border-radius:50%;background:var(--panel2);border:1px solid var(--copper-dim);color:var(--copper);font-size:12px;display:flex;align-items:center;justify-content:center}
+.safety{background:#2E2018;border:1px solid #6E443C;border-radius:12px;padding:11px 13px;font-size:12.5px;line-height:1.6;color:var(--warn);margin-top:14px;display:flex;gap:8px}
+.safety .si{flex-shrink:0}
+
+/* Skafferi */
+.pantry-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line)}
+.pantry-row:first-child{border-top:none}
+.pantry-row .pname{flex:1;font-size:14px}
+.pantry-row .ptype{font-size:11px;color:var(--muted)}
+.status-dots{display:flex;gap:5px}
+.sdot{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.sdot.sel-ok{background:var(--sage);border-color:var(--sage);color:#1A1410}
+.sdot.sel-low{background:var(--amber);border-color:var(--amber);color:#1A1410}
+.sdot.sel-out{background:var(--warn);border-color:var(--warn);color:#1A1410}
+.pantry-row .pdel{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer}
+.low-banner{background:#2E2A18;border:1px solid var(--sage-dim);border-radius:12px;padding:10px 13px;font-size:12.5px;color:var(--amber);margin-bottom:12px;display:none}
+.match-pct{font-size:11px;color:var(--sage);background:var(--panel2);border-radius:10px;padding:2px 8px}
+
+/* Brygd / AI */
+.ai-intro{font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.mode-row{display:flex;gap:8px;margin-bottom:10px}
+.mode-row button{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:11px;padding:8px;font-size:13px;cursor:pointer;font-family:inherit}
+.mode-row button.sel{background:var(--copper);color:#241C16;border-color:var(--copper)}
+.suggest-wrap{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.suggest{border:1px solid var(--sage-dim);background:transparent;color:var(--sage);border-radius:13px;padding:7px 11px;font-size:12px;cursor:pointer;font-family:inherit;text-align:left}
+.ai-box{background:linear-gradient(180deg,#2E251D,#241C16);border:1px solid var(--copper-dim);border-radius:12px;padding:13px;font-size:13.5px;line-height:1.7;color:var(--ink);white-space:pre-wrap;margin-top:12px}
+.ai-box .ai-lbl{display:block;font-size:11px;color:var(--copper);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+
+/* Dagbok */
+.jentry{padding:11px 0;border-top:1px solid var(--line)}
+.jentry:first-child{border-top:none}
+.jentry .jdate{font-size:11px;color:var(--muted)}
+.jentry .jtitle{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:2px 0 4px}
+.jentry .jbody{font-size:13px;color:var(--ink);line-height:1.6;white-space:pre-wrap}
+.jentry .jmeta{font-size:11px;color:var(--sage);margin-top:6px;display:flex;flex-wrap:wrap;gap:6px}
+.jentry .jmeta .tag{background:var(--panel2);border-radius:9px;padding:2px 8px}
+.jentry .jdel{float:right;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.result-row{display:flex;gap:6px;margin-top:6px}
+.result-row button{font-size:11px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:9px;padding:4px 9px;cursor:pointer}
+.result-row button.on{background:var(--sage);color:#1A1410;border-color:var(--sage)}
+
+/* Månen */
+.moon-stage{text-align:center;padding:6px 0}
+.moon-stage canvas{max-width:200px;width:60%;height:auto}
+.phase-name{font-family:Georgia,serif;font-size:21px;color:var(--amber);margin-top:8px}
+.phase-sub{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6}
+.mevent{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.mevent:first-child{border-top:none}
+.mevent .mi{font-size:18px}
+.mevent .mn{flex:1}
+.mevent .md{font-size:11px;color:var(--muted)}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10.5px;padding:9px 1px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--copper);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(10,8,6,.55);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.4);border-top:1px solid var(--copper-dim)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-weight:400;font-size:19px;color:var(--copper);margin-bottom:8px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--copper);color:#241C16;font-size:14px;font-weight:600;cursor:pointer;margin-top:14px;font-family:inherit}
+.gear{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:16px;cursor:pointer;z-index:45;font-family:inherit}
+.add-fab{position:fixed;bottom:calc(86px + env(safe-area-inset-bottom));right:max(14px,calc(50vw - 226px));width:52px;height:52px;border-radius:50%;border:1px solid var(--copper);background:var(--copper);color:#241C16;font-size:26px;cursor:pointer;z-index:42;box-shadow:0 4px 14px rgba(0,0,0,.35);font-family:inherit;display:none}
+.foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.sync-status{font-size:12px;margin-top:8px;padding:8px 10px;border-radius:10px;display:none}
+.sync-status.ok{display:block;background:#26301C;color:var(--sage)}
+.sync-status.err{display:block;background:#2E2018;color:var(--warn)}
+.sync-status.info{display:block;background:#2A2418;color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="gear" id="gear-btn" aria-label="Inställningar">⚙</button>
+<h1 class="brand">✶ Kitteln</h1>
+<div class="moon-line" id="moon-line"></div>
+<button class="sync-pill" id="sync-pill">Synk: av</button>
+
+<!-- RECEPT -->
+<div class="view active" id="view-recept">
+  <div class="filterbar" id="cat-filter"></div>
+  <div class="section-title" style="margin-top:10px">Intention</div>
+  <div class="intent-grid" id="intent-filter"></div>
+  <div class="section-title">Recept <span class="soft" id="recipe-count"></span></div>
+  <div id="recipe-list"></div>
+</div>
+
+<!-- SKAFFERI -->
+<div class="view" id="view-skafferi">
+  <div class="low-banner" id="low-banner"></div>
+  <div class="section-title" style="margin-top:6px">Vad kan jag laga nu? <button class="btn ghost" id="match-toggle">Visa</button></div>
+  <div id="match-list" style="display:none"></div>
+  <div class="section-title">Mitt skafferi</div>
+  <div class="filterbar" id="pantry-filter"></div>
+  <div class="card-panel" style="margin-top:8px"><div id="pantry-list"></div></div>
+</div>
+
+<!-- BRYGD (AI) -->
+<div class="view" id="view-brygd">
+  <div class="section-title" style="margin-top:6px">Brygd-hjälpen ✨</div>
+  <div class="card-panel">
+    <div class="ai-intro">Be Claude koka ihop ett recept eller svara på en fråga. Tolkningarna görs via din egen API-nyckel från Anthropic (console.anthropic.com → API keys). Nyckeln sparas bara lokalt och följer inte med i synk eller säkerhetskopior.</div>
+    <div class="mode-row" id="ai-mode">
+      <button data-m="recept" class="sel">Skapa recept</button>
+      <button data-m="fraga">Fråga fritt</button>
+    </div>
+    <textarea id="ai-input" rows="3" placeholder="T.ex. Skapa ett recept med lavendel, honung och citron för bättre sömn"></textarea>
+    <div class="suggest-wrap" id="ai-suggest"></div>
+    <button class="btn fill" id="ai-run" style="width:100%">Brygg fram ✦</button>
+    <div id="ai-result"></div>
+  </div>
+</div>
+
+<!-- DAGBOK -->
+<div class="view" id="view-dagbok">
+  <div class="section-title" style="margin-top:6px">Dagbok & ritualer <button class="btn ghost" id="add-journal">Ny rad</button></div>
+  <div class="card-panel"><div id="journal-list"></div></div>
+  <div class="section-title">Sparade favoriter</div>
+  <div class="card-panel"><div id="fav-list"></div></div>
+</div>
+
+<!-- MÅNEN -->
+<div class="view" id="view-manen">
+  <div class="card-panel moon-stage">
+    <canvas id="bigmoon" width="400" height="400"></canvas>
+    <div class="phase-name" id="phase-name"></div>
+    <div class="phase-sub" id="phase-sub"></div>
+  </div>
+  <div class="section-title">Rekommenderat just nu</div>
+  <div class="card-panel"><div id="moon-reco"></div></div>
+  <div class="section-title">Närmast i månens kalender</div>
+  <div class="card-panel"><div id="moon-events"></div></div>
+  <div class="section-title">Recept för månfaser & årshjul</div>
+  <div id="moon-recipes"></div>
+</div>
+
+<button class="add-fab" id="add-fab">+</button>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="recept"><span>📖</span>Recept</button>
+  <button data-v="skafferi"><span>🫙</span>Skafferi</button>
+  <button data-v="brygd"><span>✨</span>Brygd</button>
+  <button data-v="dagbok"><span>📔</span>Dagbok</button>
+  <button data-v="manen"><span>☾</span>Månen</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="detail-sheet"><div class="detail" id="detail-body"></div><button class="sheet-close" id="detail-close">Stäng</button></div>
+
+<div class="sheet" id="addrecipe-sheet">
+  <h3 id="ar-title">Nytt recept</h3>
+  <label>Namn</label><input type="text" id="ar-name" placeholder="T.ex. Lavendelte för lugn">
+  <label>Kategori</label><select id="ar-cat"></select>
+  <label>Intentioner (komma-separerat)</label><input type="text" id="ar-int" placeholder="lugn, sömn">
+  <div class="btn-row"><div style="flex:1"><label>Svårighet</label><select id="ar-diff"><option>Lätt</option><option>Medel</option><option>Avancerad</option></select></div><div style="flex:1"><label>Tid</label><input type="text" id="ar-time" placeholder="10 min"></div></div>
+  <label>Ingredienser — en per rad: namn | mängd | symbolik</label>
+  <textarea id="ar-ing" rows="4" placeholder="Lavendel | 1 tsk | lugn och sömn&#10;Honung | 1 tsk | sötma och tröst"></textarea>
+  <label>Steg — ett per rad</label>
+  <textarea id="ar-steps" rows="4" placeholder="Koka upp vatten&#10;Låt dra 5 minuter"></textarea>
+  <label>Magisk intention (text)</label><textarea id="ar-intent" rows="2" placeholder="Skriv en mening om syftet…"></textarea>
+  <label>Säkerhetsnotis (frivilligt)</label><textarea id="ar-safety" rows="2" placeholder="T.ex. undvik vid graviditet, allergirisk…"></textarea>
+  <label>Månfas (frivilligt)</label><select id="ar-moon"><option value="">— ingen —</option><option>nymåne</option><option>fullmåne</option></select>
+  <button class="sheet-close" id="ar-save">Spara recept</button>
+</div>
+
+<div class="sheet" id="addpantry-sheet">
+  <h3>Lägg till i skafferiet</h3>
+  <label>Namn</label><input type="text" id="ap-name" placeholder="T.ex. Kamomill">
+  <label>Typ</label><select id="ap-type"><option value="ort">Ört</option><option value="krydda">Krydda</option><option value="olja">Olja</option><option value="kristall">Kristall</option><option value="ovrigt">Övrigt</option></select>
+  <button class="sheet-close" id="ap-save">Lägg till</button>
+</div>
+
+<div class="sheet" id="journal-sheet">
+  <h3 id="js-title">Ny dagboksrad</h3>
+  <label>Vad gjorde du?</label><input type="text" id="js-name" placeholder="T.ex. Lavendelbad inför fullmåne">
+  <label>Intention</label><input type="text" id="js-intent" placeholder="lugn / sömn / skydd …">
+  <label>Hur kändes det?</label><textarea id="js-feel" rows="3" placeholder="Skriv fritt…"></textarea>
+  <label><input type="checkbox" id="js-fav" style="width:auto;accent-color:var(--copper);vertical-align:middle"> Spara som favoritritual</label>
+  <button class="sheet-close" id="js-save">Spara</button>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <h3>Inställningar</h3>
+  <div class="section-title" style="margin-top:0;font-size:14px">Synk via GitHub</div>
+  <div class="soft" style="margin-bottom:6px">Samma mönster som dina andra appar. Använder filen <b style="color:var(--ink)">kitteln.json</b> i ditt privata repo.</div>
+  <label>Användarnamn (owner)</label><input type="text" id="gh-owner" autocapitalize="off" spellcheck="false">
+  <label>Repo</label><input type="text" id="gh-repo" autocapitalize="off" spellcheck="false">
+  <label>Token (fine-grained, Contents)</label><input type="password" id="gh-token" autocapitalize="off" spellcheck="false">
+  <div class="sync-status" id="gh-status"></div>
+  <div class="btn-row" style="margin-top:10px"><button class="btn ghost" id="gh-clear">Koppla bort</button><button class="btn fill" id="gh-save">Spara & anslut</button></div>
+
+  <div class="section-title" style="font-size:14px">AI-nyckel (Anthropic)</div>
+  <div class="soft" style="margin-bottom:6px">Sparas bara lokalt. Följer inte med i synk eller säkerhetskopior.</div>
+  <label>API-nyckel</label><input type="password" id="ai-key" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
+  <div class="btn-row" style="margin-top:10px"><button class="btn ghost" id="ai-key-clear">Rensa</button><button class="btn fill" id="ai-key-save">Spara nyckel</button></div>
+
+  <div class="section-title" style="font-size:14px">Säkerhetskopia</div>
+  <div class="btn-row"><button class="btn ghost" id="export-btn">Exportera</button><button class="btn ghost" id="import-btn">Importera</button><input type="file" id="import-file" accept=".json" style="display:none"></div>
+
+  <div class="privacy" style="margin-top:14px">Kitteln är ett mysigt vardagsverktyg — inte medicinsk rådgivning. Var försiktig med örter och eteriska oljor, särskilt vid graviditet, amning, allergier eller medicinering. Vid tveksamhet: fråga vården. 🌿</div>
+  <button class="sheet-close" id="settings-close">Stäng</button>
+</div>
+
+<script>
+// ── Konstanter ────────────────────────────────────────
+var CATS=[['alla','Alla','✦'],['te','Teer','☕'],['maltid','Måltider','🍲'],['ort','Örtblandningar','🌿'],['olja','Oljor & salvor','🫗'],['bad','Badritualer','🛁'],['sasong','Säsong & måne','🗓']];
+var CAT_LABEL={te:'Te',maltid:'Måltid',ort:'Örtblandning',olja:'Olja/salva',bad:'Badritual',sasong:'Säsong'};
+var CAT_EMOJI={te:'☕',maltid:'🍲',ort:'🌿',olja:'🫗',bad:'🛁',sasong:'🗓'};
+var INTENTIONS=[['lugn','Lugn','🕊'],['skydd','Skydd','🛡'],['karlek','Kärlek','💗'],['fokus','Fokus','🎯'],['somn','Sömn','🌙'],['energi','Energi','⚡'],['sjalvkarlek','Självkärlek','🌷'],['rensning','Rensning','💨'],['tur','Tur','🍀']];
+var INT_LABEL={};INTENTIONS.forEach(function(x){INT_LABEL[x[0]]=x[1];});
+
+var SEED=[
+ {id:'s1',name:'Lavendel- & honungste',cat:'te',int:['somn','lugn'],diff:'Lätt',time:'8 min',
+  intention:'En kopp för att mjuka upp kvällen och bjuda in sömnen.',
+  ing:[['Torkad lavendel','1 tsk','rofylldhet och vila'],['Honung','1 tsk','sötma, tröst och välkomnande'],['Citronmeliss','1 tsk','lugnar oron i kroppen'],['Hett vatten','2 dl','renande grund']],
+  steps:['Värm vattnet strax under kokpunkten.','Lägg lavendel och citronmeliss i en kopp eller silikupp.','Häll över vattnet och lägg ett fat över — låt dra 5 minuter.','Sila, rör ner honung och håll koppen mellan händerna en stund medan du andas lugnt.'],
+  safety:'Använd lavendel av matkvalitet. Var försiktig vid graviditet och med små barn.'},
+ {id:'s2',name:'Skyddsbad med havssalt & rosmarin',cat:'bad',int:['skydd','rensning'],diff:'Lätt',time:'25 min',
+  intention:'Skölj av dagen och dra en mjuk cirkel av skydd runt dig.',
+  ing:[['Havssalt','1 dl','rensar och bryter tunga energier'],['Färsk rosmarin','1 kvist','skydd och klarhet'],['Svart te eller en nypa salt','—','jordar och stänger'],['Ljus','1 st','håller fokus och värme']],
+  steps:['Tänd ljuset och låt badet rinna upp ljummet till varmt.','Lös upp havssaltet i vattnet och lägg i rosmarinkvisten.','Stig i och sätt en enkel intention: "Det som inte är mitt sköljs av."','Ligg kvar 15–20 minuter och låt vattnet rinna ut medan du fortfarande sitter kvar — föreställ dig att det tar med sig det tunga.'],
+  safety:'Stig upp långsamt — varma bad kan göra dig yr. Undvik långa varma bad vid graviditet, hjärt-kärlbesvär eller lågt blodtryck.'},
+ {id:'s3',name:'Rosen- & kardemummate för hjärtat',cat:'te',int:['karlek','sjalvkarlek'],diff:'Lätt',time:'7 min',
+  intention:'En varm gest av ömhet — först och främst till dig själv.',
+  ing:[['Torkade rosenblad','1 tsk','kärlek och mjukhet'],['Kardemumma','2 krossade kapslar','värme och öppenhet'],['Rooibos eller svart te','1 tsk','grund och fyllighet'],['Honung','efter smak','sötma och självgodhet']],
+  steps:['Krossa kardemumman lätt så aromen släpper.','Lägg allt utom honungen i en kopp och häll över hett vatten.','Låt dra 4 minuter, sila och söta.','Ta första klunken med en tanke om något du tycker om hos dig själv.'],
+  safety:'Använd rosenblad som är odlade utan bekämpningsmedel (matkvalitet).'},
+ {id:'s4',name:'Fokusolja med rosmarin & citron',cat:'olja',int:['fokus'],diff:'Medel',time:'10 min',
+  intention:'En doftolja att stryka på handlederna när tankarna ska samlas.',
+  ing:[['Bärarolja (jojoba/mandel)','30 ml','jordar och bär'],['Eterisk rosmarinolja','3 droppar','skärpa och minne'],['Eterisk citronolja','3 droppar','klarhet och ljus'],['Liten glasflaska','1 st','håller och skyddar blandningen']],
+  steps:['Häll bäraroljan i glasflaskan.','Tillsätt de eteriska oljorna droppvis.','Förslut och rulla flaskan mjukt mellan händerna.','Stryk en liten mängd på handlederna före fokuserat arbete.'],
+  safety:'Späd alltid eteriska oljor (max ca 2 %). Citrusoljor kan göra huden ljuskänslig — undvik sol direkt efteråt. Undvik rosmarinolja vid graviditet och epilepsi. Test på liten hudyta först.'},
+ {id:'s5',name:'Fullmånevatten med kamomill',cat:'sasong',int:['rensning','lugn'],diff:'Lätt',time:'5 min + natt',moon:'fullmåne',
+  intention:'Ladda vatten i fullmånens ljus för att släppa det du burit för länge.',
+  ing:[['Rent vatten','1 glas','spegel och minne'],['Kamomill','1 nypa','mildhet och frid'],['En klar burk med lock','1 st','håller ljuset kvar']],
+  steps:['Fyll burken med vatten och lägg i kamomillen.','Ställ den i ett fönster där månen syns under fullmånenatten.','Skriv under tiden ned något du vill släppa.','På morgonen: häll en skvätt i te eller över händerna och låt resten vattna en växt.'],
+  safety:'Drick inte vatten som stått ute i värme länge. Vid osäkerhet — använd det utvärtes i stället.'},
+ {id:'s6',name:'Energigröt med kanel & äpple',cat:'maltid',int:['energi'],diff:'Lätt',time:'12 min',
+  intention:'En frukost med intention att tända en stadig, varm energi.',
+  ing:[['Havregryn','1 dl','uthållighet och näring'],['Vatten eller mjölk','2,5 dl','flöde'],['Äpple i tärningar','1/2 st','glädje och friskhet'],['Kanel','1 krm','värme och rörelse'],['En nypa salt','—','balans']],
+  steps:['Koka upp vätskan med en nypa salt.','Rör ner havregrynen och sänk värmen.','Lägg i äpplet och låt sjuda 5 minuter under omrörning.','Toppa med kanel och rör medsols medan du önskar dig en stadig dag.'],
+  safety:'Anpassa efter eventuella allergier (gluten/mjölk). Detta är vanlig mat — inget mer mystiskt än så.'},
+ {id:'s7',name:'Lugnande örtblandning på burk',cat:'ort',int:['lugn','somn'],diff:'Lätt',time:'5 min',
+  intention:'En egen tehörnsblandning att ösa ur när kvällen behöver mjukas upp.',
+  ing:[['Kamomill','3 delar','frid'],['Citronmeliss','2 delar','löser knutar'],['Lavendel','1 del','vila'],['Ren glasburk','1 st','håller doften']],
+  steps:['Mät upp örterna i delar och blanda försiktigt i en skål.','Häll över i en torr glasburk och förslut.','Märk burken med datum och intention.','Använd 1–2 tsk per kopp, dra 5 minuter.'],
+  safety:'Förvara torrt och mörkt. Använd inom ca 6–12 månader för bästa arom.'},
+ {id:'s8',name:'Turbrygd med kanel & apelsin',cat:'te',int:['tur','energi'],diff:'Lätt',time:'10 min',
+  intention:'En glad, kryddig kopp att starta något nytt med — för medvind.',
+  ing:[['Apelsinskal','några strimlor','öppning och flöde'],['Kanelstång','1 st','tur och värme'],['Svart te eller rooibos','1 tsk','grund'],['Honung','efter smak','sötman drar till sig gott']],
+  steps:['Lägg apelsinskal, kanel och te i en kanna.','Häll över hett vatten och låt dra 5 minuter.','Sila och söta med honung.','Rör medsols och säg tyst vad du önskar dra till dig.'],
+  safety:'Använd obesprutade apelsiner till skalet, eller skölj noga.'},
+ {id:'s9',name:'Nymånebad för nystart',cat:'bad',int:['rensning','sjalvkarlek'],diff:'Lätt',time:'25 min',moon:'nymåne',
+  intention:'Ett mörkt, mjukt bad i nymånens tystnad — för att så ett frö.',
+  ing:[['Epsomsalt','1 dl','vila för kroppen'],['Torkade rosenblad eller kamomill','1 nypa','mildhet'],['Ett tänt ljus','1 st','den lilla lågan av en ny avsikt'],['Penna & papper','—','att skriva fröet']],
+  steps:['Skriv ned en enda avsikt för den kommande månaden.','Lös epsomsaltet i ett ljummet bad och lägg i blommorna.','Ligg i det dunkla ljuset och läs din avsikt tyst för dig själv.','Spara lappen någonstans nära — ta fram den vid fullmåne och se vad som vuxit.'],
+  safety:'Epsomsalt kan vara uttorkande för huden — fukta efteråt. Undvik vid njurproblem utan att fråga vården.'},
+ {id:'s10',name:'Skyddssalt (svart salt)',cat:'ort',int:['skydd'],diff:'Lätt',time:'8 min',
+  intention:'En liten burk skyddssalt att strö i trösklar och hörn.',
+  ing:[['Grovt salt','3 dl','rensar och stänger'],['Aska eller riven träkol','1 msk','absorberar det tunga'],['Krossad svartpeppar','1 tsk','vänder bort'],['Torr glasburk','1 st','förvarar']],
+  steps:['Blanda salt, aska och peppar i en torr skål.','Rör medurs och tänk på ett tryggt, slutet rum.','Häll i burken och förslut.','Strö en nypa i trösklar eller bär en liten påse i fickan.'],
+  safety:'Endast för utvärtes/symboliskt bruk — ät inte. Förvara utom räckhåll för barn och djur.'}
+];
+
+var EXAMPLES=['Vad kan jag göra för bättre sömn?','Ge mig ett recept för fullmåne','Skapa en lugnande te-blandning med det jag har hemma','Byt ut en ingrediens jag saknar'];
+
+// ── State ─────────────────────────────────────────────
+var KEY='kitteln_v1';
+var state={recipes:[],pantry:[],journal:[],favs:[]};
+var DEFAULT_PANTRY=[
+ {id:'p1',name:'Lavendel',type:'ort',status:'ok'},
+ {id:'p2',name:'Honung',type:'ovrigt',status:'ok'},
+ {id:'p3',name:'Kamomill',type:'ort',status:'ok'},
+ {id:'p4',name:'Havssalt',type:'krydda',status:'ok'},
+ {id:'p5',name:'Rosmarin',type:'ort',status:'low'},
+ {id:'p6',name:'Kanel',type:'krydda',status:'ok'},
+ {id:'p7',name:'Citronmeliss',type:'ort',status:'ok'}
+];
+try{var raw=localStorage.getItem(KEY);if(raw){state=Object.assign(state,JSON.parse(raw));}else{state.pantry=DEFAULT_PANTRY.slice();}}catch(e){state.pantry=DEFAULT_PANTRY.slice();}
+state.recipes=state.recipes||[];state.pantry=state.pantry||[];state.journal=state.journal||[];state.favs=state.favs||[];
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+function allRecipes(){return SEED.concat(state.recipes);}
+
+// ── GitHub-synk (samma mönster som jobb.html) ─────────
+var SYNC_KEY='kittelnsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/kitteln.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+
+function setPill(st,msg){var p=document.getElementById('sync-pill');p.textContent=msg;p.className='sync-pill'+(st==='ok'?' ok':st==='err'?' err':'');}
+function applyData(d){if(!d)return;if(Array.isArray(d.recipes))state.recipes=d.recipes;if(Array.isArray(d.pantry))state.pantry=d.pantry;if(Array.isArray(d.journal))state.journal=d.journal;if(Array.isArray(d.favs))state.favs=d.favs;}
+
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setPill('load','Synk: hämtar…');var d=await ghGet();if(d){applyData(d);save();renderAll();}setPill('ok','Synk: synkad');}
+  catch(e){setPill('err','Synk: fel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setPill('load','Synk: sparar…');
+  var content=b64enc(JSON.stringify({recipes:state.recipes,pantry:state.pantry,journal:state.journal,favs:state.favs,updated:new Date().toISOString()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Kitteln',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setPill('err','Synk: fel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setPill('ok','Synk: synkad');
+}
+
+// ── Astronomi: sol & måne (Schlyter, från Månen) ──────
+var RAD=Math.PI/180;
+var sind=function(x){return Math.sin(x*RAD);},cosd=function(x){return Math.cos(x*RAD);};
+var atan2d=function(y,x){return Math.atan2(y,x)/RAD;};
+var rev=function(x){x=x%360;return x<0?x+360:x;};
+var EPOCH=Date.UTC(1999,11,31,0,0);
+var dnum=function(ms){return (ms-EPOCH)/86400000;};
+function kepler(M,e){var E=M+e/RAD*sind(M)*(1+e*cosd(M));for(var i=0;i<8;i++){var dE=(E-e/RAD*sind(E)-M)/(1-e*cosd(E));E-=dE;if(Math.abs(dE)<1e-6)break;}return E;}
+function sunLon(d){var w=rev(282.9404+4.70935e-5*d),e=0.016709-1.151e-9*d,M=rev(356.0470+0.9856002585*d);var E=kepler(M,e);var xv=cosd(E)-e,yv=Math.sqrt(1-e*e)*sind(E);return rev(atan2d(yv,xv)+w);}
+function moonLon(d){
+  var N=rev(125.1228-0.0529538083*d),i=5.1454,w=rev(318.0634+0.1643573223*d),a=60.2666,e=0.054900,M=rev(115.3654+13.0649929509*d);
+  var E=kepler(M,e);var xv=a*(cosd(E)-e),yv=a*Math.sqrt(1-e*e)*sind(E);
+  var v=atan2d(yv,xv),r=Math.sqrt(xv*xv+yv*yv),u=v+w;
+  var xh=r*(cosd(N)*cosd(u)-sind(N)*sind(u)*cosd(i)),yh=r*(sind(N)*cosd(u)+cosd(N)*sind(u)*cosd(i));
+  var lon=rev(atan2d(yh,xh));
+  var ws=rev(282.9404+4.70935e-5*d),Ms=rev(356.0470+0.9856002585*d);
+  var Ls=rev(Ms+ws),Lm=rev(M+w+N),D=rev(Lm-Ls),F=rev(Lm-N);
+  lon+=-1.274*sind(M-2*D)+0.658*sind(2*D)-0.186*sind(Ms)-0.059*sind(2*M-2*D)-0.057*sind(M-2*D+Ms)+0.053*sind(M+2*D)+0.046*sind(2*D-Ms)+0.041*sind(M-Ms)-0.035*sind(D)-0.031*sind(M+Ms)-0.015*sind(2*F-2*D)+0.011*sind(M-4*D);
+  return rev(lon);
+}
+var phaseAngle=function(d){return rev(moonLon(d)-sunLon(d));};
+var illum=function(ang){return (1-cosd(ang))/2;};
+var PHASE_NAMES=['Nymåne','Växande skära','Första kvarteret','Växande måne','Fullmåne','Avtagande måne','Sista kvarteret','Avtagande skära'];
+var PHASE_ICONS=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'];
+function phaseIdx(ang){return Math.floor(((ang+22.5)%360)/45);}
+var PHASE_HINT=[
+ 'Tid för frön och tysta avsikter. Bra för nymånebad och nystartsritualer.',
+ 'Bygg sakta på. Brygder för fokus och växande energi passar nu.',
+ 'Handlingens fas — sätt något i rörelse. Turbrygder och energirecept.',
+ 'Nästan fullt. Förstärk och nära det du odlat — kärlek och självkärlek.',
+ 'Allt syns i ljuset. Ladda vatten, släpp det tunga, gör rensande bad.',
+ 'Börja släppa taget. Lugnande teer och tacksamhet.',
+ 'Rensa och gör klart. Skyddssalt och städritualer.',
+ 'Vila och reflektion inför nymånen. Mjuka sömnteer.'
+];
+function findEvents(fromMs,days){
+  var targets=[[0,'Nymåne','🌑'],[90,'Första kvarteret','🌓'],[180,'Fullmåne','🌕'],[270,'Sista kvarteret','🌗']];
+  var ev=[],step=0.25,d0=dnum(fromMs),prev=phaseAngle(d0);
+  for(var t=step;t<=days;t+=step){
+    var d=d0+t,cur=phaseAngle(d);
+    targets.forEach(function(tt){
+      var tg=tt[0],name=tt[1],icon=tt[2];
+      var f=function(x){var v=rev(x-tg);if(v>180)v-=360;return v;};
+      var f0=f(prev),f1=f(cur);
+      if(f0<0&&f1>=0&&Math.abs(f0)<25){
+        var lo=d-step,hi=d;
+        for(var k=0;k<22;k++){var mid=(lo+hi)/2;if(f(phaseAngle(mid))<0)lo=mid;else hi=mid;}
+        ev.push({ms:EPOCH+((lo+hi)/2)*86400000,name:name,icon:icon});
+      }
+    });
+    prev=cur;
+  }
+  ev.sort(function(a,b){return a.ms-b.ms;});return ev;
+}
+function drawMoon(cvId,ang){
+  var cv=document.getElementById(cvId);if(!cv)return;var ctx=cv.getContext('2d');
+  var W=cv.width,cx=W/2,cy=W/2,R=W*0.40;ctx.clearRect(0,0,W,W);
+  var dark='#221A12',light='#F0E6D6';
+  ctx.save();ctx.shadowColor='rgba(217,178,95,0.30)';ctx.shadowBlur=W*0.06;ctx.fillStyle=dark;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();ctx.restore();
+  var k=illum(ang),waxing=ang<=180,cosP=cosd(ang);
+  ctx.fillStyle=light;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+  ctx.fillStyle=dark;ctx.beginPath();ctx.arc(cx,cy,R,Math.PI/2,Math.PI*1.5,waxing);ctx.closePath();ctx.fill();
+  ctx.fillStyle=k<0.5?dark:light;ctx.beginPath();ctx.ellipse(cx,cy,Math.abs(R*cosP),R,0,0,7);ctx.fill();
+  ctx.save();ctx.globalAlpha=0.10;ctx.fillStyle='#9A6838';
+  [[0.18,-0.22,0.13],[-0.12,0.10,0.09],[0.05,0.30,0.07],[-0.28,-0.05,0.06],[0.30,0.15,0.05]].forEach(function(c){ctx.beginPath();ctx.arc(cx+c[0]*2*R,cy+c[1]*2*R,c[2]*2*R,0,7);ctx.fill();});
+  ctx.restore();
+  ctx.strokeStyle='rgba(200,136,78,0.35)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+}
+
+// ── Filterstate ───────────────────────────────────────
+var fCat='alla',fInt=null;
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ns=document.querySelectorAll('.sheet');for(var i=0;i<ns.length;i++)ns[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Render: filter ────────────────────────────────────
+function renderFilters(){
+  var cf=document.getElementById('cat-filter');cf.innerHTML='';
+  CATS.forEach(function(c){var b=document.createElement('button');b.className='fchip'+(fCat===c[0]?' sel':'');b.innerHTML='<span class="cat-emoji">'+c[2]+'</span> '+esc(c[1]);b.onclick=function(){fCat=c[0];renderRecipes();renderFilters();};cf.appendChild(b);});
+  var nf=document.getElementById('intent-filter');nf.innerHTML='';
+  INTENTIONS.forEach(function(it){var b=document.createElement('button');b.className='ichip'+(fInt===it[0]?' sel':'');b.innerHTML=it[2]+' '+esc(it[1]);b.onclick=function(){fInt=(fInt===it[0]?null:it[0]);renderRecipes();renderFilters();};nf.appendChild(b);});
+}
+
+function isFav(id){return state.favs.indexOf(id)>=0;}
+function recipeCard(r){
+  var tags='';if(r.moon)tags+='<span class="tag">'+(r.moon==='fullmåne'?'🌕':'🌑')+' '+esc(r.moon)+'</span>';
+  (r.int||[]).slice(0,3).forEach(function(i){tags+='<span class="tag">'+esc(INT_LABEL[i]||i)+'</span>';});
+  return '<div class="rcard" data-id="'+esc(r.id)+'"><h4>'+esc(r.name)+'</h4>'
+    +'<div class="meta"><span class="cat-emoji">'+(CAT_EMOJI[r.cat]||'✦')+'</span> '+esc(CAT_LABEL[r.cat]||r.cat)+' · '+esc(r.diff||'')+' · '+esc(r.time||'')+'</div>'
+    +'<div class="meta" style="margin-top:6px">'+tags+'</div>'
+    +'<span class="fav">'+(isFav(r.id)?'★':'')+'</span></div>';
+}
+function renderRecipes(){
+  var list=allRecipes().filter(function(r){
+    if(fCat!=='alla'&&r.cat!==fCat)return false;
+    if(fInt&&(r.int||[]).indexOf(fInt)<0)return false;
+    return true;
+  });
+  var el=document.getElementById('recipe-list');
+  document.getElementById('recipe-count').textContent='('+list.length+')';
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga recept matchar filtren än. Lägg till ett eget med + eller brygg fram ett i ✨.</div>';return;}
+  el.innerHTML=list.map(recipeCard).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('.rcard'),function(c){c.onclick=function(){openDetail(c.dataset.id);};});
+}
+
+// ── Receptdetalj ──────────────────────────────────────
+function openDetail(id){
+  var r=allRecipes().filter(function(x){return x.id===id;})[0];if(!r)return;
+  var tags='';if(r.moon)tags+='<span class="tag">'+(r.moon==='fullmåne'?'🌕':'🌑')+' '+esc(r.moon)+'</span>';
+  tags+='<span class="tag">'+(CAT_EMOJI[r.cat]||'✦')+' '+esc(CAT_LABEL[r.cat]||r.cat)+'</span>';
+  (r.int||[]).forEach(function(i){tags+='<span class="tag">'+esc(INT_LABEL[i]||i)+'</span>';});
+  var ing=(r.ing||[]).map(function(x){return '<div class="ing"><div class="dot"></div><div><div class="iname">'+esc(x[0])+(x[1]&&x[1]!=='—'?' <span class="iqty">· '+esc(x[1])+'</span>':'')+'</div>'+(x[2]?'<div class="isym">'+esc(x[2])+'</div>':'')+'</div></div>';}).join('');
+  var steps=(r.steps||[]).map(function(s){return '<li>'+esc(s)+'</li>';}).join('');
+  var isUser=state.recipes.some(function(x){return x.id===r.id;});
+  var h='<h2>'+esc(r.name)+'</h2>'
+    +'<div class="dmeta"><span>'+esc(r.diff||'')+'</span><span>·</span><span>'+esc(r.time||'')+'</span></div>'
+    +'<div class="dmeta">'+tags+'</div>'
+    +(r.intention?'<div class="intention-box">✦ '+esc(r.intention)+'</div>':'')
+    +'<div class="section-title" style="margin-top:6px;font-size:15px">Ingredienser & symbolik</div>'+ing
+    +'<div class="section-title" style="font-size:15px">Gör så här</div><ol class="steps-ol">'+steps+'</ol>'
+    +(r.safety?'<div class="safety"><span class="si">⚠</span><span>'+esc(r.safety)+'</span></div>':'')
+    +'<div class="btn-row" style="margin-top:16px">'
+      +'<button class="btn ghost" id="d-fav">'+(isFav(r.id)?'★ Favorit':'☆ Favorit')+'</button>'
+      +'<button class="btn ghost" id="d-journal">Logga i dagbok</button>'
+      +(isUser?'<button class="btn ghost" id="d-del">Ta bort</button>':'')
+    +'</div>';
+  document.getElementById('detail-body').innerHTML=h;
+  document.getElementById('d-fav').onclick=function(){toggleFav(r.id);openDetail(id);renderRecipes();renderFavs();};
+  document.getElementById('d-journal').onclick=function(){closeSheets();openJournal(r.name,(r.int||[])[0]||'');};
+  if(isUser)document.getElementById('d-del').onclick=function(){if(confirm('Ta bort receptet?')){state.recipes=state.recipes.filter(function(x){return x.id!==r.id;});persist();closeSheets();renderRecipes();}};
+  openSheet('detail-sheet');
+}
+function toggleFav(id){var i=state.favs.indexOf(id);if(i>=0)state.favs.splice(i,1);else state.favs.push(id);persist();}
+
+// ── Skafferi ──────────────────────────────────────────
+var pFilter='alla';
+var PTYPES=[['alla','Alla'],['ort','Örter'],['krydda','Kryddor'],['olja','Oljor'],['kristall','Kristaller'],['ovrigt','Övrigt']];
+var STATUS_LABEL={ok:'Finns',low:'Snart slut',out:'Slut'};
+function renderPantryFilter(){
+  var pf=document.getElementById('pantry-filter');pf.innerHTML='';
+  PTYPES.forEach(function(t){var b=document.createElement('button');b.className='fchip'+(pFilter===t[0]?' sel':'');b.textContent=t[1];b.onclick=function(){pFilter=t[0];renderPantry();renderPantryFilter();};pf.appendChild(b);});
+}
+function renderPantry(){
+  var low=state.pantry.filter(function(p){return p.status==='low'||p.status==='out';});
+  var lb=document.getElementById('low-banner');
+  if(low.length){lb.style.display='block';lb.innerHTML='🪹 Snart/slut: '+low.map(function(p){return esc(p.name);}).join(', ');}else lb.style.display='none';
+  var list=state.pantry.filter(function(p){return pFilter==='alla'||p.type===pFilter;});
+  var el=document.getElementById('pantry-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Tomt här. Lägg till örter, kryddor, oljor eller kristaller med +.</div>';return;}
+  el.innerHTML=list.map(function(p){
+    var dots=['ok','low','out'].map(function(s){return '<button class="sdot'+(p.status===s?' sel-'+s:'')+'" data-id="'+esc(p.id)+'" data-s="'+s+'" title="'+STATUS_LABEL[s]+'">'+(s==='ok'?'✓':s==='low'?'½':'✕')+'</button>';}).join('');
+    return '<div class="pantry-row"><div style="flex:1"><div class="pname">'+esc(p.name)+'</div><div class="ptype">'+esc((PTYPES.filter(function(t){return t[0]===p.type;})[0]||['','Övrigt'])[1])+'</div></div><div class="status-dots">'+dots+'</div><button class="pdel" data-id="'+esc(p.id)+'">×</button></div>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('.sdot'),function(b){b.onclick=function(){var p=state.pantry.filter(function(x){return x.id===b.dataset.id;})[0];if(p){p.status=b.dataset.s;persist();renderPantry();}};});
+  Array.prototype.forEach.call(el.querySelectorAll('.pdel'),function(b){b.onclick=function(){state.pantry=state.pantry.filter(function(x){return x.id!==b.dataset.id;});persist();renderPantry();};});
+}
+function inStockNames(){return state.pantry.filter(function(p){return p.status==='ok'||p.status==='low';}).map(function(p){return p.name.toLowerCase();});}
+function recipeMatch(r){
+  var have=inStockNames();var ings=(r.ing||[]).map(function(x){return x[0].toLowerCase();});
+  if(!ings.length)return null;
+  var hit=0,missing=[];
+  ings.forEach(function(name){
+    var ok=have.some(function(h){return name.indexOf(h)>=0||h.indexOf(name)>=0;});
+    if(ok)hit++;else missing.push(name);
+  });
+  return {pct:Math.round(hit/ings.length*100),missing:missing};
+}
+function renderMatches(){
+  var ml=document.getElementById('match-list');
+  var scored=allRecipes().map(function(r){return {r:r,m:recipeMatch(r)};}).filter(function(o){return o.m&&o.m.pct>=50;}).sort(function(a,b){return b.m.pct-a.m.pct;});
+  if(!scored.length){ml.innerHTML='<div class="empty-msg">Inga starka matchningar än — markera vad du har i skafferiet, eller fråga Brygd-hjälpen ✨.</div>';return;}
+  ml.innerHTML=scored.slice(0,8).map(function(o){
+    var miss=o.m.missing.length?'<div class="soft" style="margin-top:4px">Saknas: '+o.m.missing.join(', ')+'</div>':'<div class="soft" style="margin-top:4px;color:var(--sage)">Allt finns hemma ✦</div>';
+    return '<div class="rcard" data-id="'+esc(o.r.id)+'"><span class="match-pct" style="position:absolute;top:10px;right:10px">'+o.m.pct+'%</span><h4>'+esc(o.r.name)+'</h4><div class="meta"><span class="cat-emoji">'+(CAT_EMOJI[o.r.cat]||'✦')+'</span> '+esc(CAT_LABEL[o.r.cat]||o.r.cat)+'</div>'+miss+'</div>';
+  }).join('');
+  Array.prototype.forEach.call(ml.querySelectorAll('.rcard'),function(c){c.onclick=function(){openDetail(c.dataset.id);};});
+}
+
+// ── Dagbok & favoriter ────────────────────────────────
+function openJournal(prefName,prefInt){
+  document.getElementById('js-title').textContent='Ny dagboksrad';
+  document.getElementById('js-name').value=prefName||'';
+  document.getElementById('js-intent').value=prefInt?(INT_LABEL[prefInt]||prefInt):'';
+  document.getElementById('js-feel').value='';
+  document.getElementById('js-fav').checked=false;
+  openSheet('journal-sheet');
+}
+function renderJournal(){
+  var el=document.getElementById('journal-list');
+  if(!state.journal.length){el.innerHTML='<div class="empty-msg">Inga rader än. Tryck "Ny rad" eller logga ett recept du provat.</div>';return;}
+  var sorted=state.journal.slice().sort(function(a,b){return b.ts-a.ts;});
+  el.innerHTML=sorted.map(function(j){
+    var d=new Date(j.ts);var ds=d.toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'});
+    var res='';if(j.result)res='<span class="tag" style="color:var(--amber)">Resultat: '+esc(j.result)+'</span>';
+    return '<div class="jentry"><button class="jdel" data-id="'+esc(j.id)+'">×</button><div class="jdate">'+ds+'</div><div class="jtitle">'+esc(j.name||'(utan titel)')+'</div>'
+      +(j.feel?'<div class="jbody">'+esc(j.feel)+'</div>':'')
+      +'<div class="jmeta">'+(j.intent?'<span class="tag">'+esc(j.intent)+'</span>':'')+res+'</div>'
+      +'<div class="result-row">Hur gick det? '
+        +['Bra','Sådär','Inte alls'].map(function(r){return '<button class="res-btn'+(j.result===r?' on':'')+'" data-id="'+esc(j.id)+'" data-r="'+r+'">'+r+'</button>';}).join('')
+      +'</div></div>';
+  }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('.jdel'),function(b){b.onclick=function(){state.journal=state.journal.filter(function(x){return x.id!==b.dataset.id;});persist();renderJournal();};});
+  Array.prototype.forEach.call(el.querySelectorAll('.res-btn'),function(b){b.onclick=function(){var j=state.journal.filter(function(x){return x.id===b.dataset.id;})[0];if(j){j.result=(j.result===b.dataset.r?'':b.dataset.r);persist();renderJournal();}};});
+}
+function renderFavs(){
+  var el=document.getElementById('fav-list');
+  var favs=allRecipes().filter(function(r){return isFav(r.id);});
+  if(!favs.length){el.innerHTML='<div class="empty-msg">Inga favoriter än. Stjärnmärk recept du vill hitta snabbt.</div>';return;}
+  el.innerHTML=favs.map(function(r){return '<div class="rcard" data-id="'+esc(r.id)+'"><h4>'+esc(r.name)+'</h4><div class="meta"><span class="cat-emoji">'+(CAT_EMOJI[r.cat]||'✦')+'</span> '+esc(CAT_LABEL[r.cat]||r.cat)+'</div><span class="fav">★</span></div>';}).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('.rcard'),function(c){c.onclick=function(){openDetail(c.dataset.id);};});
+}
+
+// ── Månen ─────────────────────────────────────────────
+function moonInfo(date){
+  var d=dnum(date.getTime());var ang=phaseAngle(d);var idx=phaseIdx(ang);
+  return {ang:ang,idx:idx,name:PHASE_NAMES[idx],icon:PHASE_ICONS[idx],illum:Math.round(illum(ang)*100)};
+}
+function renderMoonLine(){
+  var m=moonInfo(new Date());
+  document.getElementById('moon-line').textContent=m.icon+' '+m.name+' · '+m.illum+'% belyst';
+}
+function renderMoonView(){
+  var m=moonInfo(new Date());
+  drawMoon('bigmoon',m.ang);
+  document.getElementById('phase-name').textContent=m.icon+' '+m.name;
+  document.getElementById('phase-sub').textContent=PHASE_HINT[m.idx]+' ('+m.illum+'% belyst)';
+  document.getElementById('moon-reco').innerHTML='<div class="soft">'+esc(PHASE_HINT[m.idx])+'</div>';
+  var ev=findEvents(Date.now(),32).slice(0,5);
+  document.getElementById('moon-events').innerHTML=ev.length?ev.map(function(e){
+    var d=new Date(e.ms);var days=Math.round((e.ms-Date.now())/86400000);
+    var when=days<=0?'idag':days===1?'imorgon':'om '+days+' dagar';
+    return '<div class="mevent"><span class="mi">'+e.icon+'</span><span class="mn">'+esc(e.name)+'</span><span class="md">'+d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+' · '+when+'</span></div>';
+  }).join(''):'<div class="empty-msg">Inga händelser hittade.</div>';
+  var mr=allRecipes().filter(function(r){return r.moon;});
+  document.getElementById('moon-recipes').innerHTML=mr.length?mr.map(recipeCard).join(''):'<div class="empty-msg">Inga månrecept än.</div>';
+  Array.prototype.forEach.call(document.getElementById('moon-recipes').querySelectorAll('.rcard'),function(c){c.onclick=function(){openDetail(c.dataset.id);};});
+}
+
+// ── AI / Brygd ────────────────────────────────────────
+var AI_KEY='kitteln_ai_key';
+var aiMode='recept';
+function getAiKey(){try{return localStorage.getItem(AI_KEY)||'';}catch(e){return '';}}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSettings('ai');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function renderSuggest(){
+  var w=document.getElementById('ai-suggest');w.innerHTML='';
+  EXAMPLES.forEach(function(ex){var b=document.createElement('button');b.className='suggest';b.textContent=ex;b.onclick=function(){document.getElementById('ai-input').value=ex;};w.appendChild(b);});
+}
+function pantryLine(){var n=inStockNames();return n.length?'Hemma i skafferiet: '+n.join(', ')+'.':'Skafferiet är tomt eller okänt.';}
+function parseAiRecipe(txt){
+  var t=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+  var a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<0)return null;
+  try{var o=JSON.parse(t.slice(a,b+1));if(o&&o.name&&o.ing)return o;}catch(e){}
+  return null;
+}
+function aiRecipePreview(o){
+  var r={id:'ai_preview',name:o.name,cat:o.cat||'te',int:o.int||[],diff:o.diff||'Lätt',time:o.time||'',intention:o.intention||'',ing:(o.ing||[]).map(function(x){return Array.isArray(x)?x:[x.name||x.namn||'',x.qty||x.mangd||'',x.symbol||x.symbolik||''];}),steps:o.steps||o.steg||[],safety:o.safety||o.sakerhet||''};
+  window._aiRecipe=r;
+  var ing=r.ing.map(function(x){return '<div class="ing"><div class="dot"></div><div><div class="iname">'+esc(x[0])+(x[1]?' <span class="iqty">· '+esc(x[1])+'</span>':'')+'</div>'+(x[2]?'<div class="isym">'+esc(x[2])+'</div>':'')+'</div></div>';}).join('');
+  var steps=r.steps.map(function(s){return '<li>'+esc(s)+'</li>';}).join('');
+  return '<div class="ai-box"><span class="ai-lbl">✨ Bryggt recept</span>'
+    +'<div style="font-family:Georgia,serif;font-size:17px;color:var(--copper);margin-bottom:4px">'+esc(r.name)+'</div>'
+    +(r.intention?'<div class="intention-box">✦ '+esc(r.intention)+'</div>':'')
+    +ing+'<ol class="steps-ol" style="margin-top:8px">'+steps+'</ol>'
+    +(r.safety?'<div class="safety"><span class="si">⚠</span><span>'+esc(r.safety)+'</span></div>':'')
+    +'<button class="btn fill" id="ai-savebtn" style="width:100%;margin-top:12px">Spara i receptboken</button></div>';
+}
+async function runAi(){
+  var q=document.getElementById('ai-input').value.trim();
+  if(!q){document.getElementById('ai-input').focus();return;}
+  var btn=document.getElementById('ai-run');var orig=btn.textContent;btn.textContent='Brygger…';btn.disabled=true;
+  var out=document.getElementById('ai-result');out.innerHTML='';
+  try{
+    var prompt;
+    if(aiMode==='recept'){
+      prompt='Du är en varm, jordnära köks-häxa som skapar mysiga, säkra recept (teer, mat, örtblandningar, oljor eller bad) på svenska. '
+        +pantryLine()+' Önskemål: '+q+'. '
+        +'Svara ENDAST med ett JSON-objekt, utan markdown eller text runt om, med fälten: '
+        +'name (sträng), cat (en av: te, maltid, ort, olja, bad, sasong), int (lista med intentioner från: lugn, skydd, karlek, fokus, somn, energi, sjalvkarlek, rensning, tur), '
+        +'diff (Lätt/Medel/Avancerad), time (sträng), intention (en mening om syftet), '
+        +'ing (lista där varje element är [namn, mängd, symbolik]), steps (lista med steg), safety (säkerhetsnotis på svenska, t.ex. om eteriska oljor, allergier eller graviditet). '
+        +'Håll det säkert och vardagligt — inga giftiga örter eller medicinska påståenden.';
+      var t=await aiCall(prompt);
+      var o=parseAiRecipe(t);
+      if(o){out.innerHTML=aiRecipePreview(o);document.getElementById('ai-savebtn').onclick=function(){var r=window._aiRecipe;r.id=uid();state.recipes.push({id:r.id,name:r.name,cat:r.cat,int:r.int,diff:r.diff,time:r.time,intention:r.intention,ing:r.ing,steps:r.steps,safety:r.safety});persist();document.getElementById('ai-savebtn').textContent='✓ Sparat i receptboken';document.getElementById('ai-savebtn').disabled=true;renderRecipes();};}
+      else{out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Svar</span>'+esc(t)+'</div>';}
+    }else{
+      prompt='Du är en varm, jordnära köks-häxa. '+pantryLine()+' Svara på svenska, kort och mysigt (högst ca 160 ord), utan rubriker. Ge gärna ett konkret förslag och en mjuk säkerhetspåminnelse om det behövs (eteriska oljor, allergier, graviditet). Fråga: '+q;
+      var tx=await aiCall(prompt);
+      out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Svar</span>'+esc(tx)+'</div>';
+    }
+  }catch(e){if(e.message!=='NOKEY')out.innerHTML='<div class="safety"><span class="si">⚠</span><span>Kunde inte brygga fram något: '+esc(e.message)+'</span></div>';}
+  btn.textContent=orig;btn.disabled=false;
+}
+
+// ── Settings ──────────────────────────────────────────
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.className='sync-status '+type;el.textContent=msg;}
+function openSettings(focus){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('ai-key').value=getAiKey();
+  document.getElementById('gh-status').className='sync-status';
+  openSheet('settings-sheet');
+  if(focus==='ai')setTimeout(function(){document.getElementById('ai-key').focus();},250);
+}
+
+// ── Export / import ───────────────────────────────────
+function exportData(){
+  var blob=new Blob([JSON.stringify({recipes:state.recipes,pantry:state.pantry,journal:state.journal,favs:state.favs},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var d=new Date();a.download='kitteln-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';a.click();
+}
+
+// ── Add recipe sheet ──────────────────────────────────
+function fillCatSelect(){var sel=document.getElementById('ar-cat');sel.innerHTML='';Object.keys(CAT_LABEL).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=CAT_LABEL[k];sel.appendChild(o);});}
+function openAddRecipe(){document.getElementById('ar-name').value='';document.getElementById('ar-int').value='';document.getElementById('ar-time').value='';document.getElementById('ar-ing').value='';document.getElementById('ar-steps').value='';document.getElementById('ar-intent').value='';document.getElementById('ar-safety').value='';document.getElementById('ar-moon').value='';openSheet('addrecipe-sheet');}
+
+// ── Navigation ────────────────────────────────────────
+var curView='recept';
+function showFab(){var f=document.getElementById('add-fab');f.style.display=(curView==='recept'||curView==='skafferi')?'flex':'none';}
+Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(b){
+  b.onclick=function(){
+    curView=b.dataset.v;
+    Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    Array.prototype.forEach.call(document.querySelectorAll('.view'),function(v){v.classList.remove('active');});
+    document.getElementById('view-'+curView).classList.add('active');
+    if(curView==='manen')renderMoonView();
+    if(curView==='dagbok'){renderJournal();renderFavs();}
+    if(curView==='skafferi'){renderPantry();renderMatches();}
+    showFab();window.scrollTo(0,0);
+  };
+});
+
+// ── Event wiring ──────────────────────────────────────
+document.getElementById('gear-btn').onclick=function(){openSettings();};
+document.getElementById('sync-pill').onclick=function(){openSettings();};
+document.getElementById('settings-close').onclick=closeSheets;
+document.getElementById('detail-close').onclick=closeSheets;
+
+document.getElementById('add-fab').onclick=function(){if(curView==='skafferi'){document.getElementById('ap-name').value='';openSheet('addpantry-sheet');}else openAddRecipe();};
+
+document.getElementById('ap-save').onclick=function(){var n=document.getElementById('ap-name').value.trim();if(!n)return;state.pantry.push({id:uid(),name:n,type:document.getElementById('ap-type').value,status:'ok'});persist();closeSheets();renderPantry();renderMatches();};
+
+document.getElementById('ar-save').onclick=function(){
+  var n=document.getElementById('ar-name').value.trim();if(!n){alert('Receptet behöver ett namn.');return;}
+  var ing=document.getElementById('ar-ing').value.split('\n').map(function(l){return l.trim();}).filter(Boolean).map(function(l){var p=l.split('|').map(function(x){return x.trim();});return [p[0]||'',p[1]||'',p[2]||''];});
+  var steps=document.getElementById('ar-steps').value.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  var ints=document.getElementById('ar-int').value.split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean);
+  state.recipes.push({id:uid(),name:n,cat:document.getElementById('ar-cat').value,int:ints,diff:document.getElementById('ar-diff').value,time:document.getElementById('ar-time').value.trim(),intention:document.getElementById('ar-intent').value.trim(),ing:ing,steps:steps,safety:document.getElementById('ar-safety').value.trim(),moon:document.getElementById('ar-moon').value||undefined});
+  persist();closeSheets();fCat='alla';fInt=null;renderFilters();renderRecipes();
+};
+
+document.getElementById('add-journal').onclick=function(){openJournal('','');};
+document.getElementById('js-save').onclick=function(){
+  var n=document.getElementById('js-name').value.trim();
+  var entry={id:uid(),ts:Date.now(),name:n,intent:document.getElementById('js-intent').value.trim(),feel:document.getElementById('js-feel').value.trim(),result:''};
+  state.journal.push(entry);
+  if(document.getElementById('js-fav').checked&&n){
+    var fr={id:uid(),name:n,cat:'sasong',int:[],diff:'Lätt',time:'',intention:document.getElementById('js-feel').value.trim(),ing:[],steps:[],safety:''};
+    state.recipes.push(fr);state.favs.push(fr.id);
+  }
+  persist();closeSheets();renderJournal();renderFavs();renderRecipes();
+};
+
+document.getElementById('match-toggle').onclick=function(){var ml=document.getElementById('match-list');var on=ml.style.display==='none';ml.style.display=on?'block':'none';this.textContent=on?'Dölj':'Visa';if(on)renderMatches();};
+
+Array.prototype.forEach.call(document.querySelectorAll('#ai-mode button'),function(b){b.onclick=function(){aiMode=b.dataset.m;Array.prototype.forEach.call(document.querySelectorAll('#ai-mode button'),function(x){x.classList.remove('sel');});b.classList.add('sel');document.getElementById('ai-input').placeholder=aiMode==='recept'?'T.ex. Skapa ett recept med lavendel, honung och citron för bättre sömn':'T.ex. Vad kan jag göra för bättre sömn?';};});
+document.getElementById('ai-run').onclick=runAi;
+
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{var d=await ghGet();if(d){setGhStatus('✓ Ansluten! Hämtar din data…','ok');await ghPull();}else{setGhStatus('✓ Ansluten! Repot saknar fil — laddar upp…','ok');await ghPush();}setTimeout(closeSheets,1100);}
+  catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-clear').onclick=function(){sync={owner:'',repo:'',token:'',sha:null};localStorage.removeItem(SYNC_KEY);document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';setPill('','Synk: av');setGhStatus('Bortkopplad.','info');};
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();try{if(v)localStorage.setItem(AI_KEY,v);}catch(e){}setGhStatus('AI-nyckel sparad.','ok');};
+document.getElementById('ai-key-clear').onclick=function(){try{localStorage.removeItem(AI_KEY);}catch(e){}document.getElementById('ai-key').value='';setGhStatus('AI-nyckel rensad.','info');};
+
+document.getElementById('export-btn').onclick=exportData;
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.recipes||d.pantry||d.journal||d.favs)){applyData(d);persist();renderAll();alert('Importerat!');}else alert('Filen verkar inte vara en giltig Kitteln-säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Init ──────────────────────────────────────────────
+function renderAll(){renderFilters();renderRecipes();renderPantryFilter();renderPantry();renderMatches();renderJournal();renderFavs();renderMoonLine();if(curView==='manen')renderMoonView();}
+fillCatSelect();renderSuggest();
+loadSync();
+if(syncOn())setPill('','Synk: …');else setPill('','Synk: av');
+renderAll();
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

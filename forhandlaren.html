@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Förhandlaren">
+<meta name="theme-color" content="#0C1320">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Förhandlaren","short_name":"Förhandla","display":"standalone","background_color":"%230C1320","theme_color":"%230C1320","start_url":"."}'>
+<title>Förhandlaren</title>
+<style>
+:root{
+  --bg:#0C1320;--panel:#14203A;--panel2:#1B2A47;--line:#2A3A5C;
+  --ink:#E8E0CE;--muted:#8896AE;--copper:#C68A4E;--copper-dim:#8A6238;--gold:#D4A574;
+  --prep:#D4A574;--active:#5FA3C9;--done:#6FA67A;--warn:#D98A7A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(1100px 560px at 50% -10%,#15233E 0%,var(--bg) 62%) fixed,var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:22px;color:var(--copper);letter-spacing:.05em;text-align:center;margin:6px 0 1px}
+.tagline{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px}
+.section-title{font-family:Georgia,serif;font-size:17px;color:var(--copper);margin:18px 0 8px;letter-spacing:.02em}
+.section-title:first-child{margin-top:0}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card-panel + .card-panel{margin-top:10px}
+.btn{border:1px solid var(--copper-dim);background:linear-gradient(180deg,#1E2C4A,#16223C);color:var(--copper);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn:active{background:#23314F}
+.btn:disabled{opacity:.5}
+.btn.ghost{border-color:var(--line);color:var(--muted);background:transparent;font-size:12px;padding:8px 11px}
+.btn.solid{background:linear-gradient(180deg,#C68A4E,#A66E36);color:#15100A;border-color:#A66E36;font-weight:600}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+
+label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;letter-spacing:.02em}
+label.fld:first-child{margin-top:0}
+input[type=text],input[type=date],input[type=password],select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 11px;font-family:inherit;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--copper-dim)}
+textarea{resize:vertical;line-height:1.5;min-height:64px}
+.hint{font-size:11px;color:var(--muted);line-height:1.55;margin-top:4px}
+
+.badge{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:600;letter-spacing:.03em;white-space:nowrap}
+.b-prep{background:rgba(212,165,116,.15);color:var(--prep)}
+.b-active{background:rgba(95,163,201,.16);color:var(--active)}
+.b-done{background:rgba(111,166,122,.16);color:var(--done)}
+
+/* Negotiation list cards */
+.neg{display:flex;align-items:flex-start;gap:10px;padding:13px 0;border-top:1px solid var(--line);cursor:pointer}
+.neg:first-child{border-top:none}
+.neg-main{flex:1;min-width:0}
+.neg-who{font-family:Georgia,serif;font-size:16px;color:var(--ink);line-height:1.25}
+.neg-topic{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.neg-meta{font-size:11px;color:var(--muted);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.neg-meta .dl{color:var(--gold)}
+.chev{color:var(--copper-dim);font-size:20px;align-self:center}
+.empty-msg{font-size:12px;color:var(--muted);text-align:center;padding:14px 0;line-height:1.6}
+
+.filter-row{display:flex;gap:6px;margin-bottom:12px}
+.filter-row button{flex:1;font-size:12px;padding:7px 4px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit}
+.filter-row button.on{background:var(--panel);border-color:var(--copper-dim);color:var(--copper)}
+
+/* Dashboard tiles */
+.tile-row{display:flex;gap:10px;margin-bottom:10px}
+.tile{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 13px;text-align:center}
+.tile .n{font-family:Georgia,serif;font-size:26px;color:var(--copper);line-height:1}
+.tile .l{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.04em;text-transform:uppercase}
+.focus{font-size:13px;color:var(--ink);line-height:1.6}
+.up-item{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:9px 0;border-top:1px solid var(--line)}
+.up-item:first-child{border-top:none}
+.up-item .when{color:var(--gold);font-size:12px;white-space:nowrap}
+.up-item .lbl{color:var(--muted);font-size:11px}
+
+/* Detail */
+.detail-top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.back-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--copper);font-size:18px;cursor:pointer;flex-shrink:0}
+.detail-title{font-family:Georgia,serif;font-size:18px;color:var(--ink);flex:1;min-width:0;line-height:1.2}
+.subtabs{display:flex;gap:6px;margin-bottom:12px}
+.subtabs button{flex:1;font-size:12px;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit}
+.subtabs button.on{background:var(--panel);border-color:var(--copper-dim);color:var(--copper)}
+.subview{display:none}
+.subview.on{display:block}
+.statusrow{display:flex;gap:6px;margin-top:4px}
+.statusrow button{flex:1;font-size:12px;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit}
+.statusrow button.on{border-color:var(--copper-dim);color:var(--ink);background:var(--panel2)}
+.row2{display:flex;gap:8px}
+.row2 > *{flex:1}
+.danger{color:var(--warn);background:none;border:none;font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:8px;font-family:inherit}
+
+/* AI boxes */
+.ai-box{border:1px solid var(--copper-dim);background:linear-gradient(160deg,#1C2A48,#16223C);border-radius:12px;padding:12px 13px;font-size:13.5px;line-height:1.65;color:var(--ink);margin-top:12px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--copper);font-size:12px;display:block;margin-bottom:6px;letter-spacing:.03em}
+.thinking{font-size:12px;color:var(--muted);font-style:italic}
+
+/* Chat (träning) */
+.chat{display:flex;flex-direction:column;gap:9px;margin:6px 0 12px}
+.msg{max-width:86%;padding:9px 12px;border-radius:14px;font-size:13.5px;line-height:1.55}
+.msg.them{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.me{align-self:flex-end;background:linear-gradient(180deg,#C68A4E,#A66E36);color:#15100A;border-bottom-right-radius:4px}
+.msg.coach{align-self:stretch;max-width:100%;background:linear-gradient(160deg,#1C2A48,#16223C);border:1px solid var(--copper-dim);font-size:12.5px;color:var(--ink)}
+.msg.coach b{color:var(--copper)}
+
+/* Bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(12,19,32,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10.5px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--copper)}
+.nav button span{display:block;font-size:16px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(4,7,14,.66);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .22s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:18px;color:var(--copper);margin-bottom:4px}
+.sheet-close{width:100%;padding:11px;border-radius:11px;border:1px solid var(--copper-dim);background:var(--panel2);color:var(--copper);font-size:14px;cursor:pointer;margin-top:14px;font-family:inherit}
+
+/* Live mode overlay */
+.live{position:fixed;inset:0;background:linear-gradient(170deg,#0E1A30,#070C16);display:none;flex-direction:column;z-index:60;padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));overflow-y:auto}
+.live.open{display:flex}
+.live h2{font-family:Georgia,serif;font-size:15px;color:var(--muted);font-weight:400;letter-spacing:.05em;text-align:center;margin-bottom:18px}
+.live .lead{font-size:11px;color:var(--copper);letter-spacing:.14em;text-transform:uppercase;margin:18px 0 8px}
+.live .pt{font-family:Georgia,serif;font-size:19px;color:var(--ink);line-height:1.4;padding:6px 0}
+.live .grans{background:rgba(217,138,122,.12);border:1px solid rgba(217,138,122,.4);border-radius:12px;padding:13px 14px;font-size:16px;color:var(--ink);line-height:1.45}
+.live .glomlist{font-size:14px;color:var(--ink);line-height:1.9}
+.live-actions{display:flex;gap:8px;margin-top:24px}
+.live-actions button{flex:1;font-size:12px;padding:12px 4px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--copper);cursor:pointer;font-family:inherit}
+.live-note{text-align:center;font-size:14px;color:var(--gold);line-height:1.6;margin-top:18px;min-height:22px;font-style:italic}
+.live-exit{margin-top:auto;width:100%;padding:13px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit}
+
+.foot{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.7;margin-top:10px;line-height:1.5}
+.sync-badge{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.sync-badge.ok{color:var(--done);border-color:rgba(111,166,122,.4)}
+.sync-badge.err{color:var(--warn);border-color:rgba(217,138,122,.4)}
+.gh-status{font-size:12px;padding:9px 12px;border-radius:10px;margin-top:10px;line-height:1.5;display:none}
+</style>
+</head>
+<body>
+<div class="app">
+<h1 class="brand">&#129309; Förhandlaren</h1>
+<div class="tagline">Strategisk &middot; Lugn &middot; Självsäker</div>
+
+<!-- ════════ HEM ════════ -->
+<div class="view active" id="view-home">
+  <div class="tile-row">
+    <div class="tile"><div class="n" id="t-active">0</div><div class="l">Pågår</div></div>
+    <div class="tile"><div class="n" id="t-prep">0</div><div class="l">Förbereder</div></div>
+    <div class="tile"><div class="n" id="t-done">0</div><div class="l">Avslutade</div></div>
+  </div>
+
+  <div class="section-title">Dagens fokus</div>
+  <div class="card-panel">
+    <div class="focus" id="focus-text"></div>
+    <div id="home-ai"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn ghost" id="btn-new-home">+ Ny förhandling</button>
+      <button class="btn" id="btn-tip">&#10024; Snabbtips</button>
+    </div>
+  </div>
+
+  <div class="section-title">Kommande möten &amp; deadlines</div>
+  <div class="card-panel"><div id="upcoming"></div></div>
+
+  <div class="section-title">Pågående</div>
+  <div class="card-panel"><div id="home-list"></div></div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <button id="sync-btn">Synk</button>
+    <button id="ai-set-btn">AI-nyckel</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Förhandlingar synkas via ditt privata GitHub-repo. AI-nyckeln och allt annat sparas lokalt på den här enheten.</div>
+</div>
+
+<!-- ════════ FÖRHANDLINGAR ════════ -->
+<div class="view" id="view-list">
+  <div class="filter-row" id="filter-row">
+    <button data-f="all" class="on">Alla</button>
+    <button data-f="prep">Förbereder</button>
+    <button data-f="active">Pågår</button>
+    <button data-f="done">Avslutade</button>
+  </div>
+  <div class="card-panel"><div id="full-list"></div></div>
+  <button class="btn solid" id="btn-new-list" style="width:100%;margin-top:12px">+ Ny förhandling</button>
+</div>
+
+<!-- ════════ DETALJ ════════ -->
+<div class="view" id="view-detail">
+  <div class="detail-top">
+    <button class="back-btn" id="d-back">&#8249;</button>
+    <div class="detail-title" id="d-title"></div>
+  </div>
+  <button class="btn solid" id="d-live" style="width:100%;margin-bottom:12px">&#9673; Starta mötesläge</button>
+  <div class="subtabs" id="d-subtabs">
+    <button data-s="oversikt" class="on">Översikt</button>
+    <button data-s="prep">Förberedelse</button>
+    <button data-s="efter">Efteråt</button>
+  </div>
+
+  <!-- Översikt -->
+  <div class="subview on" id="sub-oversikt">
+    <div class="card-panel">
+      <label class="fld">Motpart</label>
+      <input type="text" id="d-motpart">
+      <label class="fld">Ämne / vad gäller det?</label>
+      <input type="text" id="d-amne">
+      <label class="fld">Status</label>
+      <div class="statusrow" id="d-status">
+        <button data-v="prep">Förbereder</button>
+        <button data-v="active">Pågår</button>
+        <button data-v="done">Avslutad</button>
+      </div>
+      <label class="fld">Vad du vill uppnå (mål)</label>
+      <textarea id="d-mal"></textarea>
+      <label class="fld">Minsta acceptabla resultat</label>
+      <textarea id="d-minsta"></textarea>
+      <label class="fld">Vad du kan erbjuda</label>
+      <textarea id="d-erbjuda"></textarea>
+      <label class="fld">Risker</label>
+      <textarea id="d-risker"></textarea>
+      <label class="fld">Deadline</label>
+      <input type="date" id="d-deadline">
+    </div>
+    <div class="card-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--muted)">Möten</span>
+        <button class="btn ghost" id="d-add-mote">+ Lägg till</button>
+      </div>
+      <div id="d-moten"></div>
+    </div>
+    <button class="danger" id="d-delete" style="display:block;margin:14px auto 0">Ta bort förhandling</button>
+  </div>
+
+  <!-- Förberedelse -->
+  <div class="subview" id="sub-prep">
+    <div class="card-panel">
+      <div class="hint" style="margin-bottom:4px">Fyll i det du vet — coachen använder det här som underlag.</div>
+      <label class="fld">Vad är mitt mål?</label>
+      <textarea id="p-mal"></textarea>
+      <label class="fld">Vad är deras mål?</label>
+      <textarea id="p-derasmal"></textarea>
+      <label class="fld">Vad är min starkaste position?</label>
+      <textarea id="p-stark"></textarea>
+      <label class="fld">Vad kan jag kompromissa med?</label>
+      <textarea id="p-kompr"></textarea>
+      <label class="fld">Vad ska jag inte gå med på?</label>
+      <textarea id="p-ejgodta"></textarea>
+      <label class="fld">Vilka frågor ska jag ställa?</label>
+      <textarea id="p-fragor"></textarea>
+    </div>
+    <div class="card-panel">
+      <button class="btn solid" id="btn-prep-ai" style="width:100%">&#10024; Få en förberedelseplan</button>
+      <div id="prep-ai"></div>
+    </div>
+  </div>
+
+  <!-- Efteråt -->
+  <div class="subview" id="sub-efter">
+    <div class="card-panel">
+      <label class="fld">Vad erbjöds?</label>
+      <textarea id="e-erbjods"></textarea>
+      <label class="fld">Vad lovades?</label>
+      <textarea id="e-lovades"></textarea>
+      <label class="fld">Nästa steg</label>
+      <textarea id="e-nasta"></textarea>
+      <label class="fld">Uppföljningsdatum</label>
+      <input type="date" id="e-uppfolj">
+    </div>
+    <div class="card-panel">
+      <div class="btn-row">
+        <button class="btn" id="btn-summary-ai">&#10024; Sammanfattning</button>
+        <button class="btn" id="btn-mail-ai">&#9993; Uppföljningsmail</button>
+      </div>
+      <div id="efter-ai"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ COACH ════════ -->
+<div class="view" id="view-coach">
+  <div class="section-title">AI-förhandlingscoach</div>
+  <div class="card-panel">
+    <div class="hint" style="margin-bottom:8px">Beskriv situationen. Coachen ger formuleringar, strategi, motargument, frågor att ställa, varningsflaggor och lugna svar om samtalet blir pressat.</div>
+    <textarea id="coach-input" placeholder="T.ex: Min chef vill att jag tar mer ansvar utan löneökning." style="min-height:90px"></textarea>
+    <button class="btn solid" id="btn-coach" style="width:100%;margin-top:10px">&#10024; Coacha mig</button>
+    <div id="coach-out"></div>
+  </div>
+  <div class="section-title">Sparade råd</div>
+  <div class="card-panel"><div id="coach-log"></div></div>
+</div>
+
+<!-- ════════ TRÄNING ════════ -->
+<div class="view" id="view-train">
+  <div class="section-title">Scenarioträning</div>
+  <div class="card-panel" id="train-setup">
+    <div class="hint" style="margin-bottom:8px">Välj ett scenario och öva i en trygg roll-lek. Motparten spelas av AI:n. När du vill, be om feedback på dina repliker.</div>
+    <label class="fld">Scenario</label>
+    <select id="train-scenario">
+      <option>Löneförhandling</option>
+      <option>Prisförhandling</option>
+      <option>Konflikt</option>
+      <option>Kundavtal</option>
+      <option>Hyra / köp / sälj</option>
+      <option>Arbetsvillkor</option>
+      <option>Relationella gränser</option>
+    </select>
+    <label class="fld">Lägg till kontext (valfritt)</label>
+    <textarea id="train-context" placeholder="T.ex. svårsåld kund, vill ha 15% rabatt…"></textarea>
+    <button class="btn solid" id="btn-train-start" style="width:100%;margin-top:12px">Starta övning</button>
+  </div>
+  <div class="card-panel" id="train-active" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;color:var(--copper);font-family:Georgia,serif" id="train-label"></span>
+      <button class="btn ghost" id="btn-train-end">Avsluta</button>
+    </div>
+    <div class="chat" id="train-chat"></div>
+    <textarea id="train-reply" placeholder="Din replik…" style="min-height:54px"></textarea>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn" id="btn-train-send">Skicka</button>
+      <button class="btn ghost" id="btn-train-fb">&#10024; Feedback</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ PRINCIPER ════════ -->
+<div class="view" id="view-principles">
+  <div class="section-title">Mina principer &amp; gränser</div>
+  <div class="card-panel">
+    <div class="hint" style="margin-bottom:8px">Dina stående ledstjärnor — det du alltid håller fast vid. Coachen tar hänsyn till dem i sina råd.</div>
+    <div id="prin-list"></div>
+    <div class="row2" style="margin-top:10px">
+      <input type="text" id="prin-input" placeholder="T.ex. Jag tar alltid betänketid på stora beslut">
+      <button class="btn" id="prin-add" style="flex:0 0 auto">Lägg till</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<div class="nav">
+  <button class="active" data-v="home"><span>&#9670;</span>Hem</button>
+  <button data-v="list"><span>&#129309;</span>Förhandlingar</button>
+  <button data-v="coach"><span>&#10024;</span>Coach</button>
+  <button data-v="train"><span>&#127919;</span>Träning</button>
+  <button data-v="principles"><span>&#9873;</span>Principer</button>
+</div>
+
+<!-- ════════ SHEETS ════════ -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="new-sheet">
+  <h3>Ny förhandling</h3>
+  <label class="fld">Motpart</label>
+  <input type="text" id="n-motpart" placeholder="T.ex. Min chef, Leverantör AB…">
+  <label class="fld">Ämne</label>
+  <input type="text" id="n-amne" placeholder="T.ex. Löneökning, ramavtal…">
+  <label class="fld">Deadline (valfritt)</label>
+  <input type="date" id="n-deadline">
+  <button class="btn solid" id="n-save" style="width:100%;margin-top:14px">Skapa</button>
+  <button class="sheet-close" id="n-close">Avbryt</button>
+</div>
+
+<div class="sheet" id="mote-sheet">
+  <h3>Lägg till möte</h3>
+  <label class="fld">Datum &amp; tid</label>
+  <input type="text" id="m-date" placeholder="T.ex. 20 jun kl 10:00">
+  <label class="fld">Anteckning (valfritt)</label>
+  <input type="text" id="m-note" placeholder="T.ex. Förmöte med teamet">
+  <button class="btn solid" id="m-save" style="width:100%;margin-top:14px">Spara</button>
+  <button class="sheet-close" id="m-close">Avbryt</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>&#10024; AI-nyckel</h3>
+  <p class="hint" style="margin-bottom:10px">Coachen och träningen drivs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> &rarr; API keys. Nyckeln sparas bara lokalt på den här enheten och följer inte med i säkerhetskopior eller synk.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn solid" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>&#9881; Synk via GitHub</h3>
+  <p class="hint" style="margin-bottom:10px">Appen läser och sparar <b style="color:var(--ink)">data.json</b> i ett <b style="color:var(--ink)">privat</b> GitHub-repo så att dina förhandlingar finns på alla enheter. Token sparas bara lokalt — aldrig i koden.</p>
+  <label class="fld">GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="dittnamn">
+  <label class="fld">Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="forhandlaren-data">
+  <label class="fld">Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Skapas på github.com &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div class="gh-status" id="gh-status"></div>
+  <button class="btn solid" id="gh-save" style="width:100%;margin-top:12px">Spara &amp; synka</button>
+  <button class="sheet-close" id="gh-close">Stäng</button>
+</div>
+
+<!-- Live mode -->
+<div class="live" id="live-mode">
+  <h2 id="live-who"></h2>
+  <div class="lead">Mina tre viktigaste punkter</div>
+  <div id="live-points"></div>
+  <div class="lead">Min lägsta gräns</div>
+  <div class="grans" id="live-grans"></div>
+  <div class="lead">Att inte glömma</div>
+  <div class="glomlist" id="live-glom"></div>
+  <div class="live-actions">
+    <button data-k="paus">&#9208; Pausa</button>
+    <button data-k="fraga">? Ställ fråga</button>
+    <button data-k="tid">&#9203; Betänketid</button>
+  </div>
+  <div class="live-note" id="live-note"></div>
+  <button class="live-exit" id="live-exit">Avsluta mötesläge</button>
+</div>
+
+<script>
+// ── Hjälpare ───────────────────────────────────────────
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+var STATUS={prep:'Förbereder',active:'Pågår',done:'Avslutad'};
+var STATUS_CLS={prep:'b-prep',active:'b-active',done:'b-done'};
+var todayISO=function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+function fmtDate(iso){
+  if(!iso)return '';
+  var p=iso.split('-');if(p.length!==3)return iso;
+  var mo=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  return parseInt(p[2],10)+' '+mo[parseInt(p[1],10)-1]+' '+p[0];
+}
+function daysTo(iso){
+  if(!iso)return null;
+  var t=new Date(todayISO()),d=new Date(iso);
+  return Math.round((d-t)/86400000);
+}
+
+// ── Data ───────────────────────────────────────────────
+var STORE='forhandlaren_v1';
+var state={negs:[],principles:[],coach:[]};
+function blankNeg(){
+  return {id:uid(),motpart:'',amne:'',status:'prep',mal:'',minsta:'',erbjuda:'',risker:'',deadline:'',
+    prep:{mal:'',derasmal:'',stark:'',kompr:'',ejgodta:'',fragor:''},
+    moten:[],live:{},
+    efter:{erbjods:'',lovades:'',nasta:'',uppfolj:'',summary:'',mail:''},
+    created:todayISO()};
+}
+function load(){
+  try{var s=localStorage.getItem(STORE);if(s){var d=JSON.parse(s);
+    if(Array.isArray(d.negs))state.negs=d.negs;
+    if(Array.isArray(d.principles))state.principles=d.principles;
+    if(Array.isArray(d.coach))state.coach=d.coach;
+  }}catch(e){}
+}
+function save(){try{localStorage.setItem(STORE,JSON.stringify({negs:state.negs,principles:state.principles,coach:state.coach}));}catch(e){}}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+function getNeg(id){for(var i=0;i<state.negs.length;i++){if(state.negs[i].id===id)return state.negs[i];}return null;}
+
+// ── GitHub-synk ────────────────────────────────────────
+var SYNC_KEY='forhandlarensync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(s,msg){var b=document.getElementById('sync-state');if(!b)return;b.textContent=msg;b.className='sync-badge'+(s==='ok'?' ok':s==='err'?' err':'');}
+function setSyncBtn(){var el=document.getElementById('sync-btn');el.textContent=syncOn()?'Synkad ✓':'Synk';}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    var data=await ghGet();
+    if(data){
+      if(Array.isArray(data.negs))state.negs=data.negs;
+      if(Array.isArray(data.principles))state.principles=data.principles;
+      if(Array.isArray(data.coach))state.coach=data.coach;
+      save();renderAll();
+    }
+  }catch(e){}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  var content=b64enc(JSON.stringify({negs:state.negs,principles:state.principles,coach:state.coach,updated:new Date().toISOString()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+}
+
+// ── AI ─────────────────────────────────────────────────
+var AI_KEY='forhandlaren_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(messages,maxTokens){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens||900,messages:messages})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function principlesText(){
+  if(!state.principles.length)return '';
+  return '\n\nMina stående principer och gränser:\n- '+state.principles.join('\n- ');
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">&#10024; Förhandlaren</span>'+esc(t)+'</div>';}
+function thinking(el){el.innerHTML='<div class="ai-box"><span class="thinking">Tänker…</span></div>';}
+
+// ── Sheets ─────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ss=document.querySelectorAll('.sheet');for(var i=0;i<ss.length;i++)ss[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Nav ────────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+function showView(v){
+  for(var i=0;i<navBtns.length;i++)navBtns[i].classList.toggle('active',navBtns[i].dataset.v===v);
+  var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='home')renderHome();
+  if(v==='list')renderList();
+  if(v==='coach')renderCoachLog();
+  if(v==='principles')renderPrinciples();
+  window.scrollTo(0,0);
+}
+for(var i=0;i<navBtns.length;i++){(function(b){b.onclick=function(){showView(b.dataset.v);};})(navBtns[i]);}
+
+// ── Hem ────────────────────────────────────────────────
+var TIPS=[
+ 'Den som pratar minst i förhandlingen styr ofta mest. Ställ en fråga och låt tystnaden arbeta.',
+ 'Bestäm din lägsta gräns innan du går in — då kan ingen pressa dig förbi den.',
+ 'Be alltid om betänketid på stora bud. "Jag återkommer i morgon" är ett fullständigt svar.',
+ 'Ankra först om du har god grund: det första seriösa budet flyttar hela samtalet.',
+ 'Skilj på person och sak. Var hård mot problemet, mjuk mot människan.',
+ 'Ett "nej" är sällan slutgiltigt — det är information om vad som behöver lösas.',
+ 'Förbered tre frågor du vill ställa. Frågor ger dig info och tid att tänka.',
+ 'Sätt ord på din BATNA: ditt bästa alternativ om ni inte kommer överens.'
+];
+function tipOfDay(){var d=new Date();var n=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);return TIPS[n%TIPS.length];}
+function renderHome(){
+  var a=0,p=0,dn=0;
+  state.negs.forEach(function(n){if(n.status==='active')a++;else if(n.status==='prep')p++;else dn++;});
+  document.getElementById('t-active').textContent=a;
+  document.getElementById('t-prep').textContent=p;
+  document.getElementById('t-done').textContent=dn;
+  document.getElementById('focus-text').textContent=tipOfDay();
+
+  // Upcoming: meetings + deadlines, sorted
+  var up=[];
+  state.negs.forEach(function(n){
+    if(n.deadline&&n.status!=='done'){var dt=daysTo(n.deadline);up.push({sort:n.deadline,when:fmtDate(n.deadline),lbl:'Deadline · '+(n.motpart||'Förhandling'),urgent:dt!=null&&dt<=3});}
+    (n.moten||[]).forEach(function(m){up.push({sort:'z'+(m.date||''),when:m.date||'',lbl:'Möte · '+(n.motpart||'Förhandling'),urgent:false});});
+  });
+  up.sort(function(x,y){return x.sort<y.sort?-1:x.sort>y.sort?1:0;});
+  var uel=document.getElementById('upcoming');
+  if(!up.length)uel.innerHTML='<div class="empty-msg">Inga inplanerade möten eller deadlines.</div>';
+  else uel.innerHTML=up.slice(0,6).map(function(u){return '<div class="up-item"><div><div>'+esc(u.lbl)+'</div></div><div class="when" style="'+(u.urgent?'color:var(--warn)':'')+'">'+esc(u.when)+'</div></div>';}).join('');
+
+  // Pågående list
+  var ongoing=state.negs.filter(function(n){return n.status!=='done';});
+  var hl=document.getElementById('home-list');
+  if(!ongoing.length)hl.innerHTML='<div class="empty-msg">Inga aktiva förhandlingar än.<br>Skapa din första nedan.</div>';
+  else hl.innerHTML=ongoing.map(negCardHTML).join('');
+  bindNegCards(hl);
+}
+
+// ── Förhandlingslista ──────────────────────────────────
+var listFilter='all';
+function negCardHTML(n){
+  var dl='';
+  if(n.deadline){var dt=daysTo(n.deadline);dl='<span class="dl">'+(dt!=null&&dt>=0?(dt===0?'Idag':dt+' d'):fmtDate(n.deadline))+'</span>';}
+  return '<div class="neg" data-id="'+n.id+'">'+
+    '<div class="neg-main">'+
+      '<div class="neg-who">'+esc(n.motpart||'Namnlös')+'</div>'+
+      (n.amne?'<div class="neg-topic">'+esc(n.amne)+'</div>':'')+
+      '<div class="neg-meta"><span class="badge '+STATUS_CLS[n.status]+'">'+STATUS[n.status]+'</span>'+dl+'</div>'+
+    '</div><div class="chev">&#8250;</div></div>';
+}
+function bindNegCards(container){
+  var cards=container.querySelectorAll('.neg');
+  for(var i=0;i<cards.length;i++){(function(c){c.onclick=function(){openDetail(c.dataset.id);};})(cards[i]);}
+}
+function renderList(){
+  var arr=state.negs.filter(function(n){return listFilter==='all'||n.status===listFilter;});
+  var el=document.getElementById('full-list');
+  if(!arr.length)el.innerHTML='<div class="empty-msg">Inga förhandlingar i den här vyn.</div>';
+  else el.innerHTML=arr.map(negCardHTML).join('');
+  bindNegCards(el);
+}
+var fbtns=document.querySelectorAll('#filter-row button');
+for(var i=0;i<fbtns.length;i++){(function(b){b.onclick=function(){listFilter=b.dataset.f;for(var k=0;k<fbtns.length;k++)fbtns[k].classList.toggle('on',fbtns[k]===b);renderList();};})(fbtns[i]);}
+
+// ── Ny förhandling ─────────────────────────────────────
+function openNew(){document.getElementById('n-motpart').value='';document.getElementById('n-amne').value='';document.getElementById('n-deadline').value='';openSheet('new-sheet');}
+document.getElementById('btn-new-home').onclick=openNew;
+document.getElementById('btn-new-list').onclick=openNew;
+document.getElementById('n-close').onclick=closeSheets;
+document.getElementById('n-save').onclick=function(){
+  var who=document.getElementById('n-motpart').value.trim();
+  if(!who){document.getElementById('n-motpart').focus();return;}
+  var n=blankNeg();
+  n.motpart=who;n.amne=document.getElementById('n-amne').value.trim();n.deadline=document.getElementById('n-deadline').value;
+  state.negs.unshift(n);persist();closeSheets();
+  openDetail(n.id);
+};
+
+// ── Detalj ─────────────────────────────────────────────
+var curId=null,curSub='oversikt';
+function openDetail(id){
+  curId=id;curSub='oversikt';
+  var n=getNeg(id);if(!n)return;
+  document.getElementById('d-title').textContent=n.motpart||'Förhandling';
+  document.getElementById('d-motpart').value=n.motpart||'';
+  document.getElementById('d-amne').value=n.amne||'';
+  document.getElementById('d-mal').value=n.mal||'';
+  document.getElementById('d-minsta').value=n.minsta||'';
+  document.getElementById('d-erbjuda').value=n.erbjuda||'';
+  document.getElementById('d-risker').value=n.risker||'';
+  document.getElementById('d-deadline').value=n.deadline||'';
+  var sb=document.querySelectorAll('#d-status button');for(var i=0;i<sb.length;i++)sb[i].classList.toggle('on',sb[i].dataset.v===n.status);
+  document.getElementById('p-mal').value=n.prep.mal||'';
+  document.getElementById('p-derasmal').value=n.prep.derasmal||'';
+  document.getElementById('p-stark').value=n.prep.stark||'';
+  document.getElementById('p-kompr').value=n.prep.kompr||'';
+  document.getElementById('p-ejgodta').value=n.prep.ejgodta||'';
+  document.getElementById('p-fragor').value=n.prep.fragor||'';
+  document.getElementById('e-erbjods').value=n.efter.erbjods||'';
+  document.getElementById('e-lovades').value=n.efter.lovades||'';
+  document.getElementById('e-nasta').value=n.efter.nasta||'';
+  document.getElementById('e-uppfolj').value=n.efter.uppfolj||'';
+  document.getElementById('prep-ai').innerHTML='';
+  document.getElementById('efter-ai').innerHTML=n.efter.summary?aiBox(n.efter.summary):'';
+  renderMoten();
+  setSub('oversikt');
+  showView('detail');
+}
+function setSub(s){
+  curSub=s;
+  var btns=document.querySelectorAll('#d-subtabs button');for(var i=0;i<btns.length;i++)btns[i].classList.toggle('on',btns[i].dataset.s===s);
+  var vs=document.querySelectorAll('.subview');for(var j=0;j<vs.length;j++)vs[j].classList.remove('on');
+  document.getElementById('sub-'+s).classList.add('on');
+  window.scrollTo(0,0);
+}
+var stbtns=document.querySelectorAll('#d-subtabs button');
+for(var i=0;i<stbtns.length;i++){(function(b){b.onclick=function(){setSub(b.dataset.s);};})(stbtns[i]);}
+document.getElementById('d-back').onclick=function(){showView('list');};
+
+// Autosave detail fields
+function saveDetail(){
+  var n=getNeg(curId);if(!n)return;
+  n.motpart=document.getElementById('d-motpart').value.trim();
+  n.amne=document.getElementById('d-amne').value.trim();
+  n.mal=document.getElementById('d-mal').value;
+  n.minsta=document.getElementById('d-minsta').value;
+  n.erbjuda=document.getElementById('d-erbjuda').value;
+  n.risker=document.getElementById('d-risker').value;
+  n.deadline=document.getElementById('d-deadline').value;
+  n.prep.mal=document.getElementById('p-mal').value;
+  n.prep.derasmal=document.getElementById('p-derasmal').value;
+  n.prep.stark=document.getElementById('p-stark').value;
+  n.prep.kompr=document.getElementById('p-kompr').value;
+  n.prep.ejgodta=document.getElementById('p-ejgodta').value;
+  n.prep.fragor=document.getElementById('p-fragor').value;
+  n.efter.erbjods=document.getElementById('e-erbjods').value;
+  n.efter.lovades=document.getElementById('e-lovades').value;
+  n.efter.nasta=document.getElementById('e-nasta').value;
+  n.efter.uppfolj=document.getElementById('e-uppfolj').value;
+  document.getElementById('d-title').textContent=n.motpart||'Förhandling';
+  persist();
+}
+['d-motpart','d-amne','d-mal','d-minsta','d-erbjuda','d-risker','d-deadline','p-mal','p-derasmal','p-stark','p-kompr','p-ejgodta','p-fragor','e-erbjods','e-lovades','e-nasta','e-uppfolj'].forEach(function(id){
+  document.getElementById(id).addEventListener('change',saveDetail);
+});
+var sbtns=document.querySelectorAll('#d-status button');
+for(var i=0;i<sbtns.length;i++){(function(b){b.onclick=function(){var n=getNeg(curId);if(!n)return;n.status=b.dataset.v;for(var k=0;k<sbtns.length;k++)sbtns[k].classList.toggle('on',sbtns[k]===b);persist();};})(sbtns[i]);}
+document.getElementById('d-delete').onclick=function(){
+  if(!confirm('Ta bort den här förhandlingen?'))return;
+  state.negs=state.negs.filter(function(n){return n.id!==curId;});
+  persist();showView('list');
+};
+
+// Möten
+function renderMoten(){
+  var n=getNeg(curId);var el=document.getElementById('d-moten');
+  if(!n||!n.moten.length){el.innerHTML='<div class="empty-msg" style="padding:6px 0">Inga inplanerade möten.</div>';return;}
+  el.innerHTML=n.moten.map(function(m){return '<div class="up-item"><div><div>'+esc(m.date||'')+'</div>'+(m.note?'<div class="lbl">'+esc(m.note)+'</div>':'')+'</div><button class="danger" style="padding:0 6px" data-mid="'+m.id+'">&times;</button></div>';}).join('');
+  var dels=el.querySelectorAll('[data-mid]');
+  for(var i=0;i<dels.length;i++){(function(b){b.onclick=function(){var nn=getNeg(curId);nn.moten=nn.moten.filter(function(m){return m.id!==b.dataset.mid;});persist();renderMoten();};})(dels[i]);}
+}
+document.getElementById('d-add-mote').onclick=function(){document.getElementById('m-date').value='';document.getElementById('m-note').value='';openSheet('mote-sheet');};
+document.getElementById('m-close').onclick=closeSheets;
+document.getElementById('m-save').onclick=function(){
+  var d=document.getElementById('m-date').value.trim();if(!d)return;
+  var n=getNeg(curId);n.moten.push({id:uid(),date:d,note:document.getElementById('m-note').value.trim()});
+  persist();closeSheets();renderMoten();
+};
+
+// ── AI: förberedelseplan ───────────────────────────────
+document.getElementById('btn-prep-ai').onclick=async function(e){
+  saveDetail();
+  var n=getNeg(curId);if(!n)return;
+  var out=document.getElementById('prep-ai');thinking(out);
+  var prompt='Du är en lugn, strategisk och erfaren förhandlingscoach. Ge en konkret förberedelseplan på svenska för förhandlingen nedan. Max 280 ord. Använd enkla korta rubriker (utan markdown-symboler) i denna ordning: Strategi, Mitt bästa alternativ (BATNA), Öppning, Frågor att ställa, Möjliga invändningar och svar, Varningsflaggor. Var konkret och praktisk.\n\n'+
+    'Motpart: '+(n.motpart||'-')+'\nÄmne: '+(n.amne||'-')+'\nMitt mål: '+(n.prep.mal||n.mal||'-')+'\nDeras mål: '+(n.prep.derasmal||'-')+'\nMin starkaste position: '+(n.prep.stark||'-')+'\nKan kompromissa med: '+(n.prep.kompr||'-')+'\nGår inte med på: '+(n.prep.ejgodta||n.minsta||'-')+'\nKan erbjuda: '+(n.erbjuda||'-')+'\nRisker: '+(n.risker||'-')+'\nFrågor jag tänkt på: '+(n.prep.fragor||'-')+principlesText();
+  try{var t=await aiCall([{role:'user',content:prompt}],950);out.innerHTML=aiBox(t);}
+  catch(err){if(err.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta plan: '+esc(err.message)+'</div>';else out.innerHTML='';}
+};
+
+// ── AI: sammanfattning & mail ──────────────────────────
+document.getElementById('btn-summary-ai').onclick=async function(){
+  saveDetail();var n=getNeg(curId);if(!n)return;
+  var out=document.getElementById('efter-ai');thinking(out);
+  var prompt='Skriv en kort, saklig sammanfattning på svenska av förhandlingens resultat. Max 120 ord, sammanhängande text utan rubriker.\n\nMotpart: '+(n.motpart||'-')+'\nÄmne: '+(n.amne||'-')+'\nVad erbjöds: '+(n.efter.erbjods||'-')+'\nVad lovades: '+(n.efter.lovades||'-')+'\nNästa steg: '+(n.efter.nasta||'-');
+  try{var t=await aiCall([{role:'user',content:prompt}],500);n.efter.summary=t;persist();out.innerHTML=aiBox(t);}
+  catch(err){if(err.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta: '+esc(err.message)+'</div>';else out.innerHTML='';}
+};
+document.getElementById('btn-mail-ai').onclick=async function(){
+  saveDetail();var n=getNeg(curId);if(!n)return;
+  var out=document.getElementById('efter-ai');thinking(out);
+  var prompt='Skriv ett vänligt men professionellt uppföljningsmail på svenska efter förhandlingen. Bekräfta det som överenskommits och föreslå nästa steg. Inkludera ämnesrad. Håll det kort och tydligt.\n\nMottagare/motpart: '+(n.motpart||'-')+'\nÄmne: '+(n.amne||'-')+'\nVad lovades: '+(n.efter.lovades||'-')+'\nNästa steg: '+(n.efter.nasta||'-')+'\nUppföljningsdatum: '+(fmtDate(n.efter.uppfolj)||'-');
+  try{var t=await aiCall([{role:'user',content:prompt}],700);n.efter.mail=t;persist();out.innerHTML=aiBox(t);}
+  catch(err){if(err.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta: '+esc(err.message)+'</div>';else out.innerHTML='';}
+};
+
+// ── Mötesläge ──────────────────────────────────────────
+var liveEl=document.getElementById('live-mode');
+document.getElementById('d-live').onclick=function(){
+  saveDetail();var n=getNeg(curId);if(!n)return;
+  document.getElementById('live-who').textContent=n.motpart||'Förhandling';
+  // tre viktigaste = use stored live points, else derive from mål/prep
+  var pts=[];
+  if(n.live&&n.live.p1)pts=[n.live.p1,n.live.p2,n.live.p3].filter(Boolean);
+  if(!pts.length){
+    if(n.mal)pts.push(n.mal);
+    if(n.prep.stark)pts.push('Min styrka: '+n.prep.stark);
+    if(n.erbjuda)pts.push('Jag kan erbjuda: '+n.erbjuda);
+  }
+  if(!pts.length)pts=['(Fyll i mål under Översikt)'];
+  document.getElementById('live-points').innerHTML=pts.slice(0,3).map(function(p){return '<div class="pt">&middot; '+esc(p)+'</div>';}).join('');
+  document.getElementById('live-grans').textContent=n.minsta||n.prep.ejgodta||'(Ingen lägsta gräns angiven)';
+  var glom=[];
+  if(n.prep.fragor)glom.push('Ställ mina frågor');
+  glom.push('Be om betänketid vid stora bud');
+  glom.push('Lyssna mer än jag pratar');
+  if(n.prep.ejgodta)glom.push('Gå aldrig med på: '+n.prep.ejgodta);
+  document.getElementById('live-glom').innerHTML=glom.map(function(g){return '&middot; '+esc(g);}).join('<br>');
+  document.getElementById('live-note').textContent='';
+  liveEl.classList.add('open');
+};
+document.getElementById('live-exit').onclick=function(){liveEl.classList.remove('open');};
+var LIVE_NOTES={
+  paus:'Andas. En kort paus är din rättighet — "Ska vi ta fem minuter?"',
+  fraga:'Bra frågor: "Vad är viktigast för dig här?" · "Hur kom ni fram till det?" · "Vad skulle få det att fungera?"',
+  tid:'"Det här är viktigt, jag vill ge det ett ordentligt övervägande. Jag återkommer i morgon." — ett komplett och starkt svar.'
+};
+var lacts=document.querySelectorAll('.live-actions button');
+for(var i=0;i<lacts.length;i++){(function(b){b.onclick=function(){document.getElementById('live-note').textContent=LIVE_NOTES[b.dataset.k];};})(lacts[i]);}
+
+// ── Coach ──────────────────────────────────────────────
+document.getElementById('btn-coach').onclick=async function(){
+  var sit=document.getElementById('coach-input').value.trim();
+  if(!sit){document.getElementById('coach-input').focus();return;}
+  var out=document.getElementById('coach-out');thinking(out);
+  var prompt='Du är en lugn, klok och strategisk förhandlingscoach. En person beskriver en situation. Svara på svenska, max 320 ord, med enkla korta rubriker (utan markdown-symboler) i denna ordning: Strategi, Förslag på formuleringar, Möjliga motargument, Frågor att ställa, Varningsflaggor, Lugna svar om det blir pressat. Var konkret, varm och praktisk. Ge faktiska repliker inom citattecken där det passar.\n\nSituation: '+sit+principlesText();
+  try{
+    var t=await aiCall([{role:'user',content:prompt}],1000);
+    out.innerHTML=aiBox(t);
+    state.coach.unshift({id:uid(),situation:sit,text:t,ts:todayISO()});
+    if(state.coach.length>30)state.coach=state.coach.slice(0,30);
+    persist();renderCoachLog();
+  }catch(err){if(err.message!=='NOKEY')out.innerHTML='<div class="ai-box">Kunde inte hämta råd: '+esc(err.message)+'</div>';else out.innerHTML='';}
+};
+function renderCoachLog(){
+  var el=document.getElementById('coach-log');
+  if(!state.coach.length){el.innerHTML='<div class="empty-msg">Dina sparade råd dyker upp här.</div>';return;}
+  el.innerHTML=state.coach.map(function(c){return '<div class="neg" data-cid="'+c.id+'"><div class="neg-main"><div class="neg-topic" style="color:var(--ink);white-space:normal">'+esc(c.situation)+'</div><div class="neg-meta">'+fmtDate(c.ts)+'</div></div><div class="chev">&#8250;</div></div>';}).join('');
+  var items=el.querySelectorAll('[data-cid]');
+  for(var i=0;i<items.length;i++){(function(it){it.onclick=function(){
+    var c=state.coach.filter(function(x){return x.id===it.dataset.cid;})[0];if(!c)return;
+    document.getElementById('coach-input').value=c.situation;
+    document.getElementById('coach-out').innerHTML=aiBox(c.text);
+    window.scrollTo(0,0);
+  };})(items[i]);}
+}
+
+// ── Träning ────────────────────────────────────────────
+var trainMsgs=[],trainScenario='';
+function trainPush(role,text){trainMsgs.push({role:role,content:text});}
+function renderTrainChat(){
+  var el=document.getElementById('train-chat');
+  el.innerHTML=trainMsgs.filter(function(m){return m.role!=='system';}).map(function(m){
+    if(m.coach)return '<div class="msg coach"><b>&#10024; Feedback</b><br>'+esc(m.content)+'</div>';
+    return '<div class="msg '+(m.role==='assistant'?'them':'me')+'">'+esc(m.content)+'</div>';
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+function trainSystem(){
+  return 'Du spelar motparten i en förhandlingsövning på svenska. Scenario: '+trainScenario+'. '+
+    'Spela en realistisk, lite utmanande men rättvis motpart. Håll dina repliker korta (1–4 meningar), stanna i karaktär och pressa lagom. Inled inte med metakommentarer.'+
+    (document.getElementById('train-context').value.trim()?' Kontext: '+document.getElementById('train-context').value.trim():'')+principlesText();
+}
+document.getElementById('btn-train-start').onclick=async function(){
+  trainScenario=document.getElementById('train-scenario').value;
+  trainMsgs=[];
+  document.getElementById('train-setup').style.display='none';
+  document.getElementById('train-active').style.display='block';
+  document.getElementById('train-label').textContent=trainScenario;
+  var el=document.getElementById('train-chat');el.innerHTML='<div class="msg them thinking">Förbereder…</div>';
+  try{
+    var t=await aiCall([{role:'user',content:'START. '+trainSystem()+'\n\nÖppna förhandlingen med din första replik som motpart.'}],300);
+    trainPush('assistant',t);renderTrainChat();
+  }catch(err){if(err.message!=='NOKEY')el.innerHTML='<div class="empty-msg">Kunde inte starta: '+esc(err.message)+'</div>';else el.innerHTML='';}
+};
+document.getElementById('btn-train-end').onclick=function(){
+  trainMsgs=[];
+  document.getElementById('train-setup').style.display='block';
+  document.getElementById('train-active').style.display='none';
+  document.getElementById('train-reply').value='';
+};
+document.getElementById('btn-train-send').onclick=async function(){
+  var txt=document.getElementById('train-reply').value.trim();if(!txt)return;
+  document.getElementById('train-reply').value='';
+  trainPush('user',txt);renderTrainChat();
+  var msgs=[{role:'user',content:trainSystem()+'\n\nVi börjar förhandlingen. Svara endast i karaktär som motparten.'}];
+  // rebuild as alternating; first assistant turn was the opener
+  trainMsgs.forEach(function(m){if(m.role==='assistant'||m.role==='user')msgs.push({role:m.role,content:m.content});});
+  try{var t=await aiCall(msgs,350);trainPush('assistant',t);renderTrainChat();}
+  catch(err){if(err.message!=='NOKEY')alert('Fel: '+err.message);}
+};
+document.getElementById('btn-train-fb').onclick=async function(){
+  if(!trainMsgs.length)return;
+  var transcript=trainMsgs.filter(function(m){return m.role!=='system'&&!m.coach;}).map(function(m){return (m.role==='assistant'?'Motpart':'Jag')+': '+m.content;}).join('\n');
+  var el=document.getElementById('train-chat');
+  try{
+    var t=await aiCall([{role:'user',content:'Du är en förhandlingscoach. Ge kort, konkret feedback på svenska (max 120 ord) på hur "Jag" förhandlar i utskriften nedan. Lyft en styrka och ett konkret förbättringsförslag.\n\n'+transcript}],400);
+    trainMsgs.push({role:'system',coach:true,content:t});renderTrainChat();
+  }catch(err){if(err.message!=='NOKEY')alert('Fel: '+err.message);}
+};
+
+// ── Principer ──────────────────────────────────────────
+function renderPrinciples(){
+  var el=document.getElementById('prin-list');
+  if(!state.principles.length){el.innerHTML='<div class="empty-msg" style="padding:6px 0">Inga principer än.</div>';return;}
+  el.innerHTML=state.principles.map(function(p,idx){return '<div class="up-item"><div>'+esc(p)+'</div><button class="danger" style="padding:0 6px" data-pi="'+idx+'">&times;</button></div>';}).join('');
+  var dels=el.querySelectorAll('[data-pi]');
+  for(var i=0;i<dels.length;i++){(function(b){b.onclick=function(){state.principles.splice(parseInt(b.dataset.pi,10),1);persist();renderPrinciples();};})(dels[i]);}
+}
+document.getElementById('prin-add').onclick=function(){
+  var v=document.getElementById('prin-input').value.trim();if(!v)return;
+  state.principles.push(v);document.getElementById('prin-input').value='';persist();renderPrinciples();
+};
+document.getElementById('prin-input').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('prin-add').click();});
+
+// ── Snabbtips (AI) ─────────────────────────────────────
+document.getElementById('btn-tip').onclick=async function(){
+  var out=document.getElementById('home-ai');thinking(out);
+  var ctx=state.negs.filter(function(n){return n.status!=='done';}).slice(0,3).map(function(n){return n.motpart+' ('+(n.amne||'')+')';}).join(', ');
+  var prompt='Ge ett enda kort, kraftfullt förhandlingstips på svenska (max 50 ord) som passar idag.'+(ctx?' Mina pågående förhandlingar: '+ctx+'.':'')+principlesText();
+  try{var t=await aiCall([{role:'user',content:prompt}],200);out.innerHTML=aiBox(t);}
+  catch(err){if(err.message!=='NOKEY')out.innerHTML='';else out.innerHTML='';}
+};
+
+// ── AI-nyckel ──────────────────────────────────────────
+document.getElementById('ai-set-btn').onclick=function(){document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+
+// ── Synk-UI ────────────────────────────────────────────
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.style.background=type==='ok'?'rgba(111,166,122,.15)':type==='err'?'rgba(217,138,122,.15)':'rgba(95,163,201,.15)';el.style.color=type==='ok'?'var(--done)':type==='err'?'var(--warn)':'var(--active)';el.textContent=msg;}
+document.getElementById('sync-btn').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';openSheet('sync-sheet');
+};
+document.getElementById('gh-close').onclick=closeSheets;
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setSyncBtn();setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar din data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPush();}
+    setTimeout(closeSheets,1100);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Säkerhetskopiering ─────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify({negs:state.negs,principles:state.principles,coach:state.coach},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='forhandlaren-backup-'+todayISO()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);
+    if(d&&Array.isArray(d.negs)){state.negs=d.negs;if(Array.isArray(d.principles))state.principles=d.principles;if(Array.isArray(d.coach))state.coach=d.coach;persist();renderAll();}
+    else alert('Filen verkar inte vara en giltig säkerhetskopia.');
+  }catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Init ───────────────────────────────────────────────
+function renderAll(){renderHome();renderList();renderCoachLog();renderPrinciples();}
+loadSync();load();setSyncBtn();renderAll();
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
