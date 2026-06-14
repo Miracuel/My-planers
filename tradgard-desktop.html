@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237A8B6F'/%3E%3Cpath d='M50 78V46' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M50 52c-14 0-22-8-22-20 12 0 22 8 22 20z' fill='%23DBE3D3'/%3E%3Cpath d='M50 46c12 0 20-7 20-18-11 0-20 7-20 18z' fill='%23DBE3D3'/%3E%3C/svg%3E">
+<title>Trädgården — dator</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--sun:#D9C27E;
+  --green:#7A8B6F;--yellow:#C7B06A;--red:#C08A7E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.shell{max-width:1200px;margin:0 auto;display:flex;min-height:100vh}
+a,button{font-family:inherit}
+
+/* Sidofält */
+.side{width:236px;flex-shrink:0;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.side .brand{font-family:Georgia,serif;font-weight:400;font-size:23px;letter-spacing:.04em;margin-bottom:24px}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:12px;background:none;border:none;color:var(--muted);font-size:15px;padding:11px 12px;border-radius:12px;cursor:pointer;text-align:left;transition:background .2s,color .2s}
+.nav button span{font-size:18px;width:22px;text-align:center}
+.nav button:hover{background:var(--panel)}
+.nav button.active{color:var(--moss);background:var(--panel);font-weight:600}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:1px solid var(--line)}
+.side-foot .row{display:flex;align-items:center;gap:8px}
+.badge{font-size:11px;border-radius:10px;padding:5px 9px;border:1px solid var(--line);color:var(--muted);background:var(--panel);flex:1;text-align:center}
+.badge.ok{color:#3B6D11;border-color:var(--moss-soft);background:var(--moss-soft)}
+.badge.err{color:#A32D2D;border-color:#E0C4BB;background:#F4E8E4}
+.icon-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;flex-shrink:0}
+
+/* Huvudyta */
+.main{flex:1;padding:30px 34px;min-width:0}
+.page-title{font-family:Georgia,serif;font-weight:400;font-size:26px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.view{display:none}
+.view.active{display:block}
+
+.section-title{font-family:Georgia,serif;font-size:16px;color:var(--ink);margin:0 0 12px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:12px;padding:10px 16px;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s}
+.btn:hover{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff}.btn.fill:hover{background:#6b7c61}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 11px}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 12px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--moss)}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+.empty-msg{font-size:13px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* Uppgifter */
+.filterbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.fchip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 13px;font-size:13px;color:var(--muted);cursor:pointer}
+.fchip:hover{border-color:var(--moss)}
+.fchip.sel{background:var(--moss);border-color:var(--moss);color:#fff}
+#task-list{column-count:2;column-gap:18px}
+@media(max-width:1100px){#task-list{column-count:1}}
+.task{break-inside:avoid;padding:12px 0;border-top:1px solid var(--line);display:flex;align-items:flex-start;gap:11px}
+.task-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--moss);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:13px;color:#fff;line-height:20px;text-align:center}
+.task-check.done{background:var(--moss)}
+.task-main{flex:1;min-width:0}
+.task-title{font-size:14px;line-height:1.4}
+.task-title.done{text-decoration:line-through;color:var(--muted)}
+.task-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.task-cat{display:inline-flex;align-items:center;gap:3px}
+.task-del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer}
+.add-row{display:flex;gap:10px;margin-top:16px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:12px;padding:0 20px;cursor:pointer;font-size:20px;flex-shrink:0}
+
+/* Odlingar */
+#plant-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.plant{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.plant-head{display:flex;align-items:center;gap:8px}
+.plant-name{font-family:Georgia,serif;font-size:16px;flex:1}
+.plant-bed{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:3px 8px}
+.plant-dates{font-size:12px;color:var(--muted);margin-top:7px;display:flex;gap:16px;flex-wrap:wrap}
+.plant-dates b{color:var(--ink);font-weight:500}
+.plant-notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+.plant-actions{display:flex;gap:8px;margin-top:10px}
+.plant-actions button{background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:12px;padding:5px 10px;cursor:pointer}
+.plant-actions button:hover{border-color:var(--moss);color:var(--moss)}
+
+/* Året */
+.month-strip{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.mchip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 14px;font-size:13px;color:var(--muted);cursor:pointer}
+.mchip:hover{border-color:var(--moss)}
+.mchip.sel{background:var(--moss);border-color:var(--moss);color:#fff}
+.mchip.now{border-color:var(--clay)}
+.guide-tips{list-style:none}
+.guide-tips li{font-size:14px;line-height:1.65;padding:6px 0 6px 22px;position:relative}
+.guide-tips li::before{content:'🌿';position:absolute;left:0;font-size:12px;top:8px}
+
+/* AI */
+.ai-box{background:var(--moss-soft);border:1px solid var(--moss);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.65;color:#37412F;margin-top:12px;white-space:pre-wrap}
+.ai-lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--moss);margin-bottom:6px;font-weight:600}
+.suggest{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.suggest:first-child{border-top:none}
+.suggest span{flex:1;line-height:1.4}
+.suggest small{color:var(--muted);display:block;margin-top:2px}
+.suggest button{border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:10px;padding:7px 13px;cursor:pointer;font-size:13px;flex-shrink:0}
+.qa{padding:14px 0;border-top:1px solid var(--line)}
+.qa:first-child{border-top:none}
+.qa .q{font-size:14px;font-weight:600;margin-bottom:6px}
+.qa .a{font-size:14px;line-height:1.65;white-space:pre-wrap}
+
+/* Modaler (sheets) */
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;top:50%;left:50%;transform:translate(-50%,-46%);width:min(540px,92vw);max-height:88vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px;z-index:51;opacity:0;visibility:hidden;transition:opacity .2s,transform .2s;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.sheet.open{opacity:1;visibility:visible;transform:translate(-50%,-50%)}
+.sheet h3{font-family:Georgia,serif;font-size:19px;margin-bottom:10px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;margin-top:16px}
+.sheet-close:hover{background:#6b7c61}
+.hint{font-size:12px;color:var(--muted);line-height:1.55;margin-top:6px}
+.foot{display:flex;gap:16px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:11px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.status-line{font-size:13px;margin-top:8px;min-height:16px}
+.status-line.ok{color:#3B6D11}.status-line.err{color:#A32D2D}
+code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
+
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --clay:#C2A38B;--sun:#C2AC6B;--green:#8FA383;--yellow:#C2AC6B;--red:#C08A7E;
+}
+html[data-theme=dark] .ai-box{color:#DCE3D3}
+html[data-theme=dark] .badge.err{background:#3A2D29;border-color:#5C443D;color:#E2C2B7}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">🌿 Trädgården</div>
+  <nav class="nav">
+    <button class="active" data-v="tasks"><span>🌱</span>Att göra</button>
+    <button data-v="plants"><span>🪴</span>Odlingar</button>
+    <button data-v="year"><span>🗓</span>Året</button>
+    <button data-v="ask"><span>✨</span>Fråga</button>
+  </nav>
+  <div class="side-foot">
+    <div class="row">
+      <span class="badge" id="sync-badge">Lokal</span>
+      <button class="icon-btn" id="sync-btn" title="Synka">&#10227;</button>
+      <button class="icon-btn" id="settings-btn" title="Inställningar">&#9881;</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- ATT GÖRA -->
+  <div class="view active" id="view-tasks">
+    <div class="page-title">Att göra</div>
+    <div class="page-sub">Dina trädgårdssysslor — filtrera per kategori eller lägg till nya.</div>
+    <div class="filterbar" id="filterbar"></div>
+    <div class="card-panel">
+      <div id="task-list"></div>
+      <div class="add-row">
+        <input id="task-input" placeholder="Lägg till uppgift…">
+        <button id="task-add" aria-label="Lägg till">+</button>
+      </div>
+    </div>
+    <button class="btn ghost" id="task-cat-toggle" style="margin-top:12px">Kategori för nästa uppgift: <b id="task-cat-label">Annat</b></button>
+  </div>
+
+  <!-- ODLINGAR -->
+  <div class="view" id="view-plants">
+    <div class="page-title">Odlingar</div>
+    <div class="page-sub">Vad som växer var. Håll koll på sådd och skörd — och få bättre AI-råd.</div>
+    <button class="btn fill" id="plant-add-btn" style="margin-bottom:18px">+ Ny odling</button>
+    <div id="plant-list"></div>
+  </div>
+
+  <!-- ÅRET -->
+  <div class="view" id="view-year">
+    <div class="page-title">Trädgårdsåret</div>
+    <div class="page-sub">Vad som är värt att göra månad för månad.</div>
+    <div class="month-strip" id="month-strip"></div>
+    <div class="grid-2">
+      <div class="card-panel">
+        <div class="section-title" id="month-title"></div>
+        <ul class="guide-tips" id="guide-tips"></ul>
+      </div>
+      <div class="card-panel">
+        <div class="section-title">✨ AI-trädgårdsmästaren</div>
+        <p class="soft">Konkreta förslag för månaden, anpassade efter din zon och dina odlingar.</p>
+        <button class="btn fill" id="ai-suggest-btn" style="margin-top:14px">Föreslå uppgifter för månaden</button>
+        <div id="ai-suggest-out"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRÅGA -->
+  <div class="view" id="view-ask">
+    <div class="page-title">Fråga trädgårdsmästaren</div>
+    <div class="page-sub">Allt om sådd, beskärning, växtval, skadedjur och jord — svaren anpassas efter din profil.</div>
+    <div class="grid-2">
+      <div class="card-panel">
+        <div class="section-title">✨ Ställ en fråga</div>
+        <textarea id="ask-input" placeholder="T.ex. När kan jag plantera ut mina tomater? Varför gulnar bladen på squashen?"></textarea>
+        <button class="btn fill" id="ask-btn" style="margin-top:12px">Fråga</button>
+      </div>
+      <div id="ask-history"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- Modaler -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="plant-sheet">
+  <h3 id="plant-sheet-title">Ny odling</h3>
+  <label>Vad odlar du?</label>
+  <input id="p-name" placeholder="T.ex. Cherrytomat 'Sungold'">
+  <label>Plats / bädd</label>
+  <input id="p-bed" placeholder="T.ex. Pallkrage 2, växthus, balkong">
+  <div class="grid-2" style="gap:12px">
+    <div><label>Sått / planterat</label><input id="p-sown" type="date"></div>
+    <div><label>Beräknad skörd</label><input id="p-harvest" type="date"></div>
+  </div>
+  <label>Anteckningar</label>
+  <textarea id="p-notes" placeholder="Sort, avstånd, hur det går…"></textarea>
+  <button class="sheet-close" id="p-save">Spara odling</button>
+</div>
+
+<div class="sheet" id="cat-sheet">
+  <h3>Kategori</h3>
+  <div id="cat-options"></div>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <h3>Inställningar</h3>
+
+  <div class="section-title" style="margin-top:10px">Trädgårdsprofil</div>
+  <p class="hint">Används för att anpassa AI-råden.</p>
+  <div class="grid-2" style="gap:12px">
+    <div><label>Växtzon</label><select id="set-zon"></select></div>
+    <div><label>Ort</label><input id="set-ort" placeholder="T.ex. Göteborg"></div>
+  </div>
+
+  <div class="section-title" style="margin-top:18px">✨ AI-nyckel</div>
+  <p class="hint">Råden ges av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt på den här enheten och följer aldrig med i säkerhetskopior eller synk.</p>
+  <label>API-nyckel</label>
+  <input id="set-aikey" type="password" placeholder="sk-ant-…">
+
+  <div class="section-title" style="margin-top:18px">&#9881; Synk via GitHub</div>
+  <p class="hint">Appen läser och sparar <code>data.json</code> i ett <strong>privat</strong> GitHub-repo, så att din dator och mobil (och hela familjen) delar samma trädgårdsplan. Token sparas bara lokalt — aldrig i koden eller säkerhetskopian.</p>
+  <label>GitHub-användarnamn (ägare av data-repot)</label>
+  <input id="gh-owner" placeholder="dittnamn">
+  <label>Reponamn</label>
+  <input id="gh-repo" placeholder="t.ex. tradgard-data">
+  <label>Fine-grained token</label>
+  <input id="gh-token" type="password" placeholder="github_pat_…">
+  <p class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</p>
+
+  <div class="status-line" id="set-status"></div>
+  <button class="sheet-close" id="set-save">Spara &amp; synka</button>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <button id="theme-btn">Tema: auto</button>
+  </div>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+  <p class="privacy">All data sparas lokalt på din enhet och i ditt eget privata GitHub-repo. Inget skickas någon annanstans.</p>
+</div>
+
+<script>
+// ── Konstanter ────────────────────────────────────────
+var CATS=[
+  {id:'sadd',label:'Sådd',emoji:'🌱'},
+  {id:'plantering',label:'Plantering',emoji:'🪴'},
+  {id:'vattning',label:'Vattning',emoji:'💧'},
+  {id:'skotsel',label:'Skötsel',emoji:'🌿'},
+  {id:'beskarning',label:'Beskärning',emoji:'✂️'},
+  {id:'godsling',label:'Gödsling',emoji:'🧪'},
+  {id:'skord',label:'Skörd',emoji:'🧺'},
+  {id:'annat',label:'Annat',emoji:'📌'}
+];
+function catById(id){for(var i=0;i<CATS.length;i++){if(CATS[i].id===id)return CATS[i];}return CATS[CATS.length-1];}
+
+var MONTHS=[
+  {n:'Januari',tips:['Planera årets odlingar och rita upp bäddarna.','Beställ frö i god tid innan favoritsorterna tar slut.','Se över och slipa verktyg, olja in träskaft.','Skaka snö från grenar och kolla övervintrande krukväxter.']},
+  {n:'Februari',tips:['Förkultivera chili, paprika och aubergine inomhus — de behöver lång säsong.','Beskär äppel- och päronträd under vilan, frostfri dag.','Starta upp övervintrade pelargoner med ljus och lite vatten.','Så lök och purjo inomhus.']},
+  {n:'Mars',tips:['Förså tomat, fysalis och tidiga ettåriga blommor inne.','Kratta och lufta gräsmattan när den torkat upp något.','Så tidiga grönsaker i drivbänk eller under fiberduk.','Vårbeskär buskar som blommar på årsskott.']},
+  {n:'April',tips:['Direktså morötter, spenat, rädisa, dill och ärtor.','Sätt förgrodd potatis när jorden nått ca 8°.','Plantera bärbuskar och fruktträd.','Gödsla rabatter och bärbuskar med kompost eller organiskt gödsel.']},
+  {n:'Maj',tips:['Plantera ut frostkänsligt först när nattfrosten är över (sen maj i många zoner).','Direktså bönor, squash, pumpa och majs.','Härda av förkultiverade plantor utomhus några timmar i taget.','Håll fiberduk redo vid nattfrostvarning.']},
+  {n:'Juni',tips:['Vattna jämnt och djupt, hellre sällan än lite ofta.','Stötta tomater och knip tjuvskott.','Rensa ogräs medan de är små.','Plocka tidiga jordgubbar; så sallad löpande för jämn skörd.']},
+  {n:'Juli',tips:['Vattna morgon eller kväll under värmen.','Skörda löpande — det stimulerar fortsatt produktion.','Klipp häck och dela tidiga perenner efter blomning.','Toppa tomatplantor i mitten/slutet av månaden.']},
+  {n:'Augusti',tips:['Skörda och konservera, frys eller torka överskott.','Så höstsallad, spenat och vintergrönsaker.','Plantera nya jordgubbsplantor.','Samla frö från favoriter för nästa år.']},
+  {n:'September',tips:['Skörda rotfrukter, äpplen och päron.','Sätt höstlökar: tulpan, narciss, krokus.','Så gröngödsling på tomma bäddar.','Dela och flytta perenner.']},
+  {n:'Oktober',tips:['Räfsa löv — använd som täcke eller kompostera.','Täck känsliga växter och rosor inför vintern.','Plantera träd och buskar medan jorden är varm.','Ta in krukväxter innan första nattfrosten.']},
+  {n:'November',tips:['Vinterförbered: täck rabatter med löv eller halm.','Skydda stammar mot gnag från sork och hare.','Töm och frostsäkra slangar och utekranar.','Rengör, torka och olja verktyg inför vintern.']},
+  {n:'December',tips:['Vila och planera nästa säsong.','Mata fåglarna och håll fågelbadet isfritt.','Kontrollera lagrade lökar och rotfrukter.','Njut av gröna kvistar inomhus och drömma om våren.']}
+];
+
+var ZONES=['I','II','III','IV','V','VI','VII','VIII'];
+
+// ── State ─────────────────────────────────────────────
+var KEY='tradgard_v1';
+var AI_KEY='tradgard_ai_key';
+var SYNC_KEY='tradgardsync_v1';
+
+var state={
+  profile:{zon:'III',ort:''},
+  tasks:[],
+  plants:[],
+  notes:{},
+  ask:[]
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+if(!state.profile)state.profile={zon:'III',ort:''};
+if(!Array.isArray(state.tasks))state.tasks=[];
+if(!Array.isArray(state.plants))state.plants=[];
+if(!Array.isArray(state.ask))state.ask=[];
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+var nextCat='annat';
+
+// ── GitHub-synk ───────────────────────────────────────
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var d=JSON.parse(localStorage.getItem(SYNC_KEY)||'{}');sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(str){return btoa(unescape(encodeURIComponent(str)));}
+function b64dec(str){return decodeURIComponent(escape(atob(str.replace(/\s/g,''))));}
+
+function setBadge(stat,msg){
+  var b=document.getElementById('sync-badge');
+  b.textContent=msg;
+  b.className='badge'+(stat==='ok'?' ok':(stat==='err'?' err':''));
+}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){
+      if(data.profile)state.profile=data.profile;
+      if(Array.isArray(data.tasks))state.tasks=data.tasks;
+      if(Array.isArray(data.plants))state.plants=data.plants;
+      if(data.notes)state.notes=data.notes;
+      save();renderAll();
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function payload(){return JSON.stringify({profile:state.profile,tasks:state.tasks,plants:state.plants,notes:state.notes,updated:new Date().toISOString()});}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(payload());
+  function doPut(){
+    var body={message:'Uppdatering via appen',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json();
+  }).then(function(j){
+    if(j&&j.content&&j.content.sha)sync.sha=j.content.sha;
+    setBadge('ok','Synkad');
+  });
+}
+var pushTimer=null;
+function persist(){
+  save();
+  if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},800);}
+}
+
+// ── AI ────────────────────────────────────────────────
+function profileLine(){
+  var p=state.profile||{};
+  var bits=['Växtzon '+(p.zon||'okänd')];
+  if(p.ort)bits.push('ort: '+p.ort);
+  return bits.join(', ');
+}
+function plantsLine(){
+  if(!state.plants.length)return 'Inga odlingar registrerade ännu.';
+  return state.plants.map(function(p){
+    var t=p.name;if(p.bed)t+=' ('+p.bed+')';return t;
+  }).join('; ');
+}
+function aiCall(prompt,maxTokens){
+  var key=getAiKey();
+  if(!key){openSheet('settings-sheet');return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens||700,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+
+// ── Rendering: Uppgifter ──────────────────────────────
+var taskFilter='alla';
+function renderFilter(){
+  var html='<button class="fchip'+(taskFilter==='alla'?' sel':'')+'" data-f="alla">Alla</button>';
+  for(var i=0;i<CATS.length;i++){
+    var c=CATS[i];
+    html+='<button class="fchip'+(taskFilter===c.id?' sel':'')+'" data-f="'+c.id+'">'+c.emoji+' '+c.label+'</button>';
+  }
+  var fb=document.getElementById('filterbar');
+  fb.innerHTML=html;
+  fb.querySelectorAll('.fchip').forEach(function(b){b.onclick=function(){taskFilter=b.getAttribute('data-f');renderFilter();renderTasks();};});
+}
+function renderTasks(){
+  var list=state.tasks.filter(function(t){return taskFilter==='alla'||t.cat===taskFilter;});
+  list.sort(function(a,b){return (a.done?1:0)-(b.done?1:0)||b.created-a.created;});
+  var el=document.getElementById('task-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga uppgifter här ännu. Lägg till en nedan, eller låt AI föreslå under fliken Året.</div>';return;}
+  var html='';
+  for(var i=0;i<list.length;i++){
+    var t=list[i],c=catById(t.cat);
+    html+='<div class="task">';
+    html+='<button class="task-check'+(t.done?' done':'')+'" data-id="'+t.id+'">'+(t.done?'✓':'')+'</button>';
+    html+='<div class="task-main"><div class="task-title'+(t.done?' done':'')+'">'+esc(t.title)+'</div>';
+    html+='<div class="task-meta"><span class="task-cat">'+c.emoji+' '+c.label+'</span></div></div>';
+    html+='<button class="task-del" data-del="'+t.id+'">×</button></div>';
+  }
+  el.innerHTML=html;
+  el.querySelectorAll('.task-check').forEach(function(b){b.onclick=function(){toggleTask(b.getAttribute('data-id'));};});
+  el.querySelectorAll('.task-del').forEach(function(b){b.onclick=function(){delTask(b.getAttribute('data-del'));};});
+}
+function addTask(title,cat){
+  title=(title||'').trim();if(!title)return;
+  state.tasks.push({id:uid(),title:title,cat:cat||nextCat,done:false,created:Date.now()});
+  persist();renderTasks();
+}
+function toggleTask(id){
+  for(var i=0;i<state.tasks.length;i++){if(state.tasks[i].id===id){state.tasks[i].done=!state.tasks[i].done;break;}}
+  persist();renderTasks();
+}
+function delTask(id){
+  state.tasks=state.tasks.filter(function(t){return t.id!==id;});
+  persist();renderTasks();
+}
+
+// ── Rendering: Odlingar ───────────────────────────────
+function fmtDate(d){if(!d)return '—';var p=d.split('-');if(p.length!==3)return d;return p[2]+'/'+p[1];}
+function renderPlants(){
+  var el=document.getElementById('plant-list');
+  if(!state.plants.length){el.innerHTML='<div class="empty-msg">Inga odlingar ännu. Lägg till det du sår och planterar för att hålla koll — och för smartare AI-råd.</div>';return;}
+  var html='';
+  for(var i=0;i<state.plants.length;i++){
+    var p=state.plants[i];
+    html+='<div class="plant"><div class="plant-head"><div class="plant-name">'+esc(p.name)+'</div>';
+    if(p.bed)html+='<span class="plant-bed">'+esc(p.bed)+'</span>';
+    html+='</div>';
+    html+='<div class="plant-dates"><span>Sått: <b>'+fmtDate(p.sown)+'</b></span><span>Skörd: <b>'+fmtDate(p.harvest)+'</b></span></div>';
+    if(p.notes)html+='<div class="plant-notes">'+esc(p.notes)+'</div>';
+    html+='<div class="plant-actions"><button data-ai="'+p.id+'">✨ Råd</button><button data-edit="'+p.id+'">Ändra</button><button data-del="'+p.id+'">Ta bort</button></div>';
+    html+='<div id="plant-ai-'+p.id+'"></div></div>';
+  }
+  el.innerHTML=html;
+  el.querySelectorAll('[data-edit]').forEach(function(b){b.onclick=function(){openPlant(b.getAttribute('data-edit'));};});
+  el.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(confirm('Ta bort odlingen?')){state.plants=state.plants.filter(function(x){return x.id!==b.getAttribute('data-del');});persist();renderPlants();}};});
+  el.querySelectorAll('[data-ai]').forEach(function(b){b.onclick=function(){plantAdvice(b.getAttribute('data-ai'),b);};});
+}
+var editingPlant=null;
+function openPlant(id){
+  editingPlant=id;
+  var p=id?state.plants.filter(function(x){return x.id===id;})[0]:null;
+  document.getElementById('plant-sheet-title').textContent=p?'Ändra odling':'Ny odling';
+  document.getElementById('p-name').value=p?p.name:'';
+  document.getElementById('p-bed').value=p?(p.bed||''):'';
+  document.getElementById('p-sown').value=p?(p.sown||''):'';
+  document.getElementById('p-harvest').value=p?(p.harvest||''):'';
+  document.getElementById('p-notes').value=p?(p.notes||''):'';
+  openSheet('plant-sheet');
+}
+function savePlant(){
+  var name=document.getElementById('p-name').value.trim();
+  if(!name){alert('Ange vad du odlar.');return;}
+  var obj={name:name,bed:document.getElementById('p-bed').value.trim(),sown:document.getElementById('p-sown').value,harvest:document.getElementById('p-harvest').value,notes:document.getElementById('p-notes').value.trim()};
+  if(editingPlant){
+    for(var i=0;i<state.plants.length;i++){if(state.plants[i].id===editingPlant){obj.id=editingPlant;state.plants[i]=obj;break;}}
+  }else{obj.id=uid();state.plants.push(obj);}
+  persist();renderPlants();closeSheets();
+}
+function plantAdvice(id,btn){
+  var p=state.plants.filter(function(x){return x.id===id;})[0];if(!p)return;
+  var out=document.getElementById('plant-ai-'+id);
+  var orig=btn.textContent;btn.textContent='✨ …';btn.disabled=true;
+  var prompt='Du är en varm, kunnig svensk trädgårdsmästare. Ge kort, konkret skötselråd på svenska (högst 120 ord, löpande text utan rubriker) för denna odling. Utgå från svenskt klimat och '+profileLine()+'.\n\nOdling: '+p.name+(p.bed?' — plats: '+p.bed:'')+(p.sown?' — sått '+p.sown:'')+(p.notes?' — egna anteckningar: '+p.notes:'')+'\n\nDagens datum: '+new Date().toISOString().slice(0,10)+'. Säg vad som är viktigast att göra just nu och vad jag ska hålla utkik efter.';
+  aiCall(prompt,400).then(function(text){
+    out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Råd</span>'+esc(text)+'</div>';
+  }).catch(function(e){if(e.message!=='NOKEY')out.innerHTML='<div class="status-line err">Kunde inte hämta råd: '+esc(e.message)+'</div>';}).then(function(){btn.textContent=orig;btn.disabled=false;});
+}
+
+// ── Rendering: Året ───────────────────────────────────
+var selMonth=new Date().getMonth();
+function renderMonthStrip(){
+  var nowM=new Date().getMonth();
+  var html='';
+  for(var i=0;i<12;i++){
+    var cls='mchip'+(i===selMonth?' sel':'')+(i===nowM?' now':'');
+    html+='<button class="'+cls+'" data-m="'+i+'">'+MONTHS[i].n.slice(0,3)+'</button>';
+  }
+  var st=document.getElementById('month-strip');
+  st.innerHTML=html;
+  st.querySelectorAll('.mchip').forEach(function(b){b.onclick=function(){selMonth=+b.getAttribute('data-m');renderYear();};});
+}
+function renderYear(){
+  renderMonthStrip();
+  document.getElementById('month-title').textContent=MONTHS[selMonth].n;
+  var tips=MONTHS[selMonth].tips;
+  var html='';for(var i=0;i<tips.length;i++)html+='<li>'+esc(tips[i])+'</li>';
+  document.getElementById('guide-tips').innerHTML=html;
+  document.getElementById('ai-suggest-out').innerHTML='';
+}
+function aiSuggest(){
+  var btn=document.getElementById('ai-suggest-btn');
+  var out=document.getElementById('ai-suggest-out');
+  var orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  var prompt='Du är en svensk trädgårdsmästare. Ge 4–6 konkreta trädgårdsuppgifter för '+MONTHS[selMonth].n+' anpassade efter '+profileLine()+'. Mina odlingar: '+plantsLine()+'.\n\nSvara ENDAST med en giltig JSON-array, ingen annan text, inga kodstaket. Varje objekt: {"title":"kort uppgift på svenska","cat":"en av sadd|plantering|vattning|skotsel|beskarning|godsling|skord|annat"}.';
+  aiCall(prompt,600).then(function(text){
+    var clean=text.replace(/\u0060{3}json|\u0060{3}/g,'').trim();
+    var arr;try{arr=JSON.parse(clean);}catch(e){arr=null;}
+    if(!arr||!arr.length){out.innerHTML='<div class="status-line err">Kunde inte tolka förslagen. Försök igen.</div>';return;}
+    var html='<div class="section-title">Förslag för '+esc(MONTHS[selMonth].n)+'</div><div class="card-panel" style="margin-bottom:0">';
+    for(var i=0;i<arr.length;i++){
+      var c=catById(arr[i].cat);
+      html+='<div class="suggest"><span>'+esc(arr[i].title)+'<small>'+c.emoji+' '+c.label+'</small></span><button data-st="'+i+'">+ Lägg till</button></div>';
+    }
+    html+='</div>';
+    out.innerHTML=html;
+    out.querySelectorAll('[data-st]').forEach(function(b){
+      b.onclick=function(){
+        var it=arr[+b.getAttribute('data-st')];
+        addTask(it.title,it.cat);
+        b.textContent='✓ Tillagd';b.disabled=true;
+      };
+    });
+  }).catch(function(e){if(e.message!=='NOKEY')out.innerHTML='<div class="status-line err">Fel: '+esc(e.message)+'</div>';}).then(function(){btn.textContent=orig;btn.disabled=false;});
+}
+
+// ── Rendering: Fråga ──────────────────────────────────
+function renderAsk(){
+  var el=document.getElementById('ask-history');
+  if(!state.ask.length){el.innerHTML='';return;}
+  var html='<div class="card-panel">';
+  for(var i=0;i<state.ask.length;i++){
+    html+='<div class="qa"><div class="q">'+esc(state.ask[i].q)+'</div><div class="a">'+esc(state.ask[i].a)+'</div></div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+function runAsk(){
+  var inp=document.getElementById('ask-input');
+  var q=inp.value.trim();if(!q){return;}
+  var btn=document.getElementById('ask-btn');var orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  var prompt='Du är en varm, kunnig och jordnära svensk trädgårdsmästare. Svara på svenska i löpande text (högst 200 ord, utan rubriker eller punktlistor om det inte verkligen behövs). Min trädgård: '+profileLine()+'. Mina odlingar: '+plantsLine()+'. Dagens datum: '+new Date().toISOString().slice(0,10)+'.\n\nFråga: '+q;
+  aiCall(prompt,700).then(function(text){
+    state.ask.unshift({q:q,a:text});
+    if(state.ask.length>12)state.ask=state.ask.slice(0,12);
+    save();renderAsk();inp.value='';
+  }).catch(function(e){if(e.message!=='NOKEY')alert('Kunde inte hämta svar: '+e.message);}).then(function(){btn.textContent=orig;btn.disabled=false;});
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+bg.onclick=closeSheets;
+
+// Kategori-väljare
+function renderCatLabel(){document.getElementById('task-cat-label').textContent=catById(nextCat).label;}
+function renderCatOptions(){
+  var html='';
+  for(var i=0;i<CATS.length;i++){
+    html+='<button class="btn" style="width:100%;margin-bottom:6px;justify-content:flex-start;text-align:left" data-c="'+CATS[i].id+'">'+CATS[i].emoji+' '+CATS[i].label+'</button>';
+  }
+  var co=document.getElementById('cat-options');
+  co.innerHTML=html;
+  co.querySelectorAll('[data-c]').forEach(function(b){b.onclick=function(){nextCat=b.getAttribute('data-c');renderCatLabel();closeSheets();};});
+}
+
+// ── Tema ──────────────────────────────────────────────
+var themeMode=localStorage.getItem('tradgard_theme')||'auto';
+function applyTheme(){
+  var dark;
+  if(themeMode==='dark')dark=true;
+  else if(themeMode==='light')dark=false;
+  else{var h=new Date().getHours();dark=(h>=20||h<7);}
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('theme-btn').textContent='Tema: '+(themeMode==='auto'?'auto':(themeMode==='dark'?'mörkt':'ljust'));
+}
+function cycleTheme(){themeMode=themeMode==='auto'?'light':(themeMode==='light'?'dark':'auto');localStorage.setItem('tradgard_theme',themeMode);applyTheme();}
+
+// ── Inställningar ─────────────────────────────────────
+function openSettings(){
+  var zsel=document.getElementById('set-zon');
+  zsel.innerHTML=ZONES.map(function(z){return '<option value="'+z+'"'+(state.profile.zon===z?' selected':'')+'>Zon '+z+'</option>';}).join('');
+  document.getElementById('set-ort').value=state.profile.ort||'';
+  document.getElementById('set-aikey').value=getAiKey();
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('set-status').textContent='';
+  openSheet('settings-sheet');
+}
+function setStatus(msg,cls){var e=document.getElementById('set-status');e.textContent=msg;e.className='status-line'+(cls?' '+cls:'');}
+function saveSettings(){
+  state.profile.zon=document.getElementById('set-zon').value;
+  state.profile.ort=document.getElementById('set-ort').value.trim();
+  var k=document.getElementById('set-aikey').value.trim();
+  if(k)localStorage.setItem(AI_KEY,k);else localStorage.removeItem(AI_KEY);
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  saveSync();save();renderYear();
+  if(syncOn()){
+    setStatus('Synkar…','');
+    ghPull().then(function(){return ghPush();}).then(function(){
+      setStatus('Sparat och synkat ✓','ok');
+      setTimeout(closeSheets,900);
+    }).catch(function(e){setStatus('Synkfel: '+e.message+'. Kontrollera namn, repo och token-behörighet.','err');});
+  }else{setStatus('Sparat lokalt ✓','ok');setTimeout(closeSheets,700);}
+}
+
+// ── Export / import ───────────────────────────────────
+function doExport(){
+  var blob=new Blob([JSON.stringify({profile:state.profile,tasks:state.tasks,plants:state.plants,notes:state.notes},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='tradgard-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+function doImport(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.tasks||d.plants)){if(d.profile)state.profile=d.profile;if(d.tasks)state.tasks=d.tasks;if(d.plants)state.plants=d.plants;if(d.notes)state.notes=d.notes;persist();renderAll();alert('Importerat.');}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+}
+
+// ── Render allt ───────────────────────────────────────
+function renderAll(){renderFilter();renderTasks();renderPlants();renderYear();renderAsk();renderCatLabel();}
+
+// ── Navigering ────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    document.getElementById('view-'+b.getAttribute('data-v')).classList.add('active');
+    window.scrollTo(0,0);
+  };
+});
+
+// ── Bindningar ────────────────────────────────────────
+document.getElementById('task-add').onclick=function(){var inp=document.getElementById('task-input');addTask(inp.value);inp.value='';inp.focus();};
+document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter'){addTask(e.target.value);e.target.value='';}});
+document.getElementById('task-cat-toggle').onclick=function(){renderCatOptions();openSheet('cat-sheet');};
+document.getElementById('plant-add-btn').onclick=function(){openPlant(null);};
+document.getElementById('p-save').onclick=savePlant;
+document.getElementById('ai-suggest-btn').onclick=aiSuggest;
+document.getElementById('ask-btn').onclick=runAsk;
+document.getElementById('settings-btn').onclick=openSettings;
+document.getElementById('set-save').onclick=saveSettings;
+document.getElementById('sync-btn').onclick=function(){if(syncOn())ghPull();else openSettings();};
+document.getElementById('export-btn').onclick=doExport;
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=doImport;
+document.getElementById('theme-btn').onclick=cycleTheme;
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Start ─────────────────────────────────────────────
+loadSync();
+applyTheme();
+renderAll();
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
