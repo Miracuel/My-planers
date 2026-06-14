@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lenormand">
+<meta name="theme-color" content="#0E1411">
+<link rel="manifest" href='data:application/manifest+json,{"name":"LenormandGuiden","short_name":"Lenormand","display":"standalone","background_color":"%230E1411","theme_color":"%230E1411","start_url":"."}'>
+<title>LenormandGuiden – Desktop</title>
+<style>
+:root{
+  --bg:#0E1411;--panel:#172019;--panel2:#1F2A22;--line:#2C3A30;
+  --ink:#ECE6D5;--muted:#8FA08E;--gold:#CF8A52;--gold-dim:#9A6230;
+  --c-love:#D06A86;--c-work:#5B9BC9;--c-health:#5E9C6A;--c-spirit:#A98BD6;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(1100px 550px at 50% -8%,#1A2A20 0%,var(--bg) 60%) fixed,var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:22px;color:var(--gold);letter-spacing:.04em;text-align:center;margin:6px 0 2px}
+.moon-line{text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:17px;color:var(--gold);margin:16px 0 8px;letter-spacing:.03em}
+.sub{font-size:12px;color:var(--muted);line-height:1.55}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{border:1px solid var(--gold-dim);background:linear-gradient(180deg,#243024,#172019);color:var(--gold);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn:active{background:#243024}
+.btn.ghost{border-color:var(--line);color:var(--muted);background:transparent;font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn-row .btn{flex:1}
+.toggle-line{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--muted);margin-top:8px}
+.toggle-line input{accent-color:var(--gold)}
+.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+.quick-grid .btn{font-size:13px;padding:13px 8px}
+.seg{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:12px}
+.seg button{flex:1;background:none;border:none;color:var(--muted);font-size:12px;padding:8px 4px;border-radius:9px;cursor:pointer;font-family:inherit}
+.seg button.active{background:var(--panel2);color:var(--gold)}
+
+/* Lenormand card visual */
+.lcard{width:118px;height:182px;border-radius:11px;background:linear-gradient(160deg,#22301f,#161e16);border:1px solid var(--gold-dim);box-shadow:inset 0 0 0 3px var(--panel),inset 0 0 0 4px var(--gold-dim);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;position:relative;flex-shrink:0}
+.lcard.mini{width:60px;height:92px;box-shadow:inset 0 0 0 2px var(--panel),inset 0 0 0 3px var(--gold-dim);padding:4px}
+.lcard .num{font-family:Georgia,serif;font-size:12px;color:var(--gold);position:absolute;top:6px;left:8px}
+.lcard.mini .num{font-size:8px;top:3px;left:4px}
+.lcard .pc{font-size:11px;color:var(--muted);position:absolute;top:6px;right:8px}
+.lcard.mini .pc{font-size:8px;top:3px;right:4px}
+.lcard .emo{font-size:46px;line-height:1}
+.lcard.mini .emo{font-size:24px}
+.lcard .nm{font-family:Georgia,serif;font-size:14px;text-align:center;color:var(--ink);margin-top:8px;line-height:1.25}
+.lcard.mini .nm{font-size:9px;margin-top:3px}
+.lcard .rev-badge{position:absolute;bottom:6px;right:7px;font-size:10px;color:#E0A0A0}
+.lcard.mini .rev-badge{font-size:8px;bottom:3px;right:4px}
+.lcard.rev .emo{transform:rotate(180deg)}
+.lcard.reveal{animation:reveal .5s ease}
+@keyframes reveal{from{transform:rotateY(92deg) scale(.92);opacity:0}to{transform:none;opacity:1}}
+.draw-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0}
+.card-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.meaning{font-size:13px;color:var(--muted);text-align:center;line-height:1.5;max-width:320px;margin:0 auto}
+.meaning b{color:var(--ink);font-weight:500}
+
+/* Daily / entries */
+.kw{font-size:13px;color:var(--ink);text-align:center;margin-top:6px}
+.budskap{font-size:12px;color:var(--muted);text-align:center;line-height:1.55;margin-top:6px}
+textarea,input[type=text],input[type=date],select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:13px;padding:8px 10px;font-family:inherit;resize:vertical}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--gold-dim)}
+label.fld{display:block;font-size:11px;color:var(--gold);margin:10px 0 3px}
+.entry{padding:11px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:none}
+.entry-top{display:flex;align-items:baseline;gap:8px}
+.entry-q{font-family:Georgia,serif;font-size:14px;color:var(--ink);flex:1}
+.entry-date{font-size:11px;color:var(--muted);white-space:nowrap}
+.entry-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.entry-detail{display:none;margin-top:8px}
+.entry.open .entry-detail{display:block}
+.del-x{color:var(--muted);font-size:16px;cursor:pointer;background:none;border:none;padding:0 4px}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.ai-box,.local-box{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.ai-lbl{font-family:Georgia,serif;color:var(--gold);font-size:12px;display:block;margin-bottom:4px}
+
+/* Library */
+.lib-item{padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.lib-item:first-child{border-top:none}
+.lib-name{font-size:13px;display:flex;align-items:center;gap:9px;color:var(--ink)}
+.lib-name .e{font-size:20px;width:24px;text-align:center}
+.lib-name .n{font-family:Georgia,serif}
+.lib-name .pc{margin-left:auto;font-size:11px;color:var(--muted)}
+.lib-detail{display:none;font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55}
+.lib-item.open .lib-detail{display:block}
+.lib-detail b{color:var(--ink);font-weight:500}
+.cat{display:block;margin-top:5px}
+.cat .tag{display:inline-block;font-size:10px;padding:1px 7px;border-radius:8px;margin-right:5px}
+.t-love{background:#3a232b;color:var(--c-love)}
+.t-work{background:#1f2d39;color:var(--c-work)}
+.t-health{background:#1f3327;color:var(--c-health)}
+.t-spirit{background:#2c2740;color:var(--c-spirit)}
+.lib-note{margin-top:8px}
+
+/* Stats */
+.stat-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+.stat-row:first-child{border-top:none}
+.stat-row b{color:var(--gold);font-weight:500}
+.freq-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0}
+.freq-row .e{font-size:16px;width:22px;text-align:center}
+.freq-row .nm{width:96px;color:var(--ink)}
+.bar-bg{flex:1;height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bar{height:100%;border-radius:4px;background:var(--gold)}
+.freq-row .ct{width:24px;text-align:right;color:var(--muted)}
+
+/* Academy */
+.acc{border-top:1px solid var(--line)}
+.acc:first-child{border-top:none}
+.acc-head{padding:11px 0;cursor:pointer;display:flex;align-items:center;gap:8px}
+.acc-head .lvl{font-family:Georgia,serif;font-size:14px;color:var(--gold)}
+.acc-head .ti{font-size:13px;color:var(--ink)}
+.acc-head .ar{margin-left:auto;color:var(--muted);transition:transform .2s}
+.acc.open .acc-head .ar{transform:rotate(90deg)}
+.acc-body{display:none;font-size:12px;color:var(--muted);line-height:1.6;padding-bottom:11px}
+.acc.open .acc-body{display:block}
+.acc-body b{color:var(--ink);font-weight:500}
+
+/* Grand Tableau */
+.gt-board{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:8px}
+.gt-cell{aspect-ratio:.66;border-radius:5px;background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;padding:1px}
+.gt-cell .ge{font-size:15px;line-height:1}
+.gt-cell.rev .ge{transform:rotate(180deg)}
+.gt-cell .gn{font-size:6px;color:var(--muted);margin-top:1px;text-align:center;line-height:1}
+.gt-cell.sig{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.gt-house{font-size:5px;color:var(--gold-dim);position:absolute;top:1px;left:2px}
+.spread-pos{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.spread-pos:first-child{border-top:none}
+.pos-name{font-size:11px;color:var(--muted);width:84px;flex-shrink:0}
+.pos-card{font-family:Georgia,serif;font-size:13px;color:var(--ink)}
+.spread-card{padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.spread-card:first-child{border-top:none}
+
+/* Combination */
+.combo-pick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.combo-chip{font-size:12px;padding:5px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);display:flex;align-items:center;gap:5px}
+.combo-chip .x{color:var(--muted);cursor:pointer}
+.combo-result{border-top:1px solid var(--line);padding:10px 0;font-size:12px;color:var(--muted);line-height:1.5}
+.combo-result b{color:var(--ink);font-weight:500}
+
+/* Sync badge + status */
+.sp-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:#22301f;color:var(--c-health);font-weight:500}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.hint{font-size:11px;color:var(--muted);font-family:monospace;background:var(--panel2);padding:5px 8px;border-radius:6px;margin:-4px 0 10px;line-height:1.4}
+#gh-status{display:none;margin:6px 0;font-size:12px;padding:8px 12px;border-radius:8px}
+
+/* Bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(14,20,17,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--gold)}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(4,7,5,.6);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .22s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;color:var(--gold);margin-bottom:10px}
+.sheet-close{width:100%;padding:11px;border-radius:11px;border:1px solid var(--gold-dim);background:var(--panel2);color:var(--gold);font-size:14px;cursor:pointer;position:sticky;bottom:0;margin-top:10px}
+.picker-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
+.picker-item{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);cursor:pointer;font-size:12px;color:var(--ink)}
+.picker-item .e{font-size:18px}
+.orient-row{display:flex;gap:8px;margin-top:10px}
+.orient-row .btn{flex:1}
+</style>
+
+<style>
+/* ===== Desktop overrides (separate desktop build) ===== */
+body{padding-left:236px}
+.app{max-width:900px;margin:0 auto;padding:38px 48px 72px}
+.brand{font-size:26px;text-align:left;margin-bottom:2px}
+.moon-line{text-align:left;margin-bottom:22px}
+
+/* Bottom nav -> fixed left sidebar rail */
+.nav{position:fixed;left:0;top:0;bottom:0;right:auto;width:236px;max-width:none;margin:0;
+  flex-direction:column;align-items:stretch;justify-content:flex-start;gap:3px;
+  border-top:none;border-right:1px solid var(--line);
+  background:rgba(14,20,17,.97);padding:0 0 24px;overflow-y:auto}
+.nav::before{content:"\10087  LenormandGuiden";display:block;font-family:Georgia,serif;
+  color:var(--gold);font-size:16px;padding:24px 22px 18px;margin-bottom:8px;
+  border-bottom:1px solid var(--line)}
+.nav button{flex:0 0 auto;display:flex;align-items:center;gap:13px;text-align:left;
+  font-size:14px;padding:13px 22px;border-radius:0;color:var(--muted)}
+.nav button span{display:inline;font-size:19px;margin:0;width:24px;text-align:center;flex:0 0 auto}
+.nav button.active{color:var(--gold);background:rgba(207,138,82,.10);
+  box-shadow:inset 3px 0 0 var(--gold)}
+.nav button:hover{color:var(--ink)}
+
+/* Card library in two columns on desktop */
+#lib-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:none;border:none;padding:0}
+#lib-list .lib-item{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+
+/* Quick buttons: roomier */
+.quick-grid{grid-template-columns:repeat(3,1fr)}
+.quick-grid .btn[style*="grid-column"]{grid-column:auto !important}
+
+/* Bottom-sheets -> centered modal dialogs */
+.sheet-bg{background:rgba(4,7,5,.72)}
+.sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(620px,92vw);max-width:620px;margin:0;
+  border:1px solid var(--line);border-radius:16px;
+  transform:translate(-50%,-46%);opacity:0;pointer-events:none;
+  transition:transform .2s ease,opacity .2s ease;max-height:86vh;max-height:86dvh;
+  padding:22px 24px 22px}
+.sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+.sheet-close{position:static}
+
+/* Grand Tableau a touch larger labels on the wide canvas */
+.gt-cell .gn{font-size:7px}
+
+/* Graceful fallback for narrow desktop windows */
+@media (max-width:760px){
+  body{padding-left:0}
+  .app{padding:14px 14px 88px}
+  .brand{text-align:center}
+  .moon-line{text-align:center}
+  .nav{position:fixed;left:0;right:0;top:auto;bottom:0;width:100%;flex-direction:row;
+    border-right:none;border-top:1px solid var(--line);padding:0}
+  .nav::before{display:none}
+  .nav button{flex:1;flex-direction:column;gap:0;text-align:center;padding:9px 2px 8px;font-size:11px}
+  .nav button span{display:block;margin-bottom:1px;width:auto}
+  .nav button.active{box-shadow:none;background:none}
+  #lib-list{grid-template-columns:1fr}
+  .quick-grid{grid-template-columns:repeat(2,1fr)}
+  .sheet{left:0;right:0;top:auto;bottom:0;width:100%;max-width:480px;margin:0 auto;
+    border-radius:18px 18px 0 0;transform:translateY(102%);opacity:1;pointer-events:auto}
+  .sheet.open{transform:translateY(0)}
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+<h1 class="brand">&#10087; LenormandGuiden &#10087;</h1>
+<div class="moon-line" id="moon-line"></div>
+
+<!-- HEM -->
+<div class="view active" id="view-hem">
+  <div class="section-title">Dagens kort</div>
+  <div class="card-panel">
+    <div class="draw-stage"><div id="daily-card"></div></div>
+    <div id="daily-kw" class="kw"></div>
+    <div id="daily-budskap" class="budskap"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn" id="daily-draw">&#127183; Dra dagens kort</button>
+    </div>
+    <label class="fld">Egna anteckningar</label>
+    <textarea id="daily-note" rows="2" placeholder="Vad väcker kortet idag?"></textarea>
+  </div>
+  <div class="section-title">Snabbknappar</div>
+  <div class="quick-grid">
+    <button class="btn" onclick="navTo('lagg')">&#127180; Dra kort</button>
+    <button class="btn" onclick="newReading()">&#128212; Ny tolkning</button>
+    <button class="btn" onclick="navTo('kort')">&#128218; Kortlexikon</button>
+    <button class="btn" onclick="navTo('dagbok')">&#128197; Dagbok</button>
+    <button class="btn" style="grid-column:1/3" onclick="openSheet('ai-quick-sheet')">&#10024; AI-tolkning</button>
+  </div>
+</div>
+
+<!-- KORT (bibliotek + kombinationer) -->
+<div class="view" id="view-kort">
+  <div class="seg" id="kort-seg">
+    <button class="active" data-k="bib">&#127183; Bibliotek</button>
+    <button data-k="komb">&#129513; Kombinationer</button>
+  </div>
+  <div id="kort-bib">
+    <div class="card-panel"><input type="text" id="lib-search" placeholder="Sök kort..." oninput="renderLib(this.value)"></div>
+    <div class="card-panel" id="lib-list"></div>
+  </div>
+  <div id="kort-komb" style="display:none">
+    <div class="card-panel">
+      <div class="sub">Sök på två eller flera kort. Lexikonet visar klassiska betydelser och dina egna tolkningar &mdash; och byggs upp över tid.</div>
+      <div class="combo-pick" id="combo-pick"></div>
+      <button class="btn ghost" onclick="openSheet('combo-pick-sheet')">+ Lägg till kort</button>
+      <div id="combo-results"></div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn" id="combo-ai-btn">&#10024; AI-tolka</button>
+      </div>
+      <label class="fld">Min egen tolkning av kombinationen</label>
+      <textarea id="combo-note" rows="2" placeholder="Vad betyder korten tillsammans för dig?"></textarea>
+      <button class="btn ghost" style="margin-top:6px" id="combo-save">Spara min tolkning</button>
+    </div>
+  </div>
+</div>
+
+<!-- DAGBOK -->
+<div class="view" id="view-dagbok">
+  <div class="section-title">Tolkningsdagbok</div>
+  <div class="card-panel"><button class="btn" style="width:100%" onclick="newReading()">+ Ny tolkning</button></div>
+  <div class="card-panel" id="reading-list"></div>
+</div>
+
+<!-- LÄGGNING -->
+<div class="view" id="view-lagg">
+  <div class="seg" id="lagg-seg">
+    <button class="active" data-l="dra">&#127180; Dra</button>
+    <button data-l="gt">&#9638; Grand Tableau</button>
+    <button data-l="guide">&#127919; Guide</button>
+  </div>
+  <div id="lagg-dra">
+    <div class="card-panel">
+      <label class="fld">Frågeställning (valfritt)</label>
+      <input type="text" id="dra-q" placeholder="Vad vill du veta?">
+      <label class="fld">Läggning</label>
+      <select id="dra-spread">
+        <option value="1">1 kort &mdash; Dagens fokus</option>
+        <option value="3">3 kort &mdash; Dåtid / Nutid / Framtid</option>
+        <option value="5">5 kort &mdash; Fördjupad rad</option>
+        <option value="9">9 kort &mdash; Ruta 3&times;3</option>
+      </select>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn" id="dra-go">&#127180; Dra korten</button>
+      </div>
+      <div class="card-row" id="dra-cards" style="margin-top:12px"></div>
+      <div id="dra-positions"></div>
+      <div id="dra-ai"></div>
+      <div class="btn-row" id="dra-actions" style="margin-top:10px;display:none">
+        <button class="btn" id="dra-ai-btn">&#10024; AI-tolka</button>
+        <button class="btn ghost" id="dra-save">&#128212; Spara i dagbok</button>
+      </div>
+    </div>
+  </div>
+  <div id="lagg-gt" style="display:none">
+    <div class="card-panel">
+      <div class="sub">Grand Tableau lägger alla 36 kort i ett rutnät. Varje position är ett <b style="color:var(--ink)">hus</b> med egen betydelse. Tryck p&aring; ett kort f&ouml;r att se kortet i sitt hus.</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn" id="gt-shuffle">&#127922; Bygg ny spelplan</button>
+      </div>
+      <div class="toggle-line"><label><input type="checkbox" id="gt-sig" checked> Markera Mannen &amp; Kvinnan</label></div>
+      <div class="gt-board" id="gt-board"></div>
+      <div id="gt-ai"></div>
+      <div class="btn-row" id="gt-actions" style="margin-top:10px;display:none">
+        <button class="btn" id="gt-ai-btn">&#10024; AI-tolka spelplanen</button>
+      </div>
+    </div>
+  </div>
+  <div id="lagg-guide" style="display:none">
+    <div class="card-panel" id="guide-list"></div>
+  </div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-mer">
+  <div class="seg" id="mer-seg">
+    <button class="active" data-m="utv">&#128200; Utveckling</button>
+    <button data-m="akad">&#128218; Akademin</button>
+    <button data-m="andl">&#127769; Andligt</button>
+    <button data-m="inst">&#9881; Inst.</button>
+  </div>
+  <div id="mer-utv">
+    <div class="section-title">Utvecklingssp&aring;rning</div>
+    <div class="card-panel" id="stats-summary"></div>
+    <div class="section-title">Mest dragna kort</div>
+    <div class="card-panel" id="stats-freq"></div>
+    <div class="section-title">Kort du sällan får</div>
+    <div class="card-panel" id="stats-rare"></div>
+  </div>
+  <div id="mer-akad" style="display:none">
+    <div class="section-title">Lenormandakademin</div>
+    <div class="card-panel" id="academy-list"></div>
+  </div>
+  <div id="mer-andl" style="display:none">
+    <div class="section-title">Spirituell dagbok</div>
+    <div class="card-panel"><button class="btn" style="width:100%" onclick="openSheet('spirit-sheet')">+ Ny anteckning</button></div>
+    <div class="card-panel" id="spirit-list"></div>
+  </div>
+  <div id="mer-inst" style="display:none">
+    <div class="section-title">Inst&auml;llningar</div>
+    <div class="card-panel">
+      <div class="sub" style="margin-bottom:8px">Synk &amp; AI</div>
+      <div class="btn-row">
+        <button class="btn" id="sync-set-btn">&#128190; Synk via GitHub</button>
+        <button class="btn" id="ai-set-btn">&#10024; AI-inst&auml;llningar</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+        <span id="sync-badge" class="sp-badge offline">Lokal</span>
+        <button class="btn ghost" id="sync-btn">&#10227; Synka nu</button>
+      </div>
+    </div>
+    <div class="card-panel">
+      <div class="sub" style="margin-bottom:8px">S&auml;kerhetskopiering</div>
+      <div class="btn-row">
+        <button class="btn ghost" id="export-btn">Exportera JSON</button>
+        <button class="btn ghost" id="import-btn">Importera JSON</button>
+        <input type="file" id="import-file" accept=".json" style="display:none">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="hem"><span>&#10087;</span>Hem</button>
+  <button data-v="kort"><span>&#127183;</span>Kort</button>
+  <button data-v="dagbok"><span>&#128212;</span>Dagbok</button>
+  <button data-v="lagg"><span>&#127180;</span>L&auml;ggning</button>
+  <button data-v="mer"><span>&#9776;</span>Mer</button>
+</div>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="card-info-sheet">
+  <h3 id="ci-title">Kort</h3>
+  <div id="ci-body"></div>
+  <button class="sheet-close" onclick="closeSheets()">Klar</button>
+</div>
+
+<div class="sheet" id="picker-sheet">
+  <h3 id="picker-title">V&auml;lj kort</h3>
+  <div class="picker-grid" id="picker-grid"></div>
+  <button class="sheet-close" onclick="closeSheets()">Avbryt</button>
+</div>
+
+<div class="sheet" id="orient-sheet">
+  <h3>Hur l&aring;g kortet?</h3>
+  <div class="orient-row">
+    <button class="btn" onclick="confirmOrient(false)">Uppr&auml;tt</button>
+    <button class="btn" onclick="confirmOrient(true)">Omv&auml;nt</button>
+  </div>
+  <button class="sheet-close" onclick="closeSheets()">Avbryt</button>
+</div>
+
+<div class="sheet" id="combo-pick-sheet">
+  <h3>L&auml;gg till kort i kombinationen</h3>
+  <div class="picker-grid" id="combo-pick-grid"></div>
+  <button class="sheet-close" onclick="closeSheets()">Klar</button>
+</div>
+
+<div class="sheet" id="reading-sheet">
+  <h3 id="rs-title">Ny tolkning</h3>
+  <label class="fld">Datum</label>
+  <input type="date" id="rs-date">
+  <label class="fld">Fr&aring;ga</label>
+  <input type="text" id="rs-q" placeholder="Vad gällde läsningen?">
+  <label class="fld">L&auml;ggning</label>
+  <input type="text" id="rs-spread" placeholder="t.ex. 3 kort, Grand Tableau...">
+  <label class="fld">Kort som drogs</label>
+  <div class="combo-pick" id="rs-cards"></div>
+  <button class="btn ghost" onclick="openSheet('rs-card-sheet')">+ L&auml;gg till kort</button>
+  <label class="fld">F&ouml;rsta intryck</label>
+  <textarea id="rs-first" rows="2"></textarea>
+  <label class="fld">Djupare analys</label>
+  <textarea id="rs-deep" rows="3"></textarea>
+  <label class="fld">H&auml;ndelser som intr&auml;ffade senare</label>
+  <textarea id="rs-later" rows="2"></textarea>
+  <button class="btn" style="width:100%;margin-top:12px" id="rs-save">Spara tolkning</button>
+  <button class="sheet-close" onclick="closeSheets()">Avbryt</button>
+</div>
+
+<div class="sheet" id="rs-card-sheet">
+  <h3>V&auml;lj kort</h3>
+  <div class="picker-grid" id="rs-card-grid"></div>
+  <button class="sheet-close" onclick="openSheet('reading-sheet')">Klar</button>
+</div>
+
+<div class="sheet" id="follow-sheet">
+  <h3>Uppf&ouml;ljning</h3>
+  <label class="fld">St&auml;mde l&auml;sningen?</label>
+  <textarea id="fl-staemde" rows="2"></textarea>
+  <label class="fld">Vad missade jag?</label>
+  <textarea id="fl-miss" rows="2"></textarea>
+  <label class="fld">Vad l&auml;rde jag mig?</label>
+  <textarea id="fl-learn" rows="2"></textarea>
+  <button class="btn" style="width:100%;margin-top:12px" id="fl-save">Spara uppf&ouml;ljning</button>
+  <button class="sheet-close" onclick="closeSheets()">Avbryt</button>
+</div>
+
+<div class="sheet" id="spirit-sheet">
+  <h3>Spirituell anteckning</h3>
+  <label class="fld">Datum</label>
+  <input type="date" id="sp-date">
+  <label class="fld">M&aring;nfas</label>
+  <input type="text" id="sp-moon">
+  <label class="fld">Lenormand</label>
+  <input type="text" id="sp-lenormand" placeholder="kort eller tema">
+  <label class="fld">Tarot</label>
+  <input type="text" id="sp-tarot">
+  <label class="fld">Dr&ouml;mmar</label>
+  <textarea id="sp-dream" rows="2"></textarea>
+  <label class="fld">Synkroniciteter</label>
+  <textarea id="sp-synch" rows="2"></textarea>
+  <button class="btn" style="width:100%;margin-top:12px" id="sp-save">Spara</button>
+  <button class="sheet-close" onclick="closeSheets()">Avbryt</button>
+</div>
+
+<div class="sheet" id="ai-quick-sheet">
+  <h3>&#10024; AI-Tolkare</h3>
+  <div class="sub" style="margin-bottom:8px">Studiehj&auml;lp, inte facit. Mata in din fr&aring;ga och dina kort.</div>
+  <label class="fld">Fr&aring;ga</label>
+  <input type="text" id="aq-q" placeholder="t.ex. Hur ser veckan ut?">
+  <label class="fld">Kort</label>
+  <div class="combo-pick" id="aq-cards"></div>
+  <button class="btn ghost" onclick="openSheet('aq-card-sheet')">+ L&auml;gg till kort</button>
+  <button class="btn" style="width:100%;margin-top:12px" id="aq-go">&#10024; Tolka</button>
+  <div id="aq-result"></div>
+  <button class="sheet-close" onclick="closeSheets()">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="aq-card-sheet">
+  <h3>V&auml;lj kort</h3>
+  <div class="picker-grid" id="aq-card-grid"></div>
+  <button class="sheet-close" onclick="openSheet('ai-quick-sheet')">Klar</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>&#10024; AI-inst&auml;llningar</h3>
+  <p class="sub" style="margin-bottom:10px">Tolkningarna g&ouml;rs av Claude via din egen API-nyckel fr&aring;n Anthropic. Skapa en p&aring; <b style="color:var(--ink)">console.anthropic.com</b> &rarr; API keys. Nyckeln sparas bara lokalt p&aring; den h&auml;r enheten och f&ouml;ljer inte med i s&auml;kerhetskopior.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
+  </div>
+  <button class="sheet-close" onclick="closeSheets()">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>&#128190; Synk via GitHub</h3>
+  <p class="sub" style="margin-bottom:10px">Appen l&auml;ser och sparar <code>lenormand-data.json</code> i ett <b style="color:var(--ink)">privat</b> GitHub-repo s&aring; att dina enheter delar samma data. Token sparas bara lokalt &mdash; aldrig i koden.</p>
+  <label class="fld">GitHub-anv&auml;ndarnamn</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label class="fld">Namn p&aring; data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="lenormand-data">
+  <label class="fld">Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">github.com &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained. Ge &aring;tkomst till ENDAST data-repot, Contents: Read and write.</div>
+  <div id="gh-status"></div>
+  <button class="btn" style="width:100%" id="gh-save">Spara &amp; synka</button>
+  <button class="sheet-close" onclick="closeSheets()">St&auml;ng</button>
+</div>
+
+<script>
+/* ===== LenormandGuiden ===== */
+/* Kortdata: n=namn, e=emoji, pc=spelkort, k=nyckelord, kar=kärlek, arb=arbete, hal=hälsa, and=andlighet, om=omvänt, hus=hus i Grand Tableau */
+var LC=[
+{n:'Ryttaren',e:'\uD83C\uDFC7',pc:'9\u2665',k:'Nyheter, r\u00f6relse, bes\u00f6k, kommunikation',kar:'Ett nytt m\u00f6te eller besked n\u00e4rmar sig; r\u00f6relse i relationen.',arb:'Nyheter, en ny kontakt eller ett snabbt projekt.',hal:'Energi och aktivitet, n\u00e5got \u00e4r i r\u00f6relse.',and:'Ett budskap \u00e4r p\u00e5 v\u00e4g till dig.',om:'F\u00f6rsenade nyheter eller falska f\u00f6rhoppningar.',hus:'Nyheter & ankomster'},
+{n:'Kl\u00f6vern',e:'\uD83C\uDF40',pc:'6\u2666',k:'Tur, m\u00f6jligheter, tillf\u00e4lliga chanser',kar:'En lycklig men kanske kortvarig chans.',arb:'En liten lycka eller m\u00f6jlighet \u2013 grip den snabbt.',hal:'Tillf\u00e4llig f\u00f6rb\u00e4ttring och l\u00e4ttnad.',and:'Synkronicitet och sm\u00e5 tecken.',om:'Otur eller en missad chans.',hus:'Lycka & tillf\u00e4lligheter'},
+{n:'Skeppet',e:'\u26F5',pc:'10\u2660',k:'L\u00e4ngtan, resa, avst\u00e5nd, \u00e4ventyr',kar:'Distansf\u00f6rh\u00e5llande eller en l\u00e4ngtan bort.',arb:'Internationellt arbete, handel, f\u00f6r\u00e4ndring.',hal:'Behov av milj\u00f6ombyte.',and:'En andlig resa eller utforskning.',om:'Stagnation, fast p\u00e5 samma plats.',hus:'Resor & l\u00e4ngtan'},
+{n:'Huset',e:'\uD83C\uDFE0',pc:'K\u2665',k:'Trygghet, familj, hem, stabilitet',kar:'Ett tryggt, etablerat f\u00f6rh\u00e5llande.',arb:'Familjef\u00f6retag eller en stabil arbetsplats.',hal:'God grundh\u00e4lsa och stabilitet.',and:'Inre trygghet och r\u00f6tter.',om:'Otrygghet i hemmet.',hus:'Hem & trygghet'},
+{n:'Tr\u00e4det',e:'\uD83C\uDF33',pc:'7\u2665',k:'H\u00e4lsa, tillv\u00e4xt, djupa r\u00f6tter, tid',kar:'Ett f\u00f6rh\u00e5llande som v\u00e4xer l\u00e5ngsamt och djupt.',arb:'L\u00e5ngsiktig utveckling och t\u00e5lamod.',hal:'H\u00e4lsa och vitalitet, ibland \u00e4rftliga fr\u00e5gor.',and:'Andlig tillv\u00e4xt och f\u00f6rbindelse till livet.',om:'Tr\u00f6tthet eller en h\u00e4lsofr\u00e5ga som beh\u00f6ver tid.',hus:'H\u00e4lsa & tillv\u00e4xt'},
+{n:'Molnen',e:'\u2601\uFE0F',pc:'K\u2663',k:'F\u00f6rvirring, tvivel, oklarhet',kar:'Os\u00e4kerhet eller missf\u00f6rst\u00e5nd i k\u00e4rlek.',arb:'Otydlighet, sv\u00e5rt att se klart.',hal:'Oklara symptom, behov av utredning.',and:'Dimma som m\u00e5ste skingras.',om:'Klarhet b\u00f6rjar \u00e5terv\u00e4nda.',hus:'Tvivel & oklarhet'},
+{n:'Ormen',e:'\uD83D\uDC0D',pc:'D\u2663',k:'Svek, frestelse, en rival, komplexitet',kar:'Misstro, otrohet eller en tredje part.',arb:'Intriger eller en list.',hal:'Komplikationer, ofta mage och tarm.',and:'Visdom dold i pr\u00f6vning.',om:'F\u00f6rl\u00e5telse eller en avsl\u00f6jad sanning.',hus:'Frestelse & komplexitet'},
+{n:'Kistan',e:'\u26B0\uFE0F',pc:'9\u2666',k:'Slut, sorg, transformation, vila',kar:'Ett f\u00f6rh\u00e5llande tar slut eller pausas.',arb:'En avslutning, en d\u00f6rr st\u00e4ngs.',hal:'Behov av vila och \u00e5terh\u00e4mtning.',and:'D\u00f6d och p\u00e5nyttf\u00f6delse, att sl\u00e4ppa taget.',om:'\u00c5terh\u00e4mtning, n\u00e5got \u00e5terupplivas.',hus:'Avslut & vila'},
+{n:'Buketten',e:'\uD83D\uDC90',pc:'D\u2660',k:'Gl\u00e4dje, g\u00e5va, sk\u00f6nhet, en inbjudan',kar:'Romantik, uppvaktning, en vacker gest.',arb:'Erk\u00e4nnande, en trevlig \u00f6verraskning.',hal:'Tillfrisknande och v\u00e4lbefinnande.',and:'Tacksamhet och sk\u00f6nhet.',om:'Ytlighet eller en falsk komplimang.',hus:'Gl\u00e4dje & g\u00e5vor'},
+{n:'Lien',e:'\uD83C\uDF3E',pc:'J\u2666',k:'Pl\u00f6tslig f\u00f6r\u00e4ndring, beslut, brott',kar:'Ett abrupt avg\u00f6rande eller en separation.',arb:'Ett snabbt beslut, en avsk\u00e4rning.',hal:'Pl\u00f6tslig \u00e5komma eller ingrepp.',and:'Sk\u00f6rd och pl\u00f6tslig insikt.',om:'Risk undviks, ett f\u00f6rdr\u00f6jt beslut.',hus:'Pl\u00f6tsliga beslut'},
+{n:'Riset',e:'\u27BF',pc:'J\u2663',k:'Konflikt, upprepning, passion, diskussion',kar:'Gr\u00e4l eller intensiv passion.',arb:'\u00c5terkommande problem eller h\u00e5rd debatt.',hal:'Tr\u00e4ning, fysisk anstr\u00e4ngning, inflammation.',and:'Rening genom upprepning.',om:'Konflikten l\u00e4gger sig.',hus:'Konflikt & upprepning'},
+{n:'F\u00e5glarna',e:'\uD83D\uDC26',pc:'7\u2666',k:'Samtal, oro, par, rykten',kar:'Mycket prat, nervositet, ett par.',arb:'M\u00f6ten, telefonsamtal, samarbete.',hal:'Nervositet, stress, andning.',and:'Budskap genom tecken.',om:'Skvaller tystnar, lugn \u00e5terv\u00e4nder.',hus:'Samtal & oro'},
+{n:'Barnet',e:'\uD83D\uDC76',pc:'J\u2660',k:'Nyb\u00f6rjan, oskuld, n\u00e5got litet, naivitet',kar:'Ett nytt eller ungt f\u00f6rh\u00e5llande.',arb:'Ett nytt projekt i sin linda.',hal:'Litet besv\u00e4r, eller barn och graviditet.',and:'Nyfikenhet och f\u00f6rundran.',om:'Omogenhet eller en f\u00f6rsenad start.',hus:'Nyb\u00f6rjan & det lilla'},
+{n:'R\u00e4ven',e:'\uD83E\uDD8A',pc:'9\u2663',k:'List, misstanke, egenintresse, f\u00f6rsiktighet',kar:'Var vaksam \u2013 n\u00e5got st\u00e4mmer inte.',arb:'Fokus och strategi, eller en bedragare.',hal:'Lyssna p\u00e5 instinkten om n\u00e5got \u00e4r fel.',and:'Sk\u00e4rpt intuition.',om:'Sanning avsl\u00f6jas, listen upph\u00f6r.',hus:'List & vaksamhet'},
+{n:'Bj\u00f6rnen',e:'\uD83D\uDC3B',pc:'10\u2663',k:'Styrka, auktoritet, ekonomi, beskydd',kar:'En stark, beskyddande partner \u2013 eller svartsjuka.',arb:'En chef, makt, ekonomisk styrka.',hal:'Kraft och uth\u00e5llighet, vikt.',and:'Inre kraft och mod.',om:'Maktmissbruk eller os\u00e4kerhet.',hus:'Styrka & ekonomi'},
+{n:'Stj\u00e4rnorna',e:'\u2B50',pc:'6\u2665',k:'Hopp, inspiration, v\u00e4gledning, klarhet',kar:'Hoppfullt \u2013 en relation med framtid.',arb:'Klar vision, framg\u00e5ng, planering.',hal:'Tillfrisknande och hopp.',and:'Andlig v\u00e4gledning och tillit.',om:'Tvivel skymmer hoppet.',hus:'Hopp & v\u00e4gledning'},
+{n:'Storken',e:'\uD83E\uDDA2',pc:'D\u2665',k:'F\u00f6r\u00e4ndring, f\u00f6rflyttning, f\u00f6rnyelse',kar:'En positiv v\u00e4ndning eller flytt tillsammans.',arb:'Byte av tj\u00e4nst, en f\u00f6rb\u00e4ttring.',hal:'F\u00f6rb\u00e4ttring, ibland graviditet.',and:'F\u00f6rvandling till n\u00e5got b\u00e4ttre.',om:'Stagnation, f\u00f6r\u00e4ndringen uteblir.',hus:'F\u00f6r\u00e4ndring & f\u00f6rnyelse'},
+{n:'Hunden',e:'\uD83D\uDC15',pc:'10\u2665',k:'V\u00e4nskap, lojalitet, tillit, st\u00f6d',kar:'En trogen, p\u00e5litlig partner eller v\u00e4n.',arb:'En lojal kollega eller mentor.',hal:'St\u00f6d under tillfrisknande.',and:'Trofast f\u00f6ljeslagare p\u00e5 v\u00e4gen.',om:'Brusten tillit eller en falsk v\u00e4n.',hus:'V\u00e4nskap & lojalitet'},
+{n:'Tornet',e:'\uD83D\uDDFC',pc:'6\u2660',k:'Avskildhet, institutioner, struktur, ensamhet',kar:'Behov av eget utrymme eller distans.',arb:'Stora organisationer och myndigheter.',hal:'Sjukhus eller l\u00e4ngre v\u00e5rd.',and:'Tillbakadragande f\u00f6r perspektiv.',om:'Isolering bryts, \u00f6ppenhet.',hus:'Struktur & avskildhet'},
+{n:'Tr\u00e4dg\u00e5rden',e:'\uD83C\uDF37',pc:'8\u2660',k:'Gemenskap, sociala sammanhang, n\u00e4tverk',kar:'M\u00f6ten i grupp, en relation som syns.',arb:'N\u00e4tverk, evenemang, publik.',hal:'H\u00e4lsa i sociala vanor.',and:'Samh\u00f6righet med andra.',om:'Ensamhet i m\u00e4ngden.',hus:'Gemenskap & det offentliga'},
+{n:'Berget',e:'\uD83C\uDFD4\uFE0F',pc:'8\u2663',k:'Hinder, f\u00f6rdr\u00f6jning, blockering, utmaning',kar:'Ett hinder eller en kall period.',arb:'Motst\u00e5nd eller f\u00f6rsening.',hal:'Kronisk fr\u00e5ga, behov av uth\u00e5llighet.',and:'Pr\u00f6vning som bygger styrka.',om:'Hindret b\u00f6rjar l\u00f6sas upp.',hus:'Hinder & f\u00f6rdr\u00f6jning'},
+{n:'V\u00e4gsk\u00e4let',e:'\uD83D\uDEE4\uFE0F',pc:'D\u2666',k:'Val, beslut, alternativ, frihet',kar:'Ett v\u00e4gval i k\u00e4rlek, kanske flera alternativ.',arb:'Beslut mellan v\u00e4gar eller en sidov\u00e4g.',hal:'Val av behandling eller livsstil.',and:'Fri vilja och nya riktningar.',om:'Obeslutsamhet eller fel v\u00e4g.',hus:'Val & v\u00e4gar'},
+{n:'M\u00f6ssen',e:'\uD83D\uDC2D',pc:'7\u2663',k:'F\u00f6rlust, slitage, stress, det som gnager',kar:'N\u00e5got t\u00e4r p\u00e5 relationen, sm\u00e5br\u00e5k.',arb:'Stress, energil\u00e4ckage, sm\u00e5f\u00f6rluster.',hal:'Utmattning, n\u00e5got som t\u00e4r.',and:'Oro som t\u00e4r p\u00e5 friden.',om:'F\u00f6rlusten hejdas, \u00e5terh\u00e4mtning.',hus:'F\u00f6rlust & slitage'},
+{n:'Hj\u00e4rtat',e:'\u2764\uFE0F',pc:'J\u2665',k:'K\u00e4rlek, k\u00e4nslor, romantik, medk\u00e4nsla',kar:'Sann k\u00e4rlek och djup k\u00e4nsla.',arb:'Arbete man \u00e4lskar, passion.',hal:'Hj\u00e4rta och cirkulation, k\u00e4nsloh\u00e4lsa.',and:'K\u00e4rlek som drivkraft.',om:'S\u00e5rade k\u00e4nslor eller svalnande k\u00e4rlek.',hus:'K\u00e4rlek & k\u00e4nslor'},
+{n:'Ringen',e:'\uD83D\uDC8D',pc:'A\u2663',k:'\u00c5tagande, l\u00f6fte, avtal, cykler',kar:'F\u00f6rlovning, \u00e4ktenskap, ett l\u00f6fte.',arb:'Kontrakt, partnerskap, avtal.',hal:'\u00c5terkommande m\u00f6nster.',and:'Helhet och f\u00f6rbindelse.',om:'Brutet l\u00f6fte eller en bindning som tynger.',hus:'\u00c5taganden & avtal'},
+{n:'Boken',e:'\uD83D\uDCD5',pc:'10\u2666',k:'Kunskap, hemligheter, studier, det ok\u00e4nda',kar:'En hemlighet eller ett nytt kapitel.',arb:'Utbildning, forskning, expertis.',hal:'En diagnos under utredning.',and:'Dold visdom som \u00f6ppnas.',om:'Hemlighet avsl\u00f6jas, klarhet.',hus:'Kunskap & hemligheter'},
+{n:'Brevet',e:'\u2709\uFE0F',pc:'7\u2660',k:'Meddelande, dokument, kommunikation, papper',kar:'Ett k\u00e4rleksbrev eller ett besked.',arb:'Dokument, mejl, formella besked.',hal:'Provsvar eller intyg.',and:'Skrivet budskap fr\u00e5n livet.',om:'F\u00f6rsenat eller missf\u00f6rst\u00e5tt meddelande.',hus:'Meddelanden & dokument'},
+{n:'Mannen',e:'\uD83E\uDDD4',pc:'A\u2665',k:'En man, partner, det manliga, fr\u00e5gest\u00e4llaren',kar:'Mannen i fr\u00e5gan eller en partner.',arb:'En manlig kollega eller klient.',hal:'Mannens tillst\u00e5nd.',and:'Den maskulina principen.',om:'En frånvarande eller os\u00e4ker man.',hus:'Mannen'},
+{n:'Kvinnan',e:'\uD83D\uDC69',pc:'A\u2660',k:'En kvinna, partner, det kvinnliga, fr\u00e5gest\u00e4llaren',kar:'Kvinnan i fr\u00e5gan eller en partner.',arb:'En kvinnlig kollega eller klient.',hal:'Kvinnans tillst\u00e5nd.',and:'Den feminina principen.',om:'En frånvarande eller os\u00e4ker kvinna.',hus:'Kvinnan'},
+{n:'Liljan',e:'\u269C\uFE0F',pc:'K\u2660',k:'Mognad, harmoni, sinnlighet, fred',kar:'Mogen, harmonisk k\u00e4rlek eller sinnlighet.',arb:'Erfarenhet, en mentor, lugn auktoritet.',hal:'Frid, ibland fr\u00e5gor som r\u00f6r \u00e5lder.',and:'Inre frid och renhet.',om:'Disharmoni eller dolda beg\u00e4r.',hus:'Mognad & harmoni'},
+{n:'Solen',e:'\u2600\uFE0F',pc:'A\u2666',k:'Framg\u00e5ng, energi, gl\u00e4dje, seger',kar:'Lycka och v\u00e4rme i relationen.',arb:'Stor framg\u00e5ng och erk\u00e4nnande.',hal:'Vitalitet och stark h\u00e4lsa.',and:'Ljus, livskraft och klarhet.',om:'Tillf\u00e4llig nedg\u00e5ng i energi.',hus:'Framg\u00e5ng & energi'},
+{n:'M\u00e5nen',e:'\uD83C\uDF19',pc:'8\u2665',k:'Intuition, dr\u00f6mmar, k\u00e4nslor, erk\u00e4nnande',kar:'Romantik, djup k\u00e4nsla, intuition.',arb:'Kreativitet, rykte och erk\u00e4nnande.',hal:'S\u00f6mn, hormoner, det undermedvetna.',and:'Dr\u00f6mmar och intuition.',om:'Illusion eller k\u00e4nslosv\u00e4ngningar.',hus:'Intuition & dr\u00f6mmar'},
+{n:'Nyckeln',e:'\uD83D\uDD11',pc:'8\u2666',k:'L\u00f6sning, genombrott, \u00f6de, ja',kar:'En viktig insikt eller ett \u00f6desbest\u00e4mt m\u00f6te.',arb:'En l\u00f6sning, en d\u00f6rr \u00f6ppnas, genombrott.',hal:'Nyckeln till tillfrisknande.',and:'Andlig \u00f6ppning och visshet.',om:'L\u00e5st l\u00e4ge, l\u00f6sningen dr\u00f6jer.',hus:'L\u00f6sningar & \u00f6den'},
+{n:'Fisken',e:'\uD83D\uDC1F',pc:'K\u2666',k:'Pengar, \u00f6verfl\u00f6d, aff\u00e4rer, fl\u00f6de',kar:'Givmildhet och fl\u00f6de i relationen.',arb:'Inkomst, aff\u00e4rer, ekonomiskt fl\u00f6de.',hal:'V\u00e4tskebalans, njurar.',and:'Fl\u00f6de och rikedom i livet.',om:'Ekonomiskt l\u00e4ckage eller girighet.',hus:'Pengar & fl\u00f6de'},
+{n:'Ankaret',e:'\u2693',pc:'9\u2660',k:'Stabilitet, arbete, uth\u00e5llighet, m\u00e5l',kar:'Ett stabilt, varaktigt f\u00f6rh\u00e5llande.',arb:'Trygg anst\u00e4llning, fasthet.',hal:'Stabil men ibland fastl\u00e5st.',and:'F\u00f6rankring och hopp.',om:'Fastl\u00e5sning eller rastl\u00f6shet.',hus:'Stabilitet & arbete'},
+{n:'Korset',e:'\u271D\uFE0F',pc:'6\u2663',k:'B\u00f6rda, \u00f6de, pr\u00f6vning, tro',kar:'En tung men \u00f6desbest\u00e4md k\u00e4rlek.',arb:'En b\u00f6rda eller en plikt.',hal:'Pr\u00f6vning som kr\u00e4ver tro.',and:'En andlig l\u00e4xa och tro.',om:'B\u00f6rdan l\u00e4ttar, befrielse.',hus:'\u00d6de & pr\u00f6vning'}
+];
+
+/* Kombinations-frön (nyckel = sorterade kortnummer "a-b") */
+var COMBO_SEED={
+'23-24':'F\u00f6rh\u00e5llande och åtagande \u2013 ett k\u00e4rleksfullt l\u00f6fte.',
+'12-13':'Misst\u00e4nkt kommunikation \u2013 ett vilseledande meddelande.',
+'15-30':'Framg\u00e5ng och inspiration \u2013 ljus och klar vision tillsammans.',
+'0-26':'Ett meddelande p\u00e5 v\u00e4g, nyheter i skrift.',
+'9-24':'Brutet avtal eller ett pl\u00f6tsligt slut p\u00e5 ett åtagande.',
+'13-33':'Stark ekonomi, en f\u00f6rm\u00f6gen beskyddare.',
+'7-23':'Slut p\u00e5 en relation, sorg och avslut.',
+'16-12':'Graviditet eller en helt ny b\u00f6rjan.',
+'5-22':'En sann v\u00e4n vid ett vägval \u2013 lojalt st\u00f6d i ett beslut.'
+};
+
+/* Läggningar */
+var SPREADS={
+'1':{nm:'Dagens fokus',pos:['Fokus']},
+'3':{nm:'D\u00e5tid \u2013 Nutid \u2013 Framtid',pos:['D\u00e5tid','Nutid','Framtid']},
+'5':{nm:'F\u00f6rdjupad rad',pos:['Bakgrund','Nutid','Utmaning','R\u00e5d','Utfall']},
+'9':{nm:'Ruta 3\u00d73',pos:['1','2','3','4','Centrum','6','7','8','9']}
+};
+
+/* Läggningsguide */
+var GUIDE=[
+['1-kortsdragning','Ett kort f\u00f6r dagens tema eller ett snabbt svar. Bra f\u00f6r daglig \u00f6vning \u2013 l\u00e4s nyckelordet och m\u00e4rk hur det utspelar sig.'],
+['3-kortsdragning','Tre kort l\u00e4ses som en mening, vänster till h\u00f6ger. Vanligast \u00e4r D\u00e5tid \u2013 Nutid \u2013 Framtid, men kan ocks\u00e5 vara Situation \u2013 Handling \u2013 Utfall. Mittkortet \u00e4r ofta k\u00e4rnan.'],
+['5-kortsrad','Fem kort i rad ger mer nyans. Mittkortet \u00e4r temat; korten runtomkring f\u00e4rgar det. L\u00e4s par och granndrag.'],
+['9-kortsruta','Nio kort i en 3\u00d73-ruta. Centrumkortet \u00e4r huvudfr\u00e5gan; rader och kolumner ger d\u00e5tid, nutid och framtid samt sinne, handling och resultat.'],
+['Grand Tableau','Alla 36 kort l\u00e4ggs ut. Varje plats \u00e4r ett <b>hus</b> med fast betydelse \u2013 kortet f\u00e4rgas av huset det landar i. Hitta Mannen och Kvinnan f\u00f6rst; korten n\u00e4rmast dem \u00e4r viktigast. Anv\u00e4nd <b>speglingar</b> (kort p\u00e5 motsatt plats) och <b>granndrag</b> f\u00f6r djup.']
+];
+
+/* Akademin */
+var ACADEMY=[
+['Niv\u00e5 1','Kortens grundbetydelser','Lär dig alla 36 kort, deras nyckelord och spelkortskoppling. \u00d6va med ett kort om dagen och skriv ner hur det utspelar sig. M\u00e5l: kunna varje korts k\u00e4rnbetydelse utan att titta.'],
+['Niv\u00e5 2','Kortkombinationer','Lenormand l\u00e4ses i par. Det f\u00f6rsta kortet \u00e4r substantivet, det andra adjektivet. \u00d6va p\u00e5 tv\u00e5- och trekortsdragningar och bygg upp ditt eget kombinationslexikon.'],
+['Niv\u00e5 3','Hus och positioner','I st\u00f6rre l\u00e4ggningar f\u00e5r varje plats en husbetydelse. Ett kort i ett hus = tema m\u00f6ter omr\u00e5de (t.ex. Solen i Hj\u00e4rtats hus = framg\u00e5ng i k\u00e4rlek). \u00d6va med 9-kortsrutan.'],
+['Niv\u00e5 4','Grand Tableau','Hela kortleken l\u00e4ggs ut. L\u00e4r dig hitta significatorn, l\u00e4sa speglingar, knighting och kortrelationer \u00f6ver hela br\u00e4det. Ta det stegvis \u2013 b\u00f6rja med korten runt Mannen och Kvinnan.'],
+['Niv\u00e5 5','Avancerad analys','Timing, kedjor och flera lager. V\u00e4v ihop hus, speglingar och granndrag till en sammanh\u00e4ngande ber\u00e4ttelse. F\u00f6lj upp dina l\u00e4sningar i dagboken f\u00f6r att kalibrera din intuition.']
+];
+
+/* ===== State ===== */
+var KEY='lenormandguiden_v1';
+var state={daily:{},libNotes:{},readings:[],combos:{},spiritual:[],rev:true,updated:''};
+try{var s0=localStorage.getItem(KEY);if(s0)state=Object.assign(state,JSON.parse(s0));}catch(e){}
+function save(){try{state.updated=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+/* ===== Helpers ===== */
+var todayD=new Date();todayD.setHours(0,0,0,0);
+function pad(n){return String(n).padStart(2,'0');}
+function toISO(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+var todayKey=toISO(todayD);
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function fmtDate(k){var d=new Date(k);return d.toLocaleDateString('sv-SE',{weekday:'long',day:'numeric',month:'long'});}
+function $(id){return document.getElementById(id);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+function cardHtml(i,rev,mini,reveal){
+  var c=LC[i];
+  return '<div class="lcard'+(mini?' mini':'')+(rev?' rev':'')+(reveal?' reveal':'')+'">'+
+    '<span class="num">'+(i+1)+'</span><span class="pc">'+c.pc+'</span>'+
+    '<span class="emo">'+c.e+'</span><span class="nm">'+esc(c.n)+'</span>'+
+    (rev?'<span class="rev-badge">omv.</span>':'')+'</div>';
+}
+function randCard(){return Math.floor(Math.random()*36);}
+function maybeRev(){return state.rev&&Math.random()<0.32;}
+
+/* ===== GitHub-synk (samma motor som jobb.html) ===== */
+var SYNC_KEY='lenormandsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/lenormand-data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=$('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':' offline');}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function mergeRemote(d){
+  if(!d)return;
+  if(d.daily)state.daily=Object.assign({},state.daily,d.daily);
+  if(d.libNotes)state.libNotes=Object.assign({},state.libNotes,d.libNotes);
+  if(d.combos)state.combos=Object.assign({},state.combos,d.combos);
+  if(Array.isArray(d.readings))state.readings=unionById(state.readings,d.readings);
+  if(Array.isArray(d.spiritual))state.spiritual=unionById(state.spiritual,d.spiritual);
+  if(typeof d.rev==='boolean')state.rev=d.rev;
+}
+function unionById(a,b){
+  var m={};a.forEach(function(x){if(x&&x.id)m[x.id]=x;});
+  b.forEach(function(x){if(x&&x.id&&!m[x.id])m[x.id]=x;});
+  var out=[];for(var k in m)out.push(m[k]);
+  out.sort(function(x,y){return (y.date||'').localeCompare(x.date||'');});
+  return out;
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','H\u00e4mtar\u2026');
+  return ghGet().then(function(d){mergeRemote(d);save();renderAll();setBadge('ok','Synkad');}).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar\u2026');
+  var payload={daily:state.daily,libNotes:state.libNotes,readings:state.readings,combos:state.combos,spiritual:state.spiritual,rev:state.rev,updated:new Date().toISOString()};
+  var content=b64enc(JSON.stringify(payload));
+  function doPut(){var body={message:'Uppdatering via LenormandGuiden',content:content};if(sync.sha)body.sha=sync.sha;return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});}
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  });
+}
+
+/* ===== AI (Anthropic, egen nyckel i webbläsaren) ===== */
+var AI_KEY='lenormand_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">\u2728 AI-tolkning</span>'+esc(t)+'</div>';}
+function cardLine(i,rev){var c=LC[i];return '- '+c.n+(rev?' (omv\u00e4nt: '+c.om+')':' ('+c.k+')');}
+var AI_PERSONA='Du \u00e4r en varm, jordn\u00e4ra och insiktsfull Lenormand-tolkare. Du fungerar som studiehj\u00e4lp, inte facit. Svara p\u00e5 svenska som en sammanh\u00e4ngande text utan rubriker eller punktlistor, v\u00e4v ihop korten parvis till en helhet och avsluta med en mjuk reflektionsfr\u00e5ga.';
+
+/* ===== Moon ===== */
+function moonInfo(d){
+  var syn=29.53058867;
+  var days=(d.getTime()-new Date(2000,0,6,18,14).getTime())/86400000%syn;
+  if(days<0)days+=syn;
+  var idx=Math.floor(days/syn*8+0.5)%8;
+  var names=['Nym\u00e5ne','V\u00e4xande sk\u00e4ra','F\u00f6rsta kvarteret','V\u00e4xande m\u00e5ne','Fullm\u00e5ne','Avtagande m\u00e5ne','Sista kvarteret','Avtagande sk\u00e4ra'];
+  var icons=['\uD83C\uDF11','\uD83C\uDF12','\uD83C\uDF13','\uD83C\uDF14','\uD83C\uDF15','\uD83C\uDF16','\uD83C\uDF17','\uD83C\uDF18'];
+  return icons[idx]+' '+names[idx];
+}
+
+/* ===== Sheets ===== */
+var bg=$('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});$(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+bg.onclick=closeSheets;
+
+/* ===== Nav ===== */
+function navTo(v){
+  document.querySelectorAll('.nav button').forEach(function(x){x.classList.toggle('active',x.dataset.v===v);});
+  document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active');});
+  $('view-'+v).classList.add('active');
+  if(v==='kort')renderLib($('lib-search').value);
+  if(v==='dagbok')renderReadings();
+  if(v==='mer')renderMer();
+  if(v==='lagg')renderGuide();
+}
+document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){navTo(b.dataset.v);};});
+
+/* Segmented controls */
+function wireSeg(segId,dataAttr,panels){
+  document.querySelectorAll('#'+segId+' button').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('#'+segId+' button').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      var sel=b.dataset[dataAttr];
+      panels.forEach(function(p){$(p.id).style.display=(p.key===sel?'block':'none');});
+      if(sel==='komb')renderCombo();
+      if(sel==='utv')renderStats();
+      if(sel==='akad')renderAcademy();
+      if(sel==='andl')renderSpirit();
+      if(sel==='gt')renderGT();
+      if(sel==='guide')renderGuide();
+    };
+  });
+}
+
+/* ===== Dagens kort (Hem) ===== */
+function renderDaily(){
+  var d=state.daily[todayKey];
+  if(!d){
+    $('daily-card').innerHTML='<div class="lcard" style="opacity:.5;justify-content:center"><span class="emo">\u2753</span><span class="nm">Dra dagens kort</span></div>';
+    $('daily-kw').textContent='';$('daily-budskap').textContent='';$('daily-note').value='';
+    return;
+  }
+  var c=LC[d.card];
+  $('daily-card').innerHTML=cardHtml(d.card,d.rev,false,true);
+  $('daily-kw').innerHTML='<b style="color:var(--ink)">'+esc(c.n)+'</b> &middot; '+esc(c.k);
+  $('daily-budskap').textContent=d.rev?c.om:c.kar+' '+c.and;
+  $('daily-note').value=d.note||'';
+}
+$('daily-draw').onclick=function(){
+  var card=randCard(),rev=maybeRev();
+  state.daily[todayKey]={card:card,rev:rev,note:(state.daily[todayKey]||{}).note||''};
+  persist();renderDaily();
+};
+$('daily-note').oninput=function(){if(!state.daily[todayKey])return;state.daily[todayKey].note=this.value;save();};
+$('daily-note').onblur=function(){if(syncOn())ghPush().catch(function(){});};
+
+/* ===== Kortbibliotek ===== */
+function catTags(c){
+  return '<div class="cat"><span class="tag t-love">\u2665 '+esc(c.kar)+'</span></div>'+
+    '<div class="cat"><span class="tag t-work">\u2692 '+esc(c.arb)+'</span></div>'+
+    '<div class="cat"><span class="tag t-health">\u2695 '+esc(c.hal)+'</span></div>'+
+    '<div class="cat"><span class="tag t-spirit">\u2727 '+esc(c.and)+'</span></div>';
+}
+function renderLib(q){
+  q=(q||'').toLowerCase();
+  var html='';
+  LC.forEach(function(c,i){
+    if(q&&c.n.toLowerCase().indexOf(q)<0&&c.k.toLowerCase().indexOf(q)<0)return;
+    var note=state.libNotes[i]||'';
+    html+='<div class="lib-item" data-i="'+i+'">'+
+      '<div class="lib-name" onclick="this.parentNode.classList.toggle(\'open\')"><span class="e">'+c.e+'</span><span class="n">'+(i+1)+'. '+esc(c.n)+'</span><span class="pc">'+c.pc+'</span></div>'+
+      '<div class="lib-detail">'+
+        '<b>Nyckelord:</b> '+esc(c.k)+'<br>'+
+        '<b>Omv\u00e4nt:</b> '+esc(c.om)+'<br>'+
+        '<b>Hus:</b> '+esc(c.hus)+
+        catTags(c)+
+        '<div class="lib-note"><label class="fld">Egna anteckningar</label><textarea rows="2" data-note="'+i+'" placeholder="Vad betyder kortet f\u00f6r dig?">'+esc(note)+'</textarea></div>'+
+      '</div></div>';
+  });
+  $('lib-list').innerHTML=html||'<div class="empty-msg">Inga kort matchar.</div>';
+  $('lib-list').querySelectorAll('textarea[data-note]').forEach(function(t){
+    t.oninput=function(){state.libNotes[t.dataset.note]=t.value;save();};
+    t.onblur=function(){if(syncOn())ghPush().catch(function(){});};
+  });
+}
+
+/* ===== Kombinationslexikon ===== */
+var comboSel=[];
+function comboKey(arr){return arr.slice().sort(function(a,b){return a-b;}).join('-');}
+function renderComboPick(){
+  $('combo-pick').innerHTML=comboSel.map(function(i){return '<span class="combo-chip">'+LC[i].e+' '+esc(LC[i].n)+'<span class="x" onclick="comboRemove('+i+')">\u00d7</span></span>';}).join('')||'<span class="sub">Inga kort valda \u00e4n.</span>';
+}
+function comboRemove(i){comboSel=comboSel.filter(function(x){return x!==i;});renderComboPick();renderComboResult();}
+function renderCombo(){renderComboPick();renderComboResult();$('combo-note').value=comboSel.length?(state.combos[comboKey(comboSel)]||''):'';}
+function renderComboResult(){
+  if(comboSel.length<2){$('combo-results').innerHTML='<div class="combo-result">V\u00e4lj minst tv\u00e5 kort f\u00f6r att se betydelser.</div>';return;}
+  var key=comboKey(comboSel);
+  var html='';
+  if(COMBO_SEED[key])html+='<div class="combo-result"><b>Klassisk betydelse:</b> '+esc(COMBO_SEED[key])+'</div>';
+  if(state.combos[key])html+='<div class="combo-result"><b>Min tolkning:</b> '+esc(state.combos[key])+'</div>';
+  if(!html)html='<div class="combo-result">Ingen sparad betydelse \u00e4n. L\u00e4s korten parvis, AI-tolka eller skriv din egen.</div>';
+  $('combo-results').innerHTML=html;
+  $('combo-note').value=state.combos[key]||'';
+}
+$('combo-save').onclick=function(){
+  if(comboSel.length<2){alert('V\u00e4lj minst tv\u00e5 kort.');return;}
+  var v=$('combo-note').value.trim();
+  if(v)state.combos[comboKey(comboSel)]=v;else delete state.combos[comboKey(comboSel)];
+  persist();renderComboResult();
+};
+$('combo-ai-btn').onclick=function(e){
+  if(comboSel.length<2){alert('V\u00e4lj minst tv\u00e5 kort.');return;}
+  var btn=e.target,orig=btn.textContent;btn.textContent='\u2728 Tolkar\u2026';btn.disabled=true;
+  var prompt=AI_PERSONA+'\n\nTolka denna kortkombination (h\u00f6gst 130 ord):\n'+comboSel.map(function(i){return cardLine(i,false);}).join('\n');
+  aiCall(prompt).then(function(t){$('combo-results').innerHTML+=aiBox(t);}).catch(function(err){if(err.message!=='NOKEY')alert('Kunde inte tolka: '+err.message);}).then(function(){btn.textContent=orig;btn.disabled=false;});
+};
+
+/* ===== Tolkningsdagbok ===== */
+var editId=null,rsCards=[];
+function newReading(){
+  navTo('dagbok');editId=null;rsCards=[];
+  $('rs-title').textContent='Ny tolkning';
+  $('rs-date').value=todayKey;$('rs-q').value='';$('rs-spread').value='';
+  $('rs-first').value='';$('rs-deep').value='';$('rs-later').value='';
+  renderRsCards();openSheet('reading-sheet');
+}
+function renderRsCards(){
+  $('rs-cards').innerHTML=rsCards.map(function(o,idx){return '<span class="combo-chip">'+LC[o.idx].e+' '+esc(LC[o.idx].n)+(o.rev?' (omv.)':'')+'<span class="x" onclick="rsCardRemove('+idx+')">\u00d7</span></span>';}).join('')||'<span class="sub">Inga kort tillagda.</span>';
+}
+function rsCardRemove(idx){rsCards.splice(idx,1);renderRsCards();}
+$('rs-save').onclick=function(){
+  var entry={id:editId||uid(),date:$('rs-date').value||todayKey,q:$('rs-q').value.trim(),spread:$('rs-spread').value.trim(),cards:rsCards.slice(),first:$('rs-first').value.trim(),deep:$('rs-deep').value.trim(),later:$('rs-later').value.trim()};
+  if(editId){var ix=state.readings.findIndex(function(r){return r.id===editId;});if(ix>=0){entry.follow=state.readings[ix].follow;entry.ai=state.readings[ix].ai;state.readings[ix]=entry;}}
+  else{state.readings.unshift(entry);}
+  state.readings.sort(function(x,y){return (y.date||'').localeCompare(x.date||'');});
+  persist();closeSheets();renderReadings();
+};
+function renderReadings(){
+  if(!state.readings.length){$('reading-list').innerHTML='<div class="empty-msg">Inga tolkningar \u00e4n. Tryck p\u00e5 + Ny tolkning.</div>';return;}
+  $('reading-list').innerHTML=state.readings.map(function(r){
+    var cards=(r.cards||[]).map(function(o){return LC[o.idx].e+(o.rev?'\u02ac':'');}).join(' ');
+    var f=r.follow||{};
+    return '<div class="entry" data-id="'+r.id+'">'+
+      '<div class="entry-top" onclick="this.parentNode.classList.toggle(\'open\')">'+
+        '<span class="entry-q">'+esc(r.q||'(ingen fr\u00e5ga)')+'</span><span class="entry-date">'+esc(r.date)+'</span></div>'+
+      '<div class="entry-sub">'+esc(r.spread||'')+' &middot; '+cards+'</div>'+
+      '<div class="entry-detail">'+
+        (r.first?'<div class="sub"><b style="color:var(--gold)">F\u00f6rsta intryck:</b> '+esc(r.first)+'</div>':'')+
+        (r.deep?'<div class="sub" style="margin-top:5px"><b style="color:var(--gold)">Djupare analys:</b> '+esc(r.deep)+'</div>':'')+
+        (r.later?'<div class="sub" style="margin-top:5px"><b style="color:var(--gold)">Senare h\u00e4ndelser:</b> '+esc(r.later)+'</div>':'')+
+        (f.staemde||f.miss||f.learn?'<div class="sub" style="margin-top:5px"><b style="color:var(--gold)">Uppf\u00f6ljning:</b> '+(f.staemde?'St\u00e4mde: '+esc(f.staemde)+' ':'')+(f.miss?'Missade: '+esc(f.miss)+' ':'')+(f.learn?'L\u00e4rdom: '+esc(f.learn):'')+'</div>':'')+
+        (r.ai?aiBox(r.ai):'')+
+        '<div class="btn-row" style="margin-top:10px">'+
+          '<button class="btn ghost" onclick="editReading(\''+r.id+'\')">Redigera</button>'+
+          '<button class="btn ghost" onclick="openFollow(\''+r.id+'\')">Uppf\u00f6ljning</button>'+
+          '<button class="btn ghost" onclick="readingAi(\''+r.id+'\',this)">\u2728 AI</button>'+
+          '<button class="btn ghost" onclick="delReading(\''+r.id+'\')" style="color:var(--c-love)">Ta bort</button>'+
+        '</div>'+
+      '</div></div>';
+  }).join('');
+}
+function editReading(id){
+  var r=state.readings.find(function(x){return x.id===id;});if(!r)return;
+  editId=id;rsCards=(r.cards||[]).slice();
+  $('rs-title').textContent='Redigera tolkning';
+  $('rs-date').value=r.date;$('rs-q').value=r.q||'';$('rs-spread').value=r.spread||'';
+  $('rs-first').value=r.first||'';$('rs-deep').value=r.deep||'';$('rs-later').value=r.later||'';
+  renderRsCards();openSheet('reading-sheet');
+}
+var followId=null;
+function openFollow(id){
+  var r=state.readings.find(function(x){return x.id===id;});if(!r)return;
+  followId=id;var f=r.follow||{};
+  $('fl-staemde').value=f.staemde||'';$('fl-miss').value=f.miss||'';$('fl-learn').value=f.learn||'';
+  openSheet('follow-sheet');
+}
+$('fl-save').onclick=function(){
+  var r=state.readings.find(function(x){return x.id===followId;});if(!r)return;
+  r.follow={staemde:$('fl-staemde').value.trim(),miss:$('fl-miss').value.trim(),learn:$('fl-learn').value.trim()};
+  persist();closeSheets();renderReadings();
+};
+function delReading(id){if(!confirm('Ta bort tolkningen?'))return;state.readings=state.readings.filter(function(x){return x.id!==id;});persist();renderReadings();}
+function readingAi(id,btn){
+  var r=state.readings.find(function(x){return x.id===id;});if(!r||!(r.cards||[]).length){alert('L\u00e4gg till minst ett kort f\u00f6rst.');return;}
+  var orig=btn.textContent;btn.textContent='\u2728\u2026';btn.disabled=true;
+  var prompt=AI_PERSONA+'\n\nL\u00e4ggning: '+(r.spread||'fri')+'\n'+(r.q?'Fr\u00e5ga: '+r.q+'\n':'')+'Kort:\n'+r.cards.map(function(o){return cardLine(o.idx,o.rev);}).join('\n')+'\n(H\u00f6gst 180 ord.)';
+  aiCall(prompt).then(function(t){r.ai=t;persist();renderReadings();}).catch(function(err){if(err.message!=='NOKEY')alert('Kunde inte tolka: '+err.message);btn.textContent=orig;btn.disabled=false;});
+}
+
+/* ===== Läggning: Dra ===== */
+var draState=null;
+$('dra-go').onclick=function(){
+  var sp=$('dra-spread').value,def=SPREADS[sp],n=def.pos.length,cards=[];
+  for(var i=0;i<n;i++)cards.push({idx:randCard(),rev:maybeRev()});
+  draState={spread:sp,q:$('dra-q').value.trim(),cards:cards};
+  $('dra-cards').innerHTML=cards.map(function(o){return cardHtml(o.idx,o.rev,true,true);}).join('');
+  $('dra-positions').innerHTML=cards.map(function(o,i){var c=LC[o.idx];return '<div class="spread-pos"><span class="pos-name">'+esc(def.pos[i])+'</span><span class="pos-card">'+c.e+' '+esc(c.n)+(o.rev?' (omv.)':'')+'</span></div>';}).join('');
+  $('dra-ai').innerHTML='';$('dra-actions').style.display='flex';
+};
+$('dra-ai-btn').onclick=function(e){
+  if(!draState)return;var btn=e.target,orig=btn.textContent;btn.textContent='\u2728 Tolkar\u2026';btn.disabled=true;
+  var def=SPREADS[draState.spread];
+  var prompt=AI_PERSONA+'\n\nL\u00e4ggning: '+def.nm+'\n'+(draState.q?'Fr\u00e5ga: '+draState.q+'\n':'')+'Kort:\n'+draState.cards.map(function(o,i){return '- '+def.pos[i]+': '+LC[o.idx].n+(o.rev?' (omv\u00e4nt: '+LC[o.idx].om+')':' ('+LC[o.idx].k+')');}).join('\n')+'\n(H\u00f6gst 180 ord.)';
+  aiCall(prompt).then(function(t){$('dra-ai').innerHTML=aiBox(t);}).catch(function(err){if(err.message!=='NOKEY')alert('Kunde inte tolka: '+err.message);}).then(function(){btn.textContent=orig;btn.disabled=false;});
+};
+$('dra-save').onclick=function(){
+  if(!draState)return;
+  editId=null;rsCards=draState.cards.slice();
+  $('rs-title').textContent='Ny tolkning';
+  $('rs-date').value=todayKey;$('rs-q').value=draState.q;$('rs-spread').value=SPREADS[draState.spread].nm;
+  $('rs-first').value='';$('rs-deep').value='';$('rs-later').value='';
+  renderRsCards();openSheet('reading-sheet');
+};
+
+/* ===== Grand Tableau ===== */
+var gtState=null;
+function renderGT(){
+  if(!gtState){$('gt-board').innerHTML='<div class="empty-msg" style="grid-column:1/10">Tryck p\u00e5 Bygg ny spelplan.</div>';$('gt-actions').style.display='none';return;}
+  var showSig=$('gt-sig').checked;
+  $('gt-board').innerHTML=gtState.map(function(o,pos){
+    var c=LC[o.idx];var isSig=showSig&&(o.idx===27||o.idx===28);
+    return '<div class="gt-cell'+(o.rev?' rev':'')+(isSig?' sig':'')+'" onclick="gtTap('+pos+')"><span class="gt-house">'+(pos+1)+'</span><span class="ge">'+c.e+'</span><span class="gn">'+esc(c.n)+'</span></div>';
+  }).join('');
+  $('gt-actions').style.display='flex';
+}
+$('gt-shuffle').onclick=function(){
+  var order=[];for(var i=0;i<36;i++)order.push(i);
+  for(var j=35;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=order[j];order[j]=order[k];order[k]=t;}
+  gtState=order.map(function(idx){return {idx:idx,rev:maybeRev()};});
+  renderGT();
+};
+$('gt-sig').onchange=renderGT;
+function gtTap(pos){
+  var o=gtState[pos],c=LC[o.idx],houseCard=LC[pos];
+  $('ci-title').textContent=c.n+(o.rev?' (omv\u00e4nt)':'');
+  $('ci-body').innerHTML='<div class="draw-stage">'+cardHtml(o.idx,o.rev,false,false)+'</div>'+
+    '<div class="meaning"><b>'+esc(c.n)+'</b> i hus '+(pos+1)+' &mdash; <b>'+esc(houseCard.hus)+'</b></div>'+
+    '<div class="sub" style="margin-top:8px"><b style="color:var(--ink)">Kortet:</b> '+esc(o.rev?c.om:c.k)+'</div>'+
+    '<div class="sub" style="margin-top:5px"><b style="color:var(--ink)">Huset f\u00e4rgar:</b> Temat "'+esc(c.n)+'" utspelar sig inom omr\u00e5det "'+esc(houseCard.hus)+'".</div>';
+  openSheet('card-info-sheet');
+}
+$('gt-ai-btn').onclick=function(e){
+  if(!gtState)return;var btn=e.target,orig=btn.textContent;btn.textContent='\u2728 Tolkar\u2026';btn.disabled=true;
+  var manPos=gtState.findIndex(function(o){return o.idx===27;}),womPos=gtState.findIndex(function(o){return o.idx===28;});
+  var lines=gtState.map(function(o,pos){return 'Hus '+(pos+1)+' ('+LC[pos].hus+'): '+LC[o.idx].n+(o.rev?' omv.':'');});
+  var prompt=AI_PERSONA+'\n\nDetta \u00e4r en Grand Tableau (36 kort i hus). Mannen ligger i hus '+(manPos+1)+', Kvinnan i hus '+(womPos+1)+'. Ge en \u00f6vergripande l\u00e4sning (h\u00f6gst 220 ord) med fokus p\u00e5 korten n\u00e4rmast significatorerna.\n'+lines.join('\n');
+  aiCall(prompt).then(function(t){$('gt-ai').innerHTML=aiBox(t);}).catch(function(err){if(err.message!=='NOKEY')alert('Kunde inte tolka: '+err.message);}).then(function(){btn.textContent=orig;btn.disabled=false;});
+};
+
+/* ===== Läggningsguide ===== */
+function renderGuide(){
+  $('guide-list').innerHTML=GUIDE.map(function(g){return '<div class="acc"><div class="acc-head" onclick="this.parentNode.classList.toggle(\'open\')"><span class="ti">'+esc(g[0])+'</span><span class="ar">\u203a</span></div><div class="acc-body">'+g[1]+'</div></div>';}).join('');
+}
+
+/* ===== AI-Tolkare (snabb) ===== */
+var aqCards=[];
+function renderAqCards(){$('aq-cards').innerHTML=aqCards.map(function(i,idx){return '<span class="combo-chip">'+LC[i].e+' '+esc(LC[i].n)+'<span class="x" onclick="aqRemove('+idx+')">\u00d7</span></span>';}).join('')||'<span class="sub">Inga kort tillagda.</span>';}
+function aqRemove(idx){aqCards.splice(idx,1);renderAqCards();}
+$('aq-go').onclick=function(e){
+  if(!aqCards.length){alert('L\u00e4gg till minst ett kort.');return;}
+  var btn=e.target,orig=btn.textContent;btn.textContent='\u2728 Tolkar\u2026';btn.disabled=true;
+  var q=$('aq-q').value.trim();
+  var prompt=AI_PERSONA+'\n\n'+(q?'Fr\u00e5ga: '+q+'\n':'')+'Kort:\n'+aqCards.map(function(i){return cardLine(i,false);}).join('\n')+'\n(H\u00f6gst 180 ord.)';
+  aiCall(prompt).then(function(t){$('aq-result').innerHTML=aiBox(t);}).catch(function(err){if(err.message!=='NOKEY')alert('Kunde inte tolka: '+err.message);}).then(function(){btn.textContent=orig;btn.disabled=false;});
+};
+
+/* ===== Card pickers ===== */
+function buildPicker(gridId,onPick){
+  $(gridId).innerHTML=LC.map(function(c,i){return '<div class="picker-item" data-pi="'+i+'"><span class="e">'+c.e+'</span>'+(i+1)+'. '+esc(c.n)+'</div>';}).join('');
+  $(gridId).querySelectorAll('.picker-item').forEach(function(el){el.onclick=function(){onPick(parseInt(el.dataset.pi,10));};});
+}
+
+/* ===== Utvecklingsspårning ===== */
+function cardCounts(){
+  var ct={};
+  for(var k in state.daily){var d=state.daily[k];if(d)ct[d.card]=(ct[d.card]||0)+1;}
+  state.readings.forEach(function(r){(r.cards||[]).forEach(function(o){ct[o.idx]=(ct[o.idx]||0)+1;});});
+  return ct;
+}
+function renderStats(){
+  var nReadings=state.readings.length;
+  var nDaily=Object.keys(state.daily).length;
+  var withFollow=state.readings.filter(function(r){return r.follow&&(r.follow.staemde||r.follow.miss||r.follow.learn);}).length;
+  var hits=state.readings.filter(function(r){return r.follow&&r.follow.staemde&&r.follow.staemde.length>2;}).length;
+  $('stats-summary').innerHTML=
+    '<div class="stat-row"><span>Antal tolkningar</span><b>'+nReadings+'</b></div>'+
+    '<div class="stat-row"><span>Dagskort dragna</span><b>'+nDaily+'</b></div>'+
+    '<div class="stat-row"><span>Uppf\u00f6ljda l\u00e4sningar</span><b>'+withFollow+'</b></div>'+
+    '<div class="stat-row"><span>Tr\u00e4ffs\u00e4kra (med uppf\u00f6ljning)</span><b>'+hits+'</b></div>'+
+    '<div class="stat-row"><span>Egna kortanteckningar</span><b>'+Object.keys(state.libNotes).filter(function(k){return (state.libNotes[k]||'').trim();}).length+'</b></div>';
+  var ct=cardCounts();
+  var arr=LC.map(function(c,i){return {i:i,n:ct[i]||0};});
+  var max=Math.max(1,arr.reduce(function(m,x){return Math.max(m,x.n);},0));
+  var top=arr.slice().sort(function(a,b){return b.n-a.n;}).filter(function(x){return x.n>0;}).slice(0,8);
+  $('stats-freq').innerHTML=top.length?top.map(function(x){return '<div class="freq-row"><span class="e">'+LC[x.i].e+'</span><span class="nm">'+esc(LC[x.i].n)+'</span><span class="bar-bg"><span class="bar" style="width:'+Math.round(x.n/max*100)+'%"></span></span><span class="ct">'+x.n+'</span></div>';}).join(''):'<div class="empty-msg">Dra kort f\u00f6r att se statistik.</div>';
+  var rare=arr.slice().sort(function(a,b){return a.n-b.n;}).slice(0,6);
+  $('stats-rare').innerHTML=rare.map(function(x){return '<div class="freq-row"><span class="e">'+LC[x.i].e+'</span><span class="nm">'+esc(LC[x.i].n)+'</span><span class="ct">'+x.n+'</span></div>';}).join('');
+}
+
+/* ===== Akademin ===== */
+function renderAcademy(){
+  $('academy-list').innerHTML=ACADEMY.map(function(a){return '<div class="acc"><div class="acc-head" onclick="this.parentNode.classList.toggle(\'open\')"><span class="lvl">'+esc(a[0])+'</span><span class="ti">'+esc(a[1])+'</span><span class="ar">\u203a</span></div><div class="acc-body">'+esc(a[2])+'</div></div>';}).join('');
+}
+
+/* ===== Spirituell dagbok ===== */
+$('sp-save').onclick=function(){
+  var entry={id:uid(),date:$('sp-date').value||todayKey,moon:$('sp-moon').value.trim(),lenormand:$('sp-lenormand').value.trim(),tarot:$('sp-tarot').value.trim(),dream:$('sp-dream').value.trim(),synch:$('sp-synch').value.trim()};
+  state.spiritual.unshift(entry);
+  state.spiritual.sort(function(x,y){return (y.date||'').localeCompare(x.date||'');});
+  persist();closeSheets();renderSpirit();
+};
+function renderSpirit(){
+  if(!state.spiritual.length){$('spirit-list').innerHTML='<div class="empty-msg">Inga anteckningar \u00e4n.</div>';return;}
+  $('spirit-list').innerHTML=state.spiritual.map(function(e){
+    return '<div class="entry"><div class="entry-top"><span class="entry-q">'+esc(e.moon||'\uD83C\uDF19')+'</span><span class="entry-date">'+esc(e.date)+'</span></div>'+
+      (e.lenormand?'<div class="entry-sub">Lenormand: '+esc(e.lenormand)+'</div>':'')+
+      (e.tarot?'<div class="entry-sub">Tarot: '+esc(e.tarot)+'</div>':'')+
+      (e.dream?'<div class="sub" style="margin-top:4px"><b style="color:var(--gold)">Dr\u00f6m:</b> '+esc(e.dream)+'</div>':'')+
+      (e.synch?'<div class="sub" style="margin-top:4px"><b style="color:var(--gold)">Synkronicitet:</b> '+esc(e.synch)+'</div>':'')+
+      '<div class="btn-row" style="margin-top:8px"><button class="btn ghost" onclick="delSpirit(\''+e.id+'\')" style="color:var(--c-love)">Ta bort</button></div></div>';
+  }).join('');
+}
+function delSpirit(id){if(!confirm('Ta bort anteckningen?'))return;state.spiritual=state.spiritual.filter(function(x){return x.id!==id;});persist();renderSpirit();}
+
+function renderMer(){renderStats();}
+
+/* ===== Inställningar: AI-nyckel ===== */
+$('ai-set-btn').onclick=function(){$('ai-key').value=getAiKey();openSheet('ai-sheet');};
+$('ai-key-save').onclick=function(){var v=$('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+$('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);$('ai-key').value='';};
+
+/* ===== Inställningar: Synk ===== */
+function setGhStatus(msg,type){var el=$('gh-status');el.style.display='block';el.style.background=type==='ok'?'#22301f':type==='err'?'#3a232b':'#1f2d39';el.style.color=type==='ok'?'#8FCF9A':type==='err'?'#E0A0A0':'#8FB8E0';el.textContent=msg;}
+$('sync-set-btn').onclick=function(){$('gh-owner').value=sync.owner;$('gh-repo').value=sync.repo;$('gh-token').value=sync.token;$('gh-status').style.display='none';openSheet('sync-sheet');};
+$('gh-save').onclick=function(){
+  sync.owner=$('gh-owner').value.trim();sync.repo=$('gh-repo').value.trim();sync.token=$('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre f\u00e4lten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning\u2026','info');
+  ghGet().then(function(d){
+    if(d){setGhStatus('\u2713 Ansluten! H\u00e4mtar data\u2026','ok');return ghPull();}
+    setGhStatus('\u2713 Ansluten! Repot \u00e4r tomt \u2013 laddar upp din data\u2026','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1200);}).catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och Contents-beh\u00f6righet.','err');});
+};
+$('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+/* ===== Backup ===== */
+$('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='lenormandguiden-backup-'+todayKey+'.json';a.click();
+};
+$('import-btn').onclick=function(){$('import-file').click();};
+$('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&typeof d==='object'){state=Object.assign({daily:{},libNotes:{},readings:[],combos:{},spiritual:[],rev:true},d);persist();renderAll();alert('Importerat.');}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte l\u00e4sa filen.');}};
+  r.readAsText(f);
+};
+
+/* ===== Wire pickers ===== */
+buildPicker('combo-pick-grid',function(i){if(comboSel.indexOf(i)<0&&comboSel.length<5)comboSel.push(i);renderComboPick();renderComboResult();});
+buildPicker('rs-card-grid',function(i){openSheet('orient-sheet');pendingPick={target:'rs',idx:i};});
+buildPicker('aq-card-grid',function(i){aqCards.push(i);renderAqCards();});
+var pendingPick=null;
+function confirmOrient(rev){
+  if(!pendingPick)return;
+  if(pendingPick.target==='rs'){rsCards.push({idx:pendingPick.idx,rev:rev});renderRsCards();openSheet('reading-sheet');}
+  pendingPick=null;
+}
+
+/* ===== Segments ===== */
+wireSeg('kort-seg','k',[{key:'bib',id:'kort-bib'},{key:'komb',id:'kort-komb'}]);
+wireSeg('lagg-seg','l',[{key:'dra',id:'lagg-dra'},{key:'gt',id:'lagg-gt'},{key:'guide',id:'lagg-guide'}]);
+wireSeg('mer-seg','m',[{key:'utv',id:'mer-utv'},{key:'akad',id:'mer-akad'},{key:'andl',id:'mer-andl'},{key:'inst',id:'mer-inst'}]);
+
+/* Spirit-sheet defaults */
+$('spirit-sheet').addEventListener('transitionend',function(){});
+function openSpiritDefaults(){$('sp-date').value=todayKey;$('sp-moon').value=moonInfo(new Date());}
+var _origOpen=openSheet;
+openSheet=function(id){_origOpen(id);if(id==='spirit-sheet')openSpiritDefaults();if(id==='ai-quick-sheet')renderAqCards();};
+
+/* ===== Init ===== */
+function renderAll(){renderDaily();renderLib($('lib-search')?$('lib-search').value:'');renderReadings();renderGuide();}
+function init(){
+  $('moon-line').textContent=moonInfo(new Date());
+  loadSync();
+  renderAll();
+  if(syncOn())ghPull();
+}
+init();
+
+</script>
+</body>
+</html>
