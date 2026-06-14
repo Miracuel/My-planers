@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BipolärBalans">
+<meta name="theme-color" content="#F1EFE9">
+<title>BipolärBalans</title>
+<style>
+:root{
+  --bg:#F1EFE9;--panel:#FAF8F3;--panel2:#ECE8E0;--line:#DED8CC;
+  --ink:#3E3B45;--muted:#857F8C;--lav:#8A86C4;--lav-soft:#E6E4F2;
+  --low:#6E93C0;--bal:#7FA890;--high:#CDA46A;
+  --navbg:rgba(241,239,233,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:20px;color:var(--ink);letter-spacing:.03em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--lav);background:var(--panel);color:var(--lav);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--lav-soft)}
+.btn.fill{background:var(--lav);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input[type=range]{accent-color:var(--lav);padding:0}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+.crisis-btn{width:100%;border:1.5px solid var(--lav);background:var(--lav-soft);color:var(--lav);border-radius:16px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px}
+
+.mood-spectrum{position:relative;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--low) 0%,var(--bal) 50%,var(--high) 100%)}
+.mood-thumb{position:absolute;top:-5px;width:18px;height:18px;border-radius:50%;background:var(--panel);border:3px solid var(--ink);transform:translateX(-50%);transition:left .3s}
+.spectrum-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:9px;text-transform:uppercase;letter-spacing:.05em}
+.mood-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.mood-label{font-family:Georgia,serif;font-size:17px}
+.mood-num{font-size:13px;color:var(--muted)}
+.tiles{display:flex;gap:8px;margin-top:12px}
+.tile{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center}
+.tile.on{background:var(--lav-soft);border-color:#C9C5E4}
+.tile .ic{font-size:17px;line-height:1}
+.tile .v{font-size:13px;font-weight:600;margin-top:3px}
+.tile .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--lav-soft);border-color:#C9C5E4;color:var(--lav)}
+.dotpick{display:flex;gap:8px}
+.dotpick button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;color:var(--muted);font-family:inherit}
+.dotpick button.sel{background:var(--lav);border-color:var(--lav);color:#fff}
+.toggle-row{display:flex;gap:8px;margin-top:4px}
+.toggle-row button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px;font-size:14px;color:var(--muted);cursor:pointer;font-family:inherit}
+.toggle-row button.sel{background:var(--lav);border-color:var(--lav);color:#fff}
+.time-row{display:flex;gap:8px}
+.time-row>div{flex:1}
+
+.range-tabs{display:flex;gap:6px;margin-bottom:8px}
+.range-tabs button{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:7px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.range-tabs button.active{background:var(--lav-soft);border-color:#C9C5E4;color:var(--lav);font-weight:600}
+.avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.avg-row:first-child{border-top:none}
+.dots5{letter-spacing:3px;color:var(--lav);font-size:13px}
+.banner{border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:12px;display:none}
+.banner.calm{background:var(--lav-soft);border:1px solid #C9C5E4;color:var(--ink)}
+
+.entry{padding:10px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:none}
+.entry-head{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.mood-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.entry-text{font-size:14px;line-height:1.5;margin-top:5px;white-space:pre-wrap}
+.entry-del{margin-left:auto;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+.contact{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.contact:first-child{border-top:none}
+.contact .nm{flex:1}
+.contact .nm b{font-size:14px}
+.contact .nm small{display:block;color:var(--muted);font-size:12px}
+.contact a{text-decoration:none;border:1px solid var(--lav);color:var(--lav);border-radius:10px;padding:7px 12px;font-size:13px}
+.contact .star{color:var(--high);font-size:13px}
+.contact .x{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.res{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.res:first-child{border-top:none}
+.res .rt{flex:1}
+.res .rt b{font-size:14px;display:block}
+.res .rt small{color:var(--muted);font-size:11px}
+.res a{text-decoration:none;background:var(--lav);color:#fff;border-radius:10px;padding:8px 13px;font-size:13px;font-weight:500}
+
+.med-item{padding:9px 0;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.med-item:first-child{border-top:none}
+.med-item .mi{flex:1}
+.med-item .mi b{font-size:14px}
+.med-item .mi small{display:block;color:var(--muted);font-size:12px}
+
+.wait-item{padding:10px 0;border-top:1px solid var(--line)}
+.wait-item:first-child{border-top:none}
+.wait-item .wt{font-size:14px}
+.wait-item .ws{font-size:12px;color:var(--muted);margin-top:3px}
+.wait-item.done .ws{color:var(--bal)}
+.wait-actions{display:flex;gap:8px;margin-top:6px}
+.wait-actions button{font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:9px;padding:5px 10px;cursor:pointer;font-family:inherit}
+
+.breath-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:10px 0}
+.breath-circle{width:120px;height:120px;border-radius:50%;background:var(--lav-soft);border:2px solid var(--lav);transition:transform 4s ease-in-out;display:flex;align-items:center;justify-content:center}
+.breath-label{font-family:Georgia,serif;font-size:16px}
+.ground-card{text-align:center;padding:10px 0}
+.ground-num{font-family:Georgia,serif;font-size:44px;color:var(--lav)}
+.ground-txt{font-size:15px;margin:6px 0 14px}
+
+.ai-box{background:var(--lav-soft);border:1px solid #C9C5E4;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6;white-space:pre-wrap;margin-top:10px}
+.ai-lbl{display:block;font-size:11px;color:var(--lav);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:600}
+
+.sp-badge{font-size:11px;padding:4px 10px;border-radius:11px;background:var(--lav-soft);color:var(--lav);font-weight:500}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.hint{font-size:11px;color:var(--muted);line-height:1.6;margin:4px 0 8px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:14px;line-height:1.6}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--lav);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(62,59,69,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--lav);color:#fff;font-size:14px;cursor:pointer;position:sticky;bottom:0;margin-top:12px;font-family:inherit}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row button{border:1px solid var(--lav);background:var(--lav);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+.checkrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.checkrow:first-child{border-top:none}
+.checkrow input{width:auto;accent-color:var(--lav)}
+
+.hdr-btns{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));display:flex;gap:8px;z-index:45}
+.hdr-btns button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;font-family:inherit}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#23222A;--panel:#2C2A33;--panel2:#343039;--line:#423E48;
+  --ink:#E7E4EE;--muted:#9C95A6;--lav:#A7A3DC;--lav-soft:#3A3550;
+  --low:#88A6CC;--bal:#90B5A2;--high:#D3AE78;--navbg:rgba(35,34,42,.95);
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="hdr-btns">
+  <button id="theme-btn" aria-label="Tema">◐</button>
+  <button id="settings-btn" aria-label="Inställningar">⚙</button>
+</div>
+<h1 class="brand">BipolärBalans</h1>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <button class="crisis-btn" id="crisis-open">Krisläge — lugnt stöd just nu</button>
+
+  <div class="card-panel">
+    <div class="mood-head">
+      <span class="mood-label" id="mood-label">Stabil</span>
+      <span class="mood-num" id="mood-num">0</span>
+    </div>
+    <div class="mood-spectrum"><div class="mood-thumb" id="mood-thumb"></div></div>
+    <div class="spectrum-labels"><span>Depression</span><span>Stabil</span><span>Mani</span></div>
+    <input type="range" id="mood-range" min="-5" max="5" step="1" value="0" style="margin-top:14px">
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn ghost" id="open-checkin">Dagens incheckning</button>
+      <button class="btn ghost" id="open-note">Skriv en rad</button>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile" id="tile-sleep"><div class="ic">🌙</div><div class="v" id="t-sleep">–</div><div class="l">Sömn</div></div>
+    <div class="tile" id="tile-energy"><div class="ic">⚡</div><div class="v" id="t-energy">–</div><div class="l">Energi</div></div>
+    <div class="tile" id="tile-med"><div class="ic">💊</div><div class="v" id="t-med">–</div><div class="l">Medicin</div></div>
+  </div>
+
+  <div class="section-title">Tidiga varningssignaler idag <button class="btn ghost" id="edit-signs" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Vad känner du av idag? Inga svar är fel — det här är bara för din egen översikt.</div>
+    <div class="chips" id="signs-chips"></div>
+  </div>
+
+  <div class="section-title">Dagens anteckning</div>
+  <div class="card-panel"><div id="today-note"></div></div>
+
+  <div class="privacy">Allt sparas på din enhet (och i ditt eget privata GitHub-repo om du slår på synk). BipolärBalans är ett stöd för självinsikt, struktur och kontakt med vård och närstående — det ersätter inte vård, diagnos eller behandling.</div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-pattern">
+  <div class="banner calm" id="sleep-risk"></div>
+  <div class="banner calm" id="care-banner"></div>
+  <div class="section-title" style="margin-top:0">Stämningskurva</div>
+  <div class="range-tabs" id="range-tabs">
+    <button data-d="14" class="active">14 dagar</button>
+    <button data-d="30">30 dagar</button>
+    <button data-d="60">60 dagar</button>
+  </div>
+  <div class="card-panel"><canvas id="curve" width="640" height="280"></canvas></div>
+  <div class="section-title">Snitt senaste 7 dagarna</div>
+  <div class="card-panel" id="avgs"></div>
+  <div class="section-title">Sömn senaste 14 dagarna</div>
+  <div class="card-panel"><canvas id="sleepc" width="640" height="170"></canvas></div>
+  <div class="section-title">Sammanfattning med AI</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:10px">AI:n läser dina senaste loggar och beskriver mönster på ett lugnt sätt. Den ställer ingen diagnos och ger inga medicinska råd.</div>
+    <button class="btn fill" id="ai-summary-btn" style="width:100%">Sammanfatta mitt mönster</button>
+    <div id="ai-summary"></div>
+  </div>
+</div>
+
+<!-- PLAN -->
+<div class="view" id="view-plan">
+  <div class="section-title" style="margin-top:0">Min krisplan <button class="btn ghost" id="edit-crisisplan" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel"><div id="crisisplan-view"></div></div>
+
+  <div class="section-title">Mina triggers <button class="btn ghost" id="edit-triggers" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="plan-triggers"></div>
+
+  <div class="section-title">Mina skyddsfaktorer <button class="btn ghost" id="edit-protect" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="plan-protect"></div>
+
+  <div class="section-title">Vad hjälper vid nedgång? <button class="btn ghost" id="edit-down" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="plan-down"></div>
+
+  <div class="section-title">Vad hjälper vid uppvarvning? <button class="btn ghost" id="edit-up" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="plan-up"></div>
+
+  <div class="section-title">När ska jag kontakta vården? <button class="btn ghost" id="edit-care" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="plan-care"></div>
+
+  <div class="section-title">Kontaktpersoner <button class="btn ghost" id="edit-contacts" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="plan-contacts"></div>
+</div>
+
+<!-- VÅRD -->
+<div class="view" id="view-care">
+  <div class="section-title" style="margin-top:0">Mina mediciner <button class="btn ghost" id="edit-meds" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel" id="meds-list"></div>
+  <div class="soft" style="margin-top:6px">Påminnelser visas i appen utifrån tiderna du anger. Markera dagens medicin under incheckningen.</div>
+
+  <div class="section-title">Biverkningslogg</div>
+  <div class="card-panel">
+    <div id="side-list"></div>
+    <div class="add-row"><input type="text" id="se-text" placeholder="Beskriv en biverkning…"><button id="se-add">+</button></div>
+  </div>
+
+  <div class="section-title">Terapianteckningar</div>
+  <div class="card-panel">
+    <textarea id="th-text" rows="3" placeholder="Tankar inför eller efter terapi…"></textarea>
+    <button class="btn fill" id="th-add" style="width:100%;margin-top:10px">Spara anteckning</button>
+    <div id="therapy-list" style="margin-top:10px"></div>
+  </div>
+
+  <div class="section-title">Frågor inför vårdbesök <button class="btn ghost" id="edit-careq" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel">
+    <div id="careq-list"></div>
+    <button class="btn" id="ai-careq-btn" style="width:100%;margin-top:10px">Hjälp mig formulera frågor med AI</button>
+    <div id="ai-careq"></div>
+  </div>
+
+  <div class="section-title">Skriv ett meddelande</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:10px">AI:n hjälper dig formulera ett lugnt meddelande till en anhörig eller vårdkontakt.</div>
+    <button class="btn fill" id="ai-msg-btn" style="width:100%">Skriv ett meddelande</button>
+  </div>
+</div>
+
+<!-- VERKTYG -->
+<div class="view" id="view-tools">
+  <div class="section-title" style="margin-top:0">Impulsskydd — vänta 24 timmar</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">När du vill köpa något, skicka ett meddelande eller fatta ett stort beslut i ett uppvarvat läge — lägg det här och kom tillbaka imorgon.</div>
+    <input type="text" id="wait-text" placeholder="Vad vill du vänta med?">
+    <div class="add-row">
+      <select id="wait-kind" style="flex:1"><option value="Köp">Köp</option><option value="Stort beslut">Stort beslut</option><option value="Meddelande">Meddelande</option></select>
+      <button id="wait-add">+</button>
+    </div>
+    <div id="wait-list" style="margin-top:10px"></div>
+  </div>
+
+  <div class="section-title">Är jag uppvarvad just nu?</div>
+  <div class="card-panel">
+    <button class="btn fill" id="arousal-btn" style="width:100%">Gör en snabb koll</button>
+    <div id="arousal-result" style="margin-top:10px"></div>
+  </div>
+
+  <div class="section-title">Andning</div>
+  <div class="card-panel">
+    <div class="breath-wrap">
+      <div class="breath-circle" id="breath-circle"><span class="breath-label" id="breath-label">Redo</span></div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn" id="b-box">Fyrkant 4-4-4-4</button>
+        <button class="btn" id="b-478">Lugnande 4-7-8</button>
+        <button class="btn ghost" id="b-stop">Stopp</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Tillbaka i rummet — 5·4·3·2·1</div>
+  <div class="card-panel">
+    <div class="ground-card">
+      <div class="ground-num" id="g-num">5</div>
+      <div class="ground-txt" id="g-txt">saker du kan <b>se</b></div>
+      <button class="btn fill" id="g-next" style="width:100%">Hittade dem — nästa</button>
+    </div>
+  </div>
+
+  <div class="section-title">Lugna rutiner med AI</div>
+  <div class="card-panel">
+    <button class="btn" id="ai-routine-btn" style="width:100%">Föreslå tre lugna rutiner för idag</button>
+    <div id="ai-routine"></div>
+  </div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="today"><span>◇</span>Idag</button>
+  <button data-v="pattern"><span>〰</span>Mönster</button>
+  <button data-v="plan"><span>🛟</span>Plan</button>
+  <button data-v="care"><span>💊</span>Vård</button>
+  <button data-v="tools"><span>🧰</span>Verktyg</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="checkin-sheet">
+  <h3>Dagens incheckning</h3>
+  <div class="soft">Ingen prestation — bara en ärlig bild av hur idag känns.</div>
+  <label>Stämningsläge: <span id="ci-mood-val">0</span> — <span id="ci-mood-lbl">Stabil</span></label>
+  <input type="range" id="ci-mood" min="-5" max="5" step="1" value="0">
+  <div class="spectrum-labels"><span>Depression</span><span>Stabil</span><span>Mani</span></div>
+  <label>Energi</label><div class="dotpick" id="ci-energy"></div>
+  <label>Ångest</label><div class="dotpick" id="ci-anx"></div>
+  <label>Irritabilitet</label><div class="dotpick" id="ci-irr"></div>
+  <label>Impulsivitet</label><div class="dotpick" id="ci-impuls"></div>
+  <label>Sömn i natt: <span id="ci-sleep-val">7,5</span> tim</label>
+  <input type="range" id="ci-sleep" min="0" max="14" step="0.5" value="7.5">
+  <label>Sömnkvalitet</label><div class="dotpick" id="ci-slq"></div>
+  <div class="time-row">
+    <div><label>Sovtid</label><input type="time" id="ci-bed"></div>
+    <div><label>Vakentid</label><input type="time" id="ci-wake"></div>
+  </div>
+  <label>Tog du medicinen idag?</label>
+  <div class="toggle-row" id="ci-med"><button data-m="1">Ja</button><button data-m="0">Nej</button></div>
+  <button class="sheet-close" id="ci-save">Klart — så här är det idag</button>
+</div>
+
+<div class="sheet" id="note-sheet">
+  <h3>Skriv en rad</h3>
+  <div class="soft">En kort anteckning kopplad till idag.</div>
+  <textarea id="ns-text" rows="3" placeholder="T.ex. sov dåligt, tankarna gick fort i morse."></textarea>
+  <button class="sheet-close" id="ns-save">Spara</button>
+</div>
+
+<div class="sheet" id="list-sheet">
+  <h3 id="list-title"></h3>
+  <div id="list-items"></div>
+  <div class="add-row"><input type="text" id="list-in" placeholder="Lägg till…"><button id="list-add">+</button></div>
+  <button class="sheet-close" id="list-done">Klar</button>
+</div>
+
+<div class="sheet" id="contact-sheet">
+  <h3>Kontaktpersoner</h3>
+  <div class="soft">Personer du kan höra av dig till. Markera en som trygg person — den visas först i krisläget.</div>
+  <div id="contact-items"></div>
+  <input type="text" id="ct-name" placeholder="Namn / roll" style="margin-top:10px">
+  <div class="add-row"><input type="text" id="ct-phone" placeholder="Telefon"><button id="ct-add">+</button></div>
+  <label class="checkrow" style="border:none;padding-top:6px"><input type="checkbox" id="ct-trusted"> Markera som trygg person</label>
+  <button class="sheet-close" id="contact-done">Klar</button>
+</div>
+
+<div class="sheet" id="med-sheet">
+  <h3>Mina mediciner</h3>
+  <div class="soft">Namn, dos och tid — för din egen översikt och påminnelser i appen.</div>
+  <div id="med-items"></div>
+  <input type="text" id="md-name" placeholder="Namn" style="margin-top:10px">
+  <div class="add-row"><input type="text" id="md-dose" placeholder="Dos, t.ex. 200 mg"><input type="time" id="md-time" style="max-width:120px"><button id="md-add">+</button></div>
+  <button class="sheet-close" id="med-done">Klar</button>
+</div>
+
+<div class="sheet" id="crisisplan-sheet">
+  <h3>Min krisplan</h3>
+  <div class="soft">Skriv ner vad just du behöver minnas när det blir svårt — egna ord, i din takt.</div>
+  <textarea id="cp-text" rows="6" placeholder="T.ex. Ring [namn]. Ta medicinen. Sänk alla krav. Stanna hemma. Andas. Det här går över."></textarea>
+  <button class="sheet-close" id="cp-save">Spara</button>
+</div>
+
+<div class="sheet" id="arousal-sheet">
+  <h3>Är jag uppvarvad just nu?</h3>
+  <div class="soft">Kryssa i det som stämmer just nu. Det här är ingen test — bara en mjuk koll.</div>
+  <div id="arousal-items"></div>
+  <div id="arousal-sum" class="soft" style="margin-top:10px"></div>
+  <button class="sheet-close" id="arousal-done">Klar</button>
+</div>
+
+<div class="sheet" id="msg-sheet">
+  <h3>Skriv ett meddelande</h3>
+  <label>Till vem?</label>
+  <select id="msg-to"><option value="en anhörig">En anhörig</option><option value="en nära vän">En nära vän</option><option value="min vårdkontakt">Min vårdkontakt</option><option value="min läkare">Min läkare</option></select>
+  <label>Vad vill du säga?</label>
+  <textarea id="msg-what" rows="3" placeholder="T.ex. att jag mår sämre och behöver hjälp att boka tid."></textarea>
+  <button class="btn fill" id="msg-gen" style="width:100%;margin-top:10px">Skapa förslag</button>
+  <div id="msg-out"></div>
+  <button class="btn" id="msg-copy" style="width:100%;margin-top:10px;display:none">Kopiera texten</button>
+  <button class="sheet-close" id="msg-close">Stäng</button>
+</div>
+
+<div class="sheet" id="crisis-sheet">
+  <h3>Krisläge — ett steg i taget</h3>
+  <div class="soft">Du behöver inte göra allt. Gör bara nästa lilla sak.</div>
+  <div id="crisis-plan-box" style="margin-top:10px"></div>
+  <label>Gör bara detta nu</label>
+  <div class="card-panel" style="padding:12px">
+    <div class="checkrow" style="border:none"><span>1.</span> Andas långsamt tre gånger.</div>
+    <div class="checkrow"><span>2.</span> Drick lite vatten.</div>
+    <div class="checkrow"><span>3.</span> Hör av dig till en person nedan.</div>
+  </div>
+  <label>Ring någon</label>
+  <div id="crisis-contacts"></div>
+  <div class="res"><div class="rt"><b>112</b><small>Vid akut fara</small></div><a href="tel:112">Ring</a></div>
+  <div class="res"><div class="rt"><b>Självmordslinjen — 90101</b><small>Mind, dygnet runt. Chatt på mind.se</small></div><a href="tel:90101">Ring</a></div>
+  <div class="res"><div class="rt"><b>1177</b><small>Sjukvårdsrådgivning</small></div><a href="tel:1177">Ring</a></div>
+  <label>Jordning — 5·4·3·2·1</label>
+  <div class="card-panel" style="padding:12px"><div class="ground-card" style="padding:4px 0">
+    <div class="ground-num" id="cg-num">5</div>
+    <div class="ground-txt" id="cg-txt">saker du kan <b>se</b></div>
+    <button class="btn" id="cg-next" style="width:100%">Nästa</button>
+  </div></div>
+  <button class="sheet-close" id="crisis-done">Stäng krisläget</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>✨ AI-stöd</h3>
+  <div class="soft">AI-funktionerna körs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt på den här enheten och följer inte med i säkerhetskopior. Varje anrop kostar några ören av ditt API-saldo.</div>
+  <label>API-nyckel</label>
+  <input type="password" id="ai-key" placeholder="sk-ant-…">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Ta bort</button>
+  </div>
+  <button class="sheet-close" id="ai-key-close">Stäng</button>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <h3>Inställningar</h3>
+  <label>Synk via GitHub</label>
+  <div class="card-panel" style="padding:12px">
+    <div style="display:flex;align-items:center;gap:8px"><span class="sp-badge offline" id="sync-badge">Lokal</span>
+    <button class="btn ghost" id="sync-pull">Hämta nu</button>
+    <button class="btn ghost" id="sync-settings">Inställningar</button></div>
+  </div>
+  <label>AI-stöd</label>
+  <div class="btn-row"><button class="btn" id="ai-set-btn">API-nyckel</button></div>
+  <label>Säkerhetskopia</label>
+  <div class="btn-row">
+    <button class="btn" id="export-btn">Exportera</button>
+    <button class="btn" id="import-btn">Importera</button>
+  </div>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+  <div class="privacy" style="margin-top:14px">BipolärBalans är ett stöd för självinsikt, struktur och kommunikation med vård och närstående. Det ersätter inte vård, diagnos eller medicinsk behandling. Vid akut fara: ring 112. Stöd dygnet runt: Självmordslinjen 90101.</div>
+  <button class="sheet-close" id="settings-done">Klar</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <code>bipolarbalans.json</code> i ett privat GitHub-repo (samma repo kan delas med dina andra appar). Token sparas bara lokalt på den här enheten.</div>
+  <label>GitHub-användarnamn (ägare av repot)</label>
+  <input type="text" id="gh-owner" placeholder="ditt-användarnamn">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="bipolarbalans-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div id="gh-status" style="display:none;margin-bottom:10px;font-size:12px;padding:8px 12px;border-radius:8px"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+const KEY='bipolarbalans_v1';
+let state={
+  days:{},
+  signsList:['Mindre sömn','Mer energi','Snabbare tankar','Ökad shoppinglust','Ökad social aktivitet','Nedstämdhet','Isolering','Hopplöshet'],
+  triggers:['För lite sömn','Stress på jobbet','Alkohol','Stora förändringar','Konflikter'],
+  protect:['Regelbundna sovtider','Ta medicinen','Röra på mig','Kontakt med nära','Struktur i vardagen'],
+  helpDown:['Sänka alla krav','Höra av mig till någon','Komma ut en kort stund','Påminna mig: det här går över','Kontakta vården vid behov'],
+  helpUp:['Hålla fasta sovtider','Undvika stora beslut','Lugna miljöer','Begränsa skärm och intryck','Rådgöra med trygg person'],
+  whenCare:['Sover under 5 tim flera nätter','Tankar som rusar och inte stannar','Tappar greppet om vardagen','Mörka tankar','När jag inte litar på mitt eget omdöme'],
+  contacts:[],
+  meds:[],
+  sideEffects:[],
+  therapy:[],
+  careQuestions:[],
+  waits:[],
+  crisisPlan:'',
+  aiSummary:'',
+  theme:'auto'
+};
+try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>toISO(new Date());
+function day(){
+  const k=todayKey();
+  if(!state.days[k])state.days[k]={mood:0,energy:null,anx:null,irr:null,impuls:null,sleepH:null,slq:null,bed:null,wake:null,med:null,signs:[],note:''};
+  const d=state.days[k];if(!Array.isArray(d.signs))d.signs=[];return d;
+}
+const fmtH=h=>h==null?'–':String(h).replace('.',',')+' tim';
+
+function moodLabel(m){
+  if(m<=-4)return 'Djup nedstämdhet';
+  if(m<=-2)return 'Nedstämd';
+  if(m===-1)return 'Lite låg';
+  if(m===0)return 'Stabil';
+  if(m===1)return 'Lite uppvarvad';
+  if(m<=3)return 'Hypomani — uppvarvad';
+  return 'Stark uppvarvning';
+}
+function moodVar(m){return m<=-1?'--low':m>=1?'--high':'--bal';}
+function cvar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function moodColor(m){return cvar(moodVar(m));}
+
+// ── Sheets ────────────────────────────────────────────
+const bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+bg.onclick=closeSheets;
+function dotpick(id,obj,field){
+  const el=document.getElementById(id);
+  el.innerHTML=[1,2,3,4,5].map(n=>'<button data-n="'+n+'"'+(obj[field]===n?' class="sel"':'')+'>'+n+'</button>').join('');
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{obj[field]=+b.dataset.n;dotpick(id,obj,field);};});
+}
+
+// ── Idag ──────────────────────────────────────────────
+function renderToday(){
+  const d=day();const m=d.mood||0;
+  document.getElementById('mood-label').textContent=moodLabel(m);
+  document.getElementById('mood-num').textContent=(m>0?'+':'')+m;
+  const th=document.getElementById('mood-thumb');
+  th.style.left=((m+5)/10*100)+'%';th.style.borderColor=moodColor(m);
+  document.getElementById('mood-range').value=m;
+  document.getElementById('t-sleep').textContent=fmtH(d.sleepH);
+  document.getElementById('t-energy').textContent=d.energy==null?'–':'●'.repeat(d.energy)+'○'.repeat(5-d.energy);
+  document.getElementById('tile-energy').querySelector('.v').style.fontSize='12px';
+  document.getElementById('t-med').textContent=d.med==null?'–':(d.med?'Tagen':'Ej tagen');
+  document.getElementById('tile-med').classList.toggle('on',d.med===1);
+  renderSignsChips();renderTodayNote();
+}
+document.getElementById('mood-range').oninput=e=>{
+  const d=day();d.mood=+e.target.value;const m=d.mood;
+  document.getElementById('mood-label').textContent=moodLabel(m);
+  document.getElementById('mood-num').textContent=(m>0?'+':'')+m;
+  const th=document.getElementById('mood-thumb');th.style.left=((m+5)/10*100)+'%';th.style.borderColor=moodColor(m);
+};
+document.getElementById('mood-range').onchange=()=>persist();
+function renderSignsChips(){
+  const d=day();const el=document.getElementById('signs-chips');
+  if(!state.signsList.length){el.innerHTML='<div class="empty-msg">Lägg till dina signaler via Ändra</div>';return;}
+  el.innerHTML=state.signsList.map(s=>'<button class="chip'+(d.signs.includes(s)?' sel':'')+'" data-s="'+esc(s)+'">'+esc(s)+'</button>').join('');
+  el.querySelectorAll('.chip').forEach(ch=>{ch.onclick=()=>{const s=ch.dataset.s;if(d.signs.includes(s))d.signs=d.signs.filter(x=>x!==s);else d.signs.push(s);persist();renderSignsChips();};});
+}
+function renderTodayNote(){
+  const d=day();const el=document.getElementById('today-note');
+  el.innerHTML=d.note?'<div class="entry-text">'+esc(d.note)+'</div>':'<div class="empty-msg">Inget skrivet idag — och det är okej.</div>';
+}
+
+let ci={energy:3,anx:3,irr:3,impuls:3,slq:3};
+document.getElementById('open-checkin').onclick=()=>{
+  const d=day();
+  ci={energy:d.energy||3,anx:d.anx||3,irr:d.irr||3,impuls:d.impuls||3,slq:d.slq||3,med:d.med};
+  document.getElementById('ci-mood').value=d.mood||0;
+  document.getElementById('ci-mood-val').textContent=(d.mood>0?'+':'')+(d.mood||0);
+  document.getElementById('ci-mood-lbl').textContent=moodLabel(d.mood||0);
+  document.getElementById('ci-sleep').value=d.sleepH!=null?d.sleepH:7.5;
+  document.getElementById('ci-sleep-val').textContent=String(d.sleepH!=null?d.sleepH:7.5).replace('.',',');
+  document.getElementById('ci-bed').value=d.bed||'';
+  document.getElementById('ci-wake').value=d.wake||'';
+  dotpick('ci-energy',ci,'energy');dotpick('ci-anx',ci,'anx');dotpick('ci-irr',ci,'irr');dotpick('ci-impuls',ci,'impuls');dotpick('ci-slq',ci,'slq');
+  renderMedToggle();openSheet('checkin-sheet');
+};
+function renderMedToggle(){
+  document.getElementById('ci-med').querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('sel',ci.med===+b.dataset.m);b.onclick=()=>{ci.med=+b.dataset.m;renderMedToggle();};
+  });
+}
+document.getElementById('ci-mood').oninput=e=>{
+  const m=+e.target.value;
+  document.getElementById('ci-mood-val').textContent=(m>0?'+':'')+m;
+  document.getElementById('ci-mood-lbl').textContent=moodLabel(m);
+};
+document.getElementById('ci-sleep').oninput=e=>document.getElementById('ci-sleep-val').textContent=String(e.target.value).replace('.',',');
+document.getElementById('ci-save').onclick=()=>{
+  const d=day();
+  d.mood=+document.getElementById('ci-mood').value;
+  d.sleepH=+document.getElementById('ci-sleep').value;
+  d.bed=document.getElementById('ci-bed').value||null;
+  d.wake=document.getElementById('ci-wake').value||null;
+  d.energy=ci.energy;d.anx=ci.anx;d.irr=ci.irr;d.impuls=ci.impuls;d.slq=ci.slq;
+  if(ci.med!=null)d.med=ci.med;
+  persist();closeSheets();renderToday();
+};
+document.getElementById('open-note').onclick=()=>{document.getElementById('ns-text').value=day().note||'';openSheet('note-sheet');};
+document.getElementById('ns-save').onclick=()=>{day().note=document.getElementById('ns-text').value.trim();persist();closeSheets();renderToday();};
+
+// ── Listredigerare ────────────────────────────────────
+let listCtx=null;
+function openListEditor(arrName,title){listCtx=arrName;document.getElementById('list-title').textContent=title;renderListEditor();openSheet('list-sheet');}
+function renderListEditor(){
+  const arr=state[listCtx];const el=document.getElementById('list-items');
+  el.innerHTML=arr.map((it,i)=>'<div class="edit-item"><span>'+esc(it)+'</span><button data-i="'+i+'">×</button></div>').join('')||'<div class="empty-msg">Tomt — lägg till nedan</div>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{arr.splice(+b.dataset.i,1);persist();renderListEditor();};});
+}
+document.getElementById('list-add').onclick=()=>{const inp=document.getElementById('list-in');const v=inp.value.trim();if(!v)return;state[listCtx].push(v);inp.value='';persist();renderListEditor();};
+document.getElementById('list-in').onkeydown=e=>{if(e.key==='Enter')document.getElementById('list-add').onclick();};
+document.getElementById('list-done').onclick=()=>{closeSheets();renderToday();renderPlan();renderCare();};
+document.getElementById('edit-signs').onclick=()=>openListEditor('signsList','Tidiga varningssignaler');
+document.getElementById('edit-triggers').onclick=()=>openListEditor('triggers','Mina triggers');
+document.getElementById('edit-protect').onclick=()=>openListEditor('protect','Mina skyddsfaktorer');
+document.getElementById('edit-down').onclick=()=>openListEditor('helpDown','Vad hjälper vid nedgång?');
+document.getElementById('edit-up').onclick=()=>openListEditor('helpUp','Vad hjälper vid uppvarvning?');
+document.getElementById('edit-care').onclick=()=>openListEditor('whenCare','När kontakta vården?');
+document.getElementById('edit-careq').onclick=()=>openListEditor('careQuestions','Frågor inför vårdbesök');
+
+// ── Plan ──────────────────────────────────────────────
+function listView(arrName){const arr=state[arrName];if(!arr.length)return '<div class="empty-msg">Tomt — tryck Ändra</div>';return arr.map(it=>'<div class="edit-item"><span>'+esc(it)+'</span></div>').join('');}
+function renderPlan(){
+  document.getElementById('crisisplan-view').innerHTML=state.crisisPlan?'<div class="entry-text">'+esc(state.crisisPlan)+'</div>':'<div class="empty-msg">Ingen krisplan ännu — tryck Ändra</div>';
+  document.getElementById('plan-triggers').innerHTML=listView('triggers');
+  document.getElementById('plan-protect').innerHTML=listView('protect');
+  document.getElementById('plan-down').innerHTML=listView('helpDown');
+  document.getElementById('plan-up').innerHTML=listView('helpUp');
+  document.getElementById('plan-care').innerHTML=listView('whenCare');
+  renderContacts();
+}
+document.getElementById('edit-crisisplan').onclick=()=>{document.getElementById('cp-text').value=state.crisisPlan||'';openSheet('crisisplan-sheet');};
+document.getElementById('cp-save').onclick=()=>{state.crisisPlan=document.getElementById('cp-text').value.trim();persist();closeSheets();renderPlan();};
+function renderContacts(){
+  const el=document.getElementById('plan-contacts');
+  if(!state.contacts.length){el.innerHTML='<div class="empty-msg">Inga kontakter ännu — tryck Ändra</div>';return;}
+  el.innerHTML=state.contacts.map(c=>'<div class="contact"><div class="nm"><b>'+esc(c.name)+(c.trusted?' <span class="star">★ trygg</span>':'')+'</b><small>'+esc(c.phone||'')+'</small></div>'+(c.phone?'<a href="tel:'+esc((c.phone||'').replace(/\s/g,''))+'">Ring</a>':'')+'</div>').join('');
+}
+document.getElementById('edit-contacts').onclick=()=>{renderContactEditor();openSheet('contact-sheet');};
+function renderContactEditor(){
+  const el=document.getElementById('contact-items');
+  el.innerHTML=state.contacts.map((c,i)=>'<div class="contact"><div class="nm"><b>'+esc(c.name)+(c.trusted?' <span class="star">★</span>':'')+'</b><small>'+esc(c.phone||'')+'</small></div><button class="x" data-i="'+i+'">×</button></div>').join('')||'<div class="empty-msg">Inga kontakter ännu</div>';
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{state.contacts.splice(+b.dataset.i,1);persist();renderContactEditor();};});
+}
+document.getElementById('ct-add').onclick=()=>{
+  const n=document.getElementById('ct-name').value.trim();const p=document.getElementById('ct-phone').value.trim();const t=document.getElementById('ct-trusted').checked;
+  if(!n)return;state.contacts.push({name:n,phone:p,trusted:t});
+  document.getElementById('ct-name').value='';document.getElementById('ct-phone').value='';document.getElementById('ct-trusted').checked=false;
+  persist();renderContactEditor();
+};
+document.getElementById('contact-done').onclick=()=>{closeSheets();renderContacts();};
+
+// ── Vård ──────────────────────────────────────────────
+function renderCare(){renderMeds();renderSide();renderTherapy();renderCareQ();}
+function renderMeds(){
+  const el=document.getElementById('meds-list');
+  if(!state.meds.length){el.innerHTML='<div class="empty-msg">Inga mediciner tillagda — tryck Ändra</div>';return;}
+  el.innerHTML=state.meds.map(m=>'<div class="med-item"><div class="mi"><b>'+esc(m.name)+'</b><small>'+esc(m.dose||'')+(m.time?' · '+esc(m.time):'')+'</small></div></div>').join('');
+}
+document.getElementById('edit-meds').onclick=()=>{renderMedEditor();openSheet('med-sheet');};
+function renderMedEditor(){
+  const el=document.getElementById('med-items');
+  el.innerHTML=state.meds.map((m,i)=>'<div class="med-item"><div class="mi"><b>'+esc(m.name)+'</b><small>'+esc(m.dose||'')+(m.time?' · '+esc(m.time):'')+'</small></div><button class="x" data-i="'+i+'" style="background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer">×</button></div>').join('')||'<div class="empty-msg">Inga mediciner ännu</div>';
+  el.querySelectorAll('.x').forEach(b=>{b.onclick=()=>{state.meds.splice(+b.dataset.i,1);persist();renderMedEditor();};});
+}
+document.getElementById('md-add').onclick=()=>{
+  const n=document.getElementById('md-name').value.trim();if(!n)return;
+  state.meds.push({name:n,dose:document.getElementById('md-dose').value.trim(),time:document.getElementById('md-time').value});
+  document.getElementById('md-name').value='';document.getElementById('md-dose').value='';document.getElementById('md-time').value='';
+  persist();renderMedEditor();
+};
+document.getElementById('med-done').onclick=()=>{closeSheets();renderMeds();};
+document.getElementById('se-add').onclick=()=>{
+  const t=document.getElementById('se-text').value.trim();if(!t)return;
+  state.sideEffects.push({date:todayKey(),text:t});document.getElementById('se-text').value='';persist();renderSide();
+};
+function renderSide(){
+  const el=document.getElementById('side-list');
+  if(!state.sideEffects.length){el.innerHTML='<div class="empty-msg">Inget loggat ännu</div>';return;}
+  el.innerHTML=state.sideEffects.map((s,i)=>'<div class="entry"><div class="entry-head">'+s.date+'<button class="entry-del" data-i="'+i+'">×</button></div><div class="entry-text">'+esc(s.text)+'</div></div>').slice().reverse().join('');
+  el.querySelectorAll('.entry-del').forEach(b=>{b.onclick=()=>{state.sideEffects.splice(+b.dataset.i,1);persist();renderSide();};});
+}
+document.getElementById('th-add').onclick=()=>{
+  const t=document.getElementById('th-text').value.trim();if(!t)return;
+  state.therapy.push({date:todayKey(),text:t});document.getElementById('th-text').value='';persist();renderTherapy();
+};
+function renderTherapy(){
+  const el=document.getElementById('therapy-list');
+  if(!state.therapy.length){el.innerHTML='<div class="empty-msg">Inga anteckningar ännu</div>';return;}
+  el.innerHTML=state.therapy.map((s,i)=>'<div class="entry"><div class="entry-head">'+s.date+'<button class="entry-del" data-i="'+i+'">×</button></div><div class="entry-text">'+esc(s.text)+'</div></div>').slice().reverse().join('');
+  el.querySelectorAll('.entry-del').forEach(b=>{b.onclick=()=>{state.therapy.splice(+b.dataset.i,1);persist();renderTherapy();};});
+}
+function renderCareQ(){
+  const el=document.getElementById('careq-list');
+  el.innerHTML=state.careQuestions.length?state.careQuestions.map(q=>'<div class="edit-item"><span>'+esc(q)+'</span></div>').join(''):'<div class="empty-msg">Inga frågor ännu — skriv egna via Ändra, eller be AI om förslag</div>';
+}
+
+// ── Verktyg: Vänta 24h ────────────────────────────────
+document.getElementById('wait-add').onclick=()=>{
+  const t=document.getElementById('wait-text').value.trim();if(!t)return;
+  state.waits.push({id:Date.now(),created:new Date().toISOString(),text:t,kind:document.getElementById('wait-kind').value});
+  document.getElementById('wait-text').value='';persist();renderWaits();
+};
+function renderWaits(){
+  const el=document.getElementById('wait-list');
+  if(!state.waits.length){el.innerHTML='<div class="empty-msg">Inget i vänteläge — fint så</div>';return;}
+  const now=Date.now();
+  el.innerHTML=state.waits.map((w,i)=>{
+    const passed=now-new Date(w.created).getTime();
+    const remMs=24*3600*1000-passed;
+    const done=remMs<=0;
+    let status;
+    if(done)status='Tiden har gått — känns det fortfarande rätt?';
+    else{const h=Math.floor(remMs/3600000),mn=Math.floor((remMs%3600000)/60000);status='Vänta '+(h>0?h+' tim ':'')+mn+' min till. Du tar beslutet imorgon.';}
+    return '<div class="wait-item'+(done?' done':'')+'"><div class="wt">'+esc(w.kind)+': '+esc(w.text)+'</div><div class="ws">'+status+'</div><div class="wait-actions"><button data-a="del" data-i="'+i+'">'+(done?'Klart — ta bort':'Ångra')+'</button></div></div>';
+  }).join('');
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{state.waits.splice(+b.dataset.i,1);persist();renderWaits();};});
+}
+
+// Är jag uppvarvad
+const AROUSAL=['Jag sover mindre men känner mig pigg','Tankarna går snabbt','Jag vill köpa eller starta saker','Jag pratar mer och fortare','Jag känner mig oslagbar eller väldigt irriterad','Jag tar risker jag annars inte tar'];
+let arousalChk={};
+document.getElementById('arousal-btn').onclick=()=>{arousalChk={};renderArousal();document.getElementById('arousal-sum').textContent='';openSheet('arousal-sheet');};
+function renderArousal(){
+  const el=document.getElementById('arousal-items');
+  el.innerHTML=AROUSAL.map((q,i)=>'<label class="checkrow"><input type="checkbox" data-i="'+i+'"'+(arousalChk[i]?' checked':'')+'> '+esc(q)+'</label>').join('');
+  el.querySelectorAll('input').forEach(cb=>{cb.onchange=()=>{arousalChk[+cb.dataset.i]=cb.checked;updateArousal();};});
+}
+function updateArousal(){
+  const n=Object.values(arousalChk).filter(Boolean).length;
+  const sum=document.getElementById('arousal-sum');
+  if(n===0)sum.textContent='Inget ikryssat — det verkar lugnt just nu.';
+  else if(n<=2)sum.textContent='Några tecken. Håll koll på sömnen och ta det lugnt med stora beslut idag.';
+  else sum.textContent='Flera tecken på uppvarvning. Det här är ett bra läge att vänta med beslut, skydda sömnen och rådgöra med din trygga person. Du hittar Vänta 24h ovanför.';
+}
+document.getElementById('arousal-done').onclick=()=>{
+  const n=Object.values(arousalChk).filter(Boolean).length;
+  document.getElementById('arousal-result').innerHTML=n?'<div class="soft">Senaste koll: '+n+' av '+AROUSAL.length+' tecken.</div>':'';
+  closeSheets();
+};
+
+// Andning
+let breathTimer=null;
+function stopBreath(){if(breathTimer){clearTimeout(breathTimer);breathTimer=null;}const c=document.getElementById('breath-circle');c.style.transition='transform .4s';c.style.transform='scale(1)';document.getElementById('breath-label').textContent='Redo';}
+function startBreath(phases){
+  stopBreath();const c=document.getElementById('breath-circle'),l=document.getElementById('breath-label');let idx=0;
+  function loop(){const p=phases[idx%phases.length];c.style.transition='transform '+p.s+'s ease-in-out';c.style.transform='scale('+p.scale+')';l.textContent=p.label;idx++;breathTimer=setTimeout(loop,p.s*1000);}
+  loop();
+}
+document.getElementById('b-box').onclick=()=>startBreath([{label:'Andas in',s:4,scale:1.5},{label:'Håll',s:4,scale:1.5},{label:'Andas ut',s:4,scale:1},{label:'Håll',s:4,scale:1}]);
+document.getElementById('b-478').onclick=()=>startBreath([{label:'Andas in',s:4,scale:1.5},{label:'Håll',s:7,scale:1.5},{label:'Andas ut',s:8,scale:1}]);
+document.getElementById('b-stop').onclick=stopBreath;
+
+// Jordning
+const GROUND=[[5,'se'],[4,'känna eller röra vid'],[3,'höra'],[2,'lukta'],[1,'smaka']];
+let gi=0;
+function renderGround(elNum,elTxt){document.getElementById(elNum).textContent=GROUND[gi][0];document.getElementById(elTxt).innerHTML='saker du kan <b>'+GROUND[gi][1]+'</b>';}
+document.getElementById('g-next').onclick=()=>{gi=(gi+1)%GROUND.length;renderGround('g-num','g-txt');};
+let cgi=0;
+document.getElementById('cg-next').onclick=()=>{cgi=(cgi+1)%GROUND.length;document.getElementById('cg-num').textContent=GROUND[cgi][0];document.getElementById('cg-txt').innerHTML='saker du kan <b>'+GROUND[cgi][1]+'</b>';};
+
+// ── Krisläge ──────────────────────────────────────────
+document.getElementById('crisis-open').onclick=()=>{
+  document.getElementById('crisis-plan-box').innerHTML=state.crisisPlan?'<div class="ai-box" style="background:var(--panel2);border-color:var(--line)"><span class="ai-lbl" style="color:var(--muted)">Min krisplan</span>'+esc(state.crisisPlan)+'</div>':'';
+  const trusted=state.contacts.filter(c=>c.trusted).concat(state.contacts.filter(c=>!c.trusted));
+  const cc=document.getElementById('crisis-contacts');
+  cc.innerHTML=trusted.length?trusted.map(c=>'<div class="contact"><div class="nm"><b>'+esc(c.name)+(c.trusted?' <span class="star">★</span>':'')+'</b><small>'+esc(c.phone||'')+'</small></div>'+(c.phone?'<a href="tel:'+esc((c.phone||'').replace(/\s/g,''))+'">Ring</a>':'')+'</div>').join(''):'<div class="empty-msg">Lägg till kontaktpersoner under Plan</div>';
+  cgi=0;document.getElementById('cg-num').textContent=5;document.getElementById('cg-txt').innerHTML='saker du kan <b>se</b>';
+  openSheet('crisis-sheet');
+};
+document.getElementById('crisis-done').onclick=closeSheets;
+
+// ── Mönster / kurva ───────────────────────────────────
+let curveDays=14;
+document.querySelectorAll('#range-tabs button').forEach(b=>{b.onclick=()=>{document.querySelectorAll('#range-tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');curveDays=+b.dataset.d;renderCurve();};});
+function lastDays(n){const out=[];for(let i=n-1;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);const k=toISO(dt);out.push({k,d:state.days[k]||null,lbl:dt.getDate()});}return out;}
+function renderCurve(){
+  const cv=document.getElementById('curve');const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
+  const W=cv.width,H=cv.height,padX=26,padT=14,padB=22,plotH=H-padT-padB;
+  const yFor=v=>padT+(5-v)/10*plotH;
+  ctx.globalAlpha=0.13;
+  ctx.fillStyle=cvar('--high');ctx.fillRect(padX,yFor(5),W-padX*2,yFor(1)-yFor(5));
+  ctx.fillStyle=cvar('--bal');ctx.fillRect(padX,yFor(1),W-padX*2,yFor(-1)-yFor(1));
+  ctx.fillStyle=cvar('--low');ctx.fillRect(padX,yFor(-1),W-padX*2,yFor(-5)-yFor(-1));
+  ctx.globalAlpha=1;
+  ctx.strokeStyle=cvar('--line');ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(padX,yFor(0));ctx.lineTo(W-padX,yFor(0));ctx.stroke();ctx.setLineDash([]);
+  const days=lastDays(curveDays);const n=days.length;const xFor=i=>padX+(n<=1?0:i*(W-padX*2)/(n-1));
+  const pts=[];days.forEach((o,i)=>{if(o.d&&typeof o.d.mood==='number')pts.push({x:xFor(i),y:yFor(o.d.mood),m:o.d.mood});});
+  ctx.strokeStyle=cvar('--lav');ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();pts.forEach((p,i)=>{if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.stroke();
+  pts.forEach(p=>{ctx.fillStyle=cvar(moodVar(p.m));ctx.beginPath();ctx.arc(p.x,p.y,3.2,0,7);ctx.fill();});
+  ctx.fillStyle=cvar('--muted');ctx.font='11px -apple-system';ctx.textAlign='center';const step=Math.ceil(n/7);
+  days.forEach((o,i)=>{if(i%step===0)ctx.fillText(o.lbl,xFor(i),H-6);});
+  renderAvgs();renderSleep();
+}
+function renderAvgs(){
+  const days=lastDays(7).map(o=>o.d).filter(Boolean);
+  const avg=f=>{const v=days.map(f).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const aM=avg(d=>d.mood),aSl=avg(d=>d.sleepH),aEn=avg(d=>d.energy),aAx=avg(d=>d.anx),aIr=avg(d=>d.irr);
+  const medDays=days.filter(d=>d.med!=null);const medPct=medDays.length?Math.round(medDays.filter(d=>d.med===1).length/medDays.length*100):null;
+  const dots=n=>n==null?'–':'●'.repeat(Math.round(n))+'○'.repeat(5-Math.round(n));
+  document.getElementById('avgs').innerHTML=
+    '<div class="avg-row"><span>Stämningsläge</span><b>'+(aM!=null?(aM>0?'+':'')+aM.toFixed(1).replace('.',','):'–')+'</b></div>'+
+    '<div class="avg-row"><span>Sömn</span><b>'+(aSl!=null?aSl.toFixed(1).replace('.',',')+' tim':'–')+'</b></div>'+
+    '<div class="avg-row"><span>Energi</span><span class="dots5">'+dots(aEn)+'</span></div>'+
+    '<div class="avg-row"><span>Ångest</span><span class="dots5">'+dots(aAx)+'</span></div>'+
+    '<div class="avg-row"><span>Irritabilitet</span><span class="dots5">'+dots(aIr)+'</span></div>'+
+    '<div class="avg-row"><span>Medicin tagen</span><b>'+(medPct!=null?medPct+' %':'–')+'</b></div>';
+  // Care banner (swing)
+  const cb=document.getElementById('care-banner');
+  const moods=days.map(d=>d.mood);
+  const swing=days.length>=4&&(Math.max.apply(null,moods)-Math.min.apply(null,moods))>=6;
+  if(swing){cb.textContent='Stämningsläget har svängt en del den här veckan. Titta gärna på dina tidiga varningssignaler och din plan — och var snäll mot dig själv.';cb.style.display='block';}
+  else cb.style.display='none';
+  // Sleep risk
+  const sr=document.getElementById('sleep-risk');
+  const slSeq=lastDays(5).map(o=>o.d&&o.d.sleepH!=null?o.d.sleepH:null).filter(x=>x!=null);
+  let risk=false;
+  if(slSeq.length>=3){const t=slSeq.slice(-3);if(t[0]>t[1]&&t[1]>t[2])risk=true;}
+  if(slSeq.length>=2){const t=slSeq.slice(-2);if(t[0]<6&&t[1]<6)risk=true;}
+  if(risk){sr.textContent='Sömnen har minskat flera nätter i rad. För många är det den tidigaste signalen på att något är på väg. Det kan vara värt att skydda nattsömnen och höra av dig till din vårdkontakt.';sr.style.display='block';}
+  else sr.style.display='none';
+}
+function renderSleep(){
+  const cv=document.getElementById('sleepc');const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
+  const W=cv.width,H=cv.height,padX=26,padB=20;const days=lastDays(14);const n=days.length;const bw=(W-padX*2)/n;const maxH=12;
+  ctx.strokeStyle=cvar('--line');ctx.lineWidth=1;[0,4,8,12].forEach(v=>{const y=H-padB-(H-padB-10)*v/maxH;ctx.beginPath();ctx.moveTo(padX,y);ctx.lineTo(W-padX,y);ctx.stroke();});
+  days.forEach((o,i)=>{
+    const x=padX+i*bw+bw*0.2;
+    if(o.d&&o.d.sleepH!=null){const h=(H-padB-10)*Math.min(o.d.sleepH,maxH)/maxH;ctx.fillStyle=(o.d.sleepH<6||o.d.sleepH>9.5)?cvar('--high'):cvar('--lav');ctx.globalAlpha=0.85;if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,H-padB-h,bw*0.6,h,4);ctx.fill();}else ctx.fillRect(x,H-padB-h,bw*0.6,h);ctx.globalAlpha=1;}
+    ctx.fillStyle=cvar('--muted');ctx.font='10px -apple-system';ctx.textAlign='center';if(i%2===0)ctx.fillText(o.lbl,x+bw*0.3,H-5);
+  });
+}
+
+// ── AI-stöd ───────────────────────────────────────────
+const AI_KEY='bipolarbalans_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(prompt,maxTok){
+  const key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||700,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  const j=await r.json();
+  return (j.content||[]).map(b=>b.text||'').join('').trim();
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI-förslag</span>'+esc(t)+'</div>';}
+function recentSummaryText(n){
+  const days=lastDays(n).filter(o=>o.d);
+  if(!days.length)return '';
+  return days.map(o=>{const d=o.d;const parts=['humör '+(d.mood>0?'+':'')+d.mood];if(d.sleepH!=null)parts.push('sömn '+d.sleepH+'h');if(d.energy!=null)parts.push('energi '+d.energy+'/5');if(d.anx!=null)parts.push('ångest '+d.anx+'/5');if(d.irr!=null)parts.push('irritabilitet '+d.irr+'/5');if(d.impuls!=null)parts.push('impulsivitet '+d.impuls+'/5');if(d.med!=null)parts.push('medicin '+(d.med?'tagen':'ej tagen'));if(d.signs&&d.signs.length)parts.push('signaler: '+d.signs.join(', '));return o.k+': '+parts.join(', ');}).join('\n');
+}
+const SAFETY='Du är ett varmt, lugnt och icke-dömande stöd i en app för personer med bipolär sjukdom. Svara på svenska. Ställ aldrig diagnoser och ge inga medicinska råd eller råd om mediciner. Var aldrig alarmerande. Om mönstret tyder på tydlig försämring, uppmuntra mjukt att kontakta vården. Påminn vid behov om att appen inte ersätter vård.';
+document.getElementById('ai-summary-btn').onclick=async e=>{
+  const data=recentSummaryText(14);
+  if(!data){alert('Logga några dagar först.');return;}
+  const btn=e.target;const o=btn.textContent;btn.textContent='✨ Läser…';btn.disabled=true;
+  try{
+    const t=await aiCall(SAFETY+'\n\nHär är användarens loggar de senaste 14 dagarna:\n'+data+'\n\nBeskriv lugnt vilka mönster du ser i humör, sömn, energi och eventuella tidiga signaler. Max 180 ord, sammanhängande text utan rubriker eller punktlistor. Avsluta med en mild, stödjande mening.',500);
+    state.aiSummary=t;save();document.getElementById('ai-summary').innerHTML=aiBox(t);
+  }catch(err){if(err.message!=='NOKEY')alert('Kunde inte hämta sammanfattning: '+err.message);}
+  btn.textContent=o;btn.disabled=false;
+};
+document.getElementById('ai-careq-btn').onclick=async e=>{
+  const data=recentSummaryText(14);
+  const btn=e.target;const o=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  try{
+    const t=await aiCall(SAFETY+'\n\nUtifrån användarens loggar:\n'+(data||'(inga loggar ännu)')+'\n\nFöreslå 5 korta, konkreta frågor som personen kan ta med till sitt vårdbesök. Svara endast med en numrerad lista, en fråga per rad, inga andra ord.',400);
+    const lines=t.split('\n').map(l=>l.replace(/^\s*\d+[\.\)]\s*/,'').trim()).filter(Boolean);
+    lines.forEach(q=>{if(!state.careQuestions.includes(q))state.careQuestions.push(q);});
+    save();renderCareQ();document.getElementById('ai-careq').innerHTML='<div class="soft" style="margin-top:8px">Förslagen lades till i din lista ovan. Ändra eller ta bort fritt.</div>';
+  }catch(err){if(err.message!=='NOKEY')alert('Kunde inte hämta förslag: '+err.message);}
+  btn.textContent=o;btn.disabled=false;
+};
+document.getElementById('ai-routine-btn').onclick=async e=>{
+  const d=day();
+  const st='humör '+(d.mood>0?'+':'')+d.mood+' ('+moodLabel(d.mood).toLowerCase()+')'+(d.sleepH!=null?', sov '+d.sleepH+' tim':'')+(d.signs&&d.signs.length?', känner av: '+d.signs.join(', '):'');
+  const btn=e.target;const o=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  try{
+    const t=await aiCall(SAFETY+'\n\nPersonens läge idag: '+st+'.\n\nFöreslå tre lugna, enkla och konkreta rutiner som kan ge stabilitet idag. Kort och vänligt, max 90 ord totalt.',300);
+    document.getElementById('ai-routine').innerHTML=aiBox(t);
+  }catch(err){if(err.message!=='NOKEY')alert('Kunde inte hämta förslag: '+err.message);}
+  btn.textContent=o;btn.disabled=false;
+};
+document.getElementById('ai-msg-btn').onclick=()=>{document.getElementById('msg-out').innerHTML='';document.getElementById('msg-copy').style.display='none';openSheet('msg-sheet');};
+let msgText='';
+document.getElementById('msg-gen').onclick=async e=>{
+  const to=document.getElementById('msg-to').value;const what=document.getElementById('msg-what').value.trim();
+  if(!what){alert('Skriv kort vad du vill säga.');return;}
+  const btn=e.target;const o=btn.textContent;btn.textContent='✨ Skriver…';btn.disabled=true;
+  try{
+    msgText=await aiCall(SAFETY+'\n\nHjälp användaren skriva ett kort, varmt och tydligt meddelande på svenska till '+to+'. Innehållet som ska förmedlas: "'+what+'". Tonen ska vara lugn och ärlig. Skriv endast själva meddelandet, max 120 ord, inga rubriker.',300);
+    document.getElementById('msg-out').innerHTML=aiBox(msgText);document.getElementById('msg-copy').style.display='block';
+  }catch(err){if(err.message!=='NOKEY')alert('Kunde inte skapa meddelande: '+err.message);}
+  btn.textContent=o;btn.disabled=false;
+};
+document.getElementById('msg-copy').onclick=()=>{if(msgText&&navigator.clipboard)navigator.clipboard.writeText(msgText).then(()=>{document.getElementById('msg-copy').textContent='Kopierat ✓';setTimeout(()=>document.getElementById('msg-copy').textContent='Kopiera texten',1500);});};
+document.getElementById('msg-close').onclick=closeSheets;
+document.getElementById('ai-set-btn').onclick=()=>{document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-key-save').onclick=()=>{const v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=()=>{localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-key-close').onclick=closeSheets;
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bipolarbalans-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.days){state=Object.assign(state,d);persist();renderAll();closeSheets();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── GitHub-synk ───────────────────────────────────────
+const SYNC_KEY='bipolarbalanssync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/bipolarbalans.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+function setBadge(stt,msg){const b=document.getElementById('sync-badge');b.textContent=msg;b.className='sp-badge'+(stt==='ok'?'':' offline');}
+const SYNC_FIELDS=['days','signsList','triggers','protect','helpDown','helpUp','whenCare','contacts','meds','sideEffects','therapy','careQuestions','waits','crisisPlan','aiSummary'];
+function applyRemote(data){SYNC_FIELDS.forEach(f=>{if(data[f]!==undefined)state[f]=data[f];});}
+async function ghGet(){const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null;}if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));}
+async function ghPull(){if(!syncOn())return;try{setBadge('load','Hämtar…');const data=await ghGet();if(data){applyRemote(data);save();renderAll();}setBadge('ok','Synkad');}catch(e){setBadge('err','Synkfel');}}
+async function ghPush(){
+  if(!syncOn())return;setBadge('load','Sparar…');
+  const payload={};SYNC_FIELDS.forEach(f=>payload[f]=state[f]);payload.updated=new Date().toISOString();
+  const content=b64enc(JSON.stringify(payload));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content},sync.sha?{sha:sync.sha}:{}))});
+  let r=await doPut();if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');
+}
+function persist(){save();if(syncOn())ghPush().catch(()=>{});}
+document.getElementById('sync-settings').onclick=()=>{document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;document.getElementById('gh-status').style.display='none';closeSheets();openSheet('sync-sheet');};
+function setGhStatus(msg,stt){const el=document.getElementById('gh-status');el.style.display='block';el.textContent=msg;el.style.background=stt==='ok'?'#E1F5EE':'#FCEBEB';el.style.color=stt==='ok'?'#0F6E56':'#A32D2D';}
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();sync.repo=document.getElementById('gh-repo').value.trim();sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  try{setGhStatus('Ansluter…','ok');const data=await ghGet();if(data){setGhStatus('✓ Ansluten! Hämtar din data…','ok');await ghPull();}else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp lokal data…','ok');await ghPush();}setTimeout(closeSheets,1100);}
+  catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('sync-pull').onclick=()=>ghPull();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+
+// ── Inställningar / tema ──────────────────────────────
+document.getElementById('settings-btn').onclick=()=>openSheet('settings-sheet');
+document.getElementById('settings-done').onclick=closeSheets;
+function applyTheme(){
+  const m=state.theme||'auto';const h=new Date().getHours();const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#23222A':'#F1EFE9';
+  const b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  if(document.getElementById('view-pattern').classList.contains('active'))renderCurve();
+}
+document.getElementById('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();renderToday();};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='pattern'){renderCurve();if(state.aiSummary)document.getElementById('ai-summary').innerHTML=aiBox(state.aiSummary);}
+    if(b.dataset.v==='plan')renderPlan();
+    if(b.dataset.v==='care')renderCare();
+    if(b.dataset.v==='tools')renderWaits();
+  };
+});
+
+function renderAll(){renderToday();renderPlan();renderCare();renderWaits();if(document.getElementById('view-pattern').classList.contains('active'))renderCurve();}
+
+// ── Init ──────────────────────────────────────────────
+(function(){const t=todayKey();state.waits=(state.waits||[]).filter(w=>{return (Date.now()-new Date(w.created).getTime())<7*24*3600*1000;});})();
+loadSync();
+if(syncOn())setBadge('ok','Synkad');
+renderToday();
+renderGround('g-num','g-txt');
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

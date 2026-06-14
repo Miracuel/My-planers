@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Balans">
+<meta name="theme-color" content="#EBF0EF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234E8285'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='16' cy='9' r='2.2'/%3E%3Cline x1='16' y1='11' x2='16' y2='15'/%3E%3Cline x1='7' y1='17' x2='25' y2='17'/%3E%3Ccircle cx='9' cy='22' r='3'/%3E%3Ccircle cx='23' cy='22' r='3'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Balans","short_name":"Balans","display":"standalone","background_color":"%23EBF0EF","theme_color":"%23EBF0EF","start_url":"."}'>
+<title>Balans – desktop</title>
+<style>
+:root{
+  --bg:#EBF0EF;--panel:#F7F9F8;--panel2:#E4ECEA;--line:#D2DEDB;
+  --ink:#36403E;--muted:#74817C;--anchor:#4E8285;--anchor-soft:#D6E4E2;--anchor-d:#2E5557;
+  --clay:#C29A87;--clay-soft:#EFE0D8;--clay-d:#6E4A40;
+  --gold:#B79A5E;
+  --navbg:rgba(235,240,239,.96);
+  --fs:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:var(--fs)}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(82px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-ic{color:var(--anchor);margin-right:5px}
+.section-title{font-family:Georgia,serif;font-size:15px;margin:16px 0 8px;letter-spacing:.02em}
+.section-title .btn.ghost{float:right;margin-top:-4px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--anchor);background:var(--panel);color:var(--anchor);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--anchor-soft)}
+.btn.fill{background:var(--anchor);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.danger{border-color:var(--clay);color:var(--clay-d);background:var(--clay-soft)}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:15px;padding:10px;font-family:inherit;width:100%;outline:none}
+textarea{resize:vertical;min-height:64px}
+.empty-msg{font-size:13px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:13px;color:var(--muted);line-height:1.65}
+input[type=range]{accent-color:var(--anchor);padding:0;width:100%}
+
+.sync-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 12px}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--anchor-soft);color:var(--anchor-d);font-weight:500}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.gear-btn{font-size:11px;padding:4px 9px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.gear-btn:active{background:var(--panel2)}
+
+.metric{margin:2px 0 6px}
+.metric .ml{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px}
+.metric .ml b{font-family:Georgia,serif;font-weight:400;color:var(--anchor)}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:7px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip b{margin-left:4px;color:var(--anchor-d)}
+.chip.sel{background:var(--anchor-soft);border-color:var(--anchor-soft);color:var(--anchor-d)}
+.chip.core{border-color:var(--anchor);color:var(--anchor-d)}
+.chip.core.open{background:var(--anchor);color:#fff;border-color:var(--anchor)}
+
+.akut-btn{width:100%;background:var(--clay-soft);border:1.5px solid var(--clay);color:var(--clay-d);border-radius:16px;padding:15px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:12px}
+.akut-btn:active{background:#E8D2C8}
+
+.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.help-btn{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px}
+.help-btn span{font-size:18px}
+.help-btn:active{background:var(--panel2)}
+
+.ai-box{border:1px solid var(--anchor);background:var(--anchor-soft);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.65;color:var(--anchor-d);margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--anchor);font-size:12px;display:block;margin-bottom:4px}
+
+.step{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;border-top:1px solid var(--line)}
+.step:first-child{border-top:none}
+.step input[type=checkbox]{width:auto;accent-color:var(--anchor)}
+.step.done span{text-decoration:line-through;color:var(--muted)}
+.line-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.line-item:first-child{border-top:none}
+.line-item .gw{flex:1}
+.line-item a{color:var(--anchor);text-decoration:none;font-weight:500}
+.line-item button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--anchor);background:var(--anchor);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+
+.entry{padding:11px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:none}
+.entry .et{display:flex;justify-content:space-between;align-items:baseline}
+.entry .et time{font-size:11px;color:var(--muted)}
+.entry .eh{font-size:14px;font-weight:500}
+.entry .ed{font-size:13px;color:var(--muted);line-height:1.55;margin-top:3px}
+.entry .pill{font-size:11px;background:var(--panel2);border-radius:9px;padding:2px 8px;color:var(--muted)}
+.entry .del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;float:right}
+
+.menu-item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px}
+.menu-item:active{background:var(--panel2)}
+.menu-item .mi-ic{font-size:21px;width:26px;text-align:center}
+.menu-item .mi-tx b{font-family:Georgia,serif;font-weight:400;font-size:15px;display:block}
+.menu-item .mi-tx small{font-size:12px;color:var(--muted)}
+
+.skill-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;margin-bottom:8px}
+.skill-card:active{background:var(--panel2)}
+.skill-ic{font-size:20px;width:26px;text-align:center}
+.skill-tx b{font-family:Georgia,serif;font-weight:400;font-size:15px;display:block}
+.skill-tx small{font-size:12px;color:var(--muted)}
+.ex-row{padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.ex-row:first-child{border-top:none}
+.ex-row b{font-size:14px}
+.ex-row small{color:var(--muted);font-size:12px;margin-left:6px}
+.ex-steps{font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px;display:none}
+.ex-steps.open{display:block}
+
+.warn-banner{background:var(--clay-soft);border:1px solid var(--clay);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--clay-d);margin-top:12px;display:none}
+.care-banner{background:var(--anchor-soft);border:1px solid var(--anchor);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--anchor-d);margin-bottom:12px;display:none}
+.note-card{background:var(--anchor-soft);border:1px solid var(--anchor);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--anchor-d)}
+
+.breath-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:10px 0}
+.breath-circle{width:120px;height:120px;border-radius:50%;background:var(--anchor-soft);border:2px solid var(--anchor);transition:transform 4s ease-in-out;display:flex;align-items:center;justify-content:center}
+.breath-label{font-family:Georgia,serif;font-size:16px}
+.ground-card{text-align:center;padding:10px 0}
+.ground-num{font-family:Georgia,serif;font-size:44px;color:var(--anchor)}
+.ground-txt{font-size:15px;margin:6px 0 14px}
+
+.bank-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px}
+.bank-card .bt{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.05em}
+.bank-card .bx{font-size:14px;line-height:1.55;margin-top:3px}
+.bank-card .del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;float:right}
+
+.delay-card{background:var(--anchor-soft);border:1px solid var(--anchor);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.delay-card .dt{font-family:Georgia,serif;font-size:22px;color:var(--anchor);text-align:center}
+.delay-card .dl{font-size:12px;color:var(--anchor-d);text-align:center;margin-top:2px}
+
+.avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.avg-row:first-child{border-top:none}
+.dots5{letter-spacing:3px;color:var(--anchor);font-size:13px}
+
+.subhead{display:flex;align-items:center;gap:10px;margin:2px 0 8px}
+.subhead button{background:none;border:1px solid var(--line);border-radius:9px;color:var(--muted);font-size:13px;padding:5px 10px;cursor:pointer;font-family:inherit}
+.subhead h2{font-family:Georgia,serif;font-weight:400;font-size:18px}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:8px;line-height:1.6}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 1px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--anchor);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(46,53,52,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--anchor);color:#fff;font-size:14px;cursor:pointer;margin-top:12px;font-family:inherit}
+.dotpick{display:flex;gap:6px;margin:4px 0 8px;flex-wrap:wrap}
+.dotpick button{flex:1;min-width:30px;height:36px;border-radius:9px;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;color:var(--muted);font-family:inherit}
+.dotpick button.sel{background:var(--anchor);border-color:var(--anchor);color:#fff}
+.sel-emotion{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.sel-emotion:first-child{border-top:none}
+.sel-emotion .nm{font-size:14px;width:104px}
+.sel-emotion .mini{display:flex;gap:4px;flex:1}
+.sel-emotion .mini button{flex:1;height:26px;border-radius:7px;border:1.5px solid var(--line);background:var(--panel2);font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.sel-emotion .mini button.sel{background:var(--anchor);border-color:var(--anchor);color:#fff}
+.sel-emotion .rm{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.gh-status{display:none;margin:6px 0 4px;font-size:12px;padding:8px 12px;border-radius:8px}
+.hint{font-size:11px;color:var(--muted);margin:-4px 0 8px;background:var(--panel2);padding:6px 9px;border-radius:8px;line-height:1.5}
+.seg{display:flex;gap:6px;margin:4px 0 10px}
+.seg button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit}
+.seg button.sel{background:var(--anchor);border-color:var(--anchor);color:#fff}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1F2422;--panel:#28302E;--panel2:#303936;--line:#3C4744;
+  --ink:#DDE5E2;--muted:#93A09B;--anchor:#7BA6A8;--anchor-soft:#33433F;--anchor-d:#CFE2E0;
+  --clay:#C29A87;--clay-soft:#3A2F2A;--clay-d:#E6C7BB;--gold:#CBB683;--navbg:rgba(31,36,34,.96);
+}
+html[data-theme=dark] .akut-btn{background:#3A2F2A;color:#E6C7BB}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+
+<style id="desktop-overrides">
+/* ── Desktop-läge (≥760px). Mobil-layouten är fallback under detta. ── */
+@media (min-width:760px){
+  body{font-size:15px}
+  .app{max-width:860px;margin:0 0 0 244px;padding:30px 36px 64px}
+  h1.brand{text-align:left;font-size:24px;margin:2px 0 10px}
+  .sync-row{justify-content:flex-start;margin-bottom:18px}
+
+  /* Bottennav -> fast sidofält */
+  .nav{top:0;bottom:0;left:0;right:auto;width:224px;max-width:none;margin:0;
+       flex-direction:column;align-items:stretch;gap:2px;padding:20px 12px;
+       border-top:none;border-right:1px solid var(--line);background:var(--panel);
+       backdrop-filter:none}
+  .nav button{flex:0 0 auto;display:flex;align-items:center;gap:13px;text-align:left;
+              font-size:14.5px;padding:12px 15px;border-radius:12px;transition:background .15s}
+  .nav button span{display:inline;font-size:19px;margin:0;width:24px;text-align:center}
+  .nav button:hover{background:var(--panel2)}
+  .nav button.active{background:var(--anchor-soft)}
+
+  /* Bottensheets -> centrerade modaler */
+  .sheet-bg{background:rgba(46,53,52,.5)}
+  .sheet{top:50%;left:50%;right:auto;bottom:auto;width:92%;max-width:560px;margin:0;
+         border-radius:18px;max-height:86vh;
+         transform:translate(-50%,-46%);opacity:0;visibility:hidden;
+         transition:opacity .2s ease,transform .2s ease;
+         box-shadow:0 24px 64px rgba(0,0,0,.28)}
+  .sheet.open{transform:translate(-50%,-50%);opacity:1;visibility:visible}
+
+  /* Hover-affordanser */
+  .btn{transition:background .15s,filter .15s}
+  .btn:hover{background:var(--anchor-soft)}
+  .btn.fill:hover{filter:brightness(1.06)}
+  .gear-btn:hover{background:var(--panel2)}
+  .menu-item:hover,.skill-card:hover,.help-btn:hover,.chip:hover{background:var(--panel2)}
+  .akut-btn{cursor:pointer}
+  .chip,.line-item a,.ex-row,.sheet-close{cursor:pointer}
+
+  /* Lite mer luft på stora ytor */
+  .help-grid{grid-template-columns:repeat(4,1fr)}
+  canvas{width:100%}
+  .theme-btn{right:26px;top:20px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">&#9680;</button>
+<h1 class="brand"><span class="brand-ic">&#9878;</span>Balans</h1>
+<div class="sync-row">
+  <span id="sync-badge" class="sp-badge offline">Lokal</span>
+  <button class="gear-btn" id="sync-btn" title="H&auml;mta senaste">&#10227; Synka</button>
+  <button class="gear-btn" id="open-settings" title="Inst&auml;llningar">&#9881;</button>
+</div>
+
+<!-- ════ IDAG ════ -->
+<div class="view active" id="view-today">
+  <div class="care-banner" id="today-banner"></div>
+  <button class="akut-btn" id="akut-btn">&#128156; Jag h&aring;ller p&aring; att bli &ouml;verv&auml;ldigad</button>
+
+  <div class="section-title">Hur m&aring;r jag just nu?</div>
+  <div class="card-panel">
+    <div class="metric"><div class="ml"><span>Hum&ouml;r</span><b id="m-mood">5</b></div><input type="range" id="r-mood" min="0" max="10" value="5"></div>
+    <div class="metric"><div class="ml"><span>Stress</span><b id="m-stress">5</b></div><input type="range" id="r-stress" min="0" max="10" value="5"></div>
+    <div class="metric"><div class="ml"><span>S&ouml;mn</span><b id="m-sleep">5</b></div><input type="range" id="r-sleep" min="0" max="10" value="5"></div>
+    <div class="metric"><div class="ml"><span>Energi</span><b id="m-energy">5</b></div><input type="range" id="r-energy" min="0" max="10" value="5"></div>
+    <div class="metric"><div class="ml"><span>Impulsk&auml;nsla</span><b id="m-impulse">2</b></div><input type="range" id="r-impulse" min="0" max="10" value="2"></div>
+    <button class="btn fill" id="checkin-save" style="width:100%;margin-top:8px">Spara incheckning</button>
+  </div>
+
+  <div class="section-title">K&auml;nslohjul</div>
+  <div class="card-panel">
+    <div class="chips" id="wheel-core"></div>
+    <div class="chips" id="wheel-nuance" style="margin-top:8px"></div>
+    <div id="wheel-selected" style="margin-top:8px"></div>
+  </div>
+
+  <div class="section-title">Sammanfattning <button class="btn ghost" id="ai-sum-btn">&#10024; Be om reflektion</button></div>
+  <div class="card-panel"><div class="soft" id="ai-summary">Tryck p&aring; reflektion s&aring; tittar AI:n p&aring; dina senaste dagar och f&ouml;resl&aring;r n&aring;got snällt. (Kr&auml;ver egen API-nyckel &mdash; under &#9881;.)</div></div>
+
+  <div class="section-title">Snabb hj&auml;lp</div>
+  <div class="help-grid">
+    <button class="help-btn" id="hb-breath"><span>&#127788;</span>Andning</button>
+    <button class="help-btn" id="hb-ground"><span>&#128064;</span>Jordning</button>
+    <button class="help-btn" id="hb-tipp"><span>&#10052;</span>TIPP</button>
+    <button class="help-btn" id="hb-bank"><span>&#127800;</span>Trygghetsbank</button>
+  </div>
+
+  <div class="foot">
+    <button id="export-btn">S&auml;kerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas p&aring; din enhet. Balans &auml;r ett komplement till behandling och egenv&aring;rd &mdash; inte en ers&auml;ttning f&ouml;r v&aring;rd. Vid akut fara, ring 112.</div>
+</div>
+
+<!-- ════ DAGBOK ════ -->
+<div class="view" id="view-journal">
+  <div class="section-title" style="margin-top:0">K&auml;nslodagbok</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Logga en situation och vad som hj&auml;lpte. Det blir l&auml;ttare att se m&ouml;nster.</div>
+    <button class="btn fill" id="open-journal" style="width:100%">+ Ny anteckning</button>
+    <button class="btn ghost" id="ai-pattern-btn" style="width:100%;margin-top:8px">&#10024; Hj&auml;lp mig se m&ouml;nster</button>
+    <div id="ai-pattern" ></div>
+  </div>
+  <div class="section-title">Tidigare</div>
+  <div class="card-panel"><div id="journal-list"></div></div>
+</div>
+
+<!-- ════ IMPULSER ════ -->
+<div class="view" id="view-impulse">
+  <div class="care-banner" id="imp-banner"></div>
+  <div id="delay-active"></div>
+  <div class="section-title" style="margin-top:0">Impulskontroll</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:10px">En impuls &auml;r en v&aring;g &mdash; den klingar av. Logga den, v&auml;nta en stund, och pr&ouml;va n&aring;got annat under tiden.</div>
+    <button class="btn fill" id="open-impulse" style="width:100%">Logga en impuls</button>
+  </div>
+  <div class="section-title">Distraktioner <button class="btn ghost" id="edit-distract">&Auml;ndra</button></div>
+  <div class="card-panel" id="distract-list"></div>
+  <div class="section-title">Senaste impulser</div>
+  <div class="card-panel"><div id="impulse-list"></div></div>
+</div>
+
+<!-- ════ FÄRDIGHETER ════ -->
+<div class="view" id="view-skills">
+  <div class="soft" style="margin:0 2px 12px">Sm&aring; DBT-&ouml;vningar p&aring; 2&ndash;5 minuter. Tryck p&aring; en kategori, v&auml;lj en &ouml;vning &mdash; och markera g&auml;rna det som hj&auml;lpte.</div>
+  <div id="skills-list"></div>
+</div>
+
+<!-- ════ RELATIONER ════ -->
+<div class="view" id="view-relations">
+  <div class="section-title" style="margin-top:0">Meddelandehj&auml;lp</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Skriv vad du vill skicka n&auml;r k&auml;nslorna &auml;r starka. AI:n hj&auml;lper dig lugna ner formuleringen och f&ouml;rtydliga ditt behov &mdash; du best&auml;mmer vad du skickar.</div>
+    <textarea id="msg-in" placeholder="T.ex. Du bryr dig aldrig om mig!"></textarea>
+    <button class="btn fill" id="msg-btn" style="width:100%;margin-top:8px">&#10024; Hj&auml;lp mig formulera</button>
+    <div id="msg-out"></div>
+  </div>
+  <div class="section-title">Personkort <button class="btn ghost" id="open-person">+ Ny</button></div>
+  <div id="people-list"></div>
+</div>
+
+<!-- ════ MER ════ -->
+<div class="view" id="view-more">
+  <div class="menu-item" data-go="struktur"><div class="mi-ic">&#128197;</div><div class="mi-tx"><b>Struktur &amp; rutiner</b><small>Morgon, kv&auml;ll, mediciner, m&aring;ltider</small></div></div>
+  <div class="menu-item" data-go="bank"><div class="mi-ic">&#127800;</div><div class="mi-tx"><b>Trygghetsbank</b><small>Minnen, framsteg, p&aring;minnelser</small></div></div>
+  <div class="menu-item" data-go="progress"><div class="mi-ic">&#128202;</div><div class="mi-tx"><b>Framsteg</b><small>Hum&ouml;r, s&ouml;mn, m&ouml;nster &ouml;ver tid</small></div></div>
+  <div class="menu-item" id="open-coach"><div class="mi-ic">&#129302;</div><div class="mi-tx"><b>AI-coach</b><small>Reflektion, k&auml;nslor, konfliktf&ouml;rberedelse</small></div></div>
+  <div class="menu-item" id="open-crisis"><div class="mi-ic">&#128374;</div><div class="mi-tx"><b>Krisplan &amp; kontakter</b><small>Din plan f&ouml;r sv&aring;ra stunder</small></div></div>
+  <div class="menu-item" id="open-settings2"><div class="mi-ic">&#9881;</div><div class="mi-tx"><b>Inst&auml;llningar</b><small>AI-nyckel, synk, tema, s&auml;kerhetskopia</small></div></div>
+</div>
+
+<!-- ════ STRUKTUR (subvy) ════ -->
+<div class="view" id="view-struktur">
+  <div class="subhead"><button data-back="1">&larr; Mer</button><h2>Struktur &amp; rutiner</h2></div>
+  <div class="section-title" style="margin-top:0">Morgonrutin <button class="btn ghost" id="edit-morning">&Auml;ndra</button></div>
+  <div class="card-panel" id="morning-list"></div>
+  <div class="section-title">Kv&auml;llsrutin <button class="btn ghost" id="edit-evening">&Auml;ndra</button></div>
+  <div class="card-panel" id="evening-list"></div>
+  <div class="section-title">Mediciner <button class="btn ghost" id="edit-meds">&Auml;ndra</button></div>
+  <div class="card-panel" id="meds-list"></div>
+  <div class="section-title">M&aring;ltider <button class="btn ghost" id="edit-meals">&Auml;ndra</button></div>
+  <div class="card-panel" id="meals-list"></div>
+</div>
+
+<!-- ════ TRYGGHETSBANK (subvy) ════ -->
+<div class="view" id="view-bank">
+  <div class="subhead"><button data-back="1">&larr; Mer</button><h2>Trygghetsbank</h2></div>
+  <div class="note-card" style="margin-bottom:12px">N&auml;r du m&aring;r d&aring;ligt: h&auml;r &auml;r saker som tidigare hj&auml;lpt dig. Fyll p&aring; banken n&auml;r du m&aring;r okej.</div>
+  <div class="card-panel">
+    <label>L&auml;gg till i banken</label>
+    <div class="seg" id="bank-type">
+      <button class="sel" data-t="minne">Minne</button>
+      <button data-t="meddelande">Meddelande</button>
+      <button data-t="påminnelse">P&aring;minnelse</button>
+      <button data-t="framsteg">Framsteg</button>
+    </div>
+    <textarea id="bank-in" placeholder="N&aring;got fint, en p&aring;minnelse, ett framsteg&hellip;"></textarea>
+    <button class="btn fill" id="bank-add" style="width:100%;margin-top:8px">L&auml;gg till</button>
+  </div>
+  <div class="section-title">Din bank</div>
+  <div id="bank-list"></div>
+</div>
+
+<!-- ════ FRAMSTEG (subvy) ════ -->
+<div class="view" id="view-progress">
+  <div class="subhead"><button data-back="1">&larr; Mer</button><h2>Framsteg</h2></div>
+  <div class="care-banner" id="prog-banner">Flera tunga dagar i rad. Det &auml;r okej att s&auml;nka kraven och be om st&ouml;d &mdash; v&aring;rden finns f&ouml;r precis det h&auml;r.</div>
+  <div class="section-title" style="margin-top:0">Hum&ouml;r senaste 14 dagarna</div>
+  <div class="card-panel"><canvas id="trend" width="640" height="240"></canvas></div>
+  <div class="section-title">Snitt senaste 7 dagarna</div>
+  <div class="card-panel" id="avgs"></div>
+  <div class="section-title">Vanligaste k&auml;nslor <span class="soft">(30 dagar)</span></div>
+  <div class="card-panel" id="top-emotions"></div>
+  <div class="section-title">F&auml;rdigheter som hj&auml;lpt mest <span class="soft">(30 dagar)</span></div>
+  <div class="card-panel" id="top-skills"></div>
+  <div class="section-title">Veckosammanfattning <button class="btn ghost" id="ai-week-btn">&#10024; Skapa</button></div>
+  <div class="card-panel"><div class="soft" id="ai-week">En kort, snäll &ouml;verblick &ouml;ver veckan. (Kr&auml;ver API-nyckel.)</div></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="today"><span>&#127780;</span>Idag</button>
+  <button data-v="journal"><span>&#129504;</span>Dagbok</button>
+  <button data-v="impulse"><span>&#127754;</span>Impulser</button>
+  <button data-v="skills"><span>&#127919;</span>F&auml;rdigheter</button>
+  <button data-v="relations"><span>&#128172;</span>Relationer</button>
+  <button data-v="more"><span>&#9776;</span>Mer</button>
+</div>
+
+<!-- ════ SHEETS ════ -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="journal-sheet">
+  <h3>Ny anteckning</h3>
+  <label>Vad h&auml;nde? (situation)</label>
+  <textarea id="j-event" placeholder="Beskriv händelsen kort&hellip;"></textarea>
+  <label>Tankar</label>
+  <textarea id="j-thoughts" placeholder="Vad tänkte du?"></textarea>
+  <label>K&auml;nslor</label>
+  <input type="text" id="j-feelings" placeholder="T.ex. ångest, ilska, skam">
+  <label>Intensitet <span id="j-int-val">5</span>/10</label>
+  <input type="range" id="j-intensity" min="0" max="10" value="5">
+  <label>Reaktion</label>
+  <textarea id="j-reaction" placeholder="Vad gjorde du?"></textarea>
+  <label>Vad hj&auml;lpte?</label>
+  <textarea id="j-helped" placeholder="Vad gjorde det lite lättare?"></textarea>
+  <button class="sheet-close" id="j-save">Spara anteckning</button>
+</div>
+
+<div class="sheet" id="impulse-sheet">
+  <h3>Logga en impuls</h3>
+  <label>Vilken sorts impuls?</label>
+  <div class="seg" id="imp-type" style="flex-wrap:wrap">
+    <button class="sel" data-t="shopping">Shopping</button>
+    <button data-t="kontakt">Kontakt</button>
+    <button data-t="ilska">Ilska</button>
+    <button data-t="självskada">Sj&auml;lvskada</button>
+    <button data-t="annat">Annat</button>
+  </div>
+  <label>Hur stark &auml;r dragningen? <span id="imp-int-val">5</span>/10</label>
+  <input type="range" id="imp-intensity" min="0" max="10" value="5">
+  <label>Anteckning (frivilligt)</label>
+  <textarea id="imp-note" placeholder="Vad triggade den? Vad behöver du?"></textarea>
+  <div class="soft" id="imp-support" style="margin:6px 0 2px"></div>
+  <label>F&ouml;rdr&ouml;j och rid ut v&aring;gen</label>
+  <div class="seg">
+    <button class="btn" id="imp-d10">V&auml;nta 10 min</button>
+    <button class="btn" id="imp-d20">20 min</button>
+    <button class="btn" id="imp-d30">30 min</button>
+  </div>
+  <button class="sheet-close" id="imp-save">Spara</button>
+</div>
+
+<div class="sheet" id="akut-sheet">
+  <h3>&#128156; Du &auml;r inte ensam i det h&auml;r</h3>
+  <div class="soft" style="margin-bottom:10px">En v&aring;g av k&auml;nslor &auml;r v&auml;ldigt jobbig &mdash; men den g&aring;r &ouml;ver. B&ouml;rja med kroppen. Du beh&ouml;ver inte fatta n&aring;gra beslut just nu.</div>
+  <button class="btn fill" id="ak-breath" style="width:100%">&#127788; Andningsövning</button>
+  <button class="btn" id="ak-ground" style="width:100%;margin-top:8px">&#128064; Jordning 5&middot;4&middot;3&middot;2&middot;1</button>
+  <button class="btn" id="ak-tipp" style="width:100%;margin-top:8px">&#10052; TIPP &mdash; lugna kroppen</button>
+  <div class="section-title">Sensoriska strategier</div>
+  <div class="soft" style="line-height:1.7">Kallt: håll en isbit eller skölj händerna i kallt vatten.<br>Tryck: tyngdtäcke, hård kram, pressa fötterna i golvet.<br>Ljud: lugn musik eller brus i hörlurar.<br>Dofta något starkt och bekant.</div>
+  <button class="btn" id="ak-crisis" style="width:100%;margin-top:12px">&#128374; &Ouml;ppna min krisplan</button>
+  <div class="soft" style="margin-top:10px;text-align:center">Vid akut fara, ring <b>112</b>. F&ouml;r r&aring;d dygnet runt finns 1177.</div>
+  <button class="sheet-close" id="ak-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="crisis-sheet">
+  <h3>&#128374; Krisplan &amp; kontakter</h3>
+  <div class="soft" style="margin-bottom:8px">F&ouml;rbered den n&auml;r du m&aring;r okej, s&aring; finns den n&auml;r det blir tungt.</div>
+  <label>Varningstecken <button class="gear-btn" id="edit-warn" style="margin-left:6px">&Auml;ndra</button></label>
+  <div id="warn-list"></div>
+  <label>Det som hj&auml;lper mig landa <button class="gear-btn" id="edit-ground2" style="margin-left:6px">&Auml;ndra</button></label>
+  <div id="ground-list"></div>
+  <label>Sk&auml;l att h&aring;lla fast vid <button class="gear-btn" id="edit-reasons" style="margin-left:6px">&Auml;ndra</button></label>
+  <div id="reasons-list"></div>
+  <label>Kontakter</label>
+  <div id="contacts-list"></div>
+  <div class="add-row"><input type="text" id="ct-name" placeholder="Namn"><input type="tel" id="ct-phone" placeholder="Tel" style="max-width:110px"><button id="ct-add">+</button></div>
+  <div class="soft" style="margin-top:10px">Vid akut fara, ring <b>112</b>. F&ouml;r r&aring;d finns 1177.</div>
+  <button class="sheet-close" id="crisis-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="person-sheet">
+  <h3 id="ps-title">Personkort</h3>
+  <label>Namn</label><input type="text" id="ps-name" placeholder="Namn">
+  <label>Relation</label><input type="text" id="ps-rel" placeholder="Partner, förälder, vän&hellip;">
+  <label>Kommunikationspreferenser</label><textarea id="ps-comm" placeholder="Hur fungerar samtal bäst med den här personen?"></textarea>
+  <label>Trigger-varningar</label><textarea id="ps-trig" placeholder="Vad brukar bli svårt?"></textarea>
+  <label>Positiva minnen</label><textarea id="ps-pos" placeholder="Fina stunder att minnas"></textarea>
+  <label>Anteckningar</label><textarea id="ps-notes"></textarea>
+  <button class="btn fill" id="ps-save" style="width:100%;margin-top:10px">Spara</button>
+  <button class="sheet-close" id="ps-close" style="background:var(--panel2);color:var(--ink)">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="coach-sheet">
+  <h3>&#129302; AI-coach</h3>
+  <div class="soft" style="margin-bottom:8px">En lugn, icke-d&ouml;mande r&ouml;st att t&auml;nka h&ouml;gt med. Inte v&aring;rd &mdash; men ett st&ouml;d mellan stunderna.</div>
+  <label>Vad vill du ha hj&auml;lp med?</label>
+  <div class="seg" id="coach-mode" style="flex-wrap:wrap">
+    <button class="sel" data-m="reflektion">Reflektion</button>
+    <button data-m="känsla">K&auml;nslor</button>
+    <button data-m="konflikt">Konflikt</button>
+    <button data-m="färdighet">F&auml;rdighet</button>
+  </div>
+  <textarea id="coach-in" placeholder="Skriv vad som rör sig&hellip;"></textarea>
+  <button class="btn fill" id="coach-btn" style="width:100%;margin-top:8px">&#10024; Svara</button>
+  <div id="coach-out"></div>
+  <button class="sheet-close" id="coach-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="breath-sheet">
+  <h3>Andning</h3>
+  <div class="breath-wrap">
+    <div class="breath-circle" id="breath-circle"><span class="breath-label" id="breath-label">Redo</span></div>
+    <div class="btn-row" style="width:100%"><button class="btn" id="b-box">Fyrkant 4-4-4-4</button><button class="btn" id="b-478">Lugnande 4-7-8</button></div>
+    <button class="btn ghost" id="b-stop" style="width:100%">Stopp</button>
+  </div>
+  <button class="sheet-close" id="breath-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="ground-sheet">
+  <h3>Jordning &mdash; 5&middot;4&middot;3&middot;2&middot;1</h3>
+  <div class="ground-card">
+    <div class="ground-num" id="g-num">5</div>
+    <div class="ground-txt" id="g-txt">saker du kan <b>se</b></div>
+    <button class="btn fill" id="g-next" style="width:100%">Hittade dem &mdash; n&auml;sta</button>
+  </div>
+  <button class="sheet-close" id="ground-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="tipp-sheet">
+  <h3>TIPP &mdash; lugna kroppen f&ouml;rst</h3>
+  <div class="ex-row"><b>Temperatur</b><div class="ex-steps open">Kallt vatten i ansiktet eller en kall handduk mot kinder och ögon i 30 sekunder. Sänker pulsen snabbt.</div></div>
+  <div class="ex-row"><b>Intensiv r&ouml;relse</b><div class="ex-steps open">Spring på stället, hoppa eller gå snabbt i några minuter — bränn av adrenalinet.</div></div>
+  <div class="ex-row"><b>Pacad andning</b><div class="ex-steps open">Andas ut längre än du andas in, t.ex. in 4, ut 6, i någon minut.</div></div>
+  <div class="ex-row"><b>Progressiv avslappning</b><div class="ex-steps open">Spänn och släpp en muskelgrupp i taget, från fötter till axlar.</div></div>
+  <button class="sheet-close" id="tipp-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="skill-sheet">
+  <h3 id="sk-title"></h3>
+  <div class="soft" id="sk-meta" style="margin-bottom:6px"></div>
+  <div class="soft" id="sk-steps" style="line-height:1.7"></div>
+  <button class="btn fill" id="sk-use" style="width:100%;margin-top:12px">Den h&auml;r hj&auml;lpte idag</button>
+  <button class="sheet-close" id="sk-close">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="list-sheet">
+  <h3 id="list-title">Lista</h3>
+  <div id="list-items"></div>
+  <div class="add-row"><input type="text" id="list-in" placeholder="L&auml;gg till&hellip;"><button id="list-add">+</button></div>
+  <button class="sheet-close" id="list-done">Klar</button>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <h3>&#9881; Inst&auml;llningar</h3>
+  <label>AI-nyckel (Anthropic)</label>
+  <div class="soft" style="margin-bottom:8px">AI-delarna anv&auml;nder Claude via din egen API-nyckel. Skapa en p&aring; <b style="color:var(--ink)">console.anthropic.com</b> &rarr; API keys. Nyckeln sparas bara lokalt och f&ouml;ljer aldrig med i s&auml;kerhetskopior eller synk.</div>
+  <input type="password" id="ai-key" placeholder="sk-ant-&hellip;" autocomplete="off">
+  <div class="btn-row" style="margin-top:8px"><button class="btn" id="ai-key-save">Spara nyckel</button><button class="btn ghost" id="ai-key-clear">Rensa</button></div>
+
+  <label style="margin-top:16px">Synk via GitHub</label>
+  <div class="soft" style="margin-bottom:8px">Sparar <b>balans-data.json</b> i ett privat repo s&aring; dina enheter h&aring;ller ihop. Token sparas bara lokalt.</div>
+  <input type="text" id="gh-owner" placeholder="GitHub-anv&auml;ndarnamn" style="margin-bottom:6px">
+  <input type="text" id="gh-repo" placeholder="balans-data (privat repo)" style="margin-bottom:6px">
+  <input type="password" id="gh-token" placeholder="github_pat_&hellip;">
+  <div class="hint">Fine-grained token med Contents: Read and write, endast f&ouml;r data-repot.</div>
+  <div class="gh-status" id="gh-status"></div>
+  <button class="btn fill" id="gh-save" style="width:100%">Spara &amp; synka</button>
+  <button class="sheet-close" id="settings-close">St&auml;ng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='balans_v1';
+var state={
+  days:{},
+  journal:[],
+  impulses:[],
+  people:[],
+  bank:[],
+  distractions:['Ring eller messa någon trygg','Kallt vatten i ansiktet','Promenad runt kvarteret','Lägg en låt högt','Krama tyngdtäcke','Rita eller klottra','Dusch','Skriv av dig i dagboken','Räkna 5·4·3·2·1','Pet ett djur'],
+  routines:{morning:['Glas vatten','Medicin','Något att äta','Incheckning i Balans'],evening:['Skärmen bort en stund','Lägg fram till imorgon','Medicin','Lugn stund'],meds:['Morgonmedicin','Kvällsmedicin'],meals:['Frukost','Lunch','Middag']},
+  crisis:{
+    warnsigns:['Allt känns svart eller vitt','Tom och bedövad','Stark dragning att isolera mig','Snabbt växlande humör','Rädd att bli övergiven'],
+    grounding:['Hörlurar och lugn musik','Glas kallt vatten','Tyngdtäcke eller filt','Andas ut långsamt','Skriv av mig','Säg till någon: jag har det tungt'],
+    reasons:['Människor som bryr sig om mig','Det här går över — det har det gjort förr','Saker jag fortfarande vill uppleva'],
+    contacts:[{name:'1177 Vårdguiden',phone:'1177'}]
+  },
+  theme:'auto'
+};
+try{var _s=localStorage.getItem(KEY);if(_s)state=deepMerge(state,JSON.parse(_s));}catch(e){}
+function deepMerge(base,add){
+  var out=Object.assign({},base);
+  for(var k in add){
+    if(add[k]&&typeof add[k]==='object'&&!Array.isArray(add[k])&&base[k]&&typeof base[k]==='object'&&!Array.isArray(base[k]))out[k]=deepMerge(base[k],add[k]);
+    else out[k]=add[k];
+  }
+  return out;
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var hhmm=function(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+function day(){
+  var k=todayKey();
+  if(!state.days[k])state.days[k]={mood:null,stress:null,sleep:null,energy:null,impulse:null,emotions:[],skills:[],routineDone:{morning:[],evening:[],meds:[],meals:[]},u:0};
+  var d=state.days[k];
+  d.emotions=d.emotions||[];d.skills=d.skills||[];
+  d.routineDone=d.routineDone||{morning:[],evening:[],meds:[],meals:[]};
+  ['morning','evening','meds','meals'].forEach(function(r){d.routineDone[r]=d.routineDone[r]||[];});
+  return d;
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+// ── Synk (GitHub Contents API) ────────────────────────
+var SYNC_KEY='balanssync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/balans-data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(stt,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sp-badge'+(stt==='ok'?'':' offline');}
+function mergeDays(local,remote){
+  var out=Object.assign({},local||{});remote=remote||{};
+  for(var k in remote){if(!out[k]||(remote[k].u||0)>=(out[k].u||0))out[k]=remote[k];}
+  return out;
+}
+function mergeById(local,remote){
+  local=local||[];remote=remote||[];
+  var map={};local.forEach(function(x){map[x.id]=x;});remote.forEach(function(x){map[x.id]=x;});
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data){
+      if(data.days)state.days=mergeDays(state.days,data.days);
+      if(data.journal)state.journal=mergeById(state.journal,data.journal);
+      if(data.impulses)state.impulses=mergeById(state.impulses,data.impulses);
+      if(data.people)state.people=mergeById(state.people,data.people);
+      if(data.bank)state.bank=mergeById(state.bank,data.bank);
+      if(data.crisis)state.crisis=deepMerge(state.crisis,data.crisis);
+      if(data.routines)state.routines=deepMerge(state.routines,data.routines);
+      if(Array.isArray(data.distractions))state.distractions=data.distractions;
+      save();renderAll();
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var payload={days:state.days,journal:state.journal,impulses:state.impulses,people:state.people,bank:state.bank,crisis:state.crisis,routines:state.routines,distractions:state.distractions,updated:new Date().toISOString()};
+  var content=b64enc(JSON.stringify(payload));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Balans',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+// ── AI (Claude via egen nyckel) ───────────────────────
+var AI_KEY='balans_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+var AI_SYS='Du är en varm, lugn och icke-dömande stödröst i appen Balans, för personer med emotionell instabilitet (EIPS/borderline). Du är inspirerad av DBT. Du validerar känslor utan att döma och svarar kort, konkret och snällt på svenska, utan rubriker eller punktlistor. Du är ett komplement till vård och egenvård, aldrig en ersättning — uppmuntra varsamt till mänskligt och professionellt stöd. Förstärk eller normalisera aldrig självskada eller andra destruktiva beteenden, och beskriv aldrig metoder. Om något tyder på akut fara för personens liv: uppmana lugnt att kontakta 112, vården eller någon de litar på.';
+async function aiCall(prompt,maxTokens){
+  var key=getAiKey();
+  if(!key){openSheet('settings-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens||500,system:AI_SYS,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">&#10024; Balans</span>'+esc(t)+'</div>';}
+async function runAi(btn,outId,prompt,maxTokens,store){
+  var orig=btn.textContent;btn.textContent='✨ …';btn.disabled=true;
+  try{
+    var text=await aiCall(prompt,maxTokens);
+    document.getElementById(outId).innerHTML=aiBox(text);
+    if(store)store(text);
+  }catch(e){if(e.message!=='NOKEY')alert('AI-fel: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+function segGroup(id,obj,field){
+  var g=document.getElementById(id),bs=g.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++)bs[i].onclick=function(){for(var j=0;j<bs.length;j++)bs[j].classList.remove('sel');this.classList.add('sel');obj[field]=this.dataset.t||this.dataset.m;};
+}
+
+// ── Idag: incheckning ─────────────────────────────────
+var METRICS=[['mood','m-mood','r-mood'],['stress','m-stress','r-stress'],['sleep','m-sleep','r-sleep'],['energy','m-energy','r-energy'],['impulse','m-impulse','r-impulse']];
+function bindMetrics(){
+  METRICS.forEach(function(m){
+    var r=document.getElementById(m[2]);
+    r.oninput=function(){document.getElementById(m[1]).textContent=r.value;};
+  });
+}
+function loadCheckin(){
+  var d=day();
+  METRICS.forEach(function(m){
+    var v=d[m[0]];var def=m[0]==='impulse'?2:5;
+    document.getElementById(m[2]).value=(v==null?def:v);
+    document.getElementById(m[1]).textContent=(v==null?def:v);
+  });
+}
+document.getElementById('checkin-save').onclick=function(){
+  var d=day();
+  METRICS.forEach(function(m){d[m[0]]=+document.getElementById(m[2]).value;});
+  d.u=Date.now();persist();renderToday();
+  var b=document.getElementById('checkin-save');b.textContent='Sparat ✓';setTimeout(function(){b.textContent='Spara incheckning';},1400);
+};
+
+// ── Känslohjul ────────────────────────────────────────
+var WHEEL={
+  'Glädje':['Tacksam','Stolt','Hoppfull','Lättad','Nöjd','Kär'],
+  'Lugn':['Trygg','Avslappnad','Närvarande','Tillfreds'],
+  'Sorg':['Ledsen','Ensam','Saknad','Hopplös','Besviken'],
+  'Ilska':['Irriterad','Frustrerad','Sviken','Avundsjuk','Rasande'],
+  'Rädsla':['Orolig','Ångest','Panik','Otrygg','Rädd att bli lämnad'],
+  'Skam':['Skamsen','Skuld','Otillräcklig','Värdelös'],
+  'Tomhet':['Tom','Bedövad','Avstängd','Overklig'],
+  'Kärlek':['Närhet','Ömhet','Sårbar','Behövd']
+};
+var wheelOpen=null;
+function renderWheel(){
+  var d=day();
+  var core=document.getElementById('wheel-core');
+  core.innerHTML=Object.keys(WHEEL).map(function(c){return '<span class="chip core'+(wheelOpen===c?' open':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</span>';}).join('');
+  var cs=core.querySelectorAll('.chip');
+  for(var i=0;i<cs.length;i++)cs[i].onclick=function(){wheelOpen=wheelOpen===this.dataset.c?null:this.dataset.c;renderWheel();};
+  var nu=document.getElementById('wheel-nuance');
+  if(wheelOpen){
+    nu.innerHTML=WHEEL[wheelOpen].map(function(n){
+      var sel=d.emotions.some(function(e){return e.name===n;});
+      return '<span class="chip'+(sel?' sel':'')+'" data-n="'+esc(n)+'">'+esc(n)+'</span>';
+    }).join('');
+    var ns=nu.querySelectorAll('.chip');
+    for(var j=0;j<ns.length;j++)ns[j].onclick=function(){toggleWheelEmotion(this.dataset.n);};
+  }else nu.innerHTML='';
+  renderWheelSelected();
+}
+function toggleWheelEmotion(name){
+  var d=day();
+  var idx=d.emotions.findIndex(function(e){return e.name===name;});
+  if(idx>=0)d.emotions.splice(idx,1);else d.emotions.push({name:name,intensity:3});
+  d.u=Date.now();persist();renderWheel();renderToday();
+}
+function renderWheelSelected(){
+  var d=day();var el=document.getElementById('wheel-selected');
+  if(!d.emotions.length){el.innerHTML='<div class="empty-msg">Tryck på en känsla för att utforska och logga.</div>';return;}
+  el.innerHTML=d.emotions.map(function(e,i){
+    var mini=[1,2,3,4,5].map(function(n){return '<button data-i="'+i+'" data-n="'+n+'"'+(e.intensity===n?' class="sel"':'')+'>'+n+'</button>';}).join('');
+    return '<div class="sel-emotion"><span class="nm">'+esc(e.name)+'</span><div class="mini">'+mini+'</div><button class="rm" data-rm="'+i+'">&times;</button></div>';
+  }).join('');
+  var mb=el.querySelectorAll('.mini button');
+  for(var i=0;i<mb.length;i++)mb[i].onclick=function(){day().emotions[+this.dataset.i].intensity=+this.dataset.n;day().u=Date.now();persist();renderWheelSelected();};
+  var rb=el.querySelectorAll('.rm');
+  for(var j=0;j<rb.length;j++)rb[j].onclick=function(){day().emotions.splice(+this.dataset.rm,1);day().u=Date.now();persist();renderWheel();renderToday();};
+}
+
+// ── Idag render + banner ──────────────────────────────
+function renderToday(){
+  var d=day();
+  var b=document.getElementById('today-banner');
+  var heavy=(d.stress!=null&&d.stress>=8)||(d.impulse!=null&&d.impulse>=7)||(d.mood!=null&&d.mood<=2);
+  if(heavy){b.style.display='block';b.textContent='Idag känns tungt. Var snäll mot dig — andas, plocka fram trygghetsbanken, och hör gärna av dig till någon du litar på.';}
+  else b.style.display='none';
+}
+
+// ── AI: dagssammanfattning ────────────────────────────
+function recentForAi(n){
+  var out=[];
+  for(var i=n-1;i>=0;i--){
+    var dt=new Date();dt.setDate(dt.getDate()-i);var k=toISO(dt);var d=state.days[k];
+    if(!d)continue;
+    var parts=[];
+    if(d.mood!=null)parts.push('humör '+d.mood);
+    if(d.stress!=null)parts.push('stress '+d.stress);
+    if(d.sleep!=null)parts.push('sömn '+d.sleep);
+    if(d.energy!=null)parts.push('energi '+d.energy);
+    if(d.impulse!=null)parts.push('impuls '+d.impulse);
+    if(d.emotions&&d.emotions.length)parts.push('känslor: '+d.emotions.map(function(e){return e.name;}).join(', '));
+    if(parts.length)out.push(k+': '+parts.join(', '));
+  }
+  return out.join('\n');
+}
+document.getElementById('ai-sum-btn').onclick=function(e){
+  var data=recentForAi(5);
+  if(!data){document.getElementById('ai-summary').textContent='Gör några incheckningar först, så har AI:n något att utgå från.';return;}
+  var p='Här är användarens senaste incheckningar (0–10):\n'+data+'\n\nGe en kort, snäll observation (max 60 ord) om eventuella mönster, och föreslå mjukt en enkel sak som kan hjälpa idag (t.ex. en lugnande övning). Ingen diagnos.';
+  runAi(e.target,'ai-summary',p,300);
+};
+
+// ── Snabb hjälp ───────────────────────────────────────
+document.getElementById('akut-btn').onclick=function(){openSheet('akut-sheet');};
+document.getElementById('hb-breath').onclick=function(){openSheet('breath-sheet');};
+document.getElementById('hb-ground').onclick=function(){gIdx=0;renderGround();openSheet('ground-sheet');};
+document.getElementById('hb-tipp').onclick=function(){openSheet('tipp-sheet');};
+document.getElementById('hb-bank').onclick=function(){switchView('more');goSub('bank');};
+document.getElementById('ak-breath').onclick=function(){openSheet('breath-sheet');};
+document.getElementById('ak-ground').onclick=function(){gIdx=0;renderGround();openSheet('ground-sheet');};
+document.getElementById('ak-tipp').onclick=function(){openSheet('tipp-sheet');};
+document.getElementById('ak-crisis').onclick=function(){renderCrisis();openSheet('crisis-sheet');};
+document.getElementById('ak-close').onclick=closeSheets;
+
+// ── Känslodagbok ──────────────────────────────────────
+document.getElementById('j-intensity').oninput=function(e){document.getElementById('j-int-val').textContent=e.target.value;};
+document.getElementById('open-journal').onclick=function(){
+  ['j-event','j-thoughts','j-feelings','j-reaction','j-helped'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('j-intensity').value=5;document.getElementById('j-int-val').textContent='5';
+  openSheet('journal-sheet');
+};
+document.getElementById('j-save').onclick=function(){
+  var ev=document.getElementById('j-event').value.trim();
+  if(!ev){alert('Skriv åtminstone vad som hände.');return;}
+  state.journal.unshift({id:uid(),ts:Date.now(),event:ev,thoughts:document.getElementById('j-thoughts').value.trim(),feelings:document.getElementById('j-feelings').value.trim(),intensity:+document.getElementById('j-intensity').value,reaction:document.getElementById('j-reaction').value.trim(),helped:document.getElementById('j-helped').value.trim()});
+  persist();closeSheets();renderJournal();
+};
+function renderJournal(){
+  var el=document.getElementById('journal-list');
+  if(!state.journal.length){el.innerHTML='<div class="empty-msg">Inga anteckningar än.</div>';return;}
+  el.innerHTML=state.journal.slice(0,40).map(function(j){
+    var dt=new Date(j.ts);
+    return '<div class="entry"><button class="del" data-id="'+j.id+'">&times;</button><div class="et"><span class="eh">'+esc(j.event)+'</span><time>'+toISO(dt)+' '+hhmm(dt)+'</time></div>'+
+      (j.feelings?'<div class="ed"><span class="pill">'+esc(j.feelings)+' · '+j.intensity+'/10</span></div>':'')+
+      (j.thoughts?'<div class="ed">Tankar: '+esc(j.thoughts)+'</div>':'')+
+      (j.reaction?'<div class="ed">Reaktion: '+esc(j.reaction)+'</div>':'')+
+      (j.helped?'<div class="ed">Hjälpte: '+esc(j.helped)+'</div>':'')+'</div>';
+  }).join('');
+  var db=el.querySelectorAll('.del');
+  for(var i=0;i<db.length;i++)db[i].onclick=function(){var id=this.dataset.id;state.journal=state.journal.filter(function(x){return x.id!==id;});persist();renderJournal();};
+}
+document.getElementById('ai-pattern-btn').onclick=function(e){
+  if(!state.journal.length){alert('Skriv några anteckningar först.');return;}
+  var lines=state.journal.slice(0,12).map(function(j){return '- Händelse: '+j.event+'; känslor: '+(j.feelings||'?')+' ('+j.intensity+'/10); hjälpte: '+(j.helped||'?');}).join('\n');
+  var p='Här är användarens känslodagbok:\n'+lines+'\n\nLyft varsamt 1–2 möjliga mönster (t.ex. återkommande triggers eller saker som brukar hjälpa), max 70 ord. Validera, döm inte, ge ingen diagnos.';
+  runAi(e.target,'ai-pattern',p,320);
+};
+
+// ── Impulskontroll ────────────────────────────────────
+var impTmp={type:'shopping'};
+function impSupportText(type){
+  if(type==='självskada')return 'Dragningen är stark men den är inte en order. Den klingar av. Skydda dig själv: jordning, kallt vatten, hör av dig till någon — och vid fara, ring 112.';
+  if(type==='ilska')return 'Kliv undan en stund innan du agerar. Rör på dig, andas ut långsamt — kom tillbaka när vågen lagt sig.';
+  if(type==='kontakt')return 'Att vänta innan du hör av dig kan kännas omöjligt. Pröva fördröjning — vill du fortfarande om 20 min?';
+  if(type==='shopping')return 'Lägg det i en önskelista istället. Vill du fortfarande om en halvtimme?';
+  return 'Vågen toppar och klingar av. Fördröj, distrahera dig en stund och se hur det känns sen.';
+}
+document.getElementById('imp-intensity').oninput=function(e){document.getElementById('imp-int-val').textContent=e.target.value;};
+document.getElementById('open-impulse').onclick=function(){
+  impTmp={type:'shopping',delay:0};
+  var seg=document.getElementById('imp-type');var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++)bs[i].classList.toggle('sel',bs[i].dataset.t==='shopping');
+  document.getElementById('imp-intensity').value=5;document.getElementById('imp-int-val').textContent='5';
+  document.getElementById('imp-note').value='';
+  document.getElementById('imp-support').textContent=impSupportText('shopping');
+  openSheet('impulse-sheet');
+};
+(function(){
+  var seg=document.getElementById('imp-type'),bs=seg.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++)bs[i].onclick=function(){for(var j=0;j<bs.length;j++)bs[j].classList.remove('sel');this.classList.add('sel');impTmp.type=this.dataset.t;document.getElementById('imp-support').textContent=impSupportText(this.dataset.t);};
+})();
+function setDelay(mins){impTmp.delay=mins;var b=document.getElementById('imp-d'+mins);['10','20','30'].forEach(function(m){document.getElementById('imp-d'+m).classList.remove('fill');});if(b)b.classList.add('fill');}
+document.getElementById('imp-d10').onclick=function(){setDelay(10);};
+document.getElementById('imp-d20').onclick=function(){setDelay(20);};
+document.getElementById('imp-d30').onclick=function(){setDelay(30);};
+document.getElementById('imp-save').onclick=function(){
+  var entry={id:uid(),ts:Date.now(),type:impTmp.type,intensity:+document.getElementById('imp-intensity').value,note:document.getElementById('imp-note').value.trim(),delayUntil:impTmp.delay?Date.now()+impTmp.delay*60000:0};
+  state.impulses.unshift(entry);persist();closeSheets();renderImpulse();
+};
+function renderImpulse(){
+  var d=document.getElementById('imp-banner');
+  var hi=state.impulses.find(function(x){return x.type==='självskada'&&(Date.now()-x.ts)<3600000;});
+  if(hi){d.style.display='block';d.textContent='Du har loggat en svår dragning nyss. Du är inte ensam — använd jordning och dina kontakter. Vid fara, ring 112.';}else d.style.display='none';
+  renderDelay();renderDistract();
+  var el=document.getElementById('impulse-list');
+  if(!state.impulses.length){el.innerHTML='<div class="empty-msg">Inget loggat än.</div>';return;}
+  var LBL={shopping:'Shopping',kontakt:'Kontakt',ilska:'Ilska','självskada':'Självskada',annat:'Annat'};
+  el.innerHTML=state.impulses.slice(0,30).map(function(x){
+    var dt=new Date(x.ts);
+    return '<div class="entry"><button class="del" data-id="'+x.id+'">&times;</button><div class="et"><span class="eh">'+esc(LBL[x.type]||x.type)+'</span><time>'+toISO(dt)+' '+hhmm(dt)+'</time></div><div class="ed"><span class="pill">styrka '+x.intensity+'/10</span></div>'+(x.note?'<div class="ed">'+esc(x.note)+'</div>':'')+'</div>';
+  }).join('');
+  var db=el.querySelectorAll('.del');
+  for(var i=0;i<db.length;i++)db[i].onclick=function(){var id=this.dataset.id;state.impulses=state.impulses.filter(function(y){return y.id!==id;});persist();renderImpulse();};
+}
+function renderDelay(){
+  var el=document.getElementById('delay-active');
+  var act=state.impulses.filter(function(x){return x.delayUntil&&x.delayUntil>Date.now();}).sort(function(a,b){return a.delayUntil-b.delayUntil;})[0];
+  if(!act){el.innerHTML='';return;}
+  var left=Math.max(0,act.delayUntil-Date.now());
+  var mm=Math.floor(left/60000),ss=Math.floor((left%60000)/1000);
+  el.innerHTML='<div class="delay-card"><div class="dt">'+mm+':'+String(ss).padStart(2,'0')+'</div><div class="dl">Du väntar ut vågen. Bra val. Pröva en distraktion under tiden.</div></div>';
+}
+setInterval(function(){if(document.getElementById('view-impulse').classList.contains('active'))renderDelay();},1000);
+function renderDistract(){
+  var el=document.getElementById('distract-list');
+  el.innerHTML=state.distractions.map(function(t){return '<div class="line-item"><span class="gw">'+esc(t)+'</span></div>';}).join('')||'<div class="empty-msg">Lägg till saker som brukar hjälpa via Ändra.</div>';
+}
+document.getElementById('edit-distract').onclick=function(){openListEditor(['distractions'],'Distraktioner');};
+
+// ── Färdigheter (DBT-bibliotek) ───────────────────────
+var SKILLS=[
+  {id:'mindfulness',ic:'🧘',title:'Mindfulness',sub:'Vara här, utan att döma',ex:[
+    {n:'Andetagsankare',t:2,s:'Sitt bekvämt. Följ tre andetag hela vägen in och ut. När tanken vandrar, ta vänligt tillbaka den till andetaget. Inget behöver vara perfekt.'},
+    {n:'Observera & beskriv',t:3,s:'Lägg märke till det du känner just nu och sätt neutrala ord på det: "jag känner spänning i bröstet", inte "det är hemskt".'},
+    {n:'En sak i taget',t:3,s:'Välj en enkel handling — drick vatten, diska en kopp. Gör bara det, med full uppmärksamhet.'}
+  ]},
+  {id:'emotion',ic:'💗',title:'Känsloreglering',sub:'Förstå och styra känslor',ex:[
+    {n:'Kolla fakta',t:4,s:'Fråga: passar känslans styrka situationen? Vilka fakta talar för och emot din tolkning? Ofta mjuknar känslan när du ser den klart.'},
+    {n:'Motsatt handling',t:5,s:'När känslan inte passar fakta — gör tvärtom, helhjärtat. Rädsla utan fara → närma dig. Skam som inte hör hit → stå kvar och berätta.'},
+    {n:'Bygg en fin stund',t:2,s:'Planera in en liten trevlig sak idag, hur liten som helst, och lägg märke till den när den händer.'}
+  ]},
+  {id:'crisis',ic:'❄️',title:'Krishantering',sub:'Ta dig igenom utan att förvärra',ex:[
+    {n:'TIPP',t:5,s:'Lugna kroppen först: kyla mot ansiktet, intensiv rörelse, lång utandning, spänn och släpp musklerna.'},
+    {n:'STOP',t:2,s:'Stanna. Ta ett steg tillbaka. Observera vad som händer. Agera medvetet — inte på autopilot.'},
+    {n:'Distrahera (ACCEPTS)',t:4,s:'Aktivitet, hjälp någon, jämför, andra känslor, skjut undan en stund, andra tankar, andra förnimmelser.'},
+    {n:'Radikalt accepterande',t:3,s:'Sluta kämpa mot det som redan är. Acceptans är inte att gilla — det är att sluta blöda energi på motstånd.'}
+  ]},
+  {id:'relation',ic:'🤝',title:'Relationsfärdigheter',sub:'Be om, säg nej, behåll självrespekt',ex:[
+    {n:'DEAR MAN',t:5,s:'Be eller säg nej tydligt: Beskriv, Uttryck, Var tydlig, Belöna — stanna i ämnet, visa trygghet, förhandla.'},
+    {n:'GIVE',t:3,s:'Vårda relationen: mjuk ton, var intresserad, validera den andra, håll det lätt och vänligt.'},
+    {n:'FAST',t:3,s:'Behåll självrespekten: var rättvis, inga onödiga ursäkter, stå för dina värderingar, var ärlig.'}
+  ]},
+  {id:'selfcomp',ic:'🌸',title:'Självmedkänsla',sub:'Möta dig själv som en vän',ex:[
+    {n:'Vad skulle jag säga till en vän?',t:3,s:'Tänk på vad du skulle säga till någon du älskar i samma läge. Säg det till dig själv, med samma värme.'},
+    {n:'Handen på hjärtat',t:2,s:'Lägg en hand på bröstet, känn värmen, andas lugnt och säg tyst: "det här är svårt, och jag gör mitt bästa".'},
+    {n:'Gemensam mänsklighet',t:2,s:'Påminn dig: smärta hör till att vara människa. Du är inte ensam eller trasig för att det gör ont.'}
+  ]}
+];
+function renderSkills(){
+  document.getElementById('skills-list').innerHTML=SKILLS.map(function(s){
+    return '<div class="skill-card" data-id="'+s.id+'"><div class="skill-ic">'+s.ic+'</div><div class="skill-tx"><b>'+s.title+'</b><small>'+esc(s.sub)+'</small></div></div>';
+  }).join('');
+  var cs=document.querySelectorAll('#skills-list .skill-card');
+  for(var i=0;i<cs.length;i++)cs[i].onclick=function(){openCategory(this.dataset.id);};
+}
+function openCategory(id){
+  var c=SKILLS.find(function(x){return x.id===id;});if(!c)return;
+  document.getElementById('sk-title').textContent=c.ic+' '+c.title;
+  document.getElementById('sk-meta').textContent=c.sub;
+  document.getElementById('sk-steps').innerHTML=c.ex.map(function(ex,i){
+    return '<div class="ex-row" data-i="'+i+'"><b>'+esc(ex.n)+'</b><small>'+ex.t+' min</small><div class="ex-steps">'+esc(ex.s)+'</div></div>';
+  }).join('');
+  var rows=document.querySelectorAll('#sk-steps .ex-row');
+  for(var i=0;i<rows.length;i++)rows[i].onclick=function(){this.querySelector('.ex-steps').classList.toggle('open');};
+  var btn=document.getElementById('sk-use');
+  btn.dataset.id=id;
+  btn.textContent=day().skills.indexOf(id)>=0?'Hjälpte idag ✓':'Den här hjälpte idag';
+  openSheet('skill-sheet');
+}
+document.getElementById('sk-use').onclick=function(){
+  var id=this.dataset.id,d=day();
+  if(d.skills.indexOf(id)<0)d.skills.push(id);
+  d.u=Date.now();persist();this.textContent='Hjälpte idag ✓';
+};
+document.getElementById('sk-close').onclick=closeSheets;
+
+// ── Relationer: meddelandehjälp ───────────────────────
+document.getElementById('msg-btn').onclick=function(e){
+  var t=document.getElementById('msg-in').value.trim();
+  if(!t){alert('Skriv vad du vill säga först.');return;}
+  var p='Användaren vill skicka det här när känslorna är starka:\n"'+t+'"\n\nHjälp till att formulera om det så att konfliktnivån sänks och behovet blir tydligt, i jag-form och med respekt för både användaren och mottagaren. Ge 1–2 alternativa formuleringar på svenska. Behåll ärligheten — släta inte över behovet. Ingen förklaring, bara förslagen.';
+  runAi(e.target,'msg-out',p,400);
+};
+
+// ── Relationer: personkort ────────────────────────────
+var psEdit=null;
+document.getElementById('open-person').onclick=function(){openPerson(null);};
+function openPerson(id){
+  psEdit=id;
+  var p=id?state.people.find(function(x){return x.id===id;}):{name:'',relation:'',comm:'',trig:'',pos:'',notes:''};
+  document.getElementById('ps-title').textContent=id?'Redigera personkort':'Nytt personkort';
+  document.getElementById('ps-name').value=p.name||'';
+  document.getElementById('ps-rel').value=p.relation||'';
+  document.getElementById('ps-comm').value=p.comm||'';
+  document.getElementById('ps-trig').value=p.trig||'';
+  document.getElementById('ps-pos').value=p.pos||'';
+  document.getElementById('ps-notes').value=p.notes||'';
+  openSheet('person-sheet');
+}
+document.getElementById('ps-save').onclick=function(){
+  var name=document.getElementById('ps-name').value.trim();
+  if(!name){alert('Ge personen ett namn.');return;}
+  var obj={name:name,relation:document.getElementById('ps-rel').value.trim(),comm:document.getElementById('ps-comm').value.trim(),trig:document.getElementById('ps-trig').value.trim(),pos:document.getElementById('ps-pos').value.trim(),notes:document.getElementById('ps-notes').value.trim()};
+  if(psEdit){var p=state.people.find(function(x){return x.id===psEdit;});Object.assign(p,obj);}
+  else{obj.id=uid();obj.ts=Date.now();state.people.unshift(obj);}
+  persist();closeSheets();renderPeople();
+};
+document.getElementById('ps-close').onclick=closeSheets;
+function renderPeople(){
+  var el=document.getElementById('people-list');
+  if(!state.people.length){el.innerHTML='<div class="card-panel"><div class="empty-msg">Lägg till viktiga personer för att samla vad som hjälper i relationen.</div></div>';return;}
+  el.innerHTML=state.people.map(function(p){
+    return '<div class="card-panel" style="margin-bottom:8px"><div class="et"><span class="eh">'+esc(p.name)+(p.relation?' <span class="soft">· '+esc(p.relation)+'</span>':'')+'</span><button class="del" data-id="'+p.id+'">&times;</button></div>'+
+      (p.comm?'<div class="ed">💬 '+esc(p.comm)+'</div>':'')+
+      (p.trig?'<div class="ed">⚠️ '+esc(p.trig)+'</div>':'')+
+      (p.pos?'<div class="ed">🌸 '+esc(p.pos)+'</div>':'')+
+      (p.notes?'<div class="ed">'+esc(p.notes)+'</div>':'')+
+      '<button class="btn ghost" data-edit="'+p.id+'" style="margin-top:8px">Redigera</button></div>';
+  }).join('');
+  var db=el.querySelectorAll('.del');for(var i=0;i<db.length;i++)db[i].onclick=function(){var id=this.dataset.id;state.people=state.people.filter(function(x){return x.id!==id;});persist();renderPeople();};
+  var eb=el.querySelectorAll('[data-edit]');for(var j=0;j<eb.length;j++)eb[j].onclick=function(){openPerson(this.dataset.edit);};
+}
+
+// ── AI-coach ──────────────────────────────────────────
+var coachMode='reflektion';
+(function(){var g=document.getElementById('coach-mode'),bs=g.querySelectorAll('button');for(var i=0;i<bs.length;i++)bs[i].onclick=function(){for(var j=0;j<bs.length;j++)bs[j].classList.remove('sel');this.classList.add('sel');coachMode=this.dataset.m;};})();
+document.getElementById('open-coach').onclick=function(){document.getElementById('coach-out').innerHTML='';document.getElementById('coach-in').value='';openSheet('coach-sheet');};
+document.getElementById('coach-close').onclick=closeSheets;
+document.getElementById('coach-btn').onclick=function(e){
+  var t=document.getElementById('coach-in').value.trim();
+  if(!t){alert('Skriv något först.');return;}
+  var mode={reflektion:'Hjälp användaren reflektera lugnt och ställ en eller två mjuka, öppna frågor.',
+    'känsla':'Hjälp användaren sätta ord på och förstå känslan bakom det de skriver.',
+    konflikt:'Hjälp användaren förbereda ett svårt samtal: vad är behovet, och hur kan det sägas tydligt och respektfullt?',
+    'färdighet':'Föreslå en konkret DBT-färdighet som passar situationen och hur den används just nu.'}[coachMode];
+  var p=mode+'\n\nAnvändaren skriver:\n"'+t+'"\n\nSvara varmt och kort (max 90 ord) på svenska.';
+  runAi(e.target,'coach-out',p,360);
+};
+
+// ── Struktur & rutiner ────────────────────────────────
+function renderRoutine(listId,arrPath,doneKey){
+  var d=day(),arr=getPath(arrPath),done=d.routineDone[doneKey];
+  var el=document.getElementById(listId);
+  el.innerHTML=arr.map(function(it,i){return '<div class="step'+(done.indexOf(i)>=0?' done':'')+'"><input type="checkbox" data-i="'+i+'"'+(done.indexOf(i)>=0?' checked':'')+'><span>'+esc(it)+'</span></div>';}).join('')||'<div class="empty-msg">Lägg till via Ändra.</div>';
+  var cb=el.querySelectorAll('input');
+  for(var i=0;i<cb.length;i++)cb[i].onchange=function(){var idx=+this.dataset.i;if(this.checked)done.push(idx);else d.routineDone[doneKey]=done.filter(function(x){return x!==idx;});day().u=Date.now();persist();renderRoutine(listId,arrPath,doneKey);};
+}
+function renderStruktur(){
+  renderRoutine('morning-list',['routines','morning'],'morning');
+  renderRoutine('evening-list',['routines','evening'],'evening');
+  renderRoutine('meds-list',['routines','meds'],'meds');
+  renderRoutine('meals-list',['routines','meals'],'meals');
+}
+document.getElementById('edit-morning').onclick=function(){openListEditor(['routines','morning'],'Morgonrutin');};
+document.getElementById('edit-evening').onclick=function(){openListEditor(['routines','evening'],'Kvällsrutin');};
+document.getElementById('edit-meds').onclick=function(){openListEditor(['routines','meds'],'Mediciner');};
+document.getElementById('edit-meals').onclick=function(){openListEditor(['routines','meals'],'Måltider');};
+
+// ── Trygghetsbank ─────────────────────────────────────
+var bankType='minne';
+(function(){var g=document.getElementById('bank-type'),bs=g.querySelectorAll('button');for(var i=0;i<bs.length;i++)bs[i].onclick=function(){for(var j=0;j<bs.length;j++)bs[j].classList.remove('sel');this.classList.add('sel');bankType=this.dataset.t;};})();
+document.getElementById('bank-add').onclick=function(){
+  var t=document.getElementById('bank-in').value.trim();if(!t)return;
+  state.bank.unshift({id:uid(),ts:Date.now(),type:bankType,text:t});persist();
+  document.getElementById('bank-in').value='';renderBank();
+};
+function renderBank(){
+  var el=document.getElementById('bank-list');
+  if(!state.bank.length){el.innerHTML='<div class="empty-msg">Banken är tom än. Fyll på med något fint.</div>';return;}
+  var LBL={minne:'Minne',meddelande:'Meddelande','påminnelse':'Påminnelse',framsteg:'Framsteg'};
+  el.innerHTML=state.bank.map(function(b){return '<div class="bank-card"><button class="del" data-id="'+b.id+'">&times;</button><div class="bt">'+(LBL[b.type]||b.type)+'</div><div class="bx">'+esc(b.text)+'</div></div>';}).join('');
+  var db=el.querySelectorAll('.del');for(var i=0;i<db.length;i++)db[i].onclick=function(){var id=this.dataset.id;state.bank=state.bank.filter(function(x){return x.id!==id;});persist();renderBank();};
+}
+
+// ── Krisplan ──────────────────────────────────────────
+function renderCrisisList(elId,arrPath,doneKey){
+  var d=day(),arr=getPath(arrPath);
+  var done=doneKey?(d.crisisCheck=d.crisisCheck||{},d.crisisCheck[doneKey]=d.crisisCheck[doneKey]||[]):null;
+  var el=document.getElementById(elId);
+  if(done){
+    el.innerHTML=arr.map(function(it,i){return '<div class="step'+(done.indexOf(i)>=0?' done':'')+'"><input type="checkbox" data-i="'+i+'"'+(done.indexOf(i)>=0?' checked':'')+'><span>'+esc(it)+'</span></div>';}).join('')||'<div class="empty-msg">Lägg till via Ändra.</div>';
+    var cb=el.querySelectorAll('input');
+    for(var i=0;i<cb.length;i++)cb[i].onchange=function(){var idx=+this.dataset.i;if(this.checked)done.push(idx);else d.crisisCheck[doneKey]=done.filter(function(x){return x!==idx;});d.u=Date.now();persist();};
+  }else{
+    el.innerHTML=arr.map(function(it){return '<div class="line-item"><span class="gw">'+esc(it)+'</span></div>';}).join('')||'<div class="empty-msg">Lägg till via Ändra.</div>';
+  }
+}
+function renderContacts(){
+  var el=document.getElementById('contacts-list');
+  el.innerHTML=state.crisis.contacts.map(function(c,i){var ph=String(c.phone||'').replace(/\s/g,'');return '<div class="line-item"><span class="gw">'+esc(c.name)+(c.phone?' · '+esc(c.phone):'')+'</span>'+(ph?'<a href="tel:'+esc(ph)+'">Ring</a>':'')+'<button data-i="'+i+'">&times;</button></div>';}).join('')||'<div class="empty-msg">Lägg till personer och stöd du kan höra av dig till.</div>';
+  var rb=el.querySelectorAll('button');for(var i=0;i<rb.length;i++)rb[i].onclick=function(){state.crisis.contacts.splice(+this.dataset.i,1);persist();renderContacts();};
+}
+function renderCrisis(){
+  renderCrisisList('warn-list',['crisis','warnsigns'],'warn');
+  renderCrisisList('ground-list',['crisis','grounding'],'ground');
+  renderCrisisList('reasons-list',['crisis','reasons'],null);
+  renderContacts();
+}
+document.getElementById('ct-add').onclick=function(){
+  var n=document.getElementById('ct-name').value.trim();if(!n)return;
+  state.crisis.contacts.push({name:n,phone:document.getElementById('ct-phone').value.trim()});persist();
+  document.getElementById('ct-name').value='';document.getElementById('ct-phone').value='';renderContacts();
+};
+document.getElementById('edit-warn').onclick=function(){openListEditor(['crisis','warnsigns'],'Varningstecken');};
+document.getElementById('edit-ground2').onclick=function(){openListEditor(['crisis','grounding'],'Det som hjälper mig landa');};
+document.getElementById('edit-reasons').onclick=function(){openListEditor(['crisis','reasons'],'Skäl att hålla fast vid');};
+document.getElementById('open-crisis').onclick=function(){renderCrisis();openSheet('crisis-sheet');};
+document.getElementById('crisis-close').onclick=closeSheets;
+
+// ── Generisk listredigerare ───────────────────────────
+function getPath(p){var o=state;for(var i=0;i<p.length;i++)o=o[p[i]];return o;}
+var listPath=null;
+function openListEditor(path,title){listPath=path;document.getElementById('list-title').textContent=title;renderListEditor();openSheet('list-sheet');}
+function renderListEditor(){
+  var arr=getPath(listPath),el=document.getElementById('list-items');
+  el.innerHTML=arr.map(function(it,i){return '<div class="line-item"><span class="gw">'+esc(it)+'</span><button data-i="'+i+'">&times;</button></div>';}).join('')||'<div class="empty-msg">Tomt</div>';
+  var b=el.querySelectorAll('button');for(var i=0;i<b.length;i++)b[i].onclick=function(){arr.splice(+this.dataset.i,1);persist();renderListEditor();};
+}
+document.getElementById('list-add').onclick=function(){var v=document.getElementById('list-in').value.trim();if(!v)return;getPath(listPath).push(v);persist();document.getElementById('list-in').value='';renderListEditor();};
+document.getElementById('list-done').onclick=function(){closeSheets();renderStruktur();renderCrisis();renderDistract();};
+
+// ── Framsteg ──────────────────────────────────────────
+function lastDays(n){var arr=[];for(var i=n-1;i>=0;i--){var dt=new Date();dt.setDate(dt.getDate()-i);var k=toISO(dt);arr.push({k:k,d:state.days[k]||null,lbl:dt.getDate()});}return arr;}
+function renderProgress(){
+  var cv=document.getElementById('trend'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  var css=getComputedStyle(document.documentElement);var col=function(v){return css.getPropertyValue(v).trim();};
+  var days=lastDays(14),W=cv.width,H=cv.height,pad=30,bw=(W-pad*2)/14;
+  ctx.strokeStyle=col('--line');ctx.lineWidth=1;
+  [0,5,10].forEach(function(v){var y=H-22-(H-50)*v/10;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();});
+  days.forEach(function(o,i){
+    var x=pad+i*bw+bw*0.18;
+    if(o.d&&o.d.mood!=null){
+      var h=(H-50)*o.d.mood/10;
+      ctx.fillStyle=o.d.mood<=3?col('--clay'):col('--anchor');
+      ctx.beginPath();
+      if(ctx.roundRect)ctx.roundRect(x,H-22-h,bw*0.64,h,5);else ctx.rect(x,H-22-h,bw*0.64,h);
+      ctx.fill();
+    }
+    ctx.fillStyle=col('--muted');ctx.font='15px -apple-system';ctx.textAlign='center';ctx.fillText(o.lbl,x+bw*0.32,H-5);
+  });
+  var last7=lastDays(7).map(function(o){return o.d;}).filter(Boolean);
+  var avg=function(f){var v=last7.map(f).filter(function(x){return x!=null;});return v.length?v.reduce(function(a,b){return a+b;},0)/v.length:null;};
+  var dots=function(n){return n==null?'–':'●'.repeat(Math.round(n/2))+'○'.repeat(5-Math.round(n/2));};
+  var aM=avg(function(d){return d.mood;}),aS=avg(function(d){return d.stress;}),aSl=avg(function(d){return d.sleep;}),aE=avg(function(d){return d.energy;});
+  document.getElementById('avgs').innerHTML=
+    '<div class="avg-row"><span>Humör</span><span class="dots5">'+dots(aM)+'</span></div>'+
+    '<div class="avg-row"><span>Stress</span><span class="dots5">'+dots(aS)+'</span></div>'+
+    '<div class="avg-row"><span>Sömn</span><span class="dots5">'+dots(aSl)+'</span></div>'+
+    '<div class="avg-row"><span>Energi</span><span class="dots5">'+dots(aE)+'</span></div>'+
+    '<div class="avg-row"><span>Lugna dagar i rad</span><b>'+calmStreak()+'</b></div>';
+  document.getElementById('prog-banner').style.display=(aM!=null&&aM<=3&&last7.length>=3)?'block':'none';
+  var d30=lastDays(30).map(function(o){return o.d;}).filter(Boolean);
+  var ec={};d30.forEach(function(d){(d.emotions||[]).forEach(function(e){ec[e.name]=(ec[e.name]||0)+1;});});
+  var et=Object.keys(ec).map(function(k){return [k,ec[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  document.getElementById('top-emotions').innerHTML=et.length?et.map(function(e){return '<div class="avg-row"><span>'+esc(e[0])+'</span><span class="dots5">× '+e[1]+'</span></div>';}).join(''):'<div class="empty-msg">Logga några dagar så syns mönstren här.</div>';
+  var sc={};d30.forEach(function(d){(d.skills||[]).forEach(function(s){sc[s]=(sc[s]||0)+1;});});
+  var st=Object.keys(sc).map(function(k){return [k,sc[k]];}).sort(function(a,b){return b[1]-a[1];});
+  document.getElementById('top-skills').innerHTML=st.length?st.map(function(s){var sk=SKILLS.find(function(x){return x.id===s[0];});return '<div class="avg-row"><span>'+(sk?sk.ic+' '+esc(sk.title):esc(s[0]))+'</span><span class="dots5">× '+s[1]+'</span></div>';}).join(''):'<div class="empty-msg">Markera färdigheter som hjälpt så samlas de här.</div>';
+}
+function calmStreak(){
+  var n=0;
+  for(var i=0;i<60;i++){
+    var dt=new Date();dt.setDate(dt.getDate()-i);var k=toISO(dt);var d=state.days[k];
+    var hard=(d&&((d.mood!=null&&d.mood<=2)||(d.impulse!=null&&d.impulse>=8)));
+    var crisisImp=state.impulses.some(function(x){return x.type==='självskada'&&toISO(new Date(x.ts))===k;});
+    if(hard||crisisImp){if(i===0)return 0;break;}
+    if(d||i===0)n++; else break;
+  }
+  return n;
+}
+document.getElementById('ai-week-btn').onclick=function(e){
+  var data=recentForAi(7);
+  if(!data){document.getElementById('ai-week').textContent='Checka in några dagar så finns det något att sammanfatta.';return;}
+  var p='Här är veckans incheckningar (0–10):\n'+data+'\n\nGe en kort, snäll veckosammanfattning (max 80 ord): lyft något som gått bra, en mild observation och en uppmuntran. Ingen diagnos.';
+  runAi(e.target,'ai-week',p,320);
+};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='balans-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.days){state=deepMerge(state,d);persist();renderAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Inställningar / AI-nyckel ──────────────────────────
+function openSettings(){
+  document.getElementById('ai-key').value=getAiKey();
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('settings-sheet');
+}
+document.getElementById('open-settings').onclick=openSettings;
+document.getElementById('open-settings2').onclick=openSettings;
+document.getElementById('settings-close').onclick=closeSheets;
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);var b=this;b.textContent='Sparat ✓';setTimeout(function(){b.textContent='Spara nyckel';},1200);};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.style.background=type==='ok'?'#EAF3DE':type==='err'?'#FBEAEA':'#E6F1FB';el.style.color=type==='ok'?'#3B6D11':type==='err'?'#A32D2D':'#185FA5';el.textContent=msg;}
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i användarnamn, repo och token.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar din data…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPush();}
+    setBadge('ok','Synkad');
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn och Contents-behörighet.','err');}
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto',h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1F2422':'#EBF0EF';
+  var b=document.getElementById('theme-btn');
+  b.innerHTML=m==='auto'?'&#9680;':(m==='dark'?'&#9790;':'&#9728;');
+  b.title=m==='auto'?'Tema: auto':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(document.getElementById('view-progress').classList.contains('active'))renderProgress();
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Andning / jordning ────────────────────────────────
+var breathTimeout=null;
+var BREATH={box:[['Andas in',4,1.55],['Håll',4,1.55],['Andas ut',4,1],['Håll',4,1]],b478:[['Andas in',4,1.55],['Håll',7,1.55],['Andas ut',8,1]]};
+function runBreath(mode,idx){var seq=BREATH[mode],step=seq[idx%seq.length],c=document.getElementById('breath-circle');document.getElementById('breath-label').textContent=step[0];c.style.transitionDuration=step[1]+'s';c.style.transform='scale('+step[2]+')';breathTimeout=setTimeout(function(){runBreath(mode,idx+1);},step[1]*1000);}
+function stopBreath(){clearTimeout(breathTimeout);breathTimeout=null;var c=document.getElementById('breath-circle');c.style.transitionDuration='1s';c.style.transform='scale(1)';document.getElementById('breath-label').textContent='Redo';}
+document.getElementById('b-box').onclick=function(){stopBreath();runBreath('box',0);};
+document.getElementById('b-478').onclick=function(){stopBreath();runBreath('b478',0);};
+document.getElementById('b-stop').onclick=stopBreath;
+document.getElementById('breath-close').onclick=function(){stopBreath();closeSheets();};
+var GROUND=[[5,'saker du kan <b>se</b>'],[4,'saker du kan <b>ta på</b>'],[3,'ljud du kan <b>höra</b>'],[2,'dofter du <b>känner</b>'],[1,'sak du kan <b>smaka</b>']];
+var gIdx=0;
+function renderGround(){if(gIdx>=GROUND.length){document.getElementById('g-num').textContent='✓';document.getElementById('g-txt').innerHTML='Tillbaka i rummet. Bra gjort.';document.getElementById('g-next').textContent='Börja om';}else{document.getElementById('g-num').textContent=GROUND[gIdx][0];document.getElementById('g-txt').innerHTML=GROUND[gIdx][1];document.getElementById('g-next').textContent='Hittade dem — nästa';}}
+document.getElementById('g-next').onclick=function(){gIdx=gIdx>=GROUND.length?0:gIdx+1;renderGround();};
+document.getElementById('ground-close').onclick=closeSheets;
+document.getElementById('tipp-close').onclick=closeSheets;
+
+// ── Nav / subvyer ─────────────────────────────────────
+var MAIN=['today','journal','impulse','skills','relations','more'];
+function switchView(v){
+  var nb=document.querySelectorAll('.nav button');
+  for(var i=0;i<nb.length;i++)nb[i].classList.toggle('active',nb[i].dataset.v===v);
+  var vw=document.querySelectorAll('.view');for(var j=0;j<vw.length;j++)vw[j].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='today'){loadCheckin();renderWheel();renderToday();}
+  if(v==='journal')renderJournal();
+  if(v==='impulse')renderImpulse();
+  if(v==='skills')renderSkills();
+  if(v==='relations')renderPeople();
+}
+function goSub(v){
+  var vw=document.querySelectorAll('.view');for(var j=0;j<vw.length;j++)vw[j].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='struktur')renderStruktur();
+  if(v==='bank')renderBank();
+  if(v==='progress')renderProgress();
+}
+(function(){var nb=document.querySelectorAll('.nav button');for(var i=0;i<nb.length;i++)nb[i].onclick=function(){switchView(this.dataset.v);};})();
+(function(){var mi=document.querySelectorAll('#view-more .menu-item[data-go]');for(var i=0;i<mi.length;i++)mi[i].onclick=function(){goSub(this.dataset.go);};})();
+(function(){var bb=document.querySelectorAll('[data-back]');for(var i=0;i<bb.length;i++)bb[i].onclick=function(){switchView('more');};})();
+
+// ── Render-allt ───────────────────────────────────────
+function renderAll(){
+  loadCheckin();renderWheel();renderToday();
+  if(document.getElementById('view-journal').classList.contains('active'))renderJournal();
+  if(document.getElementById('view-impulse').classList.contains('active'))renderImpulse();
+  if(document.getElementById('view-relations').classList.contains('active'))renderPeople();
+  if(document.getElementById('view-struktur').classList.contains('active'))renderStruktur();
+  if(document.getElementById('view-bank').classList.contains('active'))renderBank();
+  if(document.getElementById('view-progress').classList.contains('active'))renderProgress();
+}
+
+// ── Init ──────────────────────────────────────────────
+loadSync();
+bindMetrics();
+loadCheckin();
+renderWheel();
+renderToday();
+renderSkills();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn()){setBadge('ok','Synkad');ghPull();}
+</script>
+</body>
+</html>

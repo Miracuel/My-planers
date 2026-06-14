@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RunDagboken">
+<meta name="theme-color" content="#14161C">
+<link rel="manifest" href='data:application/manifest+json,{"name":"RunDagboken","short_name":"Runor","display":"standalone","background_color":"%2314161C","theme_color":"%2314161C","start_url":"."}'>
+<title>RunDagboken (dator)</title>
+<style>
+:root{
+  --bg:#14161C;--panel:#1C2029;--panel2:#242934;--line:#333947;
+  --ink:#E8E3D6;--muted:#8B8779;
+  --rune:#D89A56;--rune-dim:#9A6F3C;--stone:#7E8694;--blood:#C25A3C;
+  --green:#6FA572;--green-bg:#1E3326;--red-bg:#3A2220;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(1100px 560px at 50% -10%,#20242F 0%,var(--bg) 62%) fixed,var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:23px;color:var(--rune);letter-spacing:.06em;text-align:center;margin:6px 0 1px}
+.sub-line{text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:17px;color:var(--rune);margin:18px 0 8px;letter-spacing:.03em}
+.section-title:first-child{margin-top:0}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card-panel+.card-panel{margin-top:10px}
+.btn{border:1px solid var(--rune-dim);background:linear-gradient(180deg,#262B3A,#1C2029);color:var(--rune);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn:active{background:#262B3A}
+.btn.ghost{border-color:var(--line);color:var(--muted);background:transparent;font-size:12px;padding:8px 11px}
+.btn.full{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.muted{color:var(--muted)}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+label.field{font-size:12px;color:var(--muted);display:block;margin:10px 0 4px}
+input[type=text],input[type=date],input[type=number],input[type=password],select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:13px;padding:9px 10px;font-family:inherit;width:100%}
+textarea{resize:vertical;line-height:1.5}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rune-dim)}
+
+/* Segmented sub-tabs */
+.segmented{display:flex;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:3px;margin-bottom:12px}
+.segmented button{flex:1;background:none;border:none;color:var(--muted);font-size:12px;font-weight:500;padding:7px 4px;border-radius:8px;cursor:pointer;font-family:inherit}
+.segmented button.active{background:var(--rune-dim);color:#fff}
+.subview{display:none}
+.subview.active{display:block}
+
+/* Rune glyph card */
+.rstone{width:118px;height:160px;border-radius:12px;background:linear-gradient(160deg,#2A2F3D,#1A1E27);border:1px solid var(--rune-dim);box-shadow:inset 0 0 0 3px var(--panel),inset 0 0 0 4px var(--rune-dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative;flex-shrink:0}
+.rstone .glyph{font-size:58px;line-height:1;color:var(--rune);font-family:'Noto Sans Runic','Segoe UI Historic','Segoe UI Symbol',serif}
+.rstone .rname{font-family:Georgia,serif;font-size:13px;color:var(--ink)}
+.rstone.rev .glyph{transform:scaleY(-1)}
+.rstone .rbadge{position:absolute;top:7px;right:8px;font-size:10px;color:var(--blood)}
+.rstone.reveal{animation:reveal .5s ease}
+@keyframes reveal{from{transform:rotateX(85deg) scale(.92);opacity:0}to{transform:none;opacity:1}}
+.rstone.mini{width:58px;height:80px;box-shadow:inset 0 0 0 2px var(--panel),inset 0 0 0 3px var(--rune-dim);gap:3px}
+.rstone.mini .glyph{font-size:30px}
+.rstone.mini .rname{font-size:9px}
+
+.draw-stage{display:flex;flex-direction:column;align-items:center;gap:12px}
+.meaning{font-size:13px;color:var(--muted);text-align:center;line-height:1.55;max-width:320px}
+.meaning b{color:var(--ink);font-weight:500}
+.ref-q{font-size:12px;color:var(--rune);text-align:center;line-height:1.5;margin-top:2px}
+
+/* Lists / entries */
+.entry{display:flex;gap:11px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.entry:first-child{border-top:none}
+.entry-info{flex:1;min-width:0}
+.entry-date{font-size:11px;color:var(--muted)}
+.entry-title{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin:1px 0 3px}
+.entry-snip{font-size:12px;color:var(--muted);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.runeline{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.runeline .g{font-size:18px;color:var(--rune);font-family:'Noto Sans Runic','Segoe UI Historic','Segoe UI Symbol',serif}
+.tag{display:inline-block;font-size:10px;color:var(--stone);border:1px solid var(--line);border-radius:8px;padding:1px 7px;margin:3px 3px 0 0}
+.del-x{margin-left:auto;color:var(--muted);font-size:16px;cursor:pointer;background:none;border:none;padding:0 4px;align-self:flex-start}
+
+/* Home dashboard tiles */
+.tile-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tile-head .t{font-family:Georgia,serif;font-size:14px;color:var(--rune)}
+.tile-head .lnk{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit}
+.home-rune{display:flex;gap:12px;align-items:center}
+.recur{display:flex;gap:14px;flex-wrap:wrap}
+.recur .ri{display:flex;flex-direction:column;align-items:center;gap:2px}
+.recur .ri .g{font-size:30px;color:var(--rune);font-family:'Noto Sans Runic','Segoe UI Historic','Segoe UI Symbol',serif}
+.recur .ri .c{font-size:11px;color:var(--muted)}
+
+/* Lexikon */
+. aett-lbl{}
+.lib-group{font-family:Georgia,serif;font-size:14px;color:var(--rune);margin:14px 0 4px}
+.lib-item{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.lib-row{display:flex;align-items:center;gap:11px}
+.lib-g{font-size:30px;color:var(--rune);width:34px;text-align:center;font-family:'Noto Sans Runic','Segoe UI Historic','Segoe UI Symbol',serif}
+.lib-nm{font-family:Georgia,serif;font-size:14px;color:var(--ink)}
+.lib-th{font-size:11px;color:var(--muted)}
+.lib-detail{display:none;font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55}
+.lib-item.open .lib-detail{display:block}
+.lib-detail b{color:var(--ink);font-weight:500}
+.lib-detail .h{color:var(--rune);font-family:Georgia,serif;display:block;margin:8px 0 2px}
+.studied{font-size:10px;color:var(--green);margin-left:auto}
+
+/* Spreads */
+.spread-pos{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.spread-pos:first-child{border-top:none}
+.pos-name{font-size:12px;color:var(--muted);width:92px;flex-shrink:0}
+.pos-fill{flex:1;display:flex;align-items:center;gap:8px}
+.pos-cn{font-family:Georgia,serif;font-size:13px}
+
+/* Stats */
+.stat-row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-top:1px solid var(--line)}
+.stat-row:first-child{border-top:none}
+.stat-row b{color:var(--rune);font-weight:500}
+.bar-line{display:flex;align-items:center;gap:8px;margin:3px 0}
+.bar-g{font-size:18px;width:24px;color:var(--rune);font-family:'Noto Sans Runic','Segoe UI Historic','Segoe UI Symbol',serif}
+.bar-bg{flex:1;height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bar{height:100%;border-radius:4px;background:var(--rune-dim)}
+.bar-n{font-size:11px;color:var(--muted);width:18px;text-align:right}
+canvas{display:block;margin:6px auto 0;max-width:100%;height:auto}
+.theme-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:5px 10px;margin:3px 4px 0 0}
+.theme-chip b{color:var(--rune);font-weight:500}
+
+/* Achievements */
+.ach{display:flex;gap:11px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.ach:first-child{border-top:none}
+.ach .ic{font-size:22px;width:30px;text-align:center;opacity:.35}
+.ach.done .ic{opacity:1}
+.ach .ad{flex:1}
+.ach .an{font-size:13px;color:var(--muted)}
+.ach.done .an{color:var(--ink)}
+.ach .ap{font-size:11px;color:var(--muted);margin-top:2px}
+.ach .chk{font-size:14px;color:var(--green)}
+
+/* Transliterator */
+.translit-out{font-size:32px;color:var(--rune);font-family:'Noto Sans Runic','Segoe UI Historic','Segoe UI Symbol',serif;line-height:1.4;word-break:break-word;min-height:44px;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;margin-top:8px}
+.translit-out.latin{font-size:18px;font-family:Georgia,serif;letter-spacing:.04em}
+
+/* AI boxes */
+.ai-box{border:1px solid var(--rune-dim);background:linear-gradient(160deg,#22273A,#1A1E2C);border-radius:12px;padding:12px 13px;font-size:13px;line-height:1.65;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--rune);font-size:12px;display:block;margin-bottom:5px}
+.local-box{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.local-box .ai-lbl{font-family:Georgia,serif;color:var(--rune);font-size:12px;display:block;margin-bottom:4px}
+
+/* Chat */
+.chat-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.bubble{max-width:88%;padding:9px 12px;border-radius:13px;font-size:13px;line-height:1.55;white-space:pre-wrap}
+.bubble.u{align-self:flex-end;background:var(--rune-dim);color:#fff;border-bottom-right-radius:4px}
+.bubble.a{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.chat-suggest{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chat-suggest button{font-size:11px;color:var(--rune);border:1px solid var(--line);background:transparent;border-radius:9px;padding:6px 9px;cursor:pointer;font-family:inherit}
+
+/* Photo */
+.photo-prev{width:100%;border-radius:12px;border:1px solid var(--line);margin-top:8px;display:block}
+
+/* Bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(20,22,28,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 1px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--rune)}
+.nav button span{display:block;font-size:18px;margin-bottom:2px;line-height:1;font-family:'Noto Sans Runic','Segoe UI Historic','Segoe UI Symbol',serif}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(6,8,14,.62);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .22s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:18px;color:var(--rune);margin-bottom:10px}
+.sheet-close{width:100%;padding:11px;border-radius:11px;border:1px solid var(--rune-dim);background:var(--panel2);color:var(--rune);font-size:14px;cursor:pointer;margin-top:12px;font-family:inherit}
+.picker-list .lib-item{cursor:pointer}
+.hint{font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:10px}
+.hint b{color:var(--ink)}
+.status-line{font-size:12px;padding:8px 11px;border-radius:9px;margin:6px 0;display:none}
+.foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.7;margin-top:8px;line-height:1.5}
+.sync-badge{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;font-size:10px;padding:3px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);border:1px solid var(--line);cursor:pointer}
+.sync-badge.ok{background:var(--green-bg);color:var(--green);border-color:#365C3C}
+.sync-badge.err{background:var(--red-bg);color:var(--blood);border-color:#5C3632}
+.orient-row{display:flex;gap:8px;margin-top:10px}
+.orient-row .btn{flex:1}
+
+/* ===== DESKTOP OVERRIDES (separat datorversion) ===== */
+body{padding-left:212px}
+.app{max-width:860px;margin:0 auto;padding:30px 34px 64px;position:relative}
+
+/* Sidebar-navigation istället för bottennav */
+.nav{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:212px;max-width:212px;
+  margin:0;border-top:none;border-right:1px solid var(--line);
+  padding:22px 12px;gap:3px;justify-content:flex-start;
+  background:rgba(20,22,28,.97);backdrop-filter:blur(8px)}
+.nav::before{content:"\16A0 RunDagboken";display:block;font-family:Georgia,serif;
+  font-size:15px;color:var(--rune);letter-spacing:.05em;padding:4px 12px 16px;
+  border-bottom:1px solid var(--line);margin-bottom:10px}
+.nav button{flex:0 0 auto;text-align:left;font-size:14px;padding:11px 13px;
+  border-radius:10px;display:flex;align-items:center;gap:11px;color:var(--muted)}
+.nav button span{display:inline-block;font-size:19px;margin:0;line-height:1;width:22px;text-align:center}
+.nav button:hover{background:var(--panel2)}
+.nav button.active{background:var(--panel2);color:var(--rune)}
+
+/* Sync-badge i innehållskolumnen */
+.sync-badge{top:30px;right:34px}
+
+/* Hem-instrumentbräda i två kolumner */
+#view-hem{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+#view-hem .card-panel+.card-panel{margin-top:0}
+#view-hem .foot,#view-hem .privacy{grid-column:1 / -1}
+
+/* Centrerade modaler istället för bottensheets */
+.sheet{left:50%;right:auto;top:50%;bottom:auto;width:540px;max-width:calc(100vw - 56px);
+  margin:0;border:1px solid var(--line);border-radius:16px;
+  padding:24px 24px 22px;max-height:86vh;
+  transform:translate(-50%,-50%) scale(.97);opacity:0;visibility:hidden;pointer-events:none;
+  transition:transform .18s ease,opacity .18s ease}
+.sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;visibility:visible;pointer-events:auto}
+.sheet-close{cursor:pointer}
+
+/* Lite mer luft i breda kort */
+.draw-stage{padding:8px 0}
+.meaning{max-width:460px}
+
+/* Hover-känsla på klickbara rader */
+.entry:hover,.lib-item:hover{opacity:.92}
+.btn{transition:background .12s ease}
+.btn:hover{background:#262B3A}
+
+</style>
+</head>
+<body>
+<div class="app">
+<div class="sync-badge" id="sync-badge">Lokal</div>
+<h1 class="brand">&#5792; RunDagboken &#5792;</h1>
+<div class="sub-line" id="sub-line">Runskrift &amp; runtolkning</div>
+
+<!-- HEM -->
+<div class="view active" id="view-hem">
+  <div class="card-panel">
+    <div class="tile-head"><div class="t">&#5792; Dagens runa</div><button class="lnk" id="hem-redraw">Dra om</button></div>
+    <div id="hem-daily"></div>
+  </div>
+  <div class="card-panel">
+    <div class="tile-head"><div class="t">&#10227; Veckans återkommande runor</div></div>
+    <div id="hem-recur"></div>
+  </div>
+  <div class="card-panel">
+    <div class="tile-head"><div class="t">&#9728; AI-insikt</div><button class="lnk" id="hem-ai-btn">Uppdatera</button></div>
+    <div id="hem-ai"><div class="empty-msg">Tryck på "Uppdatera" för en sammanfattande insikt om dina senaste runor.</div></div>
+  </div>
+  <div class="card-panel">
+    <div class="tile-head"><div class="t">&#128214; Senaste dagboksanteckning</div><button class="lnk" data-go="dagbok">Öppna</button></div>
+    <div id="hem-journal"></div>
+  </div>
+  <div class="card-panel">
+    <div class="tile-head"><div class="t">&#128302; Senaste dragning</div><button class="lnk" data-go="dra">Öppna</button></div>
+    <div id="hem-lastdraw"></div>
+  </div>
+  <div class="card-panel">
+    <div class="tile-head"><div class="t">&#9876; Pågående runprojekt</div><button class="lnk" id="hem-proj-add">+ Nytt</button></div>
+    <div id="hem-proj"></div>
+  </div>
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <button id="sync-set-btn">Synk</button>
+    <button id="ai-set-btn">AI-nyckel</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">All data sparas lokalt på din enhet. Synk och AI är frivilligt och aktiveras med egna nycklar.</div>
+</div>
+
+<!-- DRA -->
+<div class="view" id="view-dra">
+  <div class="segmented" id="seg-dra">
+    <button class="active" data-sv="dra-en">Dra en runa</button>
+    <button data-sv="dra-lagg">Runläggningar</button>
+  </div>
+
+  <div class="subview active" id="sub-dra-en">
+    <div class="card-panel">
+      <div class="draw-stage">
+        <div id="draw-slot"></div>
+        <div class="btn-row full" style="width:100%">
+          <button class="btn" id="btn-draw">&#5792; Jag drar en runa</button>
+          <button class="btn ghost" id="btn-pick">Välj runa</button>
+        </div>
+        <label class="toggle-line" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><input type="checkbox" id="chk-rev" checked style="width:auto"> Använd omvända runor (merkstave)</label>
+      </div>
+    </div>
+    <div class="card-panel" id="draw-detail" style="display:none">
+      <div id="draw-meaning"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn" id="draw-save">Spara i dagbok</button>
+        <button class="btn ghost" id="draw-ai">&#9728; AI-tolkning</button>
+      </div>
+      <div id="draw-ai-box"></div>
+    </div>
+    <div class="section-title">Dagens dragningar</div>
+    <div class="card-panel"><div id="today-draws"></div></div>
+  </div>
+
+  <div class="subview" id="sub-dra-lagg">
+    <div class="card-panel">
+      <label class="field">Välj läggning</label>
+      <select id="spread-type">
+        <option value="one">1 runa — Dagens budskap</option>
+        <option value="three">3 runor — Dåtid · Nutid · Framtid</option>
+        <option value="five">5 runor — Situation · Hinder · Styrka · Råd · Utfall</option>
+        <option value="custom">Eget upplägg</option>
+      </select>
+      <div id="custom-rows" style="display:none">
+        <label class="field">Antal runor</label>
+        <input type="number" id="custom-count" min="1" max="9" value="3">
+        <label class="field">Egna positioner (en per rad, valfritt)</label>
+        <textarea id="custom-pos" rows="3" placeholder="T.ex.&#10;Sinne&#10;Kropp&#10;Själ"></textarea>
+      </div>
+      <label class="field">Din fråga (valfritt)</label>
+      <input type="text" id="spread-q" placeholder="Vad behöver jag se just nu?">
+      <div id="spread-positions" style="margin-top:10px"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn" id="spread-drawall">&#5792; Dra alla</button>
+        <button class="btn ghost" id="spread-save">Spara</button>
+        <button class="btn ghost" id="spread-reset">Rensa</button>
+      </div>
+    </div>
+    <div class="section-title">Sparade läggningar</div>
+    <div class="card-panel"><div id="spread-list"></div></div>
+  </div>
+</div>
+
+<!-- DAGBOK -->
+<div class="view" id="view-dagbok">
+  <div class="segmented" id="seg-dagbok">
+    <button class="active" data-sv="db-journal">Rundagbok</button>
+    <button data-sv="db-dream">Dröm &amp; runkoppling</button>
+  </div>
+
+  <div class="subview active" id="sub-db-journal">
+    <button class="btn full" id="journal-new">+ Ny anteckning</button>
+    <div class="card-panel" style="margin-top:10px"><div id="journal-list"></div></div>
+  </div>
+
+  <div class="subview" id="sub-db-dream">
+    <button class="btn full" id="dream-new">+ Ny dröm</button>
+    <div class="card-panel" style="margin-top:10px"><div id="dream-list"></div></div>
+    <div class="card-panel">
+      <div class="tile-head"><div class="t">&#127769; Drömkoppling</div><button class="lnk" id="dream-ai-btn">&#9728; Hitta samband</button></div>
+      <div class="hint">AI letar mönster mellan dina drömmar och de runor du dragit samma vecka.</div>
+      <div id="dream-ai-box"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-monster">
+  <div class="segmented" id="seg-monster">
+    <button class="active" data-sv="m-stat">Mönsteranalys</button>
+    <button data-sv="m-path">Runstigen</button>
+  </div>
+
+  <div class="subview active" id="sub-m-stat">
+    <div class="card-panel" id="stat-overview"></div>
+    <div class="section-title">Runhjul — frekvens</div>
+    <div class="card-panel"><canvas id="wheel" width="620" height="620"></canvas><div class="empty-msg" id="wheel-empty" style="display:none">Dra runor för att fylla runhjulet.</div></div>
+    <div class="section-title">Återkommande runor</div>
+    <div class="card-panel" id="stat-freq"></div>
+    <div class="section-title">Dominerande teman</div>
+    <div class="card-panel" id="stat-themes"></div>
+    <div class="section-title">Årstidsvariation</div>
+    <div class="card-panel" id="stat-season"></div>
+  </div>
+
+  <div class="subview" id="sub-m-path">
+    <div class="card-panel" id="path-progress"></div>
+    <div class="card-panel"><div id="ach-list"></div></div>
+  </div>
+</div>
+
+<!-- VERKTYG -->
+<div class="view" id="view-verktyg">
+  <div class="segmented" id="seg-verktyg">
+    <button class="active" data-sv="v-script">Runskrift</button>
+    <button data-sv="v-photo">Tolka foto</button>
+    <button data-sv="v-guide">Vägledare</button>
+  </div>
+
+  <div class="subview active" id="sub-v-script">
+    <div class="card-panel">
+      <label class="field">Latin &#8594; Runor (Äldre futhark)</label>
+      <input type="text" id="t-latin" placeholder="Skriv text, t.ex. Hej">
+      <div class="translit-out" id="t-latin-out"></div>
+    </div>
+    <div class="card-panel">
+      <label class="field">Runor &#8594; Latin</label>
+      <input type="text" id="t-rune" placeholder="Klistra in runor">
+      <div class="translit-out latin" id="t-rune-out"></div>
+      <div class="hint" style="margin-top:8px">Knappa in runor via tangentbord eller välj från lexikonet.</div>
+    </div>
+  </div>
+
+  <div class="subview" id="sub-v-photo">
+    <div class="card-panel">
+      <div class="tile-head"><div class="t">&#128220; Runskriftstolkning</div></div>
+      <div class="hint">Fotografera en runsten, ett smycke eller en text. AI hjälper med identifiering, translitterering, möjlig översättning och historisk kontext.</div>
+      <button class="btn full" id="photo-btn">&#128247; Välj eller ta foto</button>
+      <input type="file" id="photo-file" accept="image/*" style="display:none">
+      <img id="photo-prev" class="photo-prev" style="display:none">
+      <input type="text" id="photo-note" placeholder="Kontext (valfritt): var hittades den?" style="margin-top:8px">
+      <button class="btn full" id="photo-analyze" style="display:none;margin-top:8px">&#9728; Tolka med AI</button>
+      <div id="photo-box"></div>
+    </div>
+  </div>
+
+  <div class="subview" id="sub-v-guide">
+    <div class="card-panel">
+      <div class="tile-head"><div class="t">&#129302; AI Runvägledare</div><button class="lnk" id="guide-clear">Rensa</button></div>
+      <div class="chat-suggest" id="guide-suggest">
+        <button>Vad betyder att jag dragit Ansuz tre dagar i rad?</button>
+        <button>Hur tolkar jag Berkana och Laguz tillsammans?</button>
+        <button>Vilka runor passar temat nystart?</button>
+      </div>
+      <div class="chat-wrap" id="guide-chat"></div>
+      <div style="display:flex;gap:8px"><input type="text" id="guide-input" placeholder="Fråga om runor…"><button class="btn" id="guide-send" style="flex-shrink:0">Skicka</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- LEXIKON -->
+<div class="view" id="view-lexikon">
+  <input type="text" id="lex-search" placeholder="Sök runa, betydelse eller tema…">
+  <div id="lex-list" style="margin-top:6px"></div>
+</div>
+
+</div><!-- /app -->
+
+<!-- Bottom nav -->
+<div class="nav">
+  <button class="active" data-v="hem"><span>&#5792;</span>Hem</button>
+  <button data-v="dra"><span>&#5809;</span>Dra</button>
+  <button data-v="dagbok"><span>&#5794;</span>Dagbok</button>
+  <button data-v="monster"><span>&#5815;</span>Mönster</button>
+  <button data-v="verktyg"><span>&#5802;</span>Verktyg</button>
+  <button data-v="lexikon"><span>&#5800;</span>Lexikon</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="rune-sheet">
+  <h3 id="rs-title"></h3>
+  <div id="rs-body"></div>
+  <button class="sheet-close" id="rs-close">Stäng</button>
+</div>
+
+<div class="sheet" id="picker-sheet">
+  <h3>Välj runa</h3>
+  <input type="text" id="picker-search" placeholder="Sök…">
+  <div class="picker-list" id="picker-list" style="margin-top:8px"></div>
+  <button class="sheet-close" id="picker-cancel">Avbryt</button>
+</div>
+
+<div class="sheet" id="orient-sheet">
+  <h3>Riktning</h3>
+  <div class="orient-row">
+    <button class="btn" id="orient-up">Rättvänd</button>
+    <button class="btn" id="orient-rev">&#10227; Omvänd</button>
+  </div>
+</div>
+
+<div class="sheet" id="journal-sheet">
+  <h3 id="js-title">Ny anteckning</h3>
+  <label class="field">Datum</label>
+  <input type="date" id="js-date">
+  <label class="field">Runor</label>
+  <div id="js-runes" class="runeline" style="min-height:24px"></div>
+  <button class="btn ghost" id="js-addrune" style="margin-top:6px">+ Lägg till runa</button>
+  <label class="field">Tolkning</label>
+  <textarea id="js-tolkning" rows="3" placeholder="Vad betyder dragningen för dig?"></textarea>
+  <label class="field">Tankar</label>
+  <textarea id="js-tankar" rows="2"></textarea>
+  <label class="field">Händelser</label>
+  <textarea id="js-handelser" rows="2"></textarea>
+  <label class="field">Känslor</label>
+  <input type="text" id="js-kanslor" placeholder="T.ex. lugn, orolig, hoppfull">
+  <label class="field">Drömmar</label>
+  <textarea id="js-drommar" rows="2"></textarea>
+  <label class="field">Taggar (komma-separerade)</label>
+  <input type="text" id="js-taggar" placeholder="nystart, relation, arbete">
+  <div id="js-ai-box"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn" id="js-save">Spara</button>
+    <button class="btn ghost" id="js-ai">&#9728; AI-tolkning</button>
+    <button class="btn ghost" id="js-del" style="display:none">Radera</button>
+  </div>
+  <button class="sheet-close" id="js-close">Avbryt</button>
+</div>
+
+<div class="sheet" id="dream-sheet">
+  <h3 id="ds-title">Ny dröm</h3>
+  <label class="field">Datum</label>
+  <input type="date" id="ds-date">
+  <label class="field">Dröm</label>
+  <textarea id="ds-text" rows="4" placeholder="Beskriv drömmen…"></textarea>
+  <label class="field">Symboler / tecken (komma-separerade)</label>
+  <input type="text" id="ds-symbols" placeholder="vatten, fågel, dörr">
+  <label class="field">Kopplade runor</label>
+  <div id="ds-runes" class="runeline" style="min-height:24px"></div>
+  <button class="btn ghost" id="ds-addrune" style="margin-top:6px">+ Koppla runa</button>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn" id="ds-save">Spara</button>
+    <button class="btn ghost" id="ds-del" style="display:none">Radera</button>
+  </div>
+  <button class="sheet-close" id="ds-close">Avbryt</button>
+</div>
+
+<div class="sheet" id="spread-sheet">
+  <h3 id="ss-title"></h3>
+  <div style="font-size:12px;color:var(--muted)" id="ss-q"></div>
+  <div id="ss-cards" style="margin-top:8px"></div>
+  <div id="ss-ai-box"></div>
+  <textarea id="ss-note" rows="3" placeholder="Tolkning och tankar…" style="margin-top:10px"></textarea>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ss-savenote">Spara anteckning</button>
+    <button class="btn ghost" id="ss-ai">&#9728; AI-tolkning</button>
+    <button class="btn ghost" id="ss-del">Radera</button>
+  </div>
+  <button class="sheet-close" id="ss-close">Klar</button>
+</div>
+
+<div class="sheet" id="proj-sheet">
+  <h3 id="ps-title">Nytt runprojekt</h3>
+  <label class="field">Namn</label>
+  <input type="text" id="ps-name" placeholder="T.ex. 24-dagars futhark-studie">
+  <label class="field">Beskrivning</label>
+  <textarea id="ps-desc" rows="3"></textarea>
+  <label class="field">Fokusrunor</label>
+  <div id="ps-runes" class="runeline" style="min-height:24px"></div>
+  <button class="btn ghost" id="ps-addrune" style="margin-top:6px">+ Lägg till runa</button>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn" id="ps-save">Spara</button>
+    <button class="btn ghost" id="ps-done" style="display:none">Markera klar</button>
+    <button class="btn ghost" id="ps-del" style="display:none">Radera</button>
+  </div>
+  <button class="sheet-close" id="ps-close">Avbryt</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>&#9881; Synk via GitHub</h3>
+  <p class="hint">Appen läser och sparar <b>rundagboken.json</b> i ett privat GitHub-repo så att din runresa följer med mellan enheter. Token sparas bara lokalt på den här enheten — aldrig i koden.</p>
+  <label class="field">GitHub-användarnamn (ägare av data-repot)</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label class="field">Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="rundagboken-data">
+  <label class="field">Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint" style="margin-top:8px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Ge åtkomst till ENDAST data-repot med Contents: Read and write.</div>
+  <div class="status-line" id="gh-status"></div>
+  <div class="btn-row" style="margin-top:6px">
+    <button class="btn" id="gh-save">Spara &amp; synka</button>
+    <button class="btn ghost" id="gh-pull">&#10227; Hämta</button>
+  </div>
+  <button class="sheet-close" id="gh-close">Stäng</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>&#9728; AI-nyckel</h3>
+  <p class="hint">AI-tolkningar görs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b>console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt och följer inte med i säkerhetskopior. Varje tolkning kostar några ören.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<script>
+// ===== Hjälpare =====
+function $(id){return document.getElementById(id);}
+function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function pad(n){return String(n).padStart(2,'0');}
+function toISO(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+var todayD=new Date();todayD.setHours(0,0,0,0);
+var todayKey=toISO(todayD);
+var MN=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+function fmtDate(iso){var p=iso.split('-');return parseInt(p[2],10)+' '+MN[parseInt(p[1],10)-1]+' '+p[0];}
+
+// ===== Rundata: Äldre futhark (24) =====
+// {g:glyph, n:namn, t:translit, th:tema, up:[betydelser], rev:omvänd|null, el:element, gd:gudom, hi:historik, mg:magi, aett:1-3}
+var RUNES=[
+{g:'\u16A0',n:'Fehu',t:'F',th:'Överflöd',up:['Rikedom','Resurser','Energi','Nya möjligheter'],rev:['Förlust','Slöseri','Blockeringar'],el:'Eld',gd:'Freyr & Freyja',hi:'Boskap betydde rikedom i det forna Norden. Fehu inleder Freyrs ätt (första ätten) i Äldre futhark; i Yngre futhark lever den vidare som fé.',mg:'Manifestation, prosperitet, att dra till sig och bevara resurser.',aett:1},
+{g:'\u16A2',n:'Uruz',t:'U',th:'Urkraft',up:['Vild styrka','Hälsa','Uthållighet','Mod'],rev:['Svaghet','Missad chans','Dominans'],el:'Jord',gd:'Urkraft / Thor',hi:'Uruz syftar på uroxen (uroxen), ett symboliskt djur för otämjd kraft. Bevaras i Yngre futhark som úr (regn/slagg).',mg:'Stärka hälsa och vilja, bryta gammalt, samla rå livskraft.',aett:1},
+{g:'\u16A6',n:'Thurisaz',t:'Th',th:'Skydd & kaos',up:['Försvar','Reaktiv kraft','Katalysator','Genombrott'],rev:['Fara','Illvilja','Förhastat'],el:'Eld',gd:'Thor',hi:'Tornet eller jätten (thurs). Förknippas med Thors hammare som försvar. Lever vidare i Yngre futhark som þurs.',mg:'Försvarsmagi, att rikta kraft mot hinder, skydd mot illvilja.',aett:1},
+{g:'\u16A8',n:'Ansuz',t:'A',th:'Budskap',up:['Kommunikation','Visdom','Inspiration','Andlig insikt'],rev:['Missförstånd','Manipulation','Falska råd'],el:'Luft',gd:'Oden',hi:'Gudens runa, kopplad till Oden och det talade/skrivna ordet. Yngre futhark: óss/áss.',mg:'Klar kommunikation, inspiration, kontakt med visdom och vägledning.',aett:1},
+{g:'\u16B1',n:'Raidho',t:'R',th:'Resa',up:['Resor','Rörelse','Rytm','Vägval','Framsteg'],rev:['Stagnation','Störd plan','Inre disharmoni'],el:'Luft',gd:'Forseti (rätt väg)',hi:'Vagnen eller ritten. Symboliserar resa både i yttre och inre mening. Yngre futhark: reið.',mg:'Stöd vid resor, hitta rätt riktning, skapa rytm och framåtrörelse.',aett:1},
+{g:'\u16B2',n:'Kenaz',t:'K',th:'Insikt',up:['Ljus','Kunskap','Kreativitet','Klarhet','Läkning'],rev:['Mörker','Osäkerhet','Förlorad inspiration'],el:'Eld',gd:'Hantverkets eld',hi:'Facklan eller den kontrollerade elden. Står för upplyst kunskap och skaparkraft. Yngre futhark: kaun (sår).',mg:'Tända inspiration, läka, lysa upp det dolda, skapa.',aett:1},
+{g:'\u16B7',n:'Gebo',t:'G',th:'Gåva',up:['Gåva','Utbyte','Generositet','Partnerskap','Balans'],rev:null,el:'Luft',gd:'Oden (gåvogivaren)',hi:'Korset (X) som markerar utbyte mellan jämlikar. Saknar distinkt omvänd form. Försvinner i Yngre futhark.',mg:'Förstärka relationer, ömsesidigt utbyte, offergåvor och tacksamhet.',aett:1},
+{g:'\u16B9',n:'Wunjo',t:'W',th:'Glädje',up:['Glädje','Harmoni','Gemenskap','Belöning'],rev:['Sorg','Disharmoni','Fördröjd glädje'],el:'Jord & Luft',gd:'Frigg',hi:'Vimpeln eller glädjen som avslutar första ätten. Försvinner i Yngre futhark.',mg:'Dra till sig glädje och samhörighet, fullborda mål, skapa harmoni.',aett:1},
+{g:'\u16BA',n:'Hagalaz',t:'H',th:'Omvälvning',up:['Plötslig förändring','Prövning','Naturkraft','Rening'],rev:null,el:'Is & Vatten',gd:'Hel / Heimdall',hi:'Haglet som faller okontrollerat men smälter till liv. Inleder Hagals/Heimdalls ätt. Yngre futhark: hagall.',mg:'Acceptera nödvändig förändring, bryta stagnation, rena det gamla.',aett:2},
+{g:'\u16BE',n:'Nauthiz',t:'N',th:'Nödvändighet',up:['Nöd','Behov','Tålamod','Lärdom genom motstånd'],rev:['Tvång','Brist','Dåliga val'],el:'Eld',gd:'Nornorna',hi:'Nöden — friktionen som tänder eld. Lär genom begränsning. Yngre futhark: nauðr.',mg:'Arbeta med motstånd, tända inre eld ur brist, tålamodsmagi.',aett:2},
+{g:'\u16C1',n:'Isa',t:'I',th:'Stillhet',up:['Is','Paus','Koncentration','Väntan','Klarhet'],rev:null,el:'Is',gd:'Rimkrafterna',hi:'Isen som binder och stillar. En enda rak stav. Yngre futhark: íss.',mg:'Stilla rörelse, frysa en situation, fokusera och centrera.',aett:2},
+{g:'\u16C3',n:'Jera',t:'J',th:'Skörd',up:['Cykler','Skörd','Belöning för arbete','Naturlig tid'],rev:null,el:'Jord',gd:'Freyr',hi:'Året och dess gröda — frukten av tålmodigt arbete. Yngre futhark: ár.',mg:'Föra projekt till skörd, arbeta med cykler och rätt tajming.',aett:2},
+{g:'\u16C7',n:'Eihwaz',t:'EI',th:'Transformation',up:['Ryggrad','Skydd','Uthållighet','Livsaxel'],rev:null,el:'Alla element',gd:'Oden (Yggdrasil)',hi:'Idegranen — det eviga trädet, en bro mellan liv och död. Kopplas till Yggdrasil.',mg:'Stark skyddsmagi, transformation, koppling mellan världar.',aett:2},
+{g:'\u16C8',n:'Perthro',t:'P',th:'Öde',up:['Mysterium','Öde','Det dolda','Intuition','Slump'],rev:['Stagnation','Hemligheter','Ensamhet'],el:'Vatten',gd:'Nornorna / Frigg',hi:'Tärningsbägaren eller ödesbägaren. Förknippas med det okända och spådom.',mg:'Spådom, arbeta med öde och slump, lyfta fram det dolda.',aett:2},
+{g:'\u16C9',n:'Algiz',t:'Z',th:'Skydd',up:['Försvar','Gudomlig koppling','Instinkt','Beskydd'],rev:['Sårbarhet','Dolt hot','Förlorad kontakt'],el:'Luft',gd:'Valkyrior / Heimdall',hi:'Älggräset eller den skyddande handen mot himlen. Yngre futhark: maðr/ýr-relaterad.',mg:'Den starkaste skyddsrunan, koppling till det gudomliga, sköld.',aett:2},
+{g:'\u16CB',n:'Sowilo',t:'S',th:'Kraft & seger',up:['Sol','Framgång','Livskraft','Vägledning','Helhet'],rev:null,el:'Eld',gd:'Sól / Sunna',hi:'Solen — segerns och livskraftens runa, källan som aldrig vänds. Yngre futhark: sól.',mg:'Energi och seger, klarhet, läkning genom ljus och vitalitet.',aett:2},
+{g:'\u16CF',n:'Tiwaz',t:'T',th:'Rättvisa',up:['Mod','Rättvisa','Offer','Ledarskap','Ärlighet'],rev:['Orättvisa','Feghet','Förlorad motivation'],el:'Luft',gd:'Tyr',hi:'Pilen mot himlen — krigsguden Tyr, som offrade sin hand. Inleder Tyrs ätt. Yngre futhark: týr.',mg:'Seger med heder, rättvisa, mod att stå för det rätta.',aett:3},
+{g:'\u16D2',n:'Berkana',t:'B',th:'Nystart & växt',up:['Nystart','Fruktbarhet','Omvårdnad','Läkning','Hem'],rev:['Stagnation','Familjeoro','Stillastående'],el:'Jord',gd:'Frigg / Nerthus',hi:'Björken — moderns och växandets runa. Yngre futhark: bjarkan.',mg:'Nya början, läkning, fertilitet, omsorg om det som växer.',aett:3},
+{g:'\u16D6',n:'Ehwaz',t:'E',th:'Partnerskap',up:['Häst','Tillit','Samarbete','Harmonisk rörelse'],rev:['Disharmoni','Misstro','Stillastående'],el:'Jord',gd:'Tvillingkrafter',hi:'Hästen och dess ryttare — det fungerande partnerskapet. Försvinner i Yngre futhark.',mg:'Stärka samarbeten och relationer, framåtrörelse i samklang.',aett:3},
+{g:'\u16D7',n:'Mannaz',t:'M',th:'Självet',up:['Människan','Jaget','Gemenskap','Självkännedom'],rev:['Isolering','Självbedrägeri','Fiendskap'],el:'Luft',gd:'Heimdall / Oden',hi:'Människan — det sociala jaget och hela släktet. Yngre futhark: maðr.',mg:'Självinsikt, stärka gemenskap, balansera jaget och andra.',aett:3},
+{g:'\u16DA',n:'Laguz',t:'L',th:'Flöde & intuition',up:['Vatten','Flöde','Intuition','Känslor','Drömmar'],rev:['Förvirring','Rädsla','Blockerad intuition'],el:'Vatten',gd:'Njord / Nerthus',hi:'Vattnet och sjön — det undermedvetnas runa. Yngre futhark: lögr.',mg:'Öppna intuition, drömarbete, följa flödet, känslomässig läkning.',aett:3},
+{g:'\u16DC',n:'Ingwaz',t:'NG',th:'Potential',up:['Inre tillväxt','Potential','Fullbordan','Frö'],rev:null,el:'Jord',gd:'Ing / Freyr',hi:'Guden Ing — det samlade fröet av kraft som väntar på att gro. Sluten form utan omvändning.',mg:'Samla och frigöra inre potential, gestaltning, fertilitet.',aett:3},
+{g:'\u16DE',n:'Dagaz',t:'D',th:'Genombrott',up:['Gryning','Genombrott','Uppvaknande','Hopp','Klarhet'],rev:null,el:'Eld & Luft',gd:'Dagens krafter',hi:'Dagen — gryningen mellan natt och ljus, ett ögonblick av genombrott. Saknar omvändning.',mg:'Genombrott, uppvaknande, vända en situation mot ljuset.',aett:3},
+{g:'\u16DF',n:'Othala',t:'O',th:'Arv',up:['Arv','Hem','Släkt','Rötter','Kärnvärden'],rev:['Rotlöshet','Fördomar','Förlorat arv'],el:'Jord',gd:'Förfäder / Oden',hi:'Arvegodset och hemjorden — det vi bär med oss från släkten. Avslutar futharken.',mg:'Stärka rötter och hem, hedra förfäder, bevara kärnvärden.',aett:3}
+];
+var AETT_NAMES={1:'Freyrs ätt',2:'Hagals ätt',3:'Tyrs ätt'};
+var REFLECT=[
+'Hur visar sig denna energi i mitt liv idag?',
+'Vad vill den här runan att du ska lägga märke till?',
+'Var i ditt liv behövs den här kraften just nu?',
+'Vad ber runan dig att släppa taget om?',
+'Hur kan du arbeta med detta tema under dagen?',
+'Vad känner du när du ser runan — och varför?'
+];
+function runeByGlyph(g){for(var i=0;i<RUNES.length;i++){if(RUNES[i].g===g)return i;}return -1;}
+
+// ===== State =====
+var KEY='rundagboken_v1';
+var state={daily:{},draws:{},journal:[],dreams:[],spreads:[],projects:[],studied:[],aiInsight:null,aiDream:null,guide:[],useRev:true};
+function load(){try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);state=Object.assign(state,d);}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+// ===== GitHub-synk (samma motor som jobb.html) =====
+var SYNC_KEY='rundagboken_sync_v1';
+var FILE='rundagboken.json';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+FILE;}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(statev,msg){var b=$('sync-badge');b.textContent=msg;b.className='sync-badge'+(statev==='ok'?' ok':statev==='err'?' err':'');}
+function dataPayload(){return {daily:state.daily,draws:state.draws,journal:state.journal,dreams:state.dreams,spreads:state.spreads,projects:state.projects,studied:state.studied,updated:new Date().toISOString()};}
+function applyPayload(d){
+  if(d.daily)state.daily=d.daily;
+  if(Array.isArray(d.journal))state.journal=d.journal;
+  if(Array.isArray(d.dreams))state.dreams=d.dreams;
+  if(Array.isArray(d.spreads))state.spreads=d.spreads;
+  if(Array.isArray(d.projects))state.projects=d.projects;
+  if(Array.isArray(d.studied))state.studied=d.studied;
+  if(d.draws)state.draws=d.draws;
+}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');var data=await ghGet();if(data){applyPayload(data);save();renderAll();}setBadge('ok','Synkad');}
+  catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(dataPayload()));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+
+// ===== AI =====
+var AI_KEY='rundagboken_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCallMsgs(messages,maxTokens){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens||700,messages:messages})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function aiCall(prompt,maxTokens){return aiCallMsgs([{role:'user',content:prompt}],maxTokens);}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">&#9728; AI-tolkning</span>'+esc(t)+'</div>';}
+function localBox(t){return '<div class="local-box"><span class="ai-lbl">&#9789; Tolkning</span>'+esc(t)+'</div>';}
+function runeLineText(idx,rev){var R=RUNES[idx];return R.n+(rev&&R.rev?' (omvänd: '+R.rev.join(', ')+')':' ('+R.up.join(', ')+')');}
+
+// ===== Sheets =====
+var sheetBg=$('sheet-bg');
+function openSheet(id){sheetBg.classList.add('open');$(id).classList.add('open');}
+function closeSheets(){sheetBg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+sheetBg.onclick=closeSheets;
+
+// Generic rune picker
+var pickerCb=null;
+function openPicker(cb){
+  pickerCb=cb;$('picker-search').value='';renderPicker('');openSheet('picker-sheet');
+}
+function renderPicker(q){
+  q=(q||'').toLowerCase();
+  var html='';
+  RUNES.forEach(function(R,i){
+    if(q&&R.n.toLowerCase().indexOf(q)<0&&R.th.toLowerCase().indexOf(q)<0&&R.t.toLowerCase().indexOf(q)<0)return;
+    html+='<div class="lib-item" data-pi="'+i+'"><div class="lib-row"><div class="lib-g">'+R.g+'</div><div><div class="lib-nm">'+esc(R.n)+'</div><div class="lib-th">'+esc(R.th)+'</div></div></div></div>';
+  });
+  $('picker-list').innerHTML=html||'<div class="empty-msg">Inga träffar.</div>';
+  $('picker-list').querySelectorAll('.lib-item').forEach(function(el){
+    el.onclick=function(){var i=parseInt(el.dataset.pi,10);
+      if($('chk-rev').checked||true){
+        // ask orientation
+        pendingPick=i;openSheet('orient-sheet');
+      }
+    };
+  });
+}
+$('picker-search').oninput=function(){renderPicker(this.value);};
+$('picker-cancel').onclick=closeSheets;
+var pendingPick=null;
+$('orient-up').onclick=function(){finishPick(false);};
+$('orient-rev').onclick=function(){finishPick(true);};
+function finishPick(rev){
+  var i=pendingPick;pendingPick=null;
+  document.getElementById('orient-sheet').classList.remove('open');
+  if(pickerCb){pickerCb(i,rev);}
+}
+
+// ===== Rune stone HTML =====
+function stoneHtml(idx,rev,cls){
+  var R=RUNES[idx];
+  return '<div class="rstone'+(rev?' rev':'')+(cls?' '+cls:'')+'">'+(rev?'<span class="rbadge">&#10227;</span>':'')+'<div class="glyph">'+R.g+'</div><div class="rname">'+esc(R.n)+'</div></div>';
+}
+function miniRune(idx){return '<span class="g">'+RUNES[idx].g+'</span>';}
+
+// ===== Dagens runa =====
+function ensureDaily(){
+  if(!state.daily[todayKey]){
+    state.daily[todayKey]=Math.floor(Math.random()*RUNES.length);
+    save();
+  }
+}
+function renderHomeDaily(){
+  ensureDaily();
+  var idx=state.daily[todayKey];var R=RUNES[idx];
+  $('hem-daily').innerHTML='<div class="home-rune">'+stoneHtml(idx,false,'mini')+
+    '<div style="flex:1;min-width:0"><div class="entry-title">'+esc(R.n)+' · '+esc(R.th)+'</div>'+
+    '<div class="meaning" style="text-align:left;margin:0">'+esc(R.up.join(' · '))+'</div></div></div>';
+}
+
+// ===== Veckans återkommande =====
+function drawsInLastDays(days){
+  var since=new Date(todayD);since.setDate(since.getDate()-(days-1));
+  var counts={};
+  Object.keys(state.draws).forEach(function(k){
+    var d=new Date(k);if(d>=since){state.draws[k].forEach(function(x){counts[x.r]=(counts[x.r]||0)+1;});}
+  });
+  // include daily runes
+  Object.keys(state.daily).forEach(function(k){var d=new Date(k);if(d>=since){var r=state.daily[k];counts[r]=(counts[r]||0)+1;}});
+  return counts;
+}
+function renderRecur(){
+  var counts=drawsInLastDays(14);
+  var arr=Object.keys(counts).map(function(k){return {r:parseInt(k,10),c:counts[k]};}).filter(function(x){return x.c>=2;}).sort(function(a,b){return b.c-a.c;}).slice(0,6);
+  if(!arr.length){$('hem-recur').innerHTML='<div class="empty-msg">Inga återkommande runor ännu — dra fler för att se mönster.</div>';return;}
+  var html='<div class="recur">';
+  arr.forEach(function(x){html+='<div class="ri" data-rr="'+x.r+'"><span class="g">'+RUNES[x.r].g+'</span><span class="c">'+RUNES[x.r].n+' ·'+x.c+'x</span></div>';});
+  html+='</div>';
+  $('hem-recur').innerHTML=html;
+  $('hem-recur').querySelectorAll('.ri').forEach(function(el){el.onclick=function(){openRuneSheet(parseInt(el.dataset.rr,10));};});
+}
+
+// ===== Hem: senaste anteckning, dragning, projekt =====
+function renderHomeJournal(){
+  if(!state.journal.length){$('hem-journal').innerHTML='<div class="empty-msg">Inga anteckningar ännu.</div>';return;}
+  var j=state.journal.slice().sort(function(a,b){return b.created-a.created;})[0];
+  var snip=j.tolkning||j.tankar||j.handelser||'';
+  $('hem-journal').innerHTML='<div class="entry-date">'+fmtDate(j.date)+'</div>'+
+    (j.runes&&j.runes.length?'<div class="runeline">'+j.runes.map(miniRune).join('')+'</div>':'')+
+    '<div class="entry-snip" style="margin-top:4px">'+esc(snip)+'</div>';
+}
+function renderHomeLastDraw(){
+  var keys=Object.keys(state.draws).filter(function(k){return state.draws[k].length;}).sort();
+  if(!keys.length){$('hem-lastdraw').innerHTML='<div class="empty-msg">Ingen dragning sparad ännu.</div>';return;}
+  var k=keys[keys.length-1];var last=state.draws[k][state.draws[k].length-1];var R=RUNES[last.r];
+  $('hem-lastdraw').innerHTML='<div class="home-rune">'+stoneHtml(last.r,last.rev,'mini')+
+    '<div style="flex:1;min-width:0"><div class="entry-date">'+fmtDate(k)+'</div><div class="entry-title">'+esc(R.n)+(last.rev?' (omvänd)':'')+'</div>'+
+    '<div class="meaning" style="text-align:left;margin:0">'+esc((last.rev&&R.rev?R.rev:R.up).join(' · '))+'</div></div></div>';
+}
+function renderHomeProjects(){
+  var act=state.projects.filter(function(p){return !p.done;});
+  if(!act.length){$('hem-proj').innerHTML='<div class="empty-msg">Inga pågående projekt. Tryck + Nytt för att starta ett.</div>';return;}
+  var html='';
+  act.forEach(function(p){
+    html+='<div class="entry" data-pid="'+p.id+'"><div class="entry-info"><div class="entry-title">'+esc(p.name)+'</div>'+
+      (p.desc?'<div class="entry-snip">'+esc(p.desc)+'</div>':'')+
+      (p.runes&&p.runes.length?'<div class="runeline">'+p.runes.map(miniRune).join('')+'</div>':'')+'</div></div>';
+  });
+  $('hem-proj').innerHTML=html;
+  $('hem-proj').querySelectorAll('.entry').forEach(function(el){el.onclick=function(){openProject(el.dataset.pid);};});
+}
+
+// ===== AI-insikt (hem) =====
+$('hem-ai-btn').onclick=async function(){
+  var counts=drawsInLastDays(14);
+  var arr=Object.keys(counts).map(function(k){return {r:parseInt(k,10),c:counts[k]};}).sort(function(a,b){return b.c-a.c;}).slice(0,8);
+  if(!arr.length){$('hem-ai').innerHTML='<div class="empty-msg">Dra några runor först så kan AI ge en insikt.</div>';return;}
+  var lines=arr.map(function(x){return '- '+RUNES[x.r].n+' ('+RUNES[x.r].th+') — '+x.c+' gånger';}).join('\n');
+  var prompt='Du är en varm, jordnära runvägledare. Här är de runor användaren dragit de senaste två veckorna:\n'+lines+'\n\nSkriv på svenska en kort insikt (högst 90 ord) om vilka teman som verkar dominera och vad de kan peka mot. Ingen rubrik, ingen punktlista, avsluta med en mjuk reflektionsfråga.';
+  var btn=this;var orig=btn.textContent;btn.textContent='Tänker…';btn.disabled=true;
+  try{var t=await aiCall(prompt,400);state.aiInsight={date:todayKey,text:t};save();$('hem-ai').innerHTML=aiBox(t);}
+  catch(e){if(e.message!=='NOKEY')$('hem-ai').innerHTML='<div class="empty-msg">Kunde inte hämta insikt: '+esc(e.message)+'</div>';}
+  btn.textContent=orig;btn.disabled=false;
+};
+
+// ===== DRA: dra en runa =====
+var lastDraw=null;
+$('chk-rev').checked=state.useRev!==false;
+$('chk-rev').onchange=function(){state.useRev=this.checked;save();};
+function drawRandom(){
+  var i=Math.floor(Math.random()*RUNES.length);
+  var rev=false;
+  if($('chk-rev').checked&&RUNES[i].rev){rev=Math.random()<0.5;}
+  return {r:i,rev:rev};
+}
+function showDraw(idx,rev){
+  lastDraw={r:idx,rev:rev};
+  $('draw-slot').innerHTML=stoneHtml(idx,rev,'reveal');
+  var R=RUNES[idx];
+  var mean=(rev&&R.rev?R.rev:R.up);
+  var q=REFLECT[Math.floor(Math.random()*REFLECT.length)];
+  $('draw-meaning').innerHTML='<div style="text-align:center"><div class="entry-title" style="font-size:16px">'+esc(R.n)+(rev?' &#10227; omvänd':'')+' · '+esc(R.th)+'</div></div>'+
+    '<div class="meaning"><b>'+esc(mean.join(' · '))+'</b></div>'+
+    '<div class="ref-q">&#9789; '+esc(q)+'</div>';
+  $('draw-detail').style.display='block';
+  $('draw-ai-box').innerHTML='';
+  markStudied(idx);
+}
+$('btn-draw').onclick=function(){var d=drawRandom();showDraw(d.r,d.rev);};
+$('btn-pick').onclick=function(){openPicker(function(i,rev){closeSheets();showDraw(i,rev);});};
+$('draw-save').onclick=function(){
+  if(!lastDraw)return;
+  if(!state.draws[todayKey])state.draws[todayKey]=[];
+  state.draws[todayKey].push({r:lastDraw.r,rev:lastDraw.rev,ts:Date.now()});
+  persist();renderTodayDraws();renderHomeLastDraw();
+  // also open a prefilled journal entry
+  openJournal(null,[lastDraw.r]);
+};
+$('draw-ai').onclick=async function(){
+  if(!lastDraw)return;
+  var R=RUNES[lastDraw.r];
+  var prompt='Du är en varm, insiktsfull runvägledare. Tolka denna dagsruna på svenska (högst 120 ord, ingen rubrik, ingen punktlista) och avsluta med en mjuk reflektionsfråga.\n\nRuna: '+runeLineText(lastDraw.r,lastDraw.rev)+'\nTema: '+R.th;
+  var btn=this;var orig=btn.textContent;btn.textContent='Tolkar…';btn.disabled=true;
+  try{var t=await aiCall(prompt,400);$('draw-ai-box').innerHTML=aiBox(t);}
+  catch(e){if(e.message!=='NOKEY')alert('Kunde inte hämta tolkning: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+};
+function renderTodayDraws(){
+  var list=state.draws[todayKey]||[];
+  if(!list.length){$('today-draws').innerHTML='<div class="empty-msg">Inga dragningar idag ännu.</div>';return;}
+  var html='';
+  list.forEach(function(x,i){
+    var R=RUNES[x.r];
+    html+='<div class="entry"><div class="entry-info" data-rs="'+x.r+'"><div class="entry-title">'+R.g+' '+esc(R.n)+(x.rev?' &#10227;':'')+'</div><div class="entry-snip">'+esc((x.rev&&R.rev?R.rev:R.up).join(', '))+'</div></div><button class="del-x" data-di="'+i+'">&times;</button></div>';
+  });
+  $('today-draws').innerHTML=html;
+  $('today-draws').querySelectorAll('[data-rs]').forEach(function(el){el.onclick=function(){openRuneSheet(parseInt(el.dataset.rs,10));};});
+  $('today-draws').querySelectorAll('.del-x').forEach(function(el){el.onclick=function(ev){ev.stopPropagation();state.draws[todayKey].splice(parseInt(el.dataset.di,10),1);persist();renderTodayDraws();};});
+}
+
+// ===== Läggningar =====
+var SPREADS={
+  one:{name:'Dagens budskap',pos:['Budskap']},
+  three:{name:'Dåtid · Nutid · Framtid',pos:['Dåtid','Nutid','Framtid']},
+  five:{name:'Femrunorslag',pos:['Situation','Hinder','Styrka','Råd','Utfall']}
+};
+var spreadDraft=null;
+function buildSpreadDraft(){
+  var type=$('spread-type').value;
+  var pos;
+  if(type==='custom'){
+    var n=Math.max(1,Math.min(9,parseInt($('custom-count').value,10)||3));
+    var lines=$('custom-pos').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    pos=[];for(var i=0;i<n;i++){pos.push(lines[i]||('Runa '+(i+1)));}
+  }else{pos=SPREADS[type].pos.slice();}
+  spreadDraft={type:type,pos:pos,cards:pos.map(function(p){return {pos:p,r:null,rev:false};})};
+  renderSpreadDraft();
+}
+function renderSpreadDraft(){
+  if(!spreadDraft){$('spread-positions').innerHTML='';return;}
+  var html='';
+  spreadDraft.cards.forEach(function(c,i){
+    html+='<div class="spread-pos"><div class="pos-name">'+esc(c.pos)+'</div><div class="pos-fill">'+
+      (c.r==null?'<button class="btn ghost" data-sp="'+i+'">Dra / välj</button>':
+        miniRune(c.r)+'<span class="pos-cn">'+esc(RUNES[c.r].n)+(c.rev?' &#10227;':'')+'</span><button class="btn ghost" data-sp="'+i+'" style="margin-left:auto">Byt</button>')+
+      '</div></div>';
+  });
+  $('spread-positions').innerHTML=html;
+  $('spread-positions').querySelectorAll('[data-sp]').forEach(function(el){
+    el.onclick=function(){var i=parseInt(el.dataset.sp,10);openPicker(function(ri,rev){closeSheets();spreadDraft.cards[i].r=ri;spreadDraft.cards[i].rev=rev;markStudied(ri);renderSpreadDraft();});};
+  });
+}
+$('spread-type').onchange=function(){$('custom-rows').style.display=this.value==='custom'?'block':'none';buildSpreadDraft();};
+$('custom-count').oninput=buildSpreadDraft;
+$('custom-pos').oninput=buildSpreadDraft;
+$('spread-drawall').onclick=function(){if(!spreadDraft)buildSpreadDraft();spreadDraft.cards.forEach(function(c){var d=drawRandom();c.r=d.r;c.rev=d.rev;markStudied(d.r);});renderSpreadDraft();};
+$('spread-reset').onclick=function(){buildSpreadDraft();$('spread-q').value='';};
+$('spread-save').onclick=function(){
+  if(!spreadDraft||spreadDraft.cards.some(function(c){return c.r==null;})){alert('Dra eller välj alla runor först.');return;}
+  var s={id:uid(),type:spreadDraft.type,pos:spreadDraft.pos,cards:spreadDraft.cards.map(function(c){return {pos:c.pos,r:c.r,rev:c.rev};}),q:$('spread-q').value.trim(),date:todayKey,note:'',ai:'',created:Date.now()};
+  state.spreads.push(s);persist();buildSpreadDraft();$('spread-q').value='';renderSpreadList();
+};
+function spreadName(s){return s.type==='custom'?'Eget upplägg':(SPREADS[s.type]?SPREADS[s.type].name:'Läggning');}
+function renderSpreadList(){
+  if(!state.spreads.length){$('spread-list').innerHTML='<div class="empty-msg">Inga sparade läggningar ännu.</div>';return;}
+  var html='';
+  state.spreads.slice().sort(function(a,b){return b.created-a.created;}).forEach(function(s){
+    html+='<div class="entry" data-sid="'+s.id+'"><div class="entry-info"><div class="entry-date">'+fmtDate(s.date)+' · '+esc(spreadName(s))+'</div>'+
+      (s.q?'<div class="entry-snip">'+esc(s.q)+'</div>':'')+
+      '<div class="runeline">'+s.cards.map(function(c){return miniRune(c.r);}).join('')+'</div></div></div>';
+  });
+  $('spread-list').innerHTML=html;
+  $('spread-list').querySelectorAll('.entry').forEach(function(el){el.onclick=function(){openSpread(el.dataset.sid);};});
+}
+var ssId=null;
+function openSpread(id){
+  var s=state.spreads.find(function(x){return x.id===id;});if(!s)return;ssId=id;
+  $('ss-title').textContent=spreadName(s)+' · '+fmtDate(s.date);
+  $('ss-q').textContent=s.q||'';
+  var html='';
+  s.cards.forEach(function(c){var R=RUNES[c.r];
+    html+='<div class="spread-pos"><div class="pos-name">'+esc(c.pos)+'</div><div class="pos-fill" data-rs="'+c.r+'">'+miniRune(c.r)+'<span class="pos-cn">'+esc(R.n)+(c.rev?' &#10227;':'')+'</span></div></div>';
+  });
+  $('ss-cards').innerHTML=html;
+  $('ss-cards').querySelectorAll('[data-rs]').forEach(function(el){el.onclick=function(){openRuneSheet(parseInt(el.dataset.rs,10));};});
+  $('ss-note').value=s.note||'';
+  $('ss-ai-box').innerHTML=s.ai?aiBox(s.ai):'';
+  openSheet('spread-sheet');
+}
+$('ss-savenote').onclick=function(){var s=state.spreads.find(function(x){return x.id===ssId;});if(!s)return;s.note=$('ss-note').value.trim();persist();closeSheets();};
+$('ss-del').onclick=function(){if(!confirm('Radera läggningen?'))return;state.spreads=state.spreads.filter(function(x){return x.id!==ssId;});persist();closeSheets();renderSpreadList();};
+$('ss-close').onclick=function(){closeSheets();renderSpreadList();};
+$('ss-ai').onclick=async function(){
+  var s=state.spreads.find(function(x){return x.id===ssId;});if(!s)return;
+  var lines=s.cards.map(function(c){return '- '+c.pos+': '+runeLineText(c.r,c.rev);}).join('\n');
+  var prompt='Du är en varm, insiktsfull runvägledare. Tolka denna läggning på svenska som en sammanhängande text (högst 200 ord, ingen rubrik, ingen punktlista). Knyt ihop positionerna och avsluta med en mjuk reflektionsfråga.\n\nLäggning: '+spreadName(s)+'\n'+(s.q?'Fråga: '+s.q+'\n':'')+'Runor:\n'+lines;
+  var btn=this;var orig=btn.textContent;btn.textContent='Tolkar…';btn.disabled=true;
+  try{var t=await aiCall(prompt,600);s.ai=t;persist();$('ss-ai-box').innerHTML=aiBox(t);}
+  catch(e){if(e.message!=='NOKEY')alert('Kunde inte hämta tolkning: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+};
+
+// ===== Rundagbok =====
+var jsId=null;var jsRunes=[];
+function openJournal(id,prefRunes){
+  if(id){
+    var j=state.journal.find(function(x){return x.id===id;});if(!j)return;jsId=id;jsRunes=(j.runes||[]).slice();
+    $('js-title').textContent='Redigera anteckning';$('js-date').value=j.date;
+    $('js-tolkning').value=j.tolkning||'';$('js-tankar').value=j.tankar||'';$('js-handelser').value=j.handelser||'';
+    $('js-kanslor').value=j.kanslor||'';$('js-drommar').value=j.drommar||'';$('js-taggar').value=(j.taggar||[]).join(', ');
+    $('js-del').style.display='';
+  }else{
+    jsId=null;jsRunes=(prefRunes||[]).slice();
+    $('js-title').textContent='Ny anteckning';$('js-date').value=todayKey;
+    ['js-tolkning','js-tankar','js-handelser','js-kanslor','js-drommar','js-taggar'].forEach(function(i){$(i).value='';});
+    $('js-del').style.display='none';
+  }
+  $('js-ai-box').innerHTML='';
+  renderJsRunes();openSheet('journal-sheet');
+}
+function renderJsRunes(){$('js-runes').innerHTML=jsRunes.length?jsRunes.map(function(r,i){return '<span class="g" data-jr="'+i+'" title="Ta bort">'+RUNES[r].g+'</span>';}).join(''):'<span class="muted" style="font-size:12px">Inga runor kopplade</span>';
+  $('js-runes').querySelectorAll('[data-jr]').forEach(function(el){el.onclick=function(){jsRunes.splice(parseInt(el.dataset.jr,10),1);renderJsRunes();};});}
+$('js-addrune').onclick=function(){openPicker(function(i,rev){closeSheets();jsRunes.push(i);markStudied(i);openSheet('journal-sheet');renderJsRunes();});};
+$('js-save').onclick=function(){
+  var rec={date:$('js-date').value||todayKey,runes:jsRunes.slice(),tolkning:$('js-tolkning').value.trim(),tankar:$('js-tankar').value.trim(),handelser:$('js-handelser').value.trim(),kanslor:$('js-kanslor').value.trim(),drommar:$('js-drommar').value.trim(),taggar:$('js-taggar').value.split(',').map(function(s){return s.trim();}).filter(Boolean)};
+  if(jsId){var j=state.journal.find(function(x){return x.id===jsId;});Object.assign(j,rec);}
+  else{rec.id=uid();rec.created=Date.now();state.journal.push(rec);}
+  persist();closeSheets();renderJournalList();renderHomeJournal();
+};
+$('js-del').onclick=function(){if(!confirm('Radera anteckningen?'))return;state.journal=state.journal.filter(function(x){return x.id!==jsId;});persist();closeSheets();renderJournalList();renderHomeJournal();};
+$('js-close').onclick=closeSheets;
+$('js-ai').onclick=async function(){
+  var prompt='Du är en varm, insiktsfull runvägledare. Användaren har skrivit en dagboksanteckning. Ge på svenska en kort tolkande spegling (högst 130 ord, ingen rubrik, ingen punktlista) som väver ihop runorna med det skrivna, och avsluta med en mjuk reflektionsfråga.\n\n';
+  if(jsRunes.length)prompt+='Runor: '+jsRunes.map(function(r){return RUNES[r].n;}).join(', ')+'\n';
+  if($('js-tolkning').value.trim())prompt+='Egen tolkning: '+$('js-tolkning').value.trim()+'\n';
+  if($('js-tankar').value.trim())prompt+='Tankar: '+$('js-tankar').value.trim()+'\n';
+  if($('js-handelser').value.trim())prompt+='Händelser: '+$('js-handelser').value.trim()+'\n';
+  if($('js-kanslor').value.trim())prompt+='Känslor: '+$('js-kanslor').value.trim()+'\n';
+  if($('js-drommar').value.trim())prompt+='Drömmar: '+$('js-drommar').value.trim()+'\n';
+  var btn=this;var orig=btn.textContent;btn.textContent='Tolkar…';btn.disabled=true;
+  try{var t=await aiCall(prompt,450);$('js-ai-box').innerHTML=aiBox(t);}
+  catch(e){if(e.message!=='NOKEY')alert('Kunde inte hämta tolkning: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+};
+$('journal-new').onclick=function(){openJournal(null,null);};
+function renderJournalList(){
+  if(!state.journal.length){$('journal-list').innerHTML='<div class="empty-msg">Inga anteckningar ännu.</div>';return;}
+  var html='';
+  state.journal.slice().sort(function(a,b){return (b.date<a.date?-1:b.date>a.date?1:b.created-a.created);}).forEach(function(j){
+    var snip=j.tolkning||j.tankar||j.handelser||j.kanslor||'';
+    html+='<div class="entry" data-jid="'+j.id+'"><div class="entry-info"><div class="entry-date">'+fmtDate(j.date)+'</div>'+
+      (j.runes&&j.runes.length?'<div class="runeline">'+j.runes.map(miniRune).join('')+'</div>':'')+
+      (snip?'<div class="entry-snip" style="margin-top:3px">'+esc(snip)+'</div>':'')+
+      ((j.taggar&&j.taggar.length)?'<div>'+j.taggar.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div>':'')+
+      '</div></div>';
+  });
+  $('journal-list').innerHTML=html;
+  $('journal-list').querySelectorAll('.entry').forEach(function(el){el.onclick=function(){openJournal(el.dataset.jid);};});
+}
+
+// ===== Drömmar =====
+var dsId=null;var dsRunes=[];
+function openDream(id){
+  if(id){var dr=state.dreams.find(function(x){return x.id===id;});if(!dr)return;dsId=id;dsRunes=(dr.runes||[]).slice();
+    $('ds-title').textContent='Redigera dröm';$('ds-date').value=dr.date;$('ds-text').value=dr.text||'';$('ds-symbols').value=(dr.symbols||[]).join(', ');$('ds-del').style.display='';
+  }else{dsId=null;dsRunes=[];$('ds-title').textContent='Ny dröm';$('ds-date').value=todayKey;$('ds-text').value='';$('ds-symbols').value='';$('ds-del').style.display='none';}
+  renderDsRunes();openSheet('dream-sheet');
+}
+function renderDsRunes(){$('ds-runes').innerHTML=dsRunes.length?dsRunes.map(function(r,i){return '<span class="g" data-dr="'+i+'">'+RUNES[r].g+'</span>';}).join(''):'<span class="muted" style="font-size:12px">Inga runor kopplade</span>';
+  $('ds-runes').querySelectorAll('[data-dr]').forEach(function(el){el.onclick=function(){dsRunes.splice(parseInt(el.dataset.dr,10),1);renderDsRunes();};});}
+$('ds-addrune').onclick=function(){openPicker(function(i,rev){closeSheets();dsRunes.push(i);markStudied(i);openSheet('dream-sheet');renderDsRunes();});};
+$('ds-save').onclick=function(){
+  var rec={date:$('ds-date').value||todayKey,text:$('ds-text').value.trim(),symbols:$('ds-symbols').value.split(',').map(function(s){return s.trim();}).filter(Boolean),runes:dsRunes.slice()};
+  if(!rec.text){alert('Skriv något om drömmen först.');return;}
+  if(dsId){var dr=state.dreams.find(function(x){return x.id===dsId;});Object.assign(dr,rec);}
+  else{rec.id=uid();rec.created=Date.now();state.dreams.push(rec);}
+  persist();closeSheets();renderDreamList();
+};
+$('ds-del').onclick=function(){if(!confirm('Radera drömmen?'))return;state.dreams=state.dreams.filter(function(x){return x.id!==dsId;});persist();closeSheets();renderDreamList();};
+$('ds-close').onclick=closeSheets;
+$('dream-new').onclick=function(){openDream(null);};
+function renderDreamList(){
+  if(!state.dreams.length){$('dream-list').innerHTML='<div class="empty-msg">Inga drömmar loggade ännu.</div>';return;}
+  var html='';
+  state.dreams.slice().sort(function(a,b){return (b.date<a.date?-1:b.date>a.date?1:b.created-a.created);}).forEach(function(dr){
+    html+='<div class="entry" data-did="'+dr.id+'"><div class="entry-info"><div class="entry-date">'+fmtDate(dr.date)+'</div>'+
+      '<div class="entry-snip">'+esc(dr.text)+'</div>'+
+      (dr.runes&&dr.runes.length?'<div class="runeline">'+dr.runes.map(miniRune).join('')+'</div>':'')+
+      ((dr.symbols&&dr.symbols.length)?'<div>'+dr.symbols.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div>':'')+
+      '</div></div>';
+  });
+  $('dream-list').innerHTML=html;
+  $('dream-list').querySelectorAll('.entry').forEach(function(el){el.onclick=function(){openDream(el.dataset.did);};});
+}
+$('dream-ai-btn').onclick=async function(){
+  if(!state.dreams.length){$('dream-ai-box').innerHTML='<div class="empty-msg">Logga några drömmar först.</div>';return;}
+  var recent=state.dreams.slice().sort(function(a,b){return b.created-a.created;}).slice(0,8);
+  var lines=recent.map(function(dr){
+    // runes drawn same week
+    var wk=[];Object.keys(state.draws).forEach(function(k){if(sameWeek(k,dr.date)){state.draws[k].forEach(function(x){wk.push(RUNES[x.r].n);});}});
+    if(state.daily[dr.date])wk.push(RUNES[state.daily[dr.date]].n);
+    return '- '+dr.date+': '+dr.text+(dr.symbols&&dr.symbols.length?' [symboler: '+dr.symbols.join(', ')+']':'')+(wk.length?' [runor samma vecka: '+wk.join(', ')+']':'');
+  }).join('\n');
+  var prompt='Du är en varm, insiktsfull runvägledare med kunskap om drömsymbolik. Här är användarens senaste drömmar med eventuella runor dragna samma vecka:\n'+lines+'\n\nSkriv på svenska (högst 160 ord, ingen rubrik, ingen punktlista) om möjliga samband mellan drömmarnas symboler och runorna. Avsluta med en mjuk reflektionsfråga.';
+  var btn=this;var orig=btn.textContent;btn.textContent='Letar…';btn.disabled=true;
+  try{var t=await aiCall(prompt,500);state.aiDream={date:todayKey,text:t};save();$('dream-ai-box').innerHTML=aiBox(t);}
+  catch(e){if(e.message!=='NOKEY')$('dream-ai-box').innerHTML='<div class="empty-msg">Kunde inte hämta: '+esc(e.message)+'</div>';}
+  btn.textContent=orig;btn.disabled=false;
+};
+function isoWeek(d){var dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);var y=dt.getUTCFullYear();var wk=Math.ceil((((dt-new Date(Date.UTC(y,0,1)))/86400000)+1)/7);return y+'-'+wk;}
+function sameWeek(a,b){return isoWeek(new Date(a))===isoWeek(new Date(b));}
+
+// ===== Projekt =====
+var psId=null;var psRunes=[];
+function openProject(id){
+  if(id){var p=state.projects.find(function(x){return x.id===id;});if(!p)return;psId=id;psRunes=(p.runes||[]).slice();
+    $('ps-title').textContent='Redigera projekt';$('ps-name').value=p.name;$('ps-desc').value=p.desc||'';$('ps-done').style.display='';$('ps-del').style.display='';
+    $('ps-done').textContent=p.done?'Återöppna':'Markera klar';
+  }else{psId=null;psRunes=[];$('ps-title').textContent='Nytt runprojekt';$('ps-name').value='';$('ps-desc').value='';$('ps-done').style.display='none';$('ps-del').style.display='none';}
+  renderPsRunes();openSheet('proj-sheet');
+}
+function renderPsRunes(){$('ps-runes').innerHTML=psRunes.length?psRunes.map(function(r,i){return '<span class="g" data-pr="'+i+'">'+RUNES[r].g+'</span>';}).join(''):'<span class="muted" style="font-size:12px">Inga fokusrunor</span>';
+  $('ps-runes').querySelectorAll('[data-pr]').forEach(function(el){el.onclick=function(){psRunes.splice(parseInt(el.dataset.pr,10),1);renderPsRunes();};});}
+$('ps-addrune').onclick=function(){openPicker(function(i,rev){closeSheets();psRunes.push(i);markStudied(i);openSheet('proj-sheet');renderPsRunes();});};
+$('ps-save').onclick=function(){
+  var name=$('ps-name').value.trim();if(!name){alert('Ge projektet ett namn.');return;}
+  if(psId){var p=state.projects.find(function(x){return x.id===psId;});p.name=name;p.desc=$('ps-desc').value.trim();p.runes=psRunes.slice();}
+  else{state.projects.push({id:uid(),name:name,desc:$('ps-desc').value.trim(),runes:psRunes.slice(),done:false,created:Date.now()});}
+  persist();closeSheets();renderHomeProjects();
+};
+$('ps-done').onclick=function(){var p=state.projects.find(function(x){return x.id===psId;});if(p){p.done=!p.done;persist();closeSheets();renderHomeProjects();}};
+$('ps-del').onclick=function(){if(!confirm('Radera projektet?'))return;state.projects=state.projects.filter(function(x){return x.id!==psId;});persist();closeSheets();renderHomeProjects();};
+$('ps-close').onclick=closeSheets;
+$('hem-proj-add').onclick=function(){openProject(null);};
+$('hem-redraw').onclick=function(){if(!confirm('Dra om dagens runa?'))return;state.daily[todayKey]=Math.floor(Math.random()*RUNES.length);save();renderHomeDaily();};
+
+// ===== Mönsteranalys =====
+function allDrawCounts(){
+  var counts={};
+  Object.keys(state.draws).forEach(function(k){state.draws[k].forEach(function(x){counts[x.r]=(counts[x.r]||0)+1;});});
+  Object.keys(state.daily).forEach(function(k){var r=state.daily[k];counts[r]=(counts[r]||0)+1;});
+  state.spreads.forEach(function(s){s.cards.forEach(function(c){counts[c.r]=(counts[c.r]||0)+1;});});
+  return counts;
+}
+function totalDraws(){var c=allDrawCounts();var t=0;Object.keys(c).forEach(function(k){t+=c[k];});return t;}
+function renderStats(){
+  var counts=allDrawCounts();var total=totalDraws();
+  var distinct=Object.keys(counts).length;
+  $('stat-overview').innerHTML=
+    '<div class="stat-row"><span>Totalt antal runor</span><b>'+total+'</b></div>'+
+    '<div class="stat-row"><span>Olika runor dragna</span><b>'+distinct+' / 24</b></div>'+
+    '<div class="stat-row"><span>Dagboksanteckningar</span><b>'+state.journal.length+'</b></div>'+
+    '<div class="stat-row"><span>Sparade läggningar</span><b>'+state.spreads.length+'</b></div>'+
+    '<div class="stat-row"><span>Drömmar loggade</span><b>'+state.dreams.length+'</b></div>';
+  // frequency bars
+  var arr=Object.keys(counts).map(function(k){return {r:parseInt(k,10),c:counts[k]};}).sort(function(a,b){return b.c-a.c;});
+  if(!arr.length){$('stat-freq').innerHTML='<div class="empty-msg">Dra runor för att se frekvens.</div>';}
+  else{
+    var max=arr[0].c;var html='';
+    arr.slice(0,12).forEach(function(x){html+='<div class="bar-line"><span class="bar-g">'+RUNES[x.r].g+'</span><div class="bar-bg"><div class="bar" style="width:'+Math.round(x.c/max*100)+'%"></div></div><span class="bar-n">'+x.c+'</span></div>';});
+    $('stat-freq').innerHTML=html;
+  }
+  // themes
+  var th={};arr.forEach(function(x){var t=RUNES[x.r].th;th[t]=(th[t]||0)+x.c;});
+  var thArr=Object.keys(th).map(function(k){return {t:k,c:th[k]};}).sort(function(a,b){return b.c-a.c;}).slice(0,6);
+  $('stat-themes').innerHTML=thArr.length?thArr.map(function(x){return '<span class="theme-chip">'+esc(x.t)+' <b>'+x.c+'</b></span>';}).join(''):'<div class="empty-msg">Inga teman ännu.</div>';
+  // season
+  var seasons={'Vinter':0,'Vår':0,'Sommar':0,'Höst':0};
+  function seasonOf(m){return m<2||m===11?'Vinter':m<5?'Vår':m<8?'Sommar':'Höst';}
+  Object.keys(state.draws).forEach(function(k){var m=new Date(k).getMonth();state.draws[k].forEach(function(){seasons[seasonOf(m)]++;});});
+  Object.keys(state.daily).forEach(function(k){seasons[seasonOf(new Date(k).getMonth())]++;});
+  var sMax=Math.max(1,seasons.Vinter,seasons['Vår'],seasons.Sommar,seasons['Höst']);
+  var sHtml='';['Vinter','Vår','Sommar','Höst'].forEach(function(s){sHtml+='<div class="bar-line"><span style="width:54px;font-size:11px;color:var(--muted)">'+s+'</span><div class="bar-bg"><div class="bar" style="width:'+Math.round(seasons[s]/sMax*100)+'%"></div></div><span class="bar-n">'+seasons[s]+'</span></div>';});
+  $('stat-season').innerHTML=sHtml;
+  drawWheel(counts);
+}
+function drawWheel(counts){
+  var cv=$('wheel');var ctx=cv.getContext('2d');var W=cv.width;var cx=W/2;var cy=W/2;
+  ctx.clearRect(0,0,W,W);
+  var total=0;Object.keys(counts).forEach(function(k){total+=counts[k];});
+  if(!total){$('wheel-empty').style.display='block';cv.style.display='none';return;}
+  $('wheel-empty').style.display='none';cv.style.display='block';
+  var n=RUNES.length;var rOuter=W*0.46;var rInner=W*0.20;
+  var max=1;Object.keys(counts).forEach(function(k){if(counts[k]>max)max=counts[k];});
+  var styles=getComputedStyle(document.documentElement);
+  var col=styles.getPropertyValue('--rune-dim').trim()||'#9A6F3C';
+  var line=styles.getPropertyValue('--line').trim()||'#333947';
+  var ink=styles.getPropertyValue('--rune').trim()||'#D89A56';
+  for(var i=0;i<n;i++){
+    var a0=(i/n)*Math.PI*2-Math.PI/2;var a1=((i+1)/n)*Math.PI*2-Math.PI/2;
+    var c=counts[i]||0;var rr=rInner+(rOuter-rInner)*(c/max);
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,rr,a0,a1);ctx.closePath();
+    ctx.fillStyle=c?col:'rgba(126,134,148,0.12)';ctx.fill();
+    ctx.strokeStyle=line;ctx.lineWidth=1;ctx.stroke();
+    // glyph
+    var am=(a0+a1)/2;var gx=cx+Math.cos(am)*(rOuter+16);var gy=cy+Math.sin(am)*(rOuter+16);
+    ctx.fillStyle=ink;ctx.font='22px "Noto Sans Runic","Segoe UI Historic","Segoe UI Symbol",serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(RUNES[i].g,gx,gy);
+  }
+  ctx.beginPath();ctx.arc(cx,cy,rInner,0,Math.PI*2);ctx.fillStyle=styles.getPropertyValue('--panel').trim()||'#1C2029';ctx.fill();ctx.strokeStyle=line;ctx.stroke();
+}
+
+// ===== Runstigen (achievements) =====
+function distinctJournalDays(){var s={};state.journal.forEach(function(j){s[j.date]=1;});return Object.keys(s).length;}
+function distinctRunesDrawn(){return Object.keys(allDrawCounts()).length;}
+function achievements(){
+  var totDraw=totalDraws();
+  return [
+    {ic:'\u16B1',n:'Första dragningen',need:1,have:totDraw,unit:'dragning'},
+    {ic:'\u16CB',n:'Tio dragningar',need:10,have:totDraw,unit:'dragningar'},
+    {ic:'\u16D2',n:'Första runläggningen',need:1,have:state.spreads.length,unit:'läggning'},
+    {ic:'\u16DA',n:'Första drömmen loggad',need:1,have:state.dreams.length,unit:'dröm'},
+    {ic:'\u16A8',n:'30 dagars dagbok',need:30,have:distinctJournalDays(),unit:'dagar'},
+    {ic:'\u16D7',n:'100 anteckningar',need:100,have:state.journal.length,unit:'anteckningar'},
+    {ic:'\u16C7',n:'Alla 24 runor dragna',need:24,have:distinctRunesDrawn(),unit:'runor'},
+    {ic:'\u16DF',n:'Alla runor studerade',need:24,have:(state.studied||[]).length,unit:'studerade'}
+  ];
+}
+function markStudied(idx){if(!state.studied)state.studied=[];if(state.studied.indexOf(idx)<0){state.studied.push(idx);save();}}
+function renderPath(){
+  var ach=achievements();var done=ach.filter(function(a){return a.have>=a.need;}).length;
+  $('path-progress').innerHTML='<div class="tile-head"><div class="t">&#127942; Runstigen</div></div>'+
+    '<div class="meaning" style="text-align:left;margin:0">'+done+' av '+ach.length+' bedrifter upplåsta.</div>'+
+    '<div class="bar-bg" style="margin-top:8px"><div class="bar" style="width:'+Math.round(done/ach.length*100)+'%"></div></div>';
+  var html='';
+  ach.forEach(function(a){
+    var ok=a.have>=a.need;
+    html+='<div class="ach'+(ok?' done':'')+'"><div class="ic">'+a.ic+'</div><div class="ad"><div class="an">'+esc(a.n)+'</div><div class="ap">'+Math.min(a.have,a.need)+' / '+a.need+' '+a.unit+'</div></div>'+(ok?'<div class="chk">&#10003;</div>':'')+'</div>';
+  });
+  $('ach-list').innerHTML=html;
+}
+
+// ===== Verktyg: runskrift =====
+var L2R={a:'\u16A8',b:'\u16D2',c:'\u16B2',d:'\u16DE',e:'\u16D6',f:'\u16A0',g:'\u16B7',h:'\u16BA',i:'\u16C1',j:'\u16C3',k:'\u16B2',l:'\u16DA',m:'\u16D7',n:'\u16BE',o:'\u16DF',p:'\u16C8',q:'\u16B2',r:'\u16B1',s:'\u16CB',t:'\u16CF',u:'\u16A2',v:'\u16B9',w:'\u16B9',x:'\u16B2\u16CB',y:'\u16C1',z:'\u16C9','\u00e5':'\u16A8','\u00e4':'\u16A8','\u00f6':'\u16DF'};
+function latinToRunes(txt){
+  txt=txt.toLowerCase();var out='';var i=0;
+  while(i<txt.length){
+    var two=txt.substr(i,2);
+    if(two==='th'){out+='\u16A6';i+=2;continue;}
+    if(two==='ng'){out+='\u16DC';i+=2;continue;}
+    var ch=txt[i];
+    if(ch===' '){out+=' ';i++;continue;}
+    if(L2R[ch]){out+=L2R[ch];}else if(/[a-z]/.test(ch)===false&&ch!=='\u00e5'&&ch!=='\u00e4'&&ch!=='\u00f6'){out+=ch;}
+    i++;
+  }
+  return out;
+}
+var R2L={};RUNES.forEach(function(R){R2L[R.g]=R.t;});R2L['\u16A6']='Th';R2L['\u16DC']='Ng';
+function runesToLatin(txt){
+  var out='';for(var i=0;i<txt.length;i++){var ch=txt[i];if(R2L[ch]!==undefined)out+=R2L[ch];else if(ch===' ')out+=' ';else out+=ch;}
+  return out;
+}
+$('t-latin').oninput=function(){$('t-latin-out').textContent=latinToRunes(this.value);};
+$('t-rune').oninput=function(){$('t-rune-out').textContent=runesToLatin(this.value);};
+
+// ===== Verktyg: foto =====
+var photoData=null;
+$('photo-btn').onclick=function(){$('photo-file').click();};
+$('photo-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){photoData={media:f.type,b64:r.result.split(',')[1],url:r.result};$('photo-prev').src=r.result;$('photo-prev').style.display='block';$('photo-analyze').style.display='block';$('photo-box').innerHTML='';};
+  r.readAsDataURL(f);
+};
+$('photo-analyze').onclick=async function(){
+  if(!photoData)return;
+  var note=$('photo-note').value.trim();
+  var prompt='Du är expert på runologi och nordisk historia. Titta på bilden av runor/runskrift och svara på svenska med en sammanhängande text (inga rubriker). Ta upp: 1) vilka runor du tror dig se och translitterering, 2) en möjlig läsning eller översättning, 3) kort historisk kontext (futhark-typ, tidsperiod om möjligt). Var tydlig med osäkerhet.'+(note?' Användarens kontext: '+note:'');
+  var msgs=[{role:'user',content:[{type:'image',source:{type:'base64',media_type:photoData.media,data:photoData.b64}},{type:'text',text:prompt}]}];
+  var btn=this;var orig=btn.textContent;btn.textContent='Tolkar bilden…';btn.disabled=true;
+  try{var t=await aiCallMsgs(msgs,900);$('photo-box').innerHTML=aiBox(t);}
+  catch(e){if(e.message!=='NOKEY')$('photo-box').innerHTML='<div class="empty-msg">Kunde inte tolka: '+esc(e.message)+'</div>';}
+  btn.textContent=orig;btn.disabled=false;
+};
+
+// ===== Verktyg: AI Runvägledare =====
+function renderGuide(){
+  var html='';
+  (state.guide||[]).forEach(function(m){html+='<div class="bubble '+(m.role==='user'?'u':'a')+'">'+esc(m.content)+'</div>';});
+  $('guide-chat').innerHTML=html;
+  $('guide-chat').scrollTop=$('guide-chat').scrollHeight;
+}
+$('guide-clear').onclick=function(){state.guide=[];save();renderGuide();};
+document.querySelectorAll('#guide-suggest button').forEach(function(b){b.onclick=function(){$('guide-input').value=b.textContent;sendGuide();};});
+$('guide-send').onclick=sendGuide;
+$('guide-input').addEventListener('keydown',function(e){if(e.key==='Enter'){sendGuide();}});
+async function sendGuide(){
+  var txt=$('guide-input').value.trim();if(!txt)return;
+  if(!state.guide)state.guide=[];
+  state.guide.push({role:'user',content:txt});$('guide-input').value='';renderGuide();save();
+  var sys='Du är en varm, kunnig runvägledare som svarar på svenska. Du kan Äldre futharks 24 runor, deras betydelser, omvända betydelser, gudakopplingar och magiska användningar. Håll svaren personliga och konkreta, högst 180 ord, ingen onödig formatering.';
+  var msgs=[{role:'user',content:sys}].concat(state.guide.map(function(m){return {role:m.role==='user'?'user':'assistant',content:m.content};}));
+  // ensure starts/alternates correctly: prepend system as first user turn merged
+  msgs=state.guide.map(function(m){return {role:m.role==='user'?'user':'assistant',content:m.content};});
+  msgs[0]={role:'user',content:sys+'\n\nFråga: '+state.guide[0].content};
+  $('guide-chat').innerHTML+='<div class="bubble a" id="guide-typing">…</div>';
+  $('guide-chat').scrollTop=$('guide-chat').scrollHeight;
+  try{
+    var t=await aiCallMsgs(msgs,500);
+    state.guide.push({role:'assistant',content:t});save();renderGuide();
+  }catch(e){
+    var ty=$('guide-typing');if(ty)ty.remove();
+    if(e.message!=='NOKEY')alert('Kunde inte hämta svar: '+e.message);
+  }
+}
+
+// ===== Lexikon =====
+function renderLex(q){
+  q=(q||'').toLowerCase();
+  var html='';var lastAett=0;
+  RUNES.forEach(function(R,i){
+    if(q){
+      var hay=(R.n+' '+R.th+' '+R.t+' '+R.up.join(' ')+' '+(R.rev?R.rev.join(' '):'')+' '+R.gd+' '+R.el).toLowerCase();
+      if(hay.indexOf(q)<0)return;
+    }
+    if(R.aett!==lastAett&&!q){lastAett=R.aett;html+='<div class="lib-group">'+AETT_NAMES[R.aett]+'</div>';}
+    var studied=(state.studied||[]).indexOf(i)>=0;
+    html+='<div class="lib-item" data-li="'+i+'"><div class="lib-row"><div class="lib-g">'+R.g+'</div><div style="flex:1"><div class="lib-nm">'+esc(R.n)+' <span style="color:var(--muted);font-size:11px">'+esc(R.t)+'</span></div><div class="lib-th">'+esc(R.th)+'</div></div>'+(studied?'<span class="studied">studerad</span>':'')+'</div>'+
+      '<div class="lib-detail">'+lexDetail(R)+'</div></div>';
+  });
+  $('lex-list').innerHTML=html||'<div class="empty-msg">Inga träffar.</div>';
+  $('lex-list').querySelectorAll('.lib-item').forEach(function(el){el.onclick=function(){el.classList.toggle('open');if(el.classList.contains('open'))markStudied(parseInt(el.dataset.li,10));};});
+}
+function lexDetail(R){
+  return '<span class="h">Betydelse</span>'+esc(R.up.join(', '))+
+    '<span class="h">Omvänd betydelse</span>'+esc(R.rev?R.rev.join(', '):'Kan ej vändas (ingen omvänd form)')+
+    '<span class="h">Element &amp; gudom</span>'+esc(R.el)+' · '+esc(R.gd)+
+    '<span class="h">Historik</span>'+esc(R.hi)+
+    '<span class="h">Magiska användningar</span>'+esc(R.mg);
+}
+$('lex-search').oninput=function(){renderLex(this.value);};
+
+// Rune detail sheet (from anywhere)
+function openRuneSheet(idx){
+  var R=RUNES[idx];markStudied(idx);
+  $('rs-title').innerHTML=R.g+' '+esc(R.n)+' <span style="color:var(--muted);font-size:13px">'+esc(R.t)+'</span>';
+  $('rs-body').innerHTML='<div class="lib-detail" style="display:block">'+lexDetail(R)+'</div>';
+  openSheet('rune-sheet');
+}
+$('rs-close').onclick=closeSheets;
+
+// ===== Säkerhetskopiering =====
+$('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(dataPayload(),null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='rundagboken-backup-'+todayKey+'.json';a.click();
+};
+$('import-btn').onclick=function(){$('import-file').click();};
+$('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);applyPayload(d);persist();renderAll();alert('Importerat!');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ===== Synk-sheet =====
+function ghStatus(msg,type){var el=$('gh-status');el.style.display='block';el.style.background=type==='ok'?'var(--green-bg)':type==='err'?'var(--red-bg)':'var(--panel2)';el.style.color=type==='ok'?'var(--green)':type==='err'?'var(--blood)':'var(--muted)';el.textContent=msg;}
+$('sync-set-btn').onclick=function(){$('gh-owner').value=sync.owner;$('gh-repo').value=sync.repo;$('gh-token').value=sync.token;$('gh-status').style.display='none';openSheet('sync-sheet');};
+$('sync-badge').onclick=function(){$('sync-set-btn').onclick();};
+$('gh-close').onclick=closeSheets;
+$('gh-pull').onclick=function(){ghPull();};
+$('gh-save').onclick=async function(){
+  sync.owner=$('gh-owner').value.trim();sync.repo=$('gh-repo').value.trim();sync.token=$('gh-token').value.trim();
+  if(!syncOn()){ghStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();ghStatus('Testar anslutning…','info');
+  try{var data=await ghGet();if(data){ghStatus('✓ Ansluten! Hämtar data…','ok');applyPayload(data);save();renderAll();}else{ghStatus('✓ Ansluten! Repot tomt — laddar upp din data…','ok');await ghPush();}setTimeout(closeSheets,1100);}
+  catch(e){ghStatus('Fel: '+e.message+'. Kontrollera användarnamn, repo och att token har Contents-behörighet.','err');}
+};
+
+// ===== AI-nyckel =====
+$('ai-set-btn').onclick=function(){$('ai-key').value=getAiKey();openSheet('ai-sheet');};
+$('ai-key-save').onclick=function(){var v=$('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+$('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);$('ai-key').value='';};
+$('ai-close').onclick=closeSheets;
+
+// ===== Navigation =====
+document.querySelectorAll('.nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    $('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='monster'){renderStats();renderPath();}
+    if(b.dataset.v==='dra'){renderTodayDraws();renderSpreadList();}
+    if(b.dataset.v==='dagbok'){renderJournalList();renderDreamList();}
+    if(b.dataset.v==='lexikon')renderLex($('lex-search').value);
+    if(b.dataset.v==='verktyg')renderGuide();
+    window.scrollTo(0,0);
+  };
+});
+document.querySelectorAll('[data-go]').forEach(function(el){el.onclick=function(){var v=el.dataset.go;document.querySelector('.nav button[data-v="'+v+'"]').click();};});
+
+// Sub-tabs (segmented)
+document.querySelectorAll('.segmented').forEach(function(seg){
+  seg.querySelectorAll('button').forEach(function(b){
+    b.onclick=function(){
+      seg.querySelectorAll('button').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      var parent=seg.parentElement;
+      parent.querySelectorAll('.subview').forEach(function(s){s.classList.remove('active');});
+      $('sub-'+b.dataset.sv).classList.add('active');
+    };
+  });
+});
+
+// ===== Init =====
+function renderAll(){
+  renderHomeDaily();renderRecur();renderHomeJournal();renderHomeLastDraw();renderHomeProjects();
+  if(state.aiInsight&&state.aiInsight.date===todayKey)$('hem-ai').innerHTML=aiBox(state.aiInsight.text);
+  renderTodayDraws();renderSpreadList();renderJournalList();renderDreamList();renderLex('');
+}
+load();loadSync();
+buildSpreadDraft();renderGuide();renderAll();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>
