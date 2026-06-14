@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BabyKoll">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23EEF1EB'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle'%3E%F0%9F%8D%BC%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23EEF1EB'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle'%3E%F0%9F%8D%BC%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"BabyKoll","short_name":"BabyKoll","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<title>BabyKoll – dator</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--clay-soft:#EFE2D7;--sun:#D9C27E;--sky:#8EA3B0;--sky-soft:#DCE5EA;
+  --navbg:rgba(238,241,235,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Baby-huvud */
+.baby-head{display:flex;align-items:center;gap:13px}
+.avatar{width:52px;height:52px;border-radius:50%;background:var(--clay-soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.baby-head b{font-family:Georgia,serif;font-weight:400;font-size:18px;display:block}
+.baby-head .age{font-size:12px;color:var(--muted)}
+
+/* Senaste-tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.tile{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
+.tile .em{font-size:20px}
+.tile .lab{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+.tile .val{font-size:12px;font-weight:600;margin-top:2px;line-height:1.3}
+
+/* Snabbknappar */
+.bigrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.big-btn{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:14px 8px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:5px}
+.big-btn:active{background:var(--panel2)}
+.big-btn .em{font-size:24px}
+.big-btn .t{font-size:13px;font-weight:500}
+.big-btn.sleeping{border-color:var(--sky);background:var(--sky-soft)}
+
+.banner{border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5;margin-top:12px;display:none}
+.banner.sleep{background:var(--sky-soft);border:1px solid var(--sky);color:#3C4A52}
+.banner.sleep b{font-variant-numeric:tabular-nums}
+
+/* Logg-rader */
+.log-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-row .em{font-size:17px;width:22px;text-align:center}
+.log-row .main{flex:1}
+.log-row .main b{font-weight:600;font-size:13px}
+.log-row .main small{display:block;color:var(--muted);font-size:11px}
+.log-row time{color:var(--muted);font-size:11px;white-space:nowrap}
+.log-row button.del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:0 2px}
+
+/* Segmenterad kontroll */
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
+.seg button{flex:1;border:none;background:none;color:var(--muted);font-family:inherit;font-size:13px;padding:9px 4px;cursor:pointer;transition:background .2s}
+.seg button.sel{background:var(--moss);color:#fff;font-weight:600}
+
+/* Amningstimer */
+.feed-timer{display:flex;gap:10px;margin-top:12px}
+.side-card{flex:1;border:1.5px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;background:var(--panel2)}
+.side-card.active{border-color:var(--moss);background:var(--moss-soft)}
+.side-card .lab{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.side-card .time{font-family:Georgia,serif;font-size:24px;font-variant-numeric:tabular-nums;margin-top:3px}
+
+/* Sömnklocka */
+.sleep-clock{text-align:center;padding:8px 0}
+.sleep-clock .big{font-family:Georgia,serif;font-size:44px;font-variant-numeric:tabular-nums;line-height:1}
+.sleep-clock .lab{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--moss-soft);border-color:var(--moss)}
+
+/* Statistik-staplar */
+.bars{display:flex;align-items:flex-end;gap:6px;height:96px;margin-top:6px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end}
+.bar{width:100%;border-radius:6px 6px 3px 3px;background:var(--moss);min-height:3px;transition:height .4s}
+.bar.feed{background:var(--clay)}
+.bar.diaper{background:var(--sun)}
+.bar.sleep{background:var(--sky)}
+.bar-lab{font-size:9px;color:var(--muted)}
+.bar-val{font-size:10px;font-weight:600;color:var(--ink)}
+
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.stat-row:first-child{border-top:none}
+.stat-row b{font-variant-numeric:tabular-nums}
+
+/* Milstolpar */
+.mile{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.mile:first-child{border-top:none}
+.mile-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--moss);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center}
+.mile-check.done{background:var(--moss)}
+.mile .info{flex:1;font-size:14px}
+.mile .info small{display:block;color:var(--muted);font-size:11px}
+.mile .info.done b{color:var(--muted)}
+
+.edit-item{display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+
+.dotpick{display:flex;gap:8px;margin:4px 0 8px}
+.dotpick button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;color:var(--muted)}
+.dotpick button.sel{background:var(--moss);border-color:var(--moss);color:#fff}
+
+/* Nav + sheets */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--moss);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.row2{display:flex;gap:8px}
+.row2>div{flex:1}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:16px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:11px;background:var(--moss-soft);color:var(--moss);font-weight:600}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.load{background:var(--sun);color:#5C4A1E}
+.sp-badge.err{background:var(--clay-soft);color:#A2685B}
+.sync-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sync-head .section-title{margin:0}
+#gh-status{display:none;font-size:12px;padding:8px 11px;border-radius:10px;margin-top:10px;line-height:1.5}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --clay:#C2A38B;--clay-soft:#3E342C;--sun:#C2AC6B;--sky:#8EA3B0;--sky-soft:#2E3A40;
+  --navbg:rgba(34,37,31,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+<style>
+/* ── Desktop-layout (sidofalt + modaler, samma JS) ── */
+@media(min-width:760px){
+  h1.brand{display:none}
+  .theme-btn{top:14px;right:18px}
+  .app{max-width:none;margin:0;padding:26px 26px 48px 222px}
+  .view{max-width:680px;margin:0 auto}
+  .nav{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:196px;border-top:none;border-right:1px solid var(--line);background:var(--panel);backdrop-filter:none;padding:18px 12px;gap:4px;justify-content:flex-start;align-items:stretch}
+  .nav::before{content:'\1F37C  BabyKoll';font-family:Georgia,serif;font-size:18px;color:var(--ink);padding:6px 12px 18px;letter-spacing:.04em;display:block}
+  .nav button{flex:0 0 auto;display:flex;align-items:center;gap:11px;text-align:left;font-size:14px;padding:11px 13px;border-radius:12px}
+  .nav button span{display:inline;font-size:18px;margin:0}
+  .nav button.active{background:var(--moss-soft)}
+  .nav button:hover{color:var(--ink)}
+  .sheet-bg{background:rgba(60,66,55,.45)}
+  .sheet{top:50%;left:50%;right:auto;bottom:auto;width:460px;max-width:92vw;max-height:86vh;border-radius:18px;transform:translate(-50%,-46%);opacity:0;pointer-events:none;transition:transform .22s ease,opacity .22s ease;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+  .sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+  .sheet-close{position:static}
+  .big-btn{padding:18px 8px;cursor:pointer}
+  .big-btn:hover{background:var(--panel2)}
+  .btn{cursor:pointer}
+  .btn:hover{filter:brightness(.98)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🍼 BabyKoll</h1>
+
+<!-- HEM -->
+<div class="view active" id="view-hem">
+  <div class="card-panel">
+    <div class="baby-head">
+      <div class="avatar" id="baby-avatar">👶</div>
+      <div>
+        <b id="baby-name">Välkommen</b>
+        <div class="age" id="baby-age">Tryck för att lägga in barnet</div>
+      </div>
+      <button class="btn ghost" id="open-baby" style="margin-left:auto">Ändra</button>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="em">🍼</div><div class="lab">Mat</div><div class="val" id="last-feed">—</div></div>
+      <div class="tile"><div class="em">😴</div><div class="lab">Sömn</div><div class="val" id="last-sleep">—</div></div>
+      <div class="tile"><div class="em">💧</div><div class="lab">Blöja</div><div class="val" id="last-diaper">—</div></div>
+    </div>
+    <div class="banner sleep" id="sleep-banner"></div>
+    <div class="bigrow">
+      <button class="big-btn" data-q="amning"><span class="em">🤱</span><span class="t">Amning</span></button>
+      <button class="big-btn" data-q="flaska"><span class="em">🍼</span><span class="t">Flaska</span></button>
+      <button class="big-btn" data-q="bloja"><span class="em">💧</span><span class="t">Blöja</span></button>
+      <button class="big-btn" id="q-sleep" data-q="somn"><span class="em">😴</span><span class="t">Sömn</span></button>
+    </div>
+  </div>
+
+  <div class="section-title">Idag</div>
+  <div class="card-panel">
+    <div class="soft" id="today-sum" style="margin-bottom:8px"></div>
+    <div id="today-log"></div>
+  </div>
+</div>
+
+<!-- MAT -->
+<div class="view" id="view-mat">
+  <div class="section-title">Amning</div>
+  <div class="card-panel">
+    <div class="feed-timer">
+      <div class="side-card" id="side-L" data-side="L"><div class="lab">Vänster</div><div class="time" id="time-L">00:00</div></div>
+      <div class="side-card" id="side-R" data-side="R"><div class="lab">Höger</div><div class="time" id="time-R">00:00</div></div>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn fill" id="amning-toggle">Starta vänster</button>
+      <button class="btn" id="amning-save">Spara</button>
+    </div>
+    <div class="soft" id="amning-hint" style="margin-top:8px">Tryck på en sida för att starta klockan. Byt sida när du vill — tiden sparas per sida.</div>
+  </div>
+
+  <div class="section-title">Flaska</div>
+  <div class="card-panel">
+    <div class="row2">
+      <div><label>Mängd (ml)</label><input type="number" id="bottle-ml" inputmode="numeric" placeholder="t.ex. 120"></div>
+      <div><label>Typ</label><select id="bottle-kind"><option>Bröstmjölk</option><option>Ersättning</option><option>Annat</option></select></div>
+    </div>
+    <button class="btn fill" id="bottle-save" style="width:100%;margin-top:10px">Logga flaska</button>
+  </div>
+
+  <div class="section-title">Fast föda</div>
+  <div class="card-panel">
+    <label>Vad åt barnet?</label>
+    <input type="text" id="solid-food" placeholder="t.ex. äppelmos, gröt">
+    <button class="btn fill" id="solid-save" style="width:100%;margin-top:10px">Logga måltid</button>
+  </div>
+
+  <div class="section-title">Senaste matningar</div>
+  <div class="card-panel"><div id="feed-log"></div></div>
+</div>
+
+<!-- SÖMN -->
+<div class="view" id="view-somn">
+  <div class="card-panel">
+    <div class="seg" id="sleep-kind">
+      <button data-k="dag" class="sel">☀️ Dagsömn</button>
+      <button data-k="natt">🌙 Nattsömn</button>
+    </div>
+    <div class="sleep-clock">
+      <div class="big" id="sleep-elapsed">00:00</div>
+      <div class="lab" id="sleep-state">Inte igång</div>
+    </div>
+    <button class="btn fill" id="sleep-toggle" style="width:100%">Starta sömn</button>
+    <button class="btn ghost" id="open-sleep-manual" style="width:100%;margin-top:8px">Lägg till sömn manuellt</button>
+  </div>
+
+  <div class="section-title">Sömn idag</div>
+  <div class="card-panel"><div class="soft" id="sleep-today-sum"></div></div>
+
+  <div class="section-title">Senaste sömnpass</div>
+  <div class="card-panel"><div id="sleep-log"></div></div>
+</div>
+
+<!-- BLÖJA -->
+<div class="view" id="view-bloja">
+  <div class="card-panel">
+    <div class="bigrow">
+      <button class="big-btn" data-d="kiss"><span class="em">💧</span><span class="t">Kiss</span></button>
+      <button class="big-btn" data-d="bajs"><span class="em">💩</span><span class="t">Bajs</span></button>
+      <button class="big-btn" data-d="bada" style="grid-column:span 2"><span class="em">🌗</span><span class="t">Både kiss och bajs</span></button>
+    </div>
+    <div class="soft" style="margin-top:10px">Kiss loggas direkt. Bajs öppnar valfria detaljer (färg & konsistens).</div>
+  </div>
+
+  <div class="section-title">Senaste blöjor</div>
+  <div class="card-panel"><div id="diaper-log"></div></div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-mer">
+  <div class="section-title">Statistik · 7 dagar</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:4px">Matningar per dag</div>
+    <div class="bars" id="bars-feed"></div>
+  </div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:4px">Blöjor per dag</div>
+    <div class="bars" id="bars-diaper"></div>
+  </div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:4px">Sömn per dag (tim)</div>
+    <div class="bars" id="bars-sleep"></div>
+  </div>
+
+  <div class="section-title">Tillväxt</div>
+  <div class="card-panel">
+    <div class="row2">
+      <div><label>Vikt (g)</label><input type="number" id="g-weight" inputmode="numeric"></div>
+      <div><label>Längd (cm)</label><input type="number" id="g-length" inputmode="decimal"></div>
+    </div>
+    <div class="row2" style="margin-top:6px">
+      <div><label>Huvudomfång (cm)</label><input type="number" id="g-head" inputmode="decimal"></div>
+      <div><label>Datum</label><input type="date" id="g-date"></div>
+    </div>
+    <button class="btn fill" id="g-save" style="width:100%;margin-top:10px">Spara mätning</button>
+    <div id="growth-log" style="margin-top:10px"></div>
+  </div>
+
+  <div class="section-title">Milstolpar</div>
+  <div class="card-panel"><div id="mile-list"></div></div>
+
+  <div class="section-title">Föräldradagbok</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:6px">Hur är dagen för dig? Barnet mår bäst när du också får finnas till.</div>
+    <label>Energi</label><div class="dotpick" id="p-energy"></div>
+    <label>Humör</label><div class="dotpick" id="p-mood"></div>
+    <label>Anteckning till dig själv</label>
+    <textarea id="p-note" rows="2" placeholder="Valfritt"></textarea>
+    <button class="btn fill" id="p-save" style="width:100%;margin-top:10px">Spara dagen</button>
+  </div>
+
+  <div class="section-title">Synk &amp; delning</div>
+  <div class="card-panel">
+    <div class="sync-head">
+      <span class="section-title">GitHub-synk</span>
+      <span id="sync-badge" class="sp-badge offline" style="margin-left:auto">Lokal</span>
+    </div>
+    <div class="soft">Synka mat, sömn, blöjor, tillväxt och milstolpar mellan era enheter via ett privat GitHub-repo. Två vårdnadshavare ser samma data — det som loggas på en enhet dyker upp på den andra.</div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn" id="sync-btn">↻ Synka nu</button>
+      <button class="btn" id="sync-settings">⚙ Inställningar</button>
+    </div>
+  </div>
+
+  <div class="section-title">Inställningar</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn" id="open-baby2">Barnets uppgifter</button>
+      <button class="btn" id="export-btn">Exportera</button>
+    </div>
+    <button class="btn ghost" id="import-btn" style="width:100%;margin-top:8px">Importera säkerhetskopia</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+    <div class="privacy">Allt sparas bara här på din enhet. Inget skickas någonstans.</div>
+  </div>
+  <div class="foot"><button id="reset-day">Nollställ allt</button></div>
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <button class="active" data-v="hem"><span>🏠</span>Hem</button>
+  <button data-v="mat"><span>🍼</span>Mat</button>
+  <button data-v="somn"><span>😴</span>Sömn</button>
+  <button data-v="bloja"><span>💧</span>Blöja</button>
+  <button data-v="mer"><span>📊</span>Mer</button>
+</div>
+
+<!-- Sheet-bakgrund -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Sheet: synk -->
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <p class="soft">Appen läser och sparar <b>babykoll-data.json</b> i ett <b>privat</b> GitHub-repo så att hela familjen ser samma data. Token sparas bara lokalt på den här enheten — aldrig i koden.</p>
+  <label>GitHub-användarnamn (ägare av data-repot)</label>
+  <input type="text" id="gh-owner" placeholder="miracuel" autocomplete="off">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="babykoll-data" autocomplete="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="soft" style="margin-top:6px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge behörigheten <b>Contents: Read and write</b> på data-repot.</div>
+  <div id="gh-status"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<!-- Sheet: barn -->
+<div class="sheet" id="baby-sheet">
+  <h3>Barnets uppgifter</h3>
+  <label>Namn</label>
+  <input type="text" id="baby-in-name" placeholder="t.ex. Ella">
+  <label>Föddes</label>
+  <input type="date" id="baby-in-birth">
+  <button class="sheet-close" id="baby-save">Spara</button>
+</div>
+
+<!-- Sheet: blöjdetaljer -->
+<div class="sheet" id="diaper-sheet">
+  <h3 id="diaper-sheet-title">Blöja</h3>
+  <label>Färg</label>
+  <div class="chips" id="diaper-color"></div>
+  <label>Konsistens</label>
+  <div class="chips" id="diaper-cons"></div>
+  <label>Anteckning</label>
+  <input type="text" id="diaper-note" placeholder="Valfritt — t.ex. utslag">
+  <button class="sheet-close" id="diaper-save">Spara blöja</button>
+</div>
+
+<!-- Sheet: manuell sömn -->
+<div class="sheet" id="sleepm-sheet">
+  <h3>Lägg till sömn</h3>
+  <label>Somnade</label>
+  <input type="datetime-local" id="sm-start">
+  <label>Vaknade</label>
+  <input type="datetime-local" id="sm-end">
+  <div class="seg" id="sm-kind" style="margin-top:10px">
+    <button data-k="dag" class="sel">☀️ Dag</button>
+    <button data-k="natt">🌙 Natt</button>
+  </div>
+  <button class="sheet-close" id="sm-save">Spara sömn</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='babykoll_v1';
+var DEFAULT_MILES=['Första leendet','Lyfter huvudet','Rullar runt','Sitter själv','Första tanden','Kryper','Reser sig','Första ordet','Står själv','Tar första stegen','Vinkar hej då','Äter själv'];
+var state={
+  baby:{name:'',birth:''},
+  events:[],            // {id,type:'feed'|'diaper'|'sleep',t, ...}
+  growth:[],            // {id,t,weight,length,head}
+  miles:[],             // {name,done,date,note}
+  parentlog:{},         // by ISO date: {energy,mood,note}
+  activeFeed:null,      // {side,L,R,startTs}
+  activeSleep:null,     // {start,kind}
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+if(!state.miles||!state.miles.length){state.miles=DEFAULT_MILES.map(function(n){return {name:n,done:false,date:'',note:''};});}
+var sync={owner:'',repo:'',token:'',sha:null};
+var syncing=false,pushTimer=null;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} if(typeof syncOn==='function'&&syncOn()&&!syncing)pushSoon();}
+
+// ── Hjälpare ──────────────────────────────────────────
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function pad(n){return String(n).padStart(2,'0');}
+function toISO(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function todayKey(){return toISO(new Date());}
+function clock(ms){var d=new Date(ms);return pad(d.getHours())+':'+pad(d.getMinutes());}
+function fmtDur(sec){var m=Math.floor(sec/60),s=sec%60;return pad(m)+':'+pad(s);}
+function fmtHM(sec){var h=Math.floor(sec/3600),m=Math.round((sec%3600)/60);if(h<=0)return m+' min';return h+'h '+pad(m)+'m';}
+function localInput(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+function timeAgo(ms){
+  var diff=Date.now()-ms;
+  if(diff<60000)return 'nyss';
+  var min=Math.floor(diff/60000);
+  if(min<60)return 'för '+min+' min sedan';
+  var h=Math.floor(min/60),rm=min%60;
+  if(h<24)return 'för '+h+'h '+(rm?rm+'m ':'')+'sedan';
+  if(toISO(new Date(ms))===toISO(new Date(Date.now()-86400000)))return 'igår '+clock(ms);
+  return clock(ms);
+}
+function babyAge(){
+  if(!state.baby.birth)return '';
+  var b=new Date(state.baby.birth+'T00:00:00'),now=new Date();
+  var days=Math.floor((now-b)/86400000);
+  if(days<0)return 'Föds snart';
+  if(days<14)return days+' dag'+(days===1?'':'ar');
+  if(days<56){var w=Math.floor(days/7);return w+' veckor '+(days%7)+' dgr';}
+  var months=(now.getFullYear()-b.getFullYear())*12+(now.getMonth()-b.getMonth());
+  if(now.getDate()<b.getDate())months--;
+  var anchor=new Date(b);anchor.setMonth(b.getMonth()+months);
+  var rest=Math.floor((now-anchor)/86400000);
+  if(months<24)return months+' mån'+(rest>0?' '+rest+' dgr':'');
+  var yrs=Math.floor(months/12);
+  return yrs+' år '+(months%12)+' mån';
+}
+function lastOf(type){
+  var best=null;
+  state.events.forEach(function(e){if(e.type===type&&(!best||e.t>best.t))best=e;});
+  return best;
+}
+function isToday(ms){return toISO(new Date(ms))===todayKey();}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+bg.onclick=closeSheets;
+
+// ── Etiketter för loggrader ───────────────────────────
+function feedDesc(e){
+  if(e.sub==='amning'){
+    var L=e.L||0,R=e.R||0,parts=[];
+    if(L)parts.push('V '+fmtDur(L));
+    if(R)parts.push('H '+fmtDur(R));
+    return 'Amning'+(parts.length?' · '+parts.join(' · '):'');
+  }
+  if(e.sub==='flaska')return 'Flaska · '+(e.ml||0)+' ml'+(e.kind?' ('+e.kind+')':'');
+  if(e.sub==='fast')return 'Fast föda'+(e.food?' · '+esc(e.food):'');
+  return 'Matning';
+}
+function diaperDesc(e){
+  var m={kiss:'Kiss',bajs:'Bajs',bada:'Kiss & bajs'};
+  var extra=[];
+  if(e.color)extra.push(e.color);
+  if(e.cons)extra.push(e.cons);
+  return (m[e.kind]||'Blöja')+(extra.length?' · '+extra.join(', '):'');
+}
+function eventRow(e){
+  var em='•',main='';
+  if(e.type==='feed'){em=e.sub==='amning'?'🤱':e.sub==='flaska'?'🍼':'🥣';main=feedDesc(e);}
+  else if(e.type==='diaper'){em=e.kind==='kiss'?'💧':e.kind==='bajs'?'💩':'🌗';main=diaperDesc(e);}
+  else if(e.type==='sleep'){em='😴';main=(e.kind==='natt'?'Nattsömn':'Dagsömn')+' · '+fmtHM(Math.round((e.end-e.start)/1000));}
+  var note=e.note?'<small>'+esc(e.note)+'</small>':'';
+  return '<div class="log-row"><span class="em">'+em+'</span><span class="main"><b>'+main+'</b>'+note+'</span><time>'+clock(e.t)+'</time><button class="del" data-id="'+e.id+'">×</button></div>';
+}
+function bindDeletes(el){
+  el.querySelectorAll('button.del').forEach(function(b){b.onclick=function(){
+    var id=+b.dataset.id;
+    state.events=state.events.filter(function(e){return e.id!==id;});
+    save();renderAll();
+  };});
+}
+
+// ── HEM ───────────────────────────────────────────────
+function renderHem(){
+  document.getElementById('baby-name').textContent=state.baby.name||'Välkommen';
+  document.getElementById('baby-age').textContent=state.baby.birth?babyAge():'Tryck på Ändra för att lägga in barnet';
+  var lf=lastOf('feed'),ls=lastOf('sleep'),ld=lastOf('diaper');
+  document.getElementById('last-feed').textContent=lf?timeAgo(lf.t):'—';
+  document.getElementById('last-sleep').textContent=ls?timeAgo(ls.t):'—';
+  document.getElementById('last-diaper').textContent=ld?timeAgo(ld.t):'—';
+
+  var sb=document.getElementById('sleep-banner'),qs=document.getElementById('q-sleep');
+  if(state.activeSleep){
+    sb.style.display='block';qs.classList.add('sleeping');
+    qs.querySelector('.t').textContent='Vaken?';
+  }else{sb.style.display='none';qs.classList.remove('sleeping');qs.querySelector('.t').textContent='Sömn';}
+
+  var todays=state.events.filter(function(e){return isToday(e.t);}).slice().sort(function(a,b){return b.t-a.t;});
+  var feeds=todays.filter(function(e){return e.type==='feed';}).length;
+  var dipers=todays.filter(function(e){return e.type==='diaper';}).length;
+  var sleepSec=state.events.filter(function(e){return e.type==='sleep'&&isToday(e.end);}).reduce(function(a,e){return a+(e.end-e.start)/1000;},0);
+  document.getElementById('today-sum').textContent=feeds+' matningar · '+dipers+' blöjor · '+fmtHM(Math.round(sleepSec))+' sömn';
+  var tl=document.getElementById('today-log');
+  tl.innerHTML=todays.length?todays.map(eventRow).join(''):'<div class="empty-msg">Inget loggat idag ännu.</div>';
+  bindDeletes(tl);
+}
+document.querySelectorAll('.big-btn[data-q]').forEach(function(b){b.onclick=function(){
+  var q=b.dataset.q;
+  if(q==='somn'){toggleSleep();return;}
+  go(q==='bloja'?'bloja':'mat');
+};});
+
+// ── MAT: amning ───────────────────────────────────────
+function af(){return state.activeFeed;}
+function renderAmning(){
+  var a=af();
+  document.getElementById('time-L').textContent=fmtDur(curSide('L'));
+  document.getElementById('time-R').textContent=fmtDur(curSide('R'));
+  document.getElementById('side-L').classList.toggle('active',!!a&&a.side==='L');
+  document.getElementById('side-R').classList.toggle('active',!!a&&a.side==='R');
+  document.getElementById('amning-toggle').textContent=a?'Pausa':'Starta';
+}
+function curSide(side){
+  var a=af();if(!a)return 0;
+  var base=a[side]||0;
+  if(a.side===side&&a.startTs)base+=Math.floor((Date.now()-a.startTs)/1000);
+  return base;
+}
+function accumulate(){
+  var a=af();if(!a||!a.startTs)return;
+  a[a.side]=(a[a.side]||0)+Math.floor((Date.now()-a.startTs)/1000);
+  a.startTs=null;
+}
+function startSide(side){
+  if(!state.activeFeed)state.activeFeed={side:side,L:0,R:0,startTs:Date.now()};
+  else{accumulate();state.activeFeed.side=side;state.activeFeed.startTs=Date.now();}
+  save();renderAmning();
+}
+document.getElementById('side-L').onclick=function(){startSide('L');};
+document.getElementById('side-R').onclick=function(){startSide('R');};
+document.getElementById('amning-toggle').onclick=function(){
+  var a=af();
+  if(!a){startSide('L');return;}
+  if(a.startTs){accumulate();}              // pausa
+  else{a.startTs=Date.now();}               // återuppta
+  save();renderAmning();
+};
+document.getElementById('amning-save').onclick=function(){
+  var a=af();if(!a){alert('Starta klockan först.');return;}
+  accumulate();
+  var L=a.L||0,R=a.R||0;
+  if(L+R<1){state.activeFeed=null;save();renderAmning();return;}
+  state.events.push({id:Date.now(),type:'feed',sub:'amning',t:Date.now(),L:L,R:R});
+  state.activeFeed=null;save();renderAll();renderAmning();
+};
+
+// ── MAT: flaska & fast ────────────────────────────────
+document.getElementById('bottle-save').onclick=function(){
+  var ml=parseInt(document.getElementById('bottle-ml').value)||0;
+  if(ml<=0){alert('Ange en mängd i ml.');return;}
+  var kind=document.getElementById('bottle-kind').value;
+  state.events.push({id:Date.now(),type:'feed',sub:'flaska',t:Date.now(),ml:ml,kind:kind});
+  document.getElementById('bottle-ml').value='';save();renderAll();
+};
+document.getElementById('solid-save').onclick=function(){
+  var food=document.getElementById('solid-food').value.trim();
+  state.events.push({id:Date.now(),type:'feed',sub:'fast',t:Date.now(),food:food});
+  document.getElementById('solid-food').value='';save();renderAll();
+};
+function renderFeedLog(){
+  var el=document.getElementById('feed-log');
+  var fs=state.events.filter(function(e){return e.type==='feed';}).sort(function(a,b){return b.t-a.t;}).slice(0,12);
+  el.innerHTML=fs.length?fs.map(eventRow).join(''):'<div class="empty-msg">Inga matningar loggade.</div>';
+  bindDeletes(el);
+}
+
+// ── SÖMN ──────────────────────────────────────────────
+var sleepKind='dag';
+document.querySelectorAll('#sleep-kind button').forEach(function(b){b.onclick=function(){
+  sleepKind=b.dataset.k;
+  document.querySelectorAll('#sleep-kind button').forEach(function(x){x.classList.toggle('sel',x===b);});
+};});
+function toggleSleep(){
+  if(state.activeSleep){
+    var asl=state.activeSleep;
+    state.events.push({id:Date.now(),type:'sleep',t:Date.now(),start:asl.start,end:Date.now(),kind:asl.kind});
+    state.activeSleep=null;save();renderAll();
+  }else{
+    state.activeSleep={start:Date.now(),kind:sleepKind};save();renderAll();
+  }
+}
+document.getElementById('sleep-toggle').onclick=toggleSleep;
+function renderSomn(){
+  var asl=state.activeSleep;
+  var elapsed=document.getElementById('sleep-elapsed'),st=document.getElementById('sleep-state'),tg=document.getElementById('sleep-toggle');
+  if(asl){
+    elapsed.textContent=fmtDur(Math.floor((Date.now()-asl.start)/1000));
+    st.textContent=(asl.kind==='natt'?'🌙 Nattsömn':'☀️ Dagsömn')+' sedan '+clock(asl.start);
+    tg.textContent='Barnet vaknade';tg.classList.remove('fill');tg.classList.add('fill');
+  }else{
+    elapsed.textContent='00:00';st.textContent='Inte igång';tg.textContent='Starta sömn';
+  }
+  var sleeps=state.events.filter(function(e){return e.type==='sleep';}).sort(function(a,b){return b.t-a.t;}).slice(0,12);
+  var el=document.getElementById('sleep-log');
+  el.innerHTML=sleeps.length?sleeps.map(eventRow).join(''):'<div class="empty-msg">Inga sömnpass loggade.</div>';
+  bindDeletes(el);
+  var todaySec=state.events.filter(function(e){return e.type==='sleep'&&isToday(e.end);}).reduce(function(a,e){return a+(e.end-e.start)/1000;},0);
+  var naps=state.events.filter(function(e){return e.type==='sleep'&&isToday(e.end);}).length;
+  document.getElementById('sleep-today-sum').textContent='Totalt '+fmtHM(Math.round(todaySec))+' fördelat på '+naps+' pass'+(asl?' (+ ett pågående)':'')+'.';
+}
+// Manuell sömn
+document.getElementById('open-sleep-manual').onclick=function(){
+  var now=new Date(),before=new Date(now-3600000);
+  document.getElementById('sm-start').value=localInput(before);
+  document.getElementById('sm-end').value=localInput(now);
+  openSheet('sleepm-sheet');
+};
+var smKind='dag';
+document.querySelectorAll('#sm-kind button').forEach(function(b){b.onclick=function(){
+  smKind=b.dataset.k;document.querySelectorAll('#sm-kind button').forEach(function(x){x.classList.toggle('sel',x===b);});
+};});
+document.getElementById('sm-save').onclick=function(){
+  var st=new Date(document.getElementById('sm-start').value).getTime();
+  var en=new Date(document.getElementById('sm-end').value).getTime();
+  if(!st||!en||en<=st){alert('Kontrollera tiderna.');return;}
+  state.events.push({id:Date.now(),type:'sleep',t:en,start:st,end:en,kind:smKind});
+  save();closeSheets();renderAll();
+};
+
+// ── BLÖJA ─────────────────────────────────────────────
+var COLORS=['Gul','Senapsgul','Brun','Grön','Mörk'];
+var CONS=['Lös','Krämig','Normal','Hård'];
+var diaperDraft=null;
+document.querySelectorAll('.big-btn[data-d]').forEach(function(b){b.onclick=function(){
+  var kind=b.dataset.d;
+  if(kind==='kiss'){
+    state.events.push({id:Date.now(),type:'diaper',t:Date.now(),kind:'kiss'});
+    save();renderAll();return;
+  }
+  diaperDraft={kind:kind,color:'',cons:''};
+  document.getElementById('diaper-sheet-title').textContent=kind==='bajs'?'Bajsblöja':'Kiss & bajs';
+  document.getElementById('diaper-note').value='';
+  renderChipGroup('diaper-color',COLORS,'color');
+  renderChipGroup('diaper-cons',CONS,'cons');
+  openSheet('diaper-sheet');
+};});
+function renderChipGroup(id,list,field){
+  var el=document.getElementById(id);
+  el.innerHTML=list.map(function(v){return '<button class="chip'+(diaperDraft[field]===v?' sel':'')+'" data-v="'+v+'">'+v+'</button>';}).join('');
+  el.querySelectorAll('.chip').forEach(function(c){c.onclick=function(){
+    diaperDraft[field]=diaperDraft[field]===c.dataset.v?'':c.dataset.v;
+    renderChipGroup(id,list,field);
+  };});
+}
+document.getElementById('diaper-save').onclick=function(){
+  if(!diaperDraft)return;
+  state.events.push({id:Date.now(),type:'diaper',t:Date.now(),kind:diaperDraft.kind,
+    color:diaperDraft.color,cons:diaperDraft.cons,note:document.getElementById('diaper-note').value.trim()});
+  diaperDraft=null;save();closeSheets();renderAll();
+};
+function renderDiaperLog(){
+  var el=document.getElementById('diaper-log');
+  var ds=state.events.filter(function(e){return e.type==='diaper';}).sort(function(a,b){return b.t-a.t;}).slice(0,15);
+  el.innerHTML=ds.length?ds.map(eventRow).join(''):'<div class="empty-msg">Inga blöjor loggade.</div>';
+  bindDeletes(el);
+}
+
+// ── MER: statistik ────────────────────────────────────
+var WD=['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
+function last7(){
+  var arr=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);arr.push(d);}return arr;
+}
+function renderBars(id,getVal,cls,fmt){
+  var days=last7(),vals=days.map(getVal),max=Math.max.apply(null,vals.concat([1]));
+  var el=document.getElementById(id);
+  el.innerHTML=days.map(function(d,i){
+    var h=Math.round(vals[i]/max*84)+2;
+    return '<div class="bar-col"><span class="bar-val">'+(vals[i]?fmt(vals[i]):'')+'</span><div class="bar '+cls+'" style="height:'+h+'px"></div><span class="bar-lab">'+WD[d.getDay()]+'</span></div>';
+  }).join('');
+}
+function renderStats(){
+  renderBars('bars-feed',function(d){var k=toISO(d);return state.events.filter(function(e){return e.type==='feed'&&toISO(new Date(e.t))===k;}).length;},'feed',function(v){return v;});
+  renderBars('bars-diaper',function(d){var k=toISO(d);return state.events.filter(function(e){return e.type==='diaper'&&toISO(new Date(e.t))===k;}).length;},'diaper',function(v){return v;});
+  renderBars('bars-sleep',function(d){var k=toISO(d);var sec=state.events.filter(function(e){return e.type==='sleep'&&toISO(new Date(e.end))===k;}).reduce(function(a,e){return a+(e.end-e.start)/1000;},0);return Math.round(sec/3600*10)/10;},'sleep',function(v){return v;});
+}
+
+// ── MER: tillväxt ─────────────────────────────────────
+document.getElementById('g-save').onclick=function(){
+  var w=parseInt(document.getElementById('g-weight').value)||null;
+  var l=parseFloat(document.getElementById('g-length').value)||null;
+  var h=parseFloat(document.getElementById('g-head').value)||null;
+  var date=document.getElementById('g-date').value||todayKey();
+  if(!w&&!l&&!h){alert('Fyll i minst ett värde.');return;}
+  state.growth.push({id:Date.now(),t:date,weight:w,length:l,head:h});
+  document.getElementById('g-weight').value='';document.getElementById('g-length').value='';document.getElementById('g-head').value='';
+  save();renderGrowth();
+};
+function renderGrowth(){
+  var el=document.getElementById('growth-log');
+  var gs=state.growth.slice().sort(function(a,b){return a.t<b.t?1:-1;});
+  if(!gs.length){el.innerHTML='<div class="empty-msg">Inga mätningar ännu.</div>';return;}
+  el.innerHTML=gs.map(function(g){
+    var p=[];if(g.weight)p.push(g.weight+' g');if(g.length)p.push(g.length+' cm');if(g.head)p.push('huvud '+g.head+' cm');
+    return '<div class="edit-item"><span><b>'+g.t+'</b><br><span class="soft">'+p.join(' · ')+'</span></span><button data-id="'+g.id+'">×</button></div>';
+  }).join('');
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){state.growth=state.growth.filter(function(x){return x.id!==+b.dataset.id;});save();renderGrowth();};});
+}
+
+// ── MER: milstolpar ───────────────────────────────────
+function renderMiles(){
+  var el=document.getElementById('mile-list');
+  el.innerHTML=state.miles.map(function(m,i){
+    return '<div class="mile"><button class="mile-check'+(m.done?' done':'')+'" data-i="'+i+'">'+(m.done?'✓':'')+'</button>'+
+      '<div class="info'+(m.done?' done':'')+'"><b>'+esc(m.name)+'</b>'+(m.done&&m.date?'<small>'+m.date+(m.note?' · '+esc(m.note):'')+'</small>':'')+'</div></div>';
+  }).join('');
+  el.querySelectorAll('.mile-check').forEach(function(b){b.onclick=function(){
+    var m=state.miles[+b.dataset.i];
+    m.done=!m.done;m.date=m.done?todayKey():'';
+    if(m.done){var n=prompt('Anteckning för "'+m.name+'" (valfritt):','');if(n!==null)m.note=n.trim();}
+    save();renderMiles();
+  };});
+}
+
+// ── MER: föräldradagbok ───────────────────────────────
+var plog={energy:3,mood:3};
+function dotpick(id,obj,field){
+  var el=document.getElementById(id);
+  el.innerHTML=[1,2,3,4,5].map(function(n){return '<button data-n="'+n+'"'+(obj[field]===n?' class="sel"':'')+'>'+n+'</button>';}).join('');
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){obj[field]=+b.dataset.n;dotpick(id,obj,field);};});
+}
+function loadParent(){
+  var p=state.parentlog[todayKey()]||{energy:3,mood:3,note:''};
+  plog={energy:p.energy,mood:p.mood};
+  dotpick('p-energy',plog,'energy');dotpick('p-mood',plog,'mood');
+  document.getElementById('p-note').value=p.note||'';
+}
+document.getElementById('p-save').onclick=function(){
+  state.parentlog[todayKey()]={energy:plog.energy,mood:plog.mood,note:document.getElementById('p-note').value.trim()};
+  save();
+  document.getElementById('p-save').textContent='Sparat ✓';
+  setTimeout(function(){document.getElementById('p-save').textContent='Spara dagen';},1500);
+};
+
+// ── Barn-sheet ────────────────────────────────────────
+function openBaby(){
+  document.getElementById('baby-in-name').value=state.baby.name||'';
+  document.getElementById('baby-in-birth').value=state.baby.birth||'';
+  openSheet('baby-sheet');
+}
+document.getElementById('open-baby').onclick=openBaby;
+document.getElementById('open-baby2').onclick=openBaby;
+document.getElementById('baby-save').onclick=function(){
+  state.baby.name=document.getElementById('baby-in-name').value.trim();
+  state.baby.birth=document.getElementById('baby-in-birth').value;
+  save();closeSheets();renderHem();
+};
+
+// ── Export / import / reset ───────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='babykoll-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.events){state=Object.assign(state,d);save();renderAll();renderMiles();renderGrowth();loadParent();alert('Importen klar.');}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+document.getElementById('reset-day').onclick=function(){
+  if(confirm('Radera ALL data i BabyKoll? Detta går inte att ångra.')){
+    state={baby:{name:'',birth:''},events:[],growth:[],miles:DEFAULT_MILES.map(function(n){return {name:n,done:false,date:'',note:''};}),parentlog:{},activeFeed:null,activeSleep:null,theme:state.theme};
+    save();renderAll();renderMiles();renderGrowth();loadParent();
+  }
+};
+
+// ── Synk (GitHub, likt appkollen) ─────────────────────
+var SYNC_KEY='babykollsync_v1';
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/babykoll-data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge '+(stt||'');}
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');if(!el)return;el.style.display='block';el.style.background=type==='ok'?'var(--moss-soft)':type==='err'?'var(--clay-soft)':'var(--panel2)';el.style.color=type==='ok'?'var(--moss)':type==='err'?'#A2685B':'var(--muted)';el.textContent=msg;}
+// Det som synkas (ej tema/aktiv timer — de är enhetslokala)
+function syncPayload(){return {baby:state.baby,events:state.events,growth:state.growth,miles:state.miles,parentlog:state.parentlog,updated:new Date().toISOString()};}
+// Slå ihop fjärrdata utan att skriva över — union per id, så två föräldrar inte krockar
+function mergeRemote(r){
+  if(!r)return;
+  var have={};state.events.forEach(function(e){have[e.id]=true;});
+  (r.events||[]).forEach(function(e){if(e&&!have[e.id]){state.events.push(e);have[e.id]=true;}});
+  var hg={};state.growth.forEach(function(g){hg[g.id]=true;});
+  (r.growth||[]).forEach(function(g){if(g&&!hg[g.id]){state.growth.push(g);hg[g.id]=true;}});
+  if(Array.isArray(r.miles)){
+    var byName={};state.miles.forEach(function(m){byName[m.name]=m;});
+    r.miles.forEach(function(rm){
+      var lm=byName[rm.name];
+      if(!lm){state.miles.push(rm);byName[rm.name]=rm;}
+      else if(rm.done&&!lm.done){lm.done=true;lm.date=rm.date||lm.date;if(!lm.note&&rm.note)lm.note=rm.note;}
+      else if(rm.done&&lm.done&&!lm.note&&rm.note)lm.note=rm.note;
+    });
+  }
+  if(r.parentlog)Object.keys(r.parentlog).forEach(function(k){if(!state.parentlog[k])state.parentlog[k]=r.parentlog[k];});
+  if(r.baby){if(!state.baby.name&&r.baby.name)state.baby.name=r.baby.name;if(!state.baby.birth&&r.baby.birth)state.baby.birth=r.baby.birth;}
+}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data){syncing=true;mergeRemote(data);save();syncing=false;renderAll();renderMiles();renderGrowth();loadParent();}
+    setBadge('ok','Synkad');
+  }catch(e){syncing=false;setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  function doPut(){
+    var content=b64enc(JSON.stringify(syncPayload()));
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),
+      body:JSON.stringify(Object.assign({message:'Uppdatering via BabyKoll',content:content},sync.sha?{sha:sync.sha}:{}))});
+  }
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();
+  if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+function pushSoon(){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  var st=document.getElementById('gh-status');if(st)st.style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar och slår ihop data…','ok');syncing=true;mergeRemote(data);save();syncing=false;renderAll();renderMiles();renderGrowth();loadParent();await ghPush();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPush();}
+    setBadge('ok','Synkad');setTimeout(closeSheets,1200);
+  }catch(e){setBadge('err','Synkfel');setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet (Read and write).','err');}
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto',h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+function go(v){
+  document.querySelectorAll('.nav button').forEach(function(x){x.classList.toggle('active',x.dataset.v===v);});
+  document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='mat')renderFeedLog();
+  if(v==='somn')renderSomn();
+  if(v==='bloja')renderDiaperLog();
+  if(v==='mer'){renderStats();renderGrowth();renderMiles();loadParent();}
+}
+document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){go(b.dataset.v);};});
+
+// ── Render-allt + live-timrar ─────────────────────────
+function renderAll(){renderHem();renderFeedLog();renderSomn();renderDiaperLog();renderStats();}
+function liveTick(){
+  if(state.activeSleep){
+    renderHem();
+    if(document.getElementById('view-somn').classList.contains('active'))renderSomn();
+  }
+  if(state.activeFeed&&af().startTs&&document.getElementById('view-mat').classList.contains('active'))renderAmning();
+}
+
+// Init
+var gd=document.getElementById('g-date');if(gd)gd.value=todayKey();
+renderHem();renderMiles();renderGrowth();renderAmning();
+applyTheme();
+loadSync();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}else{setBadge('offline','Lokal');}
+setInterval(liveTick,1000);
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
