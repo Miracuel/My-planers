@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Medicinkollen (dator)">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Medicinkollen","short_name":"Medicin","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<title>Medicinkollen — dator</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;
+  --accent:#6E84A3;--accent-soft:#DCE3EC;
+  --warm:#C7A86A;--good:#6E9E6A;--fade:#C28E7E;--gone:#9AA0A6;
+  --track:#E2E6DD;
+  --navbg:rgba(238,241,235,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 6px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.wide{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Synk-rad */
+.sync-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);letter-spacing:.04em}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#F4E1DC;color:#A2685B}
+.gear-btn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:12px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+
+/* Medicinkort */
+.med-card{position:relative;overflow:hidden}
+.med-card+.med-card{margin-top:12px}
+.med-head{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.med-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0}
+.med-name{font-family:Georgia,serif;font-size:17px;flex:1}
+.phase-tag{font-size:11px;padding:3px 9px;border-radius:20px;color:#fff;letter-spacing:.03em}
+
+.dose-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0 4px}
+.ring{width:158px;height:158px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--gone) 0%,var(--track) 0)}
+.ring-inner{width:132px;height:132px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px}
+.ring-time{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.ring-label{font-family:Georgia,serif;font-size:14px;margin-top:3px}
+.ring-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+
+/* Tidslinje */
+.tl{position:relative;width:100%;height:14px;border-radius:8px;overflow:hidden;display:flex;margin-top:2px}
+.tl-seg{height:100%}
+.tl-mark{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--panel)}
+.tl-dose{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);opacity:.35}
+.tl-legend{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:5px;letter-spacing:.03em}
+
+.dose-line{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;padding:9px 11px;border-radius:12px;background:var(--panel2)}
+.dose-line.ready{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.dose-line .ico{font-size:15px}
+.taken-at{font-size:11px;color:var(--muted);text-align:center;margin-top:8px}
+.no-dose{font-size:13px;color:var(--muted);text-align:center;padding:6px 0 10px}
+
+/* Mediciner-lista */
+.med-row{padding:11px 0;border-top:1px solid var(--line)}
+.med-row:first-child{border-top:none}
+.med-row .top{display:flex;align-items:center;gap:9px}
+.med-row .top b{font-family:Georgia,serif;font-weight:400;font-size:15px;flex:1}
+.med-row .meta{font-size:11px;color:var(--muted);margin:5px 0 0 22px;line-height:1.6}
+.icon-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px}
+
+/* Historik */
+.log-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-row .nm{flex:1}
+.log-row time{color:var(--muted);font-size:11px}
+.log-row button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+
+/* Färgväljare */
+.swatches{display:flex;gap:9px;flex-wrap:wrap;margin:4px 0 4px}
+.swatch{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent}
+.swatch.sel{border-color:var(--ink)}
+.field-row{display:flex;gap:8px}
+.field-row>div{flex:1}
+.unit{font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
+.hint{font-size:11px;color:var(--muted);line-height:1.6;margin-top:4px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.sheet-close.sec{background:var(--panel2);color:var(--muted)}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;
+  --accent:#90A6C2;--accent-soft:#36404B;
+  --warm:#C2AC6B;--good:#86A87F;--fade:#C08A7E;--gone:#7C8189;
+  --track:#3A4038;--navbg:rgba(34,37,31,.95);
+}
+
+/* ===== DESKTOP-OVERRIDES (separat fil, delar JS + medicin.json) ===== */
+body{background:var(--bg)}
+.app{max-width:980px;margin:0 auto;padding:28px 28px 48px 232px}
+h1.brand{text-align:left;font-size:27px;margin:0 0 4px}
+.sync-row{justify-content:flex-start;margin-bottom:18px}
+.theme-btn{top:24px;right:24px}
+
+/* Bottennav -> fast sidopanel (samma .nav/.nav button, oforandrad JS) */
+.nav{position:fixed;top:0;left:0;bottom:0;right:auto;width:204px;max-width:204px;margin:0;
+  flex-direction:column;align-items:stretch;gap:5px;
+  border-top:none;border-right:1px solid var(--line);background:var(--panel);backdrop-filter:none;
+  padding:26px 14px;z-index:40}
+.nav::before{content:'\1F48A  Medicinkollen';display:block;font-family:Georgia,serif;font-size:15px;
+  color:var(--ink);letter-spacing:.03em;padding:0 8px 16px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+.nav button{flex:none;text-align:left;font-size:14px;padding:11px 13px;border-radius:12px;
+  display:flex;align-items:center;gap:11px;transition:background .15s}
+.nav button span{display:inline;font-size:18px;margin:0}
+.nav button:hover{background:var(--panel2)}
+.nav button.active{background:var(--accent-soft)}
+
+/* Nu-vy: kort sida vid sida */
+#now-list{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+#now-list .med-card,.med-card+.med-card{margin-top:0}
+#view-meds,#view-log{max-width:660px}
+
+/* Bottom-sheets -> centrerade modaler (samma .sheet/.sheet-bg, oforandrad JS) */
+.sheet-bg{background:rgba(40,44,36,.45)}
+.sheet{position:fixed;left:50%;top:50%;right:auto;bottom:auto;
+  transform:translate(-50%,-46%) scale(.98);opacity:0;pointer-events:none;
+  width:460px;max-width:92vw;max-height:86vh;border-radius:18px;
+  transition:opacity .18s ease,transform .18s ease;
+  box-shadow:0 24px 64px rgba(0,0,0,.28)}
+.sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.sheet-close{cursor:pointer;transition:filter .15s}
+.sheet-close:hover{filter:brightness(.95)}
+
+/* Hover pa knappar/swatchar pa stor skarm */
+.btn:hover{background:var(--accent-soft)}
+.btn.ghost:hover{background:var(--panel2)}
+.gear-btn:hover{background:var(--panel2)}
+.swatch:hover{filter:brightness(1.06)}
+.icon-btn:hover{color:var(--ink)}
+.log-row button:hover{color:var(--fade)}
+
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">&#9680;</button>
+<h1 class="brand">&#128138; Medicinkollen</h1>
+<div class="sync-row">
+  <span id="sync-badge" class="sp-badge offline">Lokal</span>
+  <button class="gear-btn" id="sync-btn" title="Hämta senaste">&#10227; Synka</button>
+  <button class="gear-btn" id="sync-settings" title="Synkinställningar">&#9881;</button>
+</div>
+
+<!-- NU -->
+<div class="view active" id="view-now">
+  <div id="now-list"></div>
+</div>
+
+<!-- MEDICINER -->
+<div class="view" id="view-meds">
+  <div class="section-title" style="margin-top:0">Mina mediciner</div>
+  <div class="card-panel"><div id="med-list"></div></div>
+  <button class="btn fill wide" id="add-med" style="margin-top:12px">+ Lägg till medicin</button>
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas på din enhet (och i ditt privata GitHub-repo om synk är på).<br>Medicinkollen är ett minnesstöd — inte medicinsk rådgivning. Följ alltid ordination och bipacksedel. 💊</div>
+</div>
+
+<!-- HISTORIK -->
+<div class="view" id="view-log">
+  <div class="section-title" style="margin-top:0">Tagna doser</div>
+  <div class="card-panel"><div id="log-list"></div></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="now"><span>&#9201;</span>Nu</button>
+  <button data-v="meds"><span>&#128138;</span>Mediciner</button>
+  <button data-v="log"><span>&#128203;</span>Historik</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="med-sheet">
+  <h3 id="med-sheet-title">Ny medicin</h3>
+  <label>Namn</label>
+  <input type="text" id="m-name" placeholder="T.ex. Smärtstillande">
+  <label>Färg</label>
+  <div class="swatches" id="m-swatches"></div>
+  <label>Kommer igång efter <span class="unit">(minuter)</span></label>
+  <input type="number" id="m-onset" min="0" placeholder="30">
+  <label>Börjar gå ur efter <span class="unit">(timmar)</span></label>
+  <input type="number" id="m-wear" min="0" step="0.5" placeholder="4">
+  <label>Ny dos tillåten efter <span class="unit">(timmar)</span></label>
+  <input type="number" id="m-next" min="0" step="0.5" placeholder="6">
+  <label>Helt ur kroppen efter <span class="unit">(timmar)</span></label>
+  <input type="number" id="m-clear" min="0" step="0.5" placeholder="8">
+  <button class="sheet-close" id="m-save">Spara</button>
+  <button class="sheet-close sec" id="m-delete" style="display:none">Ta bort medicin</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>&#9881; Synk via GitHub</h3>
+  <p class="soft">Appen läser och sparar <code>medicin.json</code> i ett <strong>privat</strong> GitHub-repo, så att samma mediciner och doser syns på alla dina enheter. Du kan dela samma repo med dina andra appar — varje app har sin egen fil. Token sparas bara lokalt på den här enheten — aldrig i koden.</p>
+  <label>GitHub-användarnamn (ägare av data-repot)</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="app-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div id="gh-status" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:8px"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+  <button class="sheet-close sec" id="gh-close">Stäng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='medicin_v1';
+var COLORS=['#6E84A3','#8A7BA8','#5E9690','#C2967E','#B97E92','#7A8B6F','#C7A86A','#5B7DB1'];
+var MONTHS=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+var PHASE={
+  onset:{label:'Kommer igång',sub:'tills full effekt',color:'#C7A86A'},
+  active:{label:'Verkar nu',sub:'tills den börjar gå ur',color:'#6E9E6A'},
+  waning:{label:'Börjar gå ur',sub:'tills ur kroppen',color:'#C28E7E'},
+  cleared:{label:'Ur kroppen',sub:'medicinen har gått ur',color:'#9AA0A6'}
+};
+var state={
+  meds:[{id:1,name:'Min medicin',color:'#6E84A3',onset:30,wear:4,next:6,clear:8}],
+  doses:[],
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var pushTimer=null;
+function persist(){save();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var clamp01=function(v){return Math.max(0,Math.min(100,v));};
+
+// ── Tidsformat ────────────────────────────────────────
+function fmtDur(sec){
+  sec=Math.max(0,Math.round(sec));
+  if(sec>=3600){
+    var h=Math.floor(sec/3600);var m=Math.round((sec%3600)/60);
+    if(m===60){h++;m=0;}
+    return h+' t '+m+' m';
+  }
+  var mm=Math.floor(sec/60);var ss=sec%60;
+  return String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+}
+function fmtWhen(ts){
+  var d=new Date(ts);var n=new Date();
+  var hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var sameDay=function(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();};
+  if(sameDay(d,n))return 'Idag '+hm;
+  var y=new Date(n);y.setDate(y.getDate()-1);
+  if(sameDay(d,y))return 'Igår '+hm;
+  return d.getDate()+' '+MONTHS[d.getMonth()]+' '+hm;
+}
+
+// ── Fas-beräkning ─────────────────────────────────────
+function phaseOf(med,eSec){
+  var onset=med.onset*60,wear=med.wear*3600,clear=med.clear*3600;
+  if(eSec<onset)return {key:'onset',segStart:0,target:onset};
+  if(eSec<wear) return {key:'active',segStart:onset,target:wear};
+  if(eSec<clear)return {key:'waning',segStart:wear,target:clear};
+  return {key:'cleared',segStart:clear,target:null};
+}
+function latestDose(medId){
+  var best=null;
+  for(var i=0;i<state.doses.length;i++){var d=state.doses[i];if(d.medId===medId&&(!best||d.t0>best.t0))best=d;}
+  return best;
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Vy: Nu ────────────────────────────────────────────
+var notified={};
+function renderNow(){
+  var el=document.getElementById('now-list');
+  if(!state.meds.length){
+    el.innerHTML='<div class="card-panel"><div class="empty-msg">Inga mediciner ännu.<br>Lägg till en under fliken Mediciner. 💊</div></div>';
+    return;
+  }
+  var now=Date.now();var html='';
+  for(var i=0;i<state.meds.length;i++){
+    var med=state.meds[i];
+    var dose=latestDose(med.id);
+    html+='<div class="card-panel med-card">';
+    if(!dose){
+      html+='<div class="med-head"><span class="med-dot" style="background:'+med.color+'"></span><span class="med-name">'+esc(med.name)+'</span></div>';
+      html+='<div class="no-dose">Ingen dos tagen ännu</div>';
+      html+='<button class="btn fill wide" data-take="'+med.id+'">Ta dos</button>';
+      html+='</div>';
+      continue;
+    }
+    var eSec=(now-dose.t0)/1000;
+    var ph=phaseOf(med,eSec);
+    var info=PHASE[ph.key];
+    var pct=ph.target!==null?clamp01((eSec-ph.segStart)/(ph.target-ph.segStart)*100):100;
+    var bigTime=ph.target!==null?fmtDur(ph.target-eSec):'&#10003;';
+    // milestone-pirr när appen är öppen
+    var pk='d'+dose.id+'_'+ph.key;
+    if(notified.last&&notified.last[dose.id]&&notified.last[dose.id]!==ph.key&&!document.hidden&&navigator.vibrate)navigator.vibrate(120);
+    if(!notified.last)notified.last={};notified.last[dose.id]=ph.key;
+
+    html+='<div class="med-head"><span class="med-dot" style="background:'+med.color+'"></span><span class="med-name">'+esc(med.name)+'</span><span class="phase-tag" style="background:'+info.color+'">'+info.label+'</span></div>';
+    html+='<div class="dose-wrap">';
+    html+='<div class="ring" style="background:conic-gradient('+info.color+' '+pct+'%,var(--track) 0)"><div class="ring-inner"><div class="ring-time">'+bigTime+'</div><div class="ring-label">'+info.label+'</div><div class="ring-sub">'+info.sub+'</div></div></div>';
+    // tidslinje
+    var clr=med.clear*3600;var on=med.onset*60;var we=med.wear*3600;
+    var w1=clr>0?clamp01(on/clr*100):0;
+    var w2=clr>0?clamp01((we-on)/clr*100):0;
+    var w3=clr>0?clamp01((clr-we)/clr*100):0;
+    var markPct=clr>0?clamp01(eSec/clr*100):100;
+    var ndSec=med.next*3600;var ndPct=clr>0?clamp01(ndSec/clr*100):100;
+    html+='<div style="width:100%">';
+    html+='<div class="tl">';
+    html+='<div class="tl-seg" style="width:'+w1+'%;background:'+PHASE.onset.color+'"></div>';
+    html+='<div class="tl-seg" style="width:'+w2+'%;background:'+PHASE.active.color+'"></div>';
+    html+='<div class="tl-seg" style="width:'+w3+'%;background:'+PHASE.waning.color+'"></div>';
+    html+='<div class="tl-dose" style="left:'+ndPct+'%" title="Ny dos"></div>';
+    html+='<div class="tl-mark" style="left:'+markPct+'%"></div>';
+    html+='</div>';
+    html+='<div class="tl-legend"><span>Tagen</span><span>Full effekt</span><span>Ur kroppen</span></div>';
+    html+='</div>';
+    // ny dos-status
+    var ndLeft=ndSec-eSec;
+    if(ndLeft>0)html+='<div class="dose-line"><span class="ico">&#9203;</span><span>Ny dos om '+fmtDur(ndLeft)+'</span></div>';
+    else html+='<div class="dose-line ready"><span class="ico">&#10003;</span><span>Nu kan du ta ny dos</span></div>';
+    html+='</div>';// dose-wrap
+    html+='<div class="taken-at">Senaste dos: '+fmtWhen(dose.t0)+'</div>';
+    html+='<button class="btn fill wide" data-take="'+med.id+'" style="margin-top:10px">Ta ny dos</button>';
+    html+='</div>';
+  }
+  el.innerHTML=html;
+  var btns=el.querySelectorAll('[data-take]');
+  for(var b=0;b<btns.length;b++){
+    btns[b].onclick=function(){takeDose(+this.getAttribute('data-take'));};
+  }
+}
+function takeDose(medId){
+  var med=null;for(var i=0;i<state.meds.length;i++)if(state.meds[i].id===medId)med=state.meds[i];
+  if(!med)return;
+  var prev=latestDose(medId);
+  if(prev){
+    var eSec=(Date.now()-prev.t0)/1000;var ndLeft=med.next*3600-eSec;
+    if(ndLeft>0&&!window.confirm('Det är '+fmtDur(ndLeft)+' kvar tills ny dos rekommenderas.\n\nVill du ta en dos ändå?'))return;
+  }
+  state.doses.push({id:Date.now(),medId:medId,t0:Date.now()});
+  persist();renderNow();renderLog();
+  if(navigator.vibrate)navigator.vibrate(60);
+}
+
+// ── Vy: Mediciner ─────────────────────────────────────
+function fmtHours(h){
+  if(h===Math.round(h))return h+' h';
+  return h+' h';
+}
+function renderMeds(){
+  var el=document.getElementById('med-list');
+  if(!state.meds.length){el.innerHTML='<div class="empty-msg">Inga mediciner ännu — lägg till din första nedanför.</div>';return;}
+  var html='';
+  for(var i=0;i<state.meds.length;i++){
+    var m=state.meds[i];
+    html+='<div class="med-row"><div class="top"><span class="med-dot" style="background:'+m.color+'"></span><b>'+esc(m.name)+'</b><button class="icon-btn" data-edit="'+m.id+'">&#9998;</button></div>';
+    html+='<div class="meta">Kommer igång: '+m.onset+' min · Börjar gå ur: '+m.wear+' h · Ny dos: '+m.next+' h · Ur kroppen: '+m.clear+' h</div></div>';
+  }
+  el.innerHTML=html;
+  var btns=el.querySelectorAll('[data-edit]');
+  for(var b=0;b<btns.length;b++)btns[b].onclick=function(){openMedSheet(+this.getAttribute('data-edit'));};
+}
+
+var editId=null,pickColor=COLORS[0];
+function renderSwatches(){
+  var el=document.getElementById('m-swatches');var html='';
+  for(var i=0;i<COLORS.length;i++)html+='<div class="swatch'+(COLORS[i]===pickColor?' sel':'')+'" data-c="'+COLORS[i]+'" style="background:'+COLORS[i]+'"></div>';
+  el.innerHTML=html;
+  var sw=el.querySelectorAll('.swatch');
+  for(var s=0;s<sw.length;s++)sw[s].onclick=function(){pickColor=this.getAttribute('data-c');renderSwatches();};
+}
+function openMedSheet(id){
+  editId=id;
+  var t=document.getElementById('med-sheet-title');
+  var del=document.getElementById('m-delete');
+  if(id){
+    var m=null;for(var i=0;i<state.meds.length;i++)if(state.meds[i].id===id)m=state.meds[i];
+    t.textContent='Ändra medicin';
+    document.getElementById('m-name').value=m.name;
+    document.getElementById('m-onset').value=m.onset;
+    document.getElementById('m-wear').value=m.wear;
+    document.getElementById('m-next').value=m.next;
+    document.getElementById('m-clear').value=m.clear;
+    pickColor=m.color;del.style.display='block';
+  }else{
+    t.textContent='Ny medicin';
+    document.getElementById('m-name').value='';
+    document.getElementById('m-onset').value='30';
+    document.getElementById('m-wear').value='4';
+    document.getElementById('m-next').value='6';
+    document.getElementById('m-clear').value='8';
+    pickColor=COLORS[state.meds.length%COLORS.length];del.style.display='none';
+  }
+  renderSwatches();openSheet('med-sheet');
+}
+document.getElementById('add-med').onclick=function(){openMedSheet(null);};
+document.getElementById('m-save').onclick=function(){
+  var name=document.getElementById('m-name').value.trim();
+  if(!name){alert('Ge medicinen ett namn.');return;}
+  var num=function(id,def){var v=parseFloat(document.getElementById(id).value);return isNaN(v)||v<0?def:v;};
+  var rec={name:name,color:pickColor,onset:num('m-onset',30),wear:num('m-wear',4),next:num('m-next',6),clear:num('m-clear',8)};
+  if(editId){
+    for(var i=0;i<state.meds.length;i++)if(state.meds[i].id===editId)Object.assign(state.meds[i],rec);
+  }else{
+    rec.id=Date.now();state.meds.push(rec);
+  }
+  persist();closeSheets();renderMeds();renderNow();
+};
+document.getElementById('m-delete').onclick=function(){
+  if(!editId)return;
+  if(!window.confirm('Ta bort medicinen och dess doshistorik?'))return;
+  state.meds=state.meds.filter(function(m){return m.id!==editId;});
+  state.doses=state.doses.filter(function(d){return d.medId!==editId;});
+  persist();closeSheets();renderMeds();renderNow();renderLog();
+};
+
+// ── Vy: Historik ──────────────────────────────────────
+function medName(id){for(var i=0;i<state.meds.length;i++)if(state.meds[i].id===id)return state.meds[i];return null;}
+function renderLog(){
+  var el=document.getElementById('log-list');
+  if(!state.doses.length){el.innerHTML='<div class="empty-msg">Inga doser loggade ännu.</div>';return;}
+  var sorted=state.doses.slice().sort(function(a,b){return b.t0-a.t0;});
+  var html='';
+  for(var i=0;i<sorted.length;i++){
+    var d=sorted[i];var m=medName(d.medId);
+    var color=m?m.color:'var(--gone)';var nm=m?m.name:'(borttagen)';
+    html+='<div class="log-row"><span class="med-dot" style="background:'+color+'"></span><span class="nm">'+esc(nm)+'</span><time>'+fmtWhen(d.t0)+'</time><button data-del="'+d.id+'">&times;</button></div>';
+  }
+  el.innerHTML=html;
+  var btns=el.querySelectorAll('[data-del]');
+  for(var b=0;b<btns.length;b++)btns[b].onclick=function(){
+    var id=+this.getAttribute('data-del');
+    state.doses=state.doses.filter(function(x){return x.id!==id;});
+    persist();renderLog();renderNow();
+  };
+}
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var d=new Date();var stamp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  a.download='medicinkollen-backup-'+stamp+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.meds){state=Object.assign(state,d);persist();renderNow();renderMeds();renderLog();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── GitHub-synk ───────────────────────────────────────
+var SYNC_KEY='medicinsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var DATA_FILE='medicin.json';
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+DATA_FILE;};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' offline');}
+
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data){
+      if(Array.isArray(data.meds))state.meds=data.meds;
+      if(Array.isArray(data.doses))state.doses=data.doses;
+      save();renderNow();renderMeds();renderLog();
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({meds:state.meds,doses:state.doses,updated:new Date().toISOString()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+function setGhStatus(msg,kind){
+  var el=document.getElementById('gh-status');el.style.display='block';el.textContent=msg;
+  el.style.background=kind==='err'?'#F4E1DC':'#DCE9DC';el.style.color=kind==='err'?'#A2685B':'#3F5E3A';
+}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-close').onclick=closeSheets;
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  try{
+    setGhStatus('Synkar…','ok');
+    await ghGet();await ghPush();
+    setGhStatus('Klart — synk är på.','ok');
+    setTimeout(closeSheets,1100);
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');
+  b.innerHTML=m==='auto'?'&#9680;':(m==='dark'?'&#9790;':'&#9728;');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navBtns.length;n++){
+  navBtns[n].onclick=function(){
+    for(var i=0;i<navBtns.length;i++)navBtns[i].classList.remove('active');
+    this.classList.add('active');
+    var vs=document.querySelectorAll('.view');for(var v=0;v<vs.length;v++)vs[v].classList.remove('active');
+    document.getElementById('view-'+this.getAttribute('data-v')).classList.add('active');
+    if(this.getAttribute('data-v')==='meds')renderMeds();
+    if(this.getAttribute('data-v')==='log')renderLog();
+    if(this.getAttribute('data-v')==='now')renderNow();
+  };
+}
+
+// ── Start ─────────────────────────────────────────────
+loadSync();
+applyTheme();
+renderNow();renderMeds();renderLog();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}
+setInterval(function(){if(document.getElementById('view-now').classList.contains('active'))renderNow();},1000);
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
