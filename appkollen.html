@@ -288,6 +288,26 @@ label.chk-item:last-child{border-bottom:none}
 .cal-up-h{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--pagar-text);margin:4px 0 7px}
 .cal-up-dot{width:7px;height:7px;border-radius:50%;background:var(--pagar);flex:0 0 auto}
 .cal-up-time{margin-left:auto;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+/* Klickbar dashboard + filterrad */
+.kpi.clickable{cursor:pointer;transition:transform .08s}
+.kpi.clickable:active{transform:scale(.96)}
+.bar-row.bar-clickable{cursor:pointer;border-radius:7px;padding:2px 4px;margin-left:-4px;margin-right:-4px;transition:background .12s}
+.bar-row.bar-clickable:hover{background:#EFEAE1}
+.filt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.filt-lbl{font-size:12px;color:var(--ink-soft)}
+.filt-chip{font-size:12px;font-weight:600;padding:4px 10px;border-radius:9px;background:var(--ink);color:#fff}
+.filt-clear{font-size:12px;border:1px solid var(--line);background:#fff;color:var(--ink-soft);padding:4px 10px;border-radius:9px;cursor:pointer;font-family:inherit}
+/* Manuell tid */
+.tm-manual{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.tm-manual-lbl{font-size:12px;color:var(--ink-soft);width:100%}
+.tm-manual input[type=number]{width:60px;border:1px solid var(--line);border-radius:9px;padding:8px;font-size:14px;background:var(--paper);outline:none;font-family:inherit;color:var(--ink)}
+.tm-manual button{padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;cursor:pointer;font-family:inherit}
+/* Arkivering + historik */
+.pill.arch{background:#E7E0D4;color:#7A6F5C}
+.hist-row{display:flex;gap:10px;align-items:baseline;font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.hist-row:last-child{border-bottom:none}
+.hist-when{flex:0 0 auto;color:var(--ink-soft);font-variant-numeric:tabular-nums;min-width:108px}
+.hist-what{color:var(--ink)}
 
 /* Footer */
 .foot{display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap}
@@ -410,8 +430,9 @@ label.chk-item:last-child{border-bottom:none}
 </div>
 
 <input type="text" id="search" class="search" placeholder="Sök app, punkt eller anteckning...">
-<div class="toolbar" id="toolbar"><span class="tlabel">Sortera</span><button class="fchip" id="sort-added">Tillagd</button><button class="fchip" id="sort-az">A–Ö</button><button class="fchip" id="sort-prio">Prio</button><button class="fchip" id="sort-upd">Senast uppd.</button><button class="fchip" id="sort-score">Poäng</button><button class="fchip" id="sort-status">Status</button><button class="fchip" id="sort-family">Familjer</button><button class="fchip" id="sort-appid">App-ID</button><span class="tdiv"></span><span class="tlabel">Visa</span><button class="fchip" id="f-mobil">✓ Mobil</button><button class="fchip" id="f-desktop">✓ Desktop</button><button class="fchip" id="f-token">✓ Token</button><button class="fchip" id="f-hidden">Dolda (0)</button><span class="tdiv"></span><select class="cat-filter" id="f-cat"><option value="">Alla kategorier</option><option>Produktivitet</option><option>Hälsa</option><option>NPF</option><option>Arbete</option><option>Hobby</option><option>Rollspel</option><option>Magi/Häxa</option><option>IT</option><option>Företag</option></select><select class="cat-filter" id="f-family"><option value="">Alla familjer</option></select></div>
+<div class="toolbar" id="toolbar"><span class="tlabel">Sortera</span><button class="fchip" id="sort-added">Tillagd</button><button class="fchip" id="sort-az">A–Ö</button><button class="fchip" id="sort-prio">Prio</button><button class="fchip" id="sort-upd">Senast uppd.</button><button class="fchip" id="sort-score">Poäng</button><button class="fchip" id="sort-status">Status</button><button class="fchip" id="sort-family">Familjer</button><button class="fchip" id="sort-appid">App-ID</button><span class="tdiv"></span><span class="tlabel">Visa</span><button class="fchip" id="f-mobil">✓ Mobil</button><button class="fchip" id="f-desktop">✓ Desktop</button><button class="fchip" id="f-token">✓ Token</button><button class="fchip" id="f-hidden">Dolda (0)</button><button class="fchip" id="f-archived">Arkiverade (0)</button><span class="tdiv"></span><select class="cat-filter" id="f-cat"><option value="">Alla kategorier</option><option>Produktivitet</option><option>Hälsa</option><option>NPF</option><option>Arbete</option><option>Hobby</option><option>Rollspel</option><option>Magi/Häxa</option><option>IT</option><option>Företag</option></select><select class="cat-filter" id="f-family"><option value="">Alla familjer</option></select></div>
 
+<div class="filt-bar" id="filt-bar" style="display:none"></div>
 <div id="cards"></div>
 <button class="add-card" id="add-app">+ Lägg till app</button>
 
@@ -438,9 +459,12 @@ label.chk-item:last-child{border-bottom:none}
     <button class="tm-btn" id="tm-toggle">Starta</button>
     <button class="tm-reset" id="tm-reset">Nollställ</button>
   </div>
+  <div class="tm-manual"><span class="tm-manual-lbl">Lägg till tid manuellt:</span><input type="number" id="tm-h" min="0" placeholder="h"><span>h</span><input type="number" id="tm-m" min="0" max="59" placeholder="min"><span>min</span><button id="tm-add">Lägg till</button></div>
   <label>Versionhantering</label>
   <div class="ver-box"><button class="ver-btn" id="ver-upload">📤 Markera som uppladdad nu</button><div class="ver-last" id="ver-last"></div></div>
   <div id="ver-list"></div>
+  <label>Historik</label>
+  <div id="a-history"></div>
   <label>Senast ändrad i koden</label>
   <button class="chip chip-ch" id="a-changed" style="width:100%"><span class="bead"></span><span id="a-changed-txt">Markera ändrad idag</span></button>
   <label>Inkastad i</label>
@@ -519,6 +543,7 @@ label.chk-item:last-child{border-bottom:none}
   <input type="text" id="a-link-gpt" class="gap" placeholder="ChatGPT-länk (https://chatgpt.com/...)">
   <input type="text" id="a-link-claude" class="gap" placeholder="Claude-länk (https://claude.ai/...)">
   <div class="color-row" id="a-colors"></div>
+  <button class="hide-btn" id="a-archive">Arkivera appen</button>
   <button class="hide-btn" id="a-hide">Klarmarkera appen (dölj)</button>
   <button class="del-btn" id="a-del">Ta bort appen</button>
   <button class="sheet-close" id="a-done">Klar</button>
@@ -635,7 +660,7 @@ function fixCounter(){let mx=0;state.ideas.forEach(i=>{if(i.no>mx)mx=i.no;});if(
 function seed(){
   if(state.seeded)return;
   const s=[['Min planering','index.html'],['Dagstavlan','dagstavlan.html'],['Jobbplanering','jobb.html'],['Batteriet','batteriet.html'],['Månen','manen.html'],['Stjärnkartan','astro.html'],['Tarotdagboken','tarot.html'],['Appkollen','appkollen.html']];
-  state.apps=s.map((a,i)=>({id:uid()+i,name:a[0],file:a[1],color:COLORS[i%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:null,cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:'',uploads:[]}));
+  state.apps=s.map((a,i)=>({id:uid()+i,name:a[0],file:a[1],color:COLORS[i%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:null,cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:'',uploads:[],archived:false,history:[]}));
   state.seeded=true;saveData();
 }
 
@@ -784,7 +809,7 @@ function appIdStr(n){var s=''+n;while(s.length<3)s='0'+s;return 'APP-'+s;}
 var STCOL={pagar:'#5E8C61',test:'#5B7BA6',back:'#C98A3D',none:'#B8B0A4',klar:'#3E6B41'};
 function pctOf(n,d){return d?Math.round(n/d*100):0;}
 function weekRange(){var t=new Date();var day=(t.getDay()+6)%7;var mon=new Date(t.getFullYear(),t.getMonth(),t.getDate()-day);var sun=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6);var iso=function(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());};return[iso(mon),iso(sun)];}
-function barRows(items){var mx=items.reduce(function(m,it){return Math.max(m,it.count);},0);return items.length?items.map(function(it){var w=mx?Math.round(it.count/mx*100):0;return'<div class="bar-row"><span class="bar-lbl">'+esc(it.label)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+w+'%;background:'+(it.color||'var(--ink-soft)')+'"></span></span><span class="bar-val">'+it.count+'</span></div>';}).join(''):'<div class="dash-empty">Ingen data än.</div>';}
+function barRows(items){var mx=items.reduce(function(m,it){return Math.max(m,it.count);},0);return items.length?items.map(function(it){var w=mx?Math.round(it.count/mx*100):0;return'<div class="bar-row'+(it.filter?' bar-clickable':'')+'"'+(it.filter?' data-filter="'+esc(it.filter)+'"':'')+'><span class="bar-lbl">'+esc(it.label)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+w+'%;background:'+(it.color||'var(--ink-soft)')+'"></span></span><span class="bar-val">'+it.count+'</span></div>';}).join(''):'<div class="dash-empty">Ingen data än.</div>';}
 function healthBar(label,p){return'<div class="hb"><div class="hb-top"><span>'+label+'</span><span>'+p+'%</span></div><div class="hb-track"><span class="hb-fill" style="width:'+p+'%"></span></div></div>';}
 function buildTimeline(apps){
   var now=new Date();var buckets=[];var labels=[];
@@ -801,24 +826,27 @@ function renderDashboard(){
   dash.classList.toggle('closed',!dashOpen);
   var chev=document.getElementById('dash-chev');if(chev)chev.textContent=dashOpen?'\u25be':'\u25b8';
   if(!dashOpen){body.innerHTML='';return;}
-  var apps=state.apps.filter(function(a){return!a.hidden;});
+  var apps=state.apps.filter(function(a){return!a.hidden&&!a.archived;});
   var tot=apps.length;
   var cntKlar=0,cntPagar=0,cntTest=0,cntMob=0,cntDesk=0,cntTok=0,cntToday=0,cntWeek=0,sumS=0,nS=0,cntDoc=0;
   var wk=weekRange();
   apps.forEach(function(a){var st=effStatus(a);if(st==='klar')cntKlar++;else if(st==='pagar')cntPagar++;else if(st==='test')cntTest++;var C=a.chk||{};if(C.mobil)cntMob++;if(C.desktop)cntDesk++;if(C.token)cntTok++;if(a.commit===todayISO())cntToday++;if(a.commit&&a.commit>=wk[0]&&a.commit<=wk[1])cntWeek++;var ps=prioScore(a);if(ps!==null){sumS+=ps;nS++;}if((a.note&&a.note.trim())||a.link||a.linkGpt||a.linkClaude)cntDoc++;});
   var ideasLeft=state.ideas.filter(function(i){return!i.up;}).length;
   var avgS=nS?Math.round(sumS/nS*10)/10:0;
-  var kpis=[['\ud83d\udcf1',tot,'Totalt'],['\u2705',cntKlar,'Klara'],['\ud83d\udea7',cntPagar,'Under utv.'],['\ud83e\uddea',cntTest,'I test'],['\ud83d\udca1',ideasLeft,'Idéer kvar'],['\ud83d\udcf2',cntMob,'Mobil'],['\ud83d\udda5',cntDesk,'Desktop'],['\ud83d\udd11',cntTok,'Synktoken'],['\ud83d\udcc8',(nS?avgS:'\u2013'),'Snitt-score'],['\ud83c\udfaf',cntToday,'Idag'],['\ud83d\udcc5',cntWeek,'Denna vecka']];
-  var kpiHtml='<div class="kpi-grid">'+kpis.map(function(k){return'<div class="kpi"><div class="kpi-ico">'+k[0]+'</div><div class="kpi-num">'+k[1]+'</div><div class="kpi-lbl">'+k[2]+'</div></div>';}).join('')+'</div>';
+  var kpis=[['\ud83d\udcf1',tot,'Totalt',''],['\u2705',cntKlar,'Klara','status:klar'],['\ud83d\udea7',cntPagar,'Under utv.','status:pagar'],['\ud83e\uddea',cntTest,'I test','status:test'],['\ud83d\udca1',ideasLeft,'Idéer kvar',''],['\ud83d\udcf2',cntMob,'Mobil','chk:mobil'],['\ud83d\udda5',cntDesk,'Desktop','chk:desktop'],['\ud83d\udd11',cntTok,'Synktoken','chk:token'],['\ud83d\udcc8',(nS?avgS:'\u2013'),'Snitt-score',''],['\ud83c\udfaf',cntToday,'Idag','date:today'],['\ud83d\udcc5',cntWeek,'Denna vecka','date:week']];
+  var kpiHtml='<div class="kpi-grid">'+kpis.map(function(k){return'<div class="kpi'+(k[3]?' clickable':'')+'"'+(k[3]?' data-filter="'+k[3]+'"':'')+'><div class="kpi-ico">'+k[0]+'</div><div class="kpi-num">'+k[1]+'</div><div class="kpi-lbl">'+k[2]+'</div></div>';}).join('')+'</div>';
   var catMap={};apps.forEach(function(a){if(a.cat)catMap[a.cat]=(catMap[a.cat]||0)+1;});
-  var catItems=Object.keys(catMap).map(function(c){return{label:c,count:catMap[c],color:(CATCOL[c]?CATCOL[c][1]:'var(--ink-soft)')};}).sort(function(a,b){return b.count-a.count;});
+  var catItems=Object.keys(catMap).map(function(c){return{label:c,count:catMap[c],color:(CATCOL[c]?CATCOL[c][1]:'var(--ink-soft)'),filter:'cat:'+c};}).sort(function(a,b){return b.count-a.count;});
   var famMap={};apps.forEach(function(a){var f=a.family||'Utan familj';famMap[f]=(famMap[f]||0)+1;});
-  var famItems=Object.keys(famMap).map(function(f){return{label:f,count:famMap[f],color:'#9C8F7A'};}).sort(function(a,b){return b.count-a.count;});
-  var stItems=[['pagar','Pågår'],['test','Test'],['back','Backlogg'],['none','Ej skapad'],['klar','Klar']].map(function(s){return{label:s[1],count:apps.filter(function(a){return effStatus(a)===s[0];}).length,color:STCOL[s[0]]};}).filter(function(it){return it.count>0;});
+  var famItems=Object.keys(famMap).map(function(f){return{label:f,count:famMap[f],color:'#9C8F7A',filter:(f==='Utan familj'?'':'fam:'+f)};}).sort(function(a,b){return b.count-a.count;});
+  var stItems=[['pagar','Pågår'],['test','Test'],['back','Backlogg'],['none','Ej skapad'],['klar','Klar']].map(function(s){return{label:s[1],count:apps.filter(function(a){return effStatus(a)===s[0];}).length,color:STCOL[s[0]],filter:'status:'+s[0]};}).filter(function(it){return it.count>0;});
+  var prioItems=[];for(var _pp=1;_pp<=5;_pp++){var _pcc=apps.filter(function(a){return (a.prio||0)===_pp;}).length;if(_pcc)prioItems.push({label:'Prioritet '+_pp,count:_pcc,color:PRIOCOL[_pp],filter:'prio:'+_pp});}
+  var _np=apps.filter(function(a){return !a.prio;}).length;if(_np)prioItems.push({label:'Ingen prioritet',count:_np,color:'var(--ink-soft)'});
   var chartsHtml='<div class="dash-charts">'+
     '<div class="chart-box"><div class="chart-h">Appar per kategori</div>'+barRows(catItems)+'</div>'+
     '<div class="chart-box"><div class="chart-h">Appar per familj</div>'+barRows(famItems)+'</div>'+
     '<div class="chart-box"><div class="chart-h">Statusfördelning</div>'+barRows(stItems)+'</div>'+
+    '<div class="chart-box"><div class="chart-h">Appar per prioritering</div>'+barRows(prioItems)+'</div>'+
     '<div class="chart-box"><div class="chart-h">Utveckling över tid</div>'+buildTimeline(apps)+'</div></div>';
   var healthHtml='<div class="health-box"><div class="chart-h">Portföljhälsa</div>'+healthBar('Färdigställandegrad',pctOf(cntKlar,tot))+healthBar('Kvalitetsgrad',nS?Math.round(avgS*10):0)+healthBar('Synkgrad',pctOf(cntTok,tot))+healthBar('Dokumentationsgrad',pctOf(cntDoc,tot))+'</div>';
   body.innerHTML=kpiHtml+chartsHtml+healthHtml;
@@ -832,6 +860,20 @@ function renderVersions(a){
   if(last)last.innerHTML=ups.length?('Senast uppladdad: <b>'+fmtDateTime(ups[ups.length-1])+'</b> \u00b7 '+ups.length+' version'+(ups.length===1?'':'er')):'Aldrig uppladdad \u00e4n.';
   if(listEl){var recent=ups.slice(-6).reverse();listEl.innerHTML=recent.length?('<div class="ver-hist">'+recent.map(function(t){return'<div class="ver-row"><span>'+fmtDateTime(t)+'</span><button class="ver-x" data-ts="'+t+'" title="Ta bort">\u00d7</button></div>';}).join('')+'</div>'):'';}
 }
+var PRIOCOL={1:'#C96A6A',2:'#C98A3D',3:'#D9A441',4:'#5E8C61',5:'#B8B0A4'};
+var TYPLBL={ide:'Idéer',forb:'Förbättringar',bugg:'Buggar',pagar:'Pågår'};
+function clearFilters(){typFilt=null;catFilt='';famFilt='';statusFilt='';prioFilt='';dateFilt='';chkFilt={mobil:false,desktop:false,token:false};var fc=document.getElementById('f-cat');if(fc)fc.value='';renderStats();renderCards();}
+function applyDashFilter(tok){if(!tok){clearFilters();if(view!=='cards')applyView('cards');return;}var i=tok.indexOf(':');var type=tok.slice(0,i),val=tok.slice(i+1);
+  if(type==='status')statusFilt=statusFilt===val?'':val;
+  else if(type==='prio')prioFilt=prioFilt===val?'':val;
+  else if(type==='date')dateFilt=dateFilt===val?'':val;
+  else if(type==='cat'){catFilt=catFilt===val?'':val;var fc=document.getElementById('f-cat');if(fc)fc.value=catFilt;}
+  else if(type==='fam')famFilt=famFilt===val?'':val;
+  else if(type==='chk')chkFilt[val]=!chkFilt[val];
+  if(view!=='cards')applyView('cards');renderStats();renderCards();}
+function pushHistory(a,type,label){if(!a.history)a.history=[];a.history.push({ts:new Date().toISOString(),type:type,label:label||''});}
+function histText(h){var ic={created:'\ud83c\udd95',upload:'\ud83d\udce4',done:'\u2705',undone:'\u21a9\ufe0f',status:'\ud83d\udd04',archive:'\ud83d\udce6',unarchive:'\ud83d\udce4',time:'\u23f1',idassign:'\ud83d\udd22',idreset:'\ud83d\udd22'}[h.type]||'\u2022';return ic+'  '+(h.label||h.type);}
+function renderHistory(a){var el=document.getElementById('a-history');if(!el)return;var L=(a.history||[]).slice().reverse();el.innerHTML=L.length?L.slice(0,40).map(function(h){return'<div class="hist-row"><span class="hist-when">'+fmtDateTime(h.ts)+'</span><span class="hist-what">'+histText(h)+'</span></div>';}).join(''):'<div class="empty-items">Ingen historik än.</div>';}
 function renderAll(){
   renderStats();renderIdeas();renderCards();renderReset();
   if(view==='cal')renderCalendar();
@@ -885,6 +927,7 @@ function cardHtml(a){
     });
     let pills='';
     if(a.hidden)pills+='<span class="pill klar">Dold</span>';
+    if(a.archived)pills+='<span class="pill arch">Arkiverad</span>';
     if(cIde)pills+='<span class="pill ide">'+cIde+' '+(cIde===1?'idé':'idéer')+'</span>';
     if(cForb)pills+='<span class="pill forb">'+cForb+' förbättring'+(cForb===1?'':'ar')+'</span>';
     if(cBugg)pills+='<span class="pill bugg">'+cBugg+' bugg'+(cBugg===1?'':'ar')+'</span>';
@@ -929,12 +972,16 @@ function cardHtml(a){
       scoreBadge+betygBadge+(a.prio?'<span class="prio-badge p'+a.prio+'">P'+a.prio+'</span>':'')+'<span class="chev">›</span></div>'+metaHtml+workedLine+pillsHtml+chkHtml+linksHtml+aiHtml+'</button>';
 }
 function renderCards(){
-  let list=state.apps.filter(a=>showHidden?true:!a.hidden);
+  let list=state.apps.filter(a=>(showArchived?true:!a.archived)&&(showHidden?true:!a.hidden));
   if(q){const s=q.toLowerCase();list=list.filter(a=>(a.name||'').toLowerCase().includes(s)||(a.file||'').toLowerCase().includes(s)||(a.note||'').toLowerCase().includes(s)||a.items.some(it=>it.txt.toLowerCase().includes(s))||(a.appNo&&appIdStr(a.appNo).toLowerCase().includes(s)));}
   if(typFilt)list=list.filter(a=>a.items.some(it=>it.st!=='klar'&&(typFilt==='pagar'?it.st==='pagar':it.typ===typFilt)));
   ['mobil','desktop','token'].forEach(k=>{if(chkFilt[k])list=list.filter(a=>a.chk&&a.chk[k]);});
   if(catFilt)list=list.filter(a=>(a.cat||'')===catFilt);
   if(famFilt)list=list.filter(a=>(a.family||'')===famFilt);
+  if(statusFilt)list=list.filter(a=>effStatus(a)===statusFilt);
+  if(prioFilt)list=list.filter(a=>String(a.prio||'')===String(prioFilt));
+  if(dateFilt==='today')list=list.filter(a=>a.commit===todayISO());
+  if(dateFilt==='week'){var _wk=weekRange();list=list.filter(a=>a.commit&&a.commit>=_wk[0]&&a.commit<=_wk[1]);}
   if(view==='today')list=list.filter(a=>a.commit===todayISO());
   const svName=(x,y)=>String(x.name).localeCompare(String(y.name),'sv',{sensitivity:'base'});
   if(state.sort==='az')list=list.slice().sort(svName);
@@ -957,8 +1004,10 @@ function renderCards(){
   const hb=document.getElementById('f-hidden');
   hb.classList.toggle('sel',showHidden);
   hb.textContent='Dolda ('+state.apps.filter(a=>a.hidden).length+')';
+  var _ab=document.getElementById('f-archived');if(_ab){_ab.classList.toggle('sel',showArchived);_ab.textContent='Arkiverade ('+state.apps.filter(a=>a.archived).length+')';}
   var ff=document.getElementById('f-family');
   if(ff){var fl=famList();ff.innerHTML='<option value="">Alla familjer</option>'+fl.map(function(f){return'<option'+(f===famFilt?' selected':'')+'>'+esc(f)+'</option>';}).join('');}
+  var _fb=document.getElementById('filt-bar');if(_fb){var _p=[];if(typFilt)_p.push(TYPLBL[typFilt]||typFilt);if(catFilt)_p.push('Kategori: '+catFilt);if(famFilt)_p.push('Familj: '+famFilt);if(statusFilt)_p.push('Status: '+(STATUS[statusFilt]?STATUS[statusFilt].label:statusFilt));if(prioFilt)_p.push('Prioritet '+prioFilt);if(dateFilt==='today')_p.push('Planerat idag');if(dateFilt==='week')_p.push('Denna vecka');['mobil','desktop','token'].forEach(function(k){if(chkFilt[k])_p.push(k.charAt(0).toUpperCase()+k.slice(1));});_fb.innerHTML=_p.length?('<span class="filt-lbl">Filter:</span>'+_p.map(function(p){return'<span class="filt-chip">'+esc(p)+'</span>';}).join('')+'<button class="filt-clear" id="filt-clear">\u2715 Rensa</button>'):'';_fb.style.display=_p.length?'flex':'none';var _fc=document.getElementById('filt-clear');if(_fc)_fc.onclick=clearFilters;}
   let html;
   if(state.sort==='family'){
     var groups={};list.forEach(function(a){var f=a.family||'';(groups[f]=groups[f]||[]).push(a);});
@@ -1003,6 +1052,8 @@ let curId=null,newTyp='ide',filt='alla';
 let q='',typFilt=null,chkFilt={mobil:false,desktop:false,token:false},showHidden=false;
 let showDoneIdeas=false;
 let view='cards',catFilt='',famFilt='';
+let statusFilt='',prioFilt='',dateFilt='';
+let showArchived=false;
 let dashOpen=true;var calY=(new Date()).getFullYear(),calM=(new Date()).getMonth(),calSel=todayISO();
 
 document.getElementById('cards').onclick=e=>{
@@ -1041,6 +1092,7 @@ function syncAppSheet(){
   document.getElementById('c-desktop').checked=!!C.desktop;
   document.getElementById('c-token').checked=!!C.token;
   document.querySelectorAll('#a-prio .pbtn').forEach(b=>b.classList.toggle('sel',+b.dataset.p===a.prio));
+  var _av=document.getElementById('a-archive');if(_av)_av.textContent=a.archived?'Avarkivera appen':'Arkivera appen';
   document.getElementById('a-hide').textContent=a.hidden?'Ta fram appen igen':'Klarmarkera appen (dölj)';
   const eff=effStatus(a);const cur=a.status||'auto';
   document.querySelectorAll('#a-status .sopt').forEach(b=>{b.className='sopt';const s=b.dataset.s;if(s===cur)b.classList.add('sel-'+(cur==='auto'?eff:cur));if(cur==='auto'&&s===eff)b.classList.add('autopick');});
@@ -1058,13 +1110,14 @@ function syncAppSheet(){
   updatePrioscore(a);
   renderBetyg(a);
   renderVersions(a);
+  renderHistory(a);
   var lg=document.getElementById('a-link-gpt');if(document.activeElement!==lg)lg.value=a.linkGpt||'';
   var lc=document.getElementById('a-link-claude');if(document.activeElement!==lc)lc.value=a.linkClaude||'';
   renderAppTimer(a);
   var fsel=document.getElementById('a-family');
   if(fsel)fsel.innerHTML='<option value="">— Ingen —</option>'+famList().map(function(f){return'<option'+(f===(a.family||'')?' selected':'')+'>'+esc(f)+'</option>';}).join('')+'<option value="__new__">\u2795 Ny familj\u2026</option>';
   var far=document.getElementById('fam-add-row');if(far)far.style.display='none';
-  var ir=document.getElementById('a-id-row');if(ir){if(a.appNo)ir.innerHTML='<span class="id-badge big">'+appIdStr(a.appNo)+'</span>';else ir.innerHTML='<button class="mini-btn ghost" id="a-assign-id">Tilldela App-ID</button>';var ab=document.getElementById('a-assign-id');if(ab)ab.onclick=function(){var ap=appById(curId);if(!ap||ap.appNo)return;ap.appNo=state.nextAppId++;if(!ap.created)ap.created=Date.now();persist();syncAppSheet();renderCards();};}
+  var ir=document.getElementById('a-id-row');if(ir){if(a.appNo)ir.innerHTML='<span class="id-badge big">'+appIdStr(a.appNo)+'</span><button class="mini-btn ghost" id="a-reset-id" style="margin-left:8px">Nollställ App-ID</button>';else ir.innerHTML='<button class="mini-btn ghost" id="a-assign-id">Tilldela App-ID</button>';var ab=document.getElementById('a-assign-id');if(ab)ab.onclick=function(){var ap=appById(curId);if(!ap||ap.appNo)return;ap.appNo=state.nextAppId++;if(!ap.created)ap.created=Date.now();pushHistory(ap,'idassign','Tilldelade '+appIdStr(ap.appNo));persist();syncAppSheet();renderCards();};var rb=document.getElementById('a-reset-id');if(rb)rb.onclick=function(){var ap=appById(curId);if(!ap||!ap.appNo)return;var _old=appIdStr(ap.appNo);ap.appNo=null;pushHistory(ap,'idreset','Nollställde '+_old);persist();syncAppSheet();renderCards();};}
   document.getElementById('a-colors').innerHTML=COLORS.map(c=>'<button class="cdot'+(a.color===c?' sel':'')+'" style="background:'+c+'" data-c="'+c+'"></button>').join('');
 }
 function renderItems(a){
@@ -1164,7 +1217,7 @@ document.getElementById('a-testers').oninput=e=>{
 document.getElementById('a-status').onclick=e=>{
   const b=e.target.closest('.sopt');if(!b)return;
   const a=appById(curId);if(!a)return;
-  a.status=b.dataset.s;persist();syncAppSheet();renderStats();renderCards();
+  a.status=b.dataset.s;pushHistory(a,'status','Status: '+(STATUS[effStatus(a)]?STATUS[effStatus(a)].label:b.dataset.s));persist();syncAppSheet();renderStats();renderCards();renderHistory(a);
 };
 document.getElementById('a-link').oninput=e=>{const a=appById(curId);if(a){a.link=e.target.value.trim();persistSoon();renderCards();}};
 document.getElementById('sort-upd').onclick=()=>{state.sort='upd';persist();renderCards();};
@@ -1178,6 +1231,7 @@ document.getElementById('views').onclick=e=>{const b=e.target.closest('.view-btn
 document.getElementById('cal-wrap').onclick=e=>{const dd=e.target.closest('.cal-cell[data-d]');if(dd){calSel=dd.dataset.d;renderCalendar();return;}const ab=e.target.closest('.cal-app');if(ab){openApp(ab.dataset.id);}};
 document.getElementById('tm-toggle').onclick=function(){var a=appById(curId);if(!a)return;if(timerActive(a))stopTimer();else startTimer(a.id);renderAppTimer(a);};
 document.getElementById('tm-reset').onclick=function(){var a=appById(curId);if(!a)return;if(timerActive(a))stopTimer();a.timeMs=0;persist();renderAppTimer(a);renderCards();};
+document.getElementById('tm-add').onclick=function(){var a=appById(curId);if(!a)return;var hh=+(document.getElementById('tm-h').value||0),mm=+(document.getElementById('tm-m').value||0);if(!hh&&!mm)return;a.timeMs=(a.timeMs||0)+hh*3600000+mm*60000;document.getElementById('tm-h').value='';document.getElementById('tm-m').value='';if(typeof pushHistory==='function')pushHistory(a,'time','La till '+(hh?hh+'h ':'')+(mm?mm+'m':''));persist();renderAppTimer(a);renderCards();if(typeof renderHistory==='function')renderHistory(a);};
 document.getElementById('a-family').onchange=function(e){var a=appById(curId);if(!a)return;var v=e.target.value;if(v==='__new__'){var far=document.getElementById('fam-add-row');if(far)far.style.display='flex';var fn=document.getElementById('fam-new');if(fn)fn.focus();e.target.value=a.family||'';return;}a.family=v;persist();renderCards();};
 document.getElementById('fam-add-btn').onclick=function(){var a=appById(curId);if(!a)return;var nm=document.getElementById('fam-new').value.trim();if(!nm)return;if(!state.families)state.families=[];if(state.families.indexOf(nm)<0)state.families.push(nm);a.family=nm;document.getElementById('fam-new').value='';persist();syncAppSheet();renderCards();};
 document.getElementById('fam-new').onkeydown=function(e){if(e.key==='Enter')document.getElementById('fam-add-btn').click();};
@@ -1188,8 +1242,8 @@ document.getElementById('a-commit-clear').onclick=function(){var a=appById(curId
 ['pot','fun','diff','nytta'].forEach(function(k){
   document.getElementById('sc-'+k).oninput=function(e){var a=appById(curId);if(!a)return;if(!a.scores)a.scores={};a.scores[k]=+e.target.value;document.getElementById('sv-'+k).textContent=e.target.value+'/10';updatePrioscore(a);persistSoon();renderCards();};
 });
-document.getElementById('ver-upload').onclick=function(){var a=appById(curId);if(!a)return;if(!a.uploads)a.uploads=[];a.uploads.push(new Date().toISOString());persist();syncAppSheet();renderVersions(a);renderCards();if(view==='cal')renderCalendar();};
-document.getElementById('ver-list').onclick=function(e){var x=e.target.closest('.ver-x');if(!x)return;var a=appById(curId);if(!a||!a.uploads)return;a.uploads=a.uploads.filter(function(t){return t!==x.dataset.ts;});persist();syncAppSheet();renderVersions(a);renderCards();if(view==='cal')renderCalendar();};
+document.getElementById('ver-upload').onclick=function(){var a=appById(curId);if(!a)return;if(!a.uploads)a.uploads=[];a.uploads.push(new Date().toISOString());pushHistory(a,'upload','Uppladdad');persist();syncAppSheet();renderVersions(a);renderHistory(a);renderCards();if(view==='cal')renderCalendar();};
+document.getElementById('ver-list').onclick=function(e){var x=e.target.closest('.ver-x');if(!x)return;var a=appById(curId);if(!a||!a.uploads)return;a.uploads=a.uploads.filter(function(t){return t!==x.dataset.ts;});persist();syncAppSheet();renderVersions(a);renderHistory(a);renderCards();if(view==='cal')renderCalendar();};
 document.getElementById('b-add').onclick=function(){var a=appById(curId);if(!a)return;var area=document.getElementById('b-area').value.trim();var sc=document.getElementById('b-score').value.trim();if(!area)return;if(!a.betyg)a.betyg=[];a.betyg.push({id:uid(),area:area,score:sc});document.getElementById('b-area').value='';document.getElementById('b-score').value='';persist();syncAppSheet();};
 document.getElementById('b-area').onkeydown=function(e){if(e.key==='Enter')document.getElementById('b-add').click();};
 document.getElementById('b-score').onkeydown=function(e){if(e.key==='Enter')document.getElementById('b-add').click();};
@@ -1206,7 +1260,8 @@ document.getElementById('a-prio').onclick=e=>{
 document.getElementById('a-hide').onclick=()=>{
   const a=appById(curId);if(!a)return;
   a.hidden=!a.hidden;
-  persist();syncAppSheet();renderStats();renderCards();
+  pushHistory(a,a.hidden?'done':'undone',a.hidden?'Klarmarkerad (dold)':'Återtagen');
+  persist();syncAppSheet();renderStats();renderCards();renderHistory(a);
 };
 document.getElementById('stats').onclick=e=>{
   const b=e.target.closest('.stat[data-t]');if(!b)return;
@@ -1218,7 +1273,9 @@ document.getElementById('search').oninput=e=>{q=e.target.value.trim();renderCard
   document.getElementById(id).onclick=()=>{chkFilt[k]=!chkFilt[k];renderCards();};
 });
 document.getElementById('f-hidden').onclick=()=>{showHidden=!showHidden;renderCards();};
+document.getElementById('f-archived').onclick=()=>{showArchived=!showArchived;renderCards();};
 document.getElementById('sort-prio').onclick=()=>{state.sort='prio';persist();renderCards();};
+document.getElementById('a-archive').onclick=()=>{var a=appById(curId);if(!a)return;a.archived=!a.archived;pushHistory(a,a.archived?'archive':'unarchive',a.archived?'Arkiverad':'Avarkiverad');persist();syncAppSheet();renderStats();renderCards();renderHistory(a);};
 document.getElementById('a-del').onclick=()=>{
   const a=appById(curId);if(!a)return;
   if(!confirm('Ta bort "'+a.name+'" och alla dess punkter?'))return;
@@ -1236,8 +1293,8 @@ document.getElementById('add-app').onclick=()=>{
 document.getElementById('n-create').onclick=()=>{
   const name=document.getElementById('n-name').value.trim();
   if(!name){document.getElementById('n-name').focus();return;}
-  const app={id:uid(),name:name,file:document.getElementById('n-file').value.trim(),color:COLORS[state.apps.length%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:Date.now(),cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:'',uploads:[]};
-  app.appNo=state.nextAppId++;app.created=Date.now();
+  const app={id:uid(),name:name,file:document.getElementById('n-file').value.trim(),color:COLORS[state.apps.length%COLORS.length],changed:null,sync:{},items:[],note:'',chk:{},status:'auto',link:'',testers:[],upd:Date.now(),cat:'',linkGpt:'',linkClaude:'',commit:null,scores:{},betyg:[],timeMs:0,family:'',uploads:[],archived:false,history:[]};
+  app.appNo=state.nextAppId++;app.created=Date.now();pushHistory(app,'created','Skapad');
   state.apps.push(app);persist();
   newSheet.classList.remove('open');
   renderAll();openApp(app.id);
@@ -1326,6 +1383,7 @@ fixCounter();
 renderAll();
 startResetTick();
 document.getElementById('dash-toggle').onclick=()=>{dashOpen=!dashOpen;renderDashboard();};
+var _db=document.getElementById('dash-body');if(_db)_db.onclick=function(e){var el=e.target.closest('[data-filter]');if(el)applyDashFilter(el.getAttribute('data-filter'));};
 applyView('cards');
 if(syncOn())ghPull();
 </script>
