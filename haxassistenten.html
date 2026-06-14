@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Häxassistenten">
+<meta name="theme-color" content="#120D1F">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Häxassistenten","short_name":"Häxa","display":"standalone","background_color":"%23120D1F","theme_color":"%23120D1F","start_url":"."}'>
+<title>Häxassistenten</title>
+<style>
+:root{
+  --bg:#120D1F;--panel:#1C1530;--panel2:#261C42;--line:#382B5A;
+  --ink:#EBE4F4;--muted:#9C90B8;--lav:#C3A6E8;--glow:#EBDFFB;
+  --good:#7FAE8B;--hard:#C57979;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(1100px 560px at 50% -8%,#2A1F47 0%,var(--bg) 62%) fixed,var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:22px;color:var(--lav);letter-spacing:.06em;text-align:center;margin:6px 0 14px}
+h1.brand .st{color:var(--glow)}
+.section-title{font-family:Georgia,serif;font-size:16px;color:var(--lav);margin:16px 0 8px;letter-spacing:.03em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.btn{border:1px solid var(--lav);background:linear-gradient(180deg,#33275C,#1C1530);color:var(--lav);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn:active{background:#33275C}
+.btn:disabled{opacity:.5}
+.btn.ghost{border-color:var(--line);color:var(--muted);background:transparent;font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;color-scheme:dark}
+textarea{resize:vertical;line-height:1.5}
+.hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px}
+.empty-msg{font-size:12px;color:var(--muted);padding:16px 0;text-align:center}
+canvas{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* Idag */
+.moon-wrap{text-align:center}
+.phase-name{font-family:Georgia,serif;font-size:20px;color:var(--glow);margin-top:8px}
+.phase-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.ctx-row{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.55}
+.ctx-row:first-child{border-top:none}
+.ctx-glyph{width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--lav);flex-shrink:0}
+.ctx-row b{display:block;font-size:13px;color:var(--ink);font-weight:500;margin-bottom:1px}
+
+/* Chat */
+.chat-log{min-height:40vh;padding-bottom:8px}
+.msg{max-width:86%;padding:10px 13px;border-radius:15px;font-size:13.5px;line-height:1.58;margin-bottom:10px;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+.msg.user{margin-left:auto;background:linear-gradient(180deg,#3A2C63,#2A1F47);border:1px solid var(--line);border-bottom-right-radius:4px}
+.msg.ai{margin-right:auto;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.sys{margin:0 auto 12px;text-align:center;background:none;border:none;color:var(--muted);font-size:12px;max-width:100%;font-style:italic}
+.msg .save-link{display:inline-block;margin-top:7px;font-size:11px;color:var(--lav);cursor:pointer;border-top:1px solid var(--line);padding-top:6px}
+.typing{color:var(--muted);font-size:12px;font-style:italic;margin-bottom:10px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 10px}
+.chip{font-size:11.5px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--lav);cursor:pointer;white-space:nowrap}
+.chip:active{background:var(--panel2)}
+.composer{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto;padding:8px 12px;background:rgba(18,13,31,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:none;gap:8px;align-items:flex-end;z-index:39}
+.composer textarea{flex:1;max-height:120px;border-radius:14px}
+.composer .send{width:44px;height:42px;flex-shrink:0;border-radius:14px;border:1px solid var(--lav);background:linear-gradient(180deg,#33275C,#1C1530);color:var(--lav);font-size:18px;cursor:pointer}
+
+/* Sparat */
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.bar input{flex:1}
+.cat-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.cat-filter button{font-size:11px;padding:5px 10px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.cat-filter button.active{border-color:var(--lav);color:var(--lav)}
+.entry{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.entry-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
+.entry-head b{font-family:Georgia,serif;font-weight:400;font-size:15px;color:var(--ink)}
+.entry .cat{font-size:10px;padding:2px 8px;border-radius:9px;background:var(--panel2);color:var(--lav);white-space:nowrap;flex-shrink:0}
+.entry .body{font-size:12.5px;color:var(--muted);line-height:1.55;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.entry .date{font-size:10px;color:var(--muted);opacity:.7;margin-top:6px}
+
+/* Inställningar */
+.set-block{margin-bottom:18px}
+.gh-status{display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:9px;line-height:1.5}
+.sync-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.sp-badge{font-size:11px;padding:3px 10px;border-radius:11px;background:#1E3326;color:var(--good)}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#3A2226;color:var(--hard)}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.7;margin-top:14px;line-height:1.5}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(18,13,31,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 1px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--lav)}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(8,6,18,.65);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .22s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;color:var(--lav);margin-bottom:6px}
+.sheet-close{width:100%;padding:11px;border-radius:11px;border:1px solid var(--lav);background:var(--panel2);color:var(--lav);font-size:14px;cursor:pointer;margin-top:12px}
+.catchips{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+.catchips button{font-size:12px;padding:6px 12px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-family:inherit}
+.catchips button.active{border-color:var(--lav);color:var(--lav)}
+.del-btn{background:none;border:none;color:var(--hard);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app">
+<h1 class="brand"><span class="st">✦</span> Häxassistenten <span class="st">✦</span></h1>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <div class="card-panel moon-wrap">
+    <canvas id="bigmoon" width="320" height="320" style="width:170px"></canvas>
+    <div class="phase-name" id="phase-name">—</div>
+    <div class="phase-sub" id="phase-sub"></div>
+  </div>
+  <div class="section-title">Dagens väv</div>
+  <div class="card-panel">
+    <div class="ctx-row" id="ctx-sign"></div>
+    <div class="ctx-row" id="ctx-day"></div>
+  </div>
+  <button class="btn" id="ask-today-btn" style="width:100%;margin-top:14px">✦ Fråga assistenten om idag</button>
+  <div class="privacy">Allt beräknas och sparas lokalt i din telefon.<br>För reflektion, hantverk och nöje ✦</div>
+</div>
+
+<!-- ASSISTENT -->
+<div class="view" id="view-chat">
+  <div class="chips" id="chat-chips"></div>
+  <div class="chat-log" id="chat-log"></div>
+</div>
+
+<!-- SPARAT -->
+<div class="view" id="view-saved">
+  <div class="bar">
+    <input type="search" id="saved-search" placeholder="Sök i grimoiren…">
+    <button class="btn ghost" id="saved-add" style="flex-shrink:0">+ Ny</button>
+  </div>
+  <div class="cat-filter" id="cat-filter"></div>
+  <div id="saved-list"></div>
+</div>
+
+<!-- INSTÄLLNINGAR -->
+<div class="view" id="view-settings">
+  <div class="set-block">
+    <div class="section-title">AI-nyckel</div>
+    <div class="card-panel">
+      <p class="hint" style="margin-top:0">Assistenten drivs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt i din telefon och följer inte med i säkerhetskopior. Varje svar kostar några ören från ditt API-saldo.</p>
+      <label>API-nyckel</label>
+      <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn" id="ai-key-save">Spara nyckel</button>
+        <button class="btn ghost" id="ai-key-clear">Rensa</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="section-title">Synk via GitHub</div>
+    <div class="card-panel">
+      <p class="hint" style="margin-top:0">Din grimoire (sparade besvärjelser och anteckningar) läses och sparas i ett <b style="color:var(--ink)">privat</b> GitHub-repo som <code>haxa-data.json</code>, så att telefon och dator håller ihop. Token sparas bara lokalt — aldrig i koden. Chatt och AI-nyckel synkas inte.</p>
+      <label>GitHub-användarnamn</label>
+      <input type="text" id="gh-owner" placeholder="miracuel">
+      <label>Repo-namn (privat)</label>
+      <input type="text" id="gh-repo" placeholder="haxa-data">
+      <label>Fine-grained token (Contents: Read and write)</label>
+      <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn" id="gh-save">Spara &amp; synka</button>
+        <button class="btn ghost" id="gh-pull">⟳ Hämta</button>
+      </div>
+      <div class="gh-status" id="gh-status"></div>
+      <div class="sync-row"><span>Status:</span><span id="sync-badge" class="sp-badge offline">Lokal</span></div>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="section-title">Säkerhetskopia</div>
+    <div class="card-panel">
+      <div class="btn-row">
+        <button class="btn" id="export-btn">Exportera</button>
+        <button class="btn ghost" id="import-btn">Importera</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+      <p class="hint">Sparar hela grimoiren och chatten som en JSON-fil (utan AI-nyckel).</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- Composer (visas bara i Assistent) -->
+<div class="composer" id="composer">
+  <textarea id="chat-input" rows="1" placeholder="Fråga häxassistenten…"></textarea>
+  <button class="send" id="chat-send">↑</button>
+</div>
+
+<!-- Spara/Redigera-sheet -->
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="save-sheet">
+  <h3 id="save-title">Spara i grimoiren</h3>
+  <label>Titel</label>
+  <input type="text" id="entry-title" placeholder="t.ex. Skyddsritual med salt">
+  <label>Innehåll</label>
+  <textarea id="entry-body" rows="6"></textarea>
+  <label>Kategori</label>
+  <div class="catchips" id="entry-cats"></div>
+  <button class="del-btn" id="entry-del" style="display:none">Ta bort ur grimoiren</button>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn" id="entry-save">Spara</button>
+    <button class="btn ghost" id="entry-cancel">Avbryt</button>
+  </div>
+  <button class="sheet-close" id="save-sheet-close" style="display:none">Klar</button>
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <button class="active" data-view="today"><span>☾</span>Idag</button>
+  <button data-view="chat"><span>✦</span>Assistent</button>
+  <button data-view="saved"><span>✶</span>Sparat</button>
+  <button data-view="settings"><span>⚙</span>Inställningar</button>
+</div>
+
+<script>
+// ── Astronomi: sol & måne (Schlyter, från Månen-appen) ─
+var RAD=Math.PI/180;
+var sind=function(x){return Math.sin(x*RAD);},cosd=function(x){return Math.cos(x*RAD);};
+var atan2d=function(y,x){return Math.atan2(y,x)/RAD;};
+var rev=function(x){x=x%360;return x<0?x+360:x;};
+var EPOCH=Date.UTC(1999,11,31,0,0);
+var dnum=function(ms){return (ms-EPOCH)/86400000;};
+function kepler(M,e){
+  var E=M+e/RAD*sind(M)*(1+e*cosd(M));
+  for(var i=0;i<8;i++){
+    var dE=(E-e/RAD*sind(E)-M)/(1-e*cosd(E));E-=dE;
+    if(Math.abs(dE)<1e-6)break;
+  }
+  return E;
+}
+function sunLon(d){
+  var w=rev(282.9404+4.70935e-5*d),e=0.016709-1.151e-9*d,M=rev(356.0470+0.9856002585*d);
+  var E=kepler(M,e);
+  var xv=cosd(E)-e,yv=Math.sqrt(1-e*e)*sind(E);
+  return rev(atan2d(yv,xv)+w);
+}
+function moonLon(d){
+  var N=rev(125.1228-0.0529538083*d),i=5.1454,w=rev(318.0634+0.1643573223*d),
+      a=60.2666,e=0.054900,M=rev(115.3654+13.0649929509*d);
+  var E=kepler(M,e);
+  var xv=a*(cosd(E)-e),yv=a*Math.sqrt(1-e*e)*sind(E);
+  var v=atan2d(yv,xv),r=Math.sqrt(xv*xv+yv*yv),u=v+w;
+  var xh=r*(cosd(N)*cosd(u)-sind(N)*sind(u)*cosd(i));
+  var yh=r*(sind(N)*cosd(u)+cosd(N)*sind(u)*cosd(i));
+  var lon=rev(atan2d(yh,xh));
+  var ws=rev(282.9404+4.70935e-5*d),Ms=rev(356.0470+0.9856002585*d);
+  var Ls=rev(Ms+ws),Lm=rev(M+w+N),D=rev(Lm-Ls),F=rev(Lm-N);
+  lon += -1.274*sind(M-2*D)+0.658*sind(2*D)-0.186*sind(Ms)
+        -0.059*sind(2*M-2*D)-0.057*sind(M-2*D+Ms)+0.053*sind(M+2*D)
+        +0.046*sind(2*D-Ms)+0.041*sind(M-Ms)-0.035*sind(D)-0.031*sind(M+Ms)
+        -0.015*sind(2*F-2*D)+0.011*sind(M-4*D);
+  return rev(lon);
+}
+var phaseAngle=function(d){return rev(moonLon(d)-sunLon(d));};
+var illum=function(ang){return (1-cosd(ang))/2;};
+var SYNODIC=29.530588;
+var PHASE_NAMES=['Nymåne','Växande skära','Första kvarteret','Växande måne','Fullmåne','Avtagande måne','Sista kvarteret','Avtagande skära'];
+function phaseIdx(ang){return Math.floor(((ang+22.5)%360)/45);}
+function moonAge(ang){return ang/360*SYNODIC;}
+var SIGNS=['Väduren','Oxen','Tvillingarna','Kräftan','Lejonet','Jungfrun','Vågen','Skorpionen','Skytten','Stenbocken','Vattumannen','Fiskarna'];
+var SIGN_TXT=['snabb, otålig energi — agera, men räkna till tre.','lugn och sinnlig — jorda dig, gör inget förhastat.','pratig och rörlig — skriv av dig, kommunicera.','känslorna går djupt — håll de dina nära.','varm och generös — låt hjärtat ta plats.','ordningens dag — rensa, sortera, gör klart.','harmoni söks — jämka, försköna, umgås mjukt.','intensivt och avslöjande — gå till botten, varsamt.','frihetslängtan — byt perspektiv, skratta.','fokuserat — beta av, bygg, fullfölj.','idéer och distans — tänk nytt på egna villkor.','drömskt och poröst — vila, skapa, släpp kontroll.'];
+var DAY_RULER=[
+  {p:'Solen',g:'☉',t:'vitalitet, framgång, klarhet — bra för att stärka dig själv och dina avsikter.'},
+  {p:'Månen',g:'☽',t:'intuition, drömmar, hem — bra för rening, känslor och spådom.'},
+  {p:'Mars',g:'♂',t:'mod, skydd, drivkraft — bra för att sätta gränser och agera.'},
+  {p:'Merkurius',g:'☿',t:'ord, resor, lärande — bra för kommunikation och studier.'},
+  {p:'Jupiter',g:'♃',t:'tillväxt, tur, överflöd — bra för välstånd och expansion.'},
+  {p:'Venus',g:'♀',t:'kärlek, skönhet, vänskap — bra för relationer och självkärlek.'},
+  {p:'Saturnus',g:'♄',t:'struktur, gränser, släppande — bra för bindning och avslut.'}
+];
+
+function drawMoon(cvId,ang){
+  var cv=document.getElementById(cvId);if(!cv)return;
+  var ctx;try{ctx=cv.getContext('2d');}catch(e){return;}
+  if(!ctx)return;
+  var W=cv.width,cx=W/2,cy=W/2,R=W*0.40;
+  ctx.clearRect(0,0,W,W);
+  var dark='#241B40',light='#EDE6F7';
+  ctx.save();
+  ctx.shadowColor='rgba(237,230,247,0.35)';ctx.shadowBlur=W*0.06;
+  ctx.fillStyle=dark;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+  ctx.restore();
+  var k=illum(ang),waxing=ang<=180,cosP=cosd(ang);
+  ctx.fillStyle=light;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+  ctx.fillStyle=dark;ctx.beginPath();ctx.arc(cx,cy,R,Math.PI/2,Math.PI*1.5,waxing);ctx.closePath();ctx.fill();
+  ctx.fillStyle=k<0.5?dark:light;ctx.beginPath();ctx.ellipse(cx,cy,Math.abs(R*cosP),R,0,0,7);ctx.fill();
+  ctx.save();ctx.globalAlpha=0.10;ctx.fillStyle='#6A5A8C';
+  [[0.18,-0.22,0.13],[-0.12,0.10,0.09],[0.05,0.30,0.07],[-0.28,-0.05,0.06],[0.30,0.15,0.05]].forEach(function(c){
+    ctx.beginPath();ctx.arc(cx+c[0]*2*R,cy+c[1]*2*R,c[2]*2*R,0,7);ctx.fill();
+  });
+  ctx.restore();
+  ctx.strokeStyle='rgba(195,166,232,0.35)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+}
+
+// ── State ─────────────────────────────────────────────
+var CATS=['Ört','Kristall','Ritual','Korrespondens','Besvärjelse','Övrigt'];
+var KEY='haxassistenten_v1';
+var state={saved:[],chat:[]};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+var fmtDate=function(ts){return new Date(ts).toLocaleDateString('sv-SE',{day:'numeric',month:'long',year:'numeric'});};
+
+// ── AI-nyckel ─────────────────────────────────────────
+var AI_KEY='haxa_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+
+function todayContext(){
+  var d=dnum(Date.now()),ang=phaseAngle(d),pi=phaseIdx(ang);
+  var sign=Math.floor(moonLon(d)/30);
+  var ruler=DAY_RULER[new Date().getDay()];
+  var dateStr=new Date().toLocaleDateString('sv-SE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  return 'Idag är '+dateStr+'. Månfas: '+PHASE_NAMES[pi]+' ('+Math.round(illum(ang)*100)+'% belyst, dag '+moonAge(ang).toFixed(1)+' av 29,5). Månen står i '+SIGNS[sign]+'. Veckodagens planet är '+ruler.p+' ('+ruler.t+')';
+}
+function systemPrompt(){
+  return 'Du är Häxassistenten — en varm, jordnära och kunnig följeslagare inom folktro, örtkunskap, månmagi, kristaller, korrespondenser och ritualpraktik. Du svarar alltid på svenska, i en lugn och uppmuntrande ton utan dogmatism. Du är konkret och praktisk, väver gärna in dagens månfas och energi när det är relevant, och föreslår enkla ritualer och korrespondenser.\n\nViktigt: var trygg och ansvarsfull. När örter, oljor eller bad nämns, påminn kort om säkerhet (allergier, graviditet, kontakt med läkare vid behov) och avråd från att förtära något osäkert. Ge aldrig medicinska, juridiska eller ekonomiska råd som fakta — magi kompletterar, ersätter inte, vård eller sunt förnuft. Håll svaren fokuserade och lagom långa, utan onödiga rubriker.\n\nAktuell kontext: '+todayContext()+'.';
+}
+
+async function aiChat(history){
+  var key=getAiKey();
+  if(!key){showView('settings');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,system:systemPrompt(),messages:history})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+
+// ── GitHub-synk (appkollen-mönstret från Jobbplanering) ─
+var SYNC_KEY='haxasync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/haxa-data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+
+function setBadge(stt,msg){
+  var b=document.getElementById('sync-badge');if(!b)return;
+  b.textContent=msg;
+  b.className='sp-badge'+(stt==='ok'?'':stt==='err'?' err':' offline');
+}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();
+  sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    var data=await ghGet();
+    if(data&&Array.isArray(data.saved)){
+      state.saved=data.saved;
+      save();renderSaved();
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({saved:state.saved,updated:new Date().toISOString()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Häxassistenten',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){
+    try{await ghGet();}catch(e){}
+    r=await doPut();
+  }
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();
+  if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+function persist(){
+  save();
+  if(syncOn())ghPush().catch(function(){});
+}
+
+// ── Navigering ────────────────────────────────────────
+function showView(id){
+  var views=document.querySelectorAll('.view');
+  for(var i=0;i<views.length;i++)views[i].classList.toggle('active',views[i].id==='view-'+id);
+  var btns=document.querySelectorAll('.nav button');
+  for(var k=0;k<btns.length;k++)btns[k].classList.toggle('active',btns[k].getAttribute('data-view')===id);
+  document.getElementById('composer').style.display=(id==='chat')?'flex':'none';
+  if(id==='chat'){renderChat();setTimeout(scrollChat,30);}
+  if(id==='today')renderToday();
+  window.scrollTo(0,0);
+}
+var navBtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navBtns.length;n++)navBtns[n].onclick=function(){showView(this.getAttribute('data-view'));};
+
+// ── Idag ──────────────────────────────────────────────
+function renderToday(){
+  var d=dnum(Date.now()),ang=phaseAngle(d),pi=phaseIdx(ang);
+  drawMoon('bigmoon',ang);
+  document.getElementById('phase-name').textContent=PHASE_NAMES[pi];
+  document.getElementById('phase-sub').textContent=Math.round(illum(ang)*100)+'% belyst · dag '+moonAge(ang).toFixed(1)+' av 29,5';
+  var sign=Math.floor(moonLon(d)/30);
+  document.getElementById('ctx-sign').innerHTML='<div class="ctx-glyph">☽</div><div><b>Månen i '+SIGNS[sign]+'</b>'+SIGN_TXT[sign]+'</div>';
+  var ruler=DAY_RULER[new Date().getDay()];
+  document.getElementById('ctx-day').innerHTML='<div class="ctx-glyph">'+ruler.g+'</div><div><b>'+ruler.p+'s dag</b>'+ruler.t+'</div>';
+}
+document.getElementById('ask-today-btn').onclick=function(){
+  showView('chat');
+  sendMessage('Vad passar dagens månenergi och planet bäst för? Ge mig ett par konkreta förslag.');
+};
+
+// ── Chatt ─────────────────────────────────────────────
+var QUICK=['Föreslå en enkel skyddsritual','Örter för lugn och sömn','Kristall för självförtroende','Hur renar jag mitt hem?','Vad betyder dagens månfas?'];
+function renderChips(){
+  var c=document.getElementById('chat-chips');
+  c.innerHTML=QUICK.map(function(q){return '<button class="chip" data-q="'+esc(q)+'">'+esc(q)+'</button>';}).join('');
+  var chips=c.querySelectorAll('.chip');
+  for(var i=0;i<chips.length;i++)chips[i].onclick=function(){sendMessage(this.getAttribute('data-q'));};
+}
+function scrollChat(){var l=document.getElementById('chat-log');window.scrollTo(0,document.body.scrollHeight);}
+function renderChat(){
+  var log=document.getElementById('chat-log');
+  if(!state.chat.length){
+    log.innerHTML='<div class="msg sys">Hej! Jag är din häxassistent. Fråga mig om örter, kristaller, månmagi, ritualer eller korrespondenser — jag väver gärna in dagens energi.</div>';
+    document.getElementById('chat-chips').style.display='flex';
+    return;
+  }
+  document.getElementById('chat-chips').style.display=state.chat.length>2?'none':'flex';
+  var html='';
+  for(var i=0;i<state.chat.length;i++){
+    var m=state.chat[i];
+    if(m.role==='assistant'){
+      html+='<div class="msg ai">'+esc(m.content)+'<span class="save-link" data-i="'+i+'">✶ Spara i grimoiren</span></div>';
+    }else{
+      html+='<div class="msg user">'+esc(m.content)+'</div>';
+    }
+  }
+  log.innerHTML=html;
+  var links=log.querySelectorAll('.save-link');
+  for(var k=0;k<links.length;k++)links[k].onclick=function(){
+    openSaveSheet(null,state.chat[+this.getAttribute('data-i')].content);
+  };
+}
+var busy=false;
+async function sendMessage(text){
+  text=(text||'').trim();
+  if(!text||busy)return;
+  busy=true;
+  state.chat.push({role:'user',content:text});
+  save();renderChat();
+  var log=document.getElementById('chat-log');
+  document.getElementById('chat-chips').style.display='none';
+  var typing=document.createElement('div');typing.className='typing';typing.textContent='Häxassistenten tänker…';
+  log.appendChild(typing);scrollChat();
+  try{
+    var hist=state.chat.slice(-16).map(function(m){return {role:m.role,content:m.content};});
+    var reply=await aiChat(hist);
+    state.chat.push({role:'assistant',content:reply});
+    save();renderChat();scrollChat();
+  }catch(e){
+    typing.remove();
+    if(e.message!=='NOKEY'){
+      state.chat.push({role:'assistant',content:'(Kunde inte hämta svar: '+e.message+'. Kontrollera din API-nyckel under Inställningar.)'});
+      save();renderChat();
+    }else{
+      // ta bort frågan som inte kunde skickas
+      state.chat.pop();save();
+    }
+  }
+  busy=false;
+}
+var input=document.getElementById('chat-input');
+function autoGrow(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,120)+'px';}
+input.addEventListener('input',autoGrow);
+document.getElementById('chat-send').onclick=function(){var v=input.value;input.value='';autoGrow();sendMessage(v);};
+input.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();var v=input.value;input.value='';autoGrow();sendMessage(v);}
+});
+
+// ── Sparat / Grimoire ─────────────────────────────────
+var savedFilter='Alla',savedQuery='';
+function renderCatFilter(){
+  var f=document.getElementById('cat-filter');
+  var all=['Alla'].concat(CATS);
+  f.innerHTML=all.map(function(c){return '<button class="'+(c===savedFilter?'active':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>';}).join('');
+  var bs=f.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++)bs[i].onclick=function(){savedFilter=this.getAttribute('data-c');renderSaved();};
+}
+function renderSaved(){
+  renderCatFilter();
+  var list=document.getElementById('saved-list');
+  var q=savedQuery.toLowerCase();
+  var items=state.saved.filter(function(e){
+    if(savedFilter!=='Alla'&&e.cat!==savedFilter)return false;
+    if(q&&(e.title+' '+e.body).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  }).sort(function(a,b){return b.ts-a.ts;});
+  if(!items.length){
+    list.innerHTML='<div class="empty-msg">'+(state.saved.length?'Inget matchar.':'Din grimoire är tom. Spara svar från assistenten med ✶, eller lägg till en egen anteckning med + Ny.')+'</div>';
+    return;
+  }
+  list.innerHTML=items.map(function(e){
+    return '<div class="entry" data-id="'+e.id+'"><div class="entry-head"><b>'+esc(e.title||'Utan titel')+'</b><span class="cat">'+esc(e.cat)+'</span></div><div class="body">'+esc(e.body)+'</div><div class="date">'+fmtDate(e.ts)+'</div></div>';
+  }).join('');
+  var cards=list.querySelectorAll('.entry');
+  for(var i=0;i<cards.length;i++)cards[i].onclick=function(){
+    var id=this.getAttribute('data-id');
+    var ent=state.saved.find(function(x){return x.id===id;});
+    if(ent)openSaveSheet(ent,null);
+  };
+}
+document.getElementById('saved-search').addEventListener('input',function(){savedQuery=this.value;renderSaved();});
+document.getElementById('saved-add').onclick=function(){openSaveSheet(null,'');};
+
+// ── Spara-sheet ───────────────────────────────────────
+var editId=null,pickedCat='Övrigt';
+function renderCatChips(){
+  var c=document.getElementById('entry-cats');
+  c.innerHTML=CATS.map(function(cat){return '<button class="'+(cat===pickedCat?'active':'')+'" data-c="'+esc(cat)+'">'+esc(cat)+'</button>';}).join('');
+  var bs=c.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++)bs[i].onclick=function(){pickedCat=this.getAttribute('data-c');renderCatChips();};
+}
+function openSaveSheet(entry,prefillBody){
+  if(entry){
+    editId=entry.id;pickedCat=entry.cat||'Övrigt';
+    document.getElementById('save-title').textContent='Redigera';
+    document.getElementById('entry-title').value=entry.title||'';
+    document.getElementById('entry-body').value=entry.body||'';
+    document.getElementById('entry-del').style.display='block';
+  }else{
+    editId=null;pickedCat='Övrigt';
+    document.getElementById('save-title').textContent='Spara i grimoiren';
+    document.getElementById('entry-title').value='';
+    document.getElementById('entry-body').value=prefillBody||'';
+    document.getElementById('entry-del').style.display='none';
+  }
+  renderCatChips();
+  document.getElementById('sheet-bg').classList.add('open');
+  document.getElementById('save-sheet').classList.add('open');
+}
+function closeSheet(){
+  document.getElementById('sheet-bg').classList.remove('open');
+  document.getElementById('save-sheet').classList.remove('open');
+}
+document.getElementById('sheet-bg').onclick=closeSheet;
+document.getElementById('entry-cancel').onclick=closeSheet;
+document.getElementById('entry-save').onclick=function(){
+  var title=document.getElementById('entry-title').value.trim();
+  var body=document.getElementById('entry-body').value.trim();
+  if(!body){alert('Skriv något innehåll först.');return;}
+  if(editId){
+    var ent=state.saved.find(function(x){return x.id===editId;});
+    if(ent){ent.title=title;ent.body=body;ent.cat=pickedCat;}
+  }else{
+    state.saved.push({id:uid(),title:title,body:body,cat:pickedCat,ts:Date.now()});
+  }
+  persist();renderSaved();closeSheet();
+};
+document.getElementById('entry-del').onclick=function(){
+  if(!editId)return;
+  if(!confirm('Ta bort den här anteckningen?'))return;
+  state.saved=state.saved.filter(function(x){return x.id!==editId;});
+  persist();renderSaved();closeSheet();
+};
+
+// ── Inställningar: AI-nyckel ───────────────────────────
+document.getElementById('ai-key').value=getAiKey();
+document.getElementById('ai-key-save').onclick=function(){
+  var v=document.getElementById('ai-key').value.trim();
+  if(v){localStorage.setItem(AI_KEY,v);alert('Nyckel sparad lokalt.');}
+};
+document.getElementById('ai-key-clear').onclick=function(){
+  localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';
+};
+
+// ── Inställningar: synk ────────────────────────────────
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');
+  el.style.display='block';
+  el.style.background=type==='ok'?'#1E3326':type==='err'?'#3A2226':'#241D45';
+  el.style.color=type==='ok'?'#9FCBA8':type==='err'?'#E0A0A0':'#C3A6E8';
+  el.textContent=msg;
+}
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  setGhStatus('Testar anslutning…','info');
+  try{
+    var data=await ghGet();
+    if(data){setGhStatus('✓ Ansluten! Hämtar din grimoire…','ok');await ghPull();}
+    else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din lokala grimoire…','ok');await ghPush();}
+  }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera användarnamn, reponamn och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-pull').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify({saved:state.saved,chat:state.chat,exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='haxassistenten-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      if(d&&Array.isArray(d.saved)){
+        state.saved=d.saved;
+        if(Array.isArray(d.chat))state.chat=d.chat;
+        persist();renderSaved();renderChat();alert('Importerat.');
+      }else alert('Ogiltig säkerhetskopia.');
+    }catch(err){alert('Kunde inte läsa filen.');}
+  };
+  r.readAsText(f);
+};
+
+// ── Init ──────────────────────────────────────────────
+loadSync();
+renderToday();
+renderChips();
+renderChat();
+renderSaved();
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
