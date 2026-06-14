@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ITIL Akademin">
+<meta name="theme-color" content="#EEF2F1">
+<link rel="manifest" href='data:application/manifest+json,{"name":"ITIL Akademin","short_name":"ITIL","display":"standalone","background_color":"%23EEF2F1","theme_color":"%23EEF2F1","start_url":"."}'>
+<title>ITIL Akademin</title>
+<style>
+:root{
+  --bg:#EEF2F1;--panel:#F8FAF9;--panel2:#E6EDEC;--line:#D6DFDD;
+  --ink:#283330;--muted:#74817D;
+  --accent:#1F7A8C;--accent-soft:#D5E7EB;--accent-deep:#155E6E;
+  --gen:#6C7BA9;--svc:#1F7A8C;--tech:#C58A3D;
+  --gen-soft:#E2E5F0;--svc-soft:#D5E7EB;--tech-soft:#F2E6D2;
+  --green:#5E9A6B;--yellow:#C2A24A;--red:#C0796E;
+  --navbg:rgba(238,242,241,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em}
+.section-title:first-child{margin-top:4px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Segmented control */
+.seg{display:flex;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;background:none;border:none;color:var(--muted);font-size:12px;font-weight:500;padding:8px 4px;border-radius:10px;cursor:pointer;font-family:inherit}
+.seg button.active{background:var(--panel);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+/* SVS diagram */
+.svs{display:flex;flex-direction:column;gap:8px}
+.svs-io{text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.svs-comp{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:12px 14px;cursor:pointer;transition:background .2s}
+.svs-comp:active{background:var(--accent-soft)}
+.svs-comp b{font-family:Georgia,serif;font-weight:400;font-size:15px;display:block}
+.svs-comp small{font-size:12px;color:var(--muted)}
+.svs-chain{background:var(--accent-soft);border-color:var(--accent)}
+.svs-arrow{text-align:center;color:var(--muted);font-size:14px;line-height:1}
+
+/* Tiles */
+.tile-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:12px;cursor:pointer;transition:background .2s}
+.tile:active{background:var(--accent-soft)}
+.tile b{font-size:13px;display:block;margin-bottom:3px}
+.tile small{font-size:11px;color:var(--muted);line-height:1.4}
+.tile .num{font-family:Georgia,serif;font-size:18px;color:var(--accent);display:block;margin-bottom:2px}
+
+/* Library list */
+.cat-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.cat-chip{font-size:11px;padding:6px 11px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer}
+.cat-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.cat-chip[data-c=gen].active{background:var(--gen);border-color:var(--gen)}
+.cat-chip[data-c=svc].active{background:var(--svc);border-color:var(--svc)}
+.cat-chip[data-c=tech].active{background:var(--tech);border-color:var(--tech)}
+.lib-cat-head{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px;font-weight:600}
+.lib-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.lib-item:first-child{border-top:none}
+.lib-bar{width:4px;align-self:stretch;border-radius:3px;flex-shrink:0}
+.lib-bar.gen{background:var(--gen)}.lib-bar.svc{background:var(--svc)}.lib-bar.tech{background:var(--tech)}
+.lib-item .nm{flex:1;font-size:14px}
+.lib-item .nm small{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.lib-item .chev{color:var(--muted);font-size:16px}
+.lib-item .star{color:var(--accent);font-size:14px}
+
+/* Detail sheet content */
+.detail-tag{display:inline-block;font-size:10px;padding:3px 9px;border-radius:9px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;font-weight:600}
+.detail-tag.gen{background:var(--gen-soft);color:var(--gen)}
+.detail-tag.svc{background:var(--svc-soft);color:var(--svc)}
+.detail-tag.tech{background:var(--tech-soft);color:var(--tech)}
+.d-block{margin-top:12px}
+.d-block h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+.d-block p{font-size:14px;line-height:1.55}
+.d-list{list-style:none;display:flex;flex-direction:column;gap:4px}
+.d-list li{font-size:13px;line-height:1.45;padding-left:16px;position:relative}
+.d-list li::before{content:'·';position:absolute;left:4px;color:var(--accent);font-weight:700}
+.d-list.warn li::before{content:'!';color:var(--red);font-size:11px;left:5px;top:1px}
+.exempel-box{background:var(--accent-soft);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.5;margin-top:6px}
+
+/* Tickets */
+.ticket{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:11px 12px;margin-bottom:8px}
+.ticket-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.ticket-top .tt{flex:1;font-size:14px;font-weight:500}
+.pri{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;white-space:nowrap}
+.pri.p1{background:#F4DDD8;color:#A24B3C}
+.pri.p2{background:#F2E6D2;color:#9A6B22}
+.pri.p3{background:var(--panel2);color:var(--muted)}
+.tk-meta{font-size:11px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tk-status{font-size:10px;padding:2px 8px;border-radius:8px;border:1px solid var(--line);cursor:pointer;background:var(--panel)}
+.tk-status.open{color:var(--accent);border-color:var(--accent)}
+.tk-status.done{color:var(--green);border-color:var(--green);background:var(--accent-soft)}
+.tk-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;margin-left:auto}
+.tk-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-top:4px}
+
+/* Quiz */
+.quiz-q{font-size:15px;line-height:1.5;margin-bottom:14px}
+.quiz-opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:12px 13px;font-size:14px;margin-bottom:8px;cursor:pointer;font-family:inherit;transition:background .2s}
+.quiz-opt:active{background:var(--accent-soft)}
+.quiz-opt.correct{background:var(--accent-soft);border-color:var(--green);color:var(--ink)}
+.quiz-opt.wrong{background:#F4DDD8;border-color:var(--red)}
+.quiz-exp{font-size:13px;line-height:1.55;background:var(--panel2);border-radius:12px;padding:11px 13px;margin-top:6px}
+.quiz-prog{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;justify-content:space-between}
+.score-big{font-family:Georgia,serif;font-size:40px;color:var(--accent);text-align:center}
+
+/* Maturity */
+.mat-dim{margin-bottom:14px}
+.mat-dim .dl{font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between}
+.mat-dim .dl span{color:var(--accent);font-weight:600}
+.mat-dots{display:flex;gap:6px}
+.mat-dots button{flex:1;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit}
+.mat-dots button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.mat-result{text-align:center;padding:8px 0}
+.mat-level{font-family:Georgia,serif;font-size:30px;color:var(--accent)}
+.mat-bar{height:8px;border-radius:5px;background:var(--panel2);overflow:hidden;margin:10px 0}
+.mat-fill{height:100%;background:var(--accent);border-radius:5px;transition:width .5s}
+
+/* AI */
+.ai-chip-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.ai-chip{font-size:12px;padding:7px 11px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font-family:inherit}
+.ai-chip:active{background:var(--accent-soft)}
+.ai-msg{border-radius:14px;padding:11px 13px;margin-bottom:8px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word}
+.ai-msg.u{background:var(--accent-soft);margin-left:28px}
+.ai-msg.a{background:var(--panel2);margin-right:14px}
+.ai-msg.a b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:4px;font-weight:600}
+.ai-thinking{font-size:12px;color:var(--muted);font-style:italic;padding:4px 0}
+
+/* Nav + views + sheets (suite pattern) */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(40,51,48,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-weight:400;font-size:18px;margin-bottom:4px;padding-right:30px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px;font-family:inherit}
+.sheet-x{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:none;background:var(--panel2);color:var(--muted);font-size:16px;cursor:pointer}
+
+.sync-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);font-weight:500}
+.sync-badge.ok{background:var(--accent-soft);color:var(--accent-deep)}
+.sync-badge.err{background:#F4DDD8;color:#A24B3C}
+.top-tools{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.top-tools button{font-size:11px;padding:4px 9px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-family:inherit}
+.gh-status{font-size:12px;padding:9px 12px;border-radius:10px;margin:8px 0;display:none}
+.hint{font-size:11px;color:var(--muted);font-family:monospace;background:var(--panel2);padding:6px 9px;border-radius:8px;margin:-4px 0 10px;line-height:1.5}
+.foot{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:16px;line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1C2321;--panel:#252D2B;--panel2:#2E3735;--line:#3A4441;
+  --ink:#DEE5E2;--muted:#8B968F;
+  --accent:#4FA3B3;--accent-soft:#2A3B3E;--accent-deep:#7FC3D0;
+  --gen:#8B97C0;--svc:#4FA3B3;--tech:#D2A461;
+  --gen-soft:#313748;--svc-soft:#2A3B3E;--tech-soft:#3A3326;
+  --green:#73A87E;--yellow:#C6AC5E;--red:#C68A7E;--navbg:rgba(28,35,33,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">&#9680;</button>
+<h1 class="brand">&#127963; ITIL Akademin</h1>
+<div class="brand-sub">L&auml;r &middot; Sl&aring; upp &middot; Arbeta</div>
+
+<div class="top-tools">
+  <span id="sync-badge" class="sync-badge">Lokal</span>
+  <button id="sync-btn" title="H&auml;mta senaste">&#10227; Synka</button>
+  <button id="sync-settings">&#9881; Synk</button>
+  <button id="export-btn">&#128190; Backup</button>
+  <button id="import-btn">Importera</button>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+</div>
+
+<!-- ===== HEM ===== -->
+<div class="view active" id="view-home">
+  <div class="card-panel">
+    <div class="section-title" style="margin-top:0">Service Value System</div>
+    <p class="soft" style="margin-bottom:12px">Hj&auml;rtat i ITIL 4 &mdash; hur efterfr&aring;gan blir v&auml;rde. Tryck p&aring; en del f&ouml;r att l&auml;sa mer.</p>
+    <div class="svs" id="svs-diagram"></div>
+  </div>
+
+  <div class="section-title">&#129517; Guiding Principles</div>
+  <p class="soft" style="margin-bottom:8px">Sju grundprinciper som g&auml;ller f&ouml;r allt arbete.</p>
+  <div class="tile-grid" id="principles-grid"></div>
+
+  <div class="section-title">&#9881; Service Value Chain</div>
+  <p class="soft" style="margin-bottom:8px">Sex aktiviteter som tillsammans skapar v&auml;rde.</p>
+  <div class="tile-grid" id="chain-grid"></div>
+</div>
+
+<!-- ===== BIBLIOTEK ===== -->
+<div class="view" id="view-lib">
+  <input type="search" id="lib-search" placeholder="S&ouml;k bland 34 practices&hellip;" style="margin-bottom:10px">
+  <div class="cat-filter">
+    <button class="cat-chip active" data-c="all">Alla</button>
+    <button class="cat-chip" data-c="gen">Allm&auml;n styrning</button>
+    <button class="cat-chip" data-c="svc">Tj&auml;nst</button>
+    <button class="cat-chip" data-c="tech">Teknisk</button>
+    <button class="cat-chip" data-c="star">&#9733; Mina</button>
+  </div>
+  <div id="lib-list"></div>
+</div>
+
+<!-- ===== ITSM ===== -->
+<div class="view" id="view-itsm">
+  <div class="seg" id="itsm-seg">
+    <button class="active" data-t="incident">Incident</button>
+    <button data-t="problem">Problem</button>
+    <button data-t="change">Change</button>
+    <button data-t="improve">F&ouml;rb&auml;ttr</button>
+  </div>
+  <p class="soft" id="itsm-help" style="margin-bottom:10px"></p>
+  <button class="btn fill" id="itsm-add" style="width:100%;margin-bottom:12px">+ Nytt &auml;rende</button>
+  <div id="itsm-list"></div>
+</div>
+
+<!-- ===== TR&Auml;NA ===== -->
+<div class="view" id="view-train">
+  <div class="seg" id="train-seg">
+    <button class="active" data-t="quiz">Quiz</button>
+    <button data-t="scenario">Scenario</button>
+    <button data-t="maturity">Mognad</button>
+  </div>
+  <div id="train-quiz"></div>
+  <div id="train-scenario" style="display:none"></div>
+  <div id="train-maturity" style="display:none"></div>
+</div>
+
+<!-- ===== AI ===== -->
+<div class="view" id="view-ai">
+  <div class="card-panel" style="padding:12px 14px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <b style="font-family:Georgia,serif;font-weight:400;font-size:15px">&#129302; AI-l&auml;rare</b>
+      <button class="btn ghost" id="ai-key-btn">API-nyckel</button>
+    </div>
+    <p class="soft" style="margin-top:6px">St&auml;ll fr&aring;gor om ITIL, be om f&ouml;rklaringar eller &ouml;vningsscenarier. Drivs av Claude via din egen Anthropic-nyckel.</p>
+  </div>
+  <div class="ai-chip-row" id="ai-chips"></div>
+  <div id="ai-log"></div>
+  <div class="card-panel" style="position:sticky;bottom:0;padding:10px">
+    <textarea id="ai-input" placeholder="Skriv din fr&aring;ga&hellip;" style="min-height:46px"></textarea>
+    <button class="btn fill" id="ai-send" style="width:100%;margin-top:8px">Fr&aring;ga Claude</button>
+  </div>
+</div>
+
+<div class="foot">Allt sparas lokalt p&aring; din enhet. Synk &amp; AI-nyckel f&ouml;ljer inte med i backupfiler.<br>ITIL&reg; &auml;r ett registrerat varum&auml;rke. Detta &auml;r ett eget l&auml;r- och arbetsverktyg.</div>
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <button class="active" data-v="home"><span>&#127963;</span>Hem</button>
+  <button data-v="lib"><span>&#128218;</span>Bibliotek</button>
+  <button data-v="itsm"><span>&#9881;</span>ITSM</button>
+  <button data-v="train"><span>&#129504;</span>Tr&auml;na</button>
+  <button data-v="ai"><span>&#10024;</span>AI</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="info-sheet"><button class="sheet-x" id="info-x">&times;</button><div id="info-content"></div><button class="sheet-close" data-close>St&auml;ng</button></div>
+<div class="sheet" id="detail-sheet"><button class="sheet-x" id="detail-x">&times;</button><div id="detail-content"></div><button class="sheet-close" data-close>St&auml;ng</button></div>
+
+<div class="sheet" id="ticket-sheet">
+  <button class="sheet-x" id="ticket-x">&times;</button>
+  <h3 id="ticket-title">Nytt &auml;rende</h3>
+  <label>Rubrik</label>
+  <input type="text" id="tk-title" placeholder="Kort beskrivning">
+  <label>Beskrivning</label>
+  <textarea id="tk-desc" placeholder="Detaljer, p&aring;verkan, steg&hellip;"></textarea>
+  <label>Prioritet</label>
+  <select id="tk-pri"><option value="1">P1 &mdash; Kritisk</option><option value="2" selected>P2 &mdash; H&ouml;g</option><option value="3">P3 &mdash; Normal</option></select>
+  <button class="sheet-close" id="tk-save">Spara</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <button class="sheet-x" id="sync-x">&times;</button>
+  <h3>&#9881; Synk via GitHub</h3>
+  <p class="soft" style="margin:4px 0 12px">Appen sparar <b>data.json</b> i ett privat GitHub-repo s&aring; att samma data n&aring;s p&aring; flera enheter. Token sparas bara lokalt &mdash; aldrig i koden eller backupen.</p>
+  <label>GitHub-anv&auml;ndarnamn</label>
+  <input type="text" id="gh-owner" placeholder="dittnamn">
+  <label>Repo (privat)</label>
+  <input type="text" id="gh-repo" placeholder="itil-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_&hellip;">
+  <div class="hint">github.com &rarr; Settings &rarr; Developer settings &rarr; Fine-grained tokens. Ge &aring;tkomst till ENDAST detta repo med Contents: Read and write.</div>
+  <div id="gh-status" class="gh-status"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<div class="sheet" id="aikey-sheet">
+  <button class="sheet-x" id="aikey-x">&times;</button>
+  <h3>&#129302; Anthropic API-nyckel</h3>
+  <p class="soft" style="margin:4px 0 12px">Tolkningarna g&ouml;rs av Claude via din egen nyckel fr&aring;n <b>console.anthropic.com</b> &rarr; API keys. Nyckeln sparas bara lokalt och f&ouml;ljer inte med i backupen. Varje fr&aring;ga kostar n&aring;gra &ouml;ren av ditt API-saldo.</p>
+  <label>API-nyckel</label>
+  <input type="password" id="ai-key-input" placeholder="sk-ant-&hellip;">
+  <button class="sheet-close" id="ai-key-save">Spara</button>
+</div>
+
+<script>
+
+// ====================== ITIL Akademin ======================
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var $=function(id){return document.getElementById(id);};
+
+// ---------- State ----------
+var DEF={notes:{},stars:{},tickets:[],quiz:{best:0,done:0},maturity:{},aiLog:[],theme:'auto'};
+var state=JSON.parse(JSON.stringify(DEF));
+var STORE='itil_akademin_v1';
+function save(){try{localStorage.setItem(STORE,JSON.stringify(state));}catch(e){} if(syncOn())ghPushDeb();}
+function load(){try{var s=localStorage.getItem(STORE);if(s){var d=JSON.parse(s);for(var k in DEF){if(d[k]!=null)state[k]=d[k];}}}catch(e){}}
+
+// ---------- GitHub-synk (jobb.html-mönstret) ----------
+var SYNC_KEY='itilsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=$('sync-badge');b.textContent=msg;b.className='sync-badge'+(st==='ok'?' ok':st==='err'?' err':'');}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function applyRemote(d){
+  if(!d)return;
+  for(var k in DEF){if(d[k]!=null)state[k]=d[k];}
+  try{localStorage.setItem(STORE,JSON.stringify(state));}catch(e){}
+  renderAll();
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(d){applyRemote(d);setBadge('ok','Synkad');}).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var payload={};for(var k in DEF)payload[k]=state[k];payload.updated=new Date().toISOString();
+  var content=b64enc(JSON.stringify(payload));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+var pushT=null;
+function ghPushDeb(){if(!syncOn())return;clearTimeout(pushT);pushT=setTimeout(ghPush,1200);}
+
+// ====================== INNEHÅLL ======================
+
+// ---------- SVS ----------
+var SVS=[
+  {t:'Guiding Principles',d:'Grundprinciper för allt arbete',x:'Sju rekommendationer som vägleder organisationen oavsett mål, strategi eller arbetssätt. De gäller i alla situationer och vid alla typer av förbättringar.'},
+  {t:'Governance (Styrning)',d:'Riktning, policy och uppföljning',x:'Det sätt på vilket organisationen styrs och kontrolleras. Ledningen sätter riktning, beslutar om policyer och följer upp att tjänsterna levererar enligt verksamhetens mål.'},
+  {t:'Service Value Chain',d:'Hur värde faktiskt skapas',x:'Den operativa kärnan: sex aktiviteter (Plan, Improve, Engage, Design & transition, Obtain/build, Deliver & support) som kombineras till olika värdeflöden från efterfrågan till värde.'},
+  {t:'Practices',d:'34 arbetssätt och förmågor',x:'Uppsättningar av organisatoriska resurser utformade för att utföra arbete eller nå ett mål. ITIL 4 har 34 practices i tre grupper: allmän styrning, tjänst och teknisk.'},
+  {t:'Continual Improvement',d:'Ständiga förbättringar',x:'Återkommande aktivitet för att anpassa tjänster och arbetssätt efter förändrade behov. Genomsyrar hela SVS och bygger på den enkla frågan: hur blir vi lite bättre?'}
+];
+
+// ---------- Guiding Principles ----------
+var PRIN=[
+  {t:'Fokusera på värde',q:'"Vilket värde ger detta kunden?"',a:'Allt du gör ska kunna kopplas till värde för en intressent. Identifiera vem som konsumerar tjänsten, vad de upplever som värde och hur deras upplevelse ser ut.',e:'Innan ett nytt verktyg köps in: vilket konkret problem löser det för användarna, och hur märks det?'},
+  {t:'Börja där du är',q:'Riv inte allt och börja om.',a:'Bygg vidare på det som redan fungerar. Mät och observera nuläget direkt i stället för att anta. Återanvänd befintliga processer, människor och teknik så långt det går.',e:'Innan en ny incidentprocess införs: kartlägg hur ärenden faktiskt hanteras idag och behåll det som redan fungerar.'},
+  {t:'Arbeta iterativt med feedback',q:'Små steg, hela tiden.',a:'Dela upp arbetet i hanterbara delar som levereras och utvärderas i omgångar. Sök feedback före, under och efter varje iteration så att du kan justera kursen.',e:'Rulla ut en självserviceportal till en avdelning först, samla in synpunkter och förbättra innan bred lansering.'},
+  {t:'Samarbeta och främja synlighet',q:'Bryt silos.',a:'Rätt personer involverade ger bättre beslut och förankring. Gör arbete, status och information synligt så att alla drar åt samma håll och flaskhalsar syns.',e:'Service Desk och utvecklingsteam delar samma ärendetavla i stället för att kasta ärenden mellan sig.'},
+  {t:'Tänk och arbeta holistiskt',q:'Se hela flödet.',a:'Ingen tjänst står ensam. Förstå hur människor, processer, teknik, partners och information hänger ihop, och optimera helheten i stället för en enskild del.',e:'En snabbare server hjälper inte om flaskhalsen egentligen är en manuell godkännanderutin tidigare i flödet.'},
+  {t:'Håll det enkelt och praktiskt',q:'Undvik överbyråkrati.',a:'Använd minsta antal steg som behövs för att nå målet. Ta bort allt som inte skapar värde. Enkla lösningar är lättare att förstå, följa och förbättra.',e:'Ett ändringsformulär med 5 relevanta fält följs oftare korrekt än ett med 30 fält "för säkerhets skull".'},
+  {t:'Optimera och automatisera',q:'Låt tekniken göra jobbet.',a:'Optimera först (gör processen så bra som möjligt manuellt), automatisera sedan det repetitiva. Frigör människor till arbete som kräver omdöme och kreativitet.',e:'Lösenordsåterställning som självservice frigör Service Desk till mer komplexa ärenden.'}
+];
+
+// ---------- Service Value Chain ----------
+var CHAIN=[
+  {t:'Plan',x:'Strategi, riktning och planering för alla tjänster.',e:'Budget, roadmaps, kapacitets- och kompetensplanering, policyer.'},
+  {t:'Improve',x:'Förbättra tjänster och arbetssätt över tid.',e:'KPI-analys, feedbackhantering, trender från problem och incidenter.'},
+  {t:'Engage',x:'Förstå behov och hålla löpande kontakt med intressenter.',e:'Support, kundmöten, kravinsamling, leverantörsdialog.'},
+  {t:'Design & transition',x:'Utforma och införa nya eller ändrade tjänster.',e:'Tjänstedesign, test, releaseplanering, överlämning till drift.'},
+  {t:'Obtain/build',x:'Skaffa eller bygga de komponenter som behövs.',e:'Utveckling, inköp, konfiguration, integrationer.'},
+  {t:'Deliver & support',x:'Leverera tjänster och ge löpande stöd enligt överenskommelse.',e:'Service Desk, incidenthantering, drift och övervakning.'}
+];
+
+// ---------- 34 Practices ----------
+// c: gen / svc / tech
+var P=[
+  // ---- General management (14) ----
+  {n:'Architecture Management',c:'gen',s:'Ge en samlad bild av organisationens olika arkitekturer och hur de samverkar.',d:'Hanterar affärs-, informations-, applikations- och teknikarkitektur så att förändringar sker strukturerat.',r:['Enterprisearkitekt','Lösningsarkitekt'],i:['Verksamhetsmål','Befintliga system','Krav'],o:['Arkitekturprinciper','Roadmaps','Riktlinjer'],k:['Andel projekt som följer arkitekturen','Teknisk skuld över tid'],m:['Arkitektur på papper som ingen följer','För detaljerad för att vara användbar'],e:'Innan ett nytt system köps in kontrolleras att det passar in i målarkitekturen och inte skapar onödig dubblering.'},
+  {n:'Continual Improvement',c:'gen',s:'Anpassa tjänster och arbetssätt löpande efter förändrade behov.',d:'En genomgående praktik för att hitta, prioritera och genomföra förbättringar i alla delar av verksamheten.',r:['Förbättringsansvarig','Alla medarbetare'],i:['KPI:er','Feedback','Problemtrender'],o:['Förbättringslogg (CIR)','Genomförda förbättringar'],k:['Antal genomförda förbättringar','Värde/effekt per förbättring'],m:['Förbättringslogg utan ägare','Bara stora projekt, aldrig små vinster'],e:'Återkommande långa väntetider i en process loggas, analyseras och åtgärdas i små steg via förbättringsloggen.'},
+  {n:'Information Security Management',c:'gen',s:'Skydda informationens konfidentialitet, integritet och tillgänglighet (CIA).',d:'Säkerställer att information är säker genom policyer, kontroller och riskhantering.',r:['Informationssäkerhetsansvarig (CISO)','Säkerhetsteam'],i:['Hotbild','Riskanalyser','Lagkrav'],o:['Säkerhetspolicy','Kontroller','Incidentrutiner'],k:['Antal säkerhetsincidenter','Andel åtgärdade sårbarheter i tid'],m:['Säkerhet som hinder i stället för möjliggörare','Glömmer den mänskliga faktorn'],e:'Behörigheter ses över regelbundet så att ingen har mer åtkomst än rollen kräver (least privilege).'},
+  {n:'Knowledge Management',c:'gen',s:'Säkerställa att rätt kunskap finns tillgänglig för rätt person vid rätt tillfälle.',d:'Samlar, strukturerar och delar kunskap så att beslut och arbete bygger på erfarenhet.',r:['Knowledge manager','Innehållsägare'],i:['Lösta ärenden','Dokumentation','Erfarenheter'],o:['Wiki/kunskapsbas','Runbooks','Lösningsartiklar'],k:['Andel ärenden lösta via kunskapsartikel','Återanvändning av artiklar'],m:['Inaktuell dokumentation','Kunskap fast i enskilda personers huvuden'],e:'Vanliga incidenter får en lösningsartikel så att nästa handläggare löser dem direkt.'},
+  {n:'Measurement & Reporting',c:'gen',s:'Stödja goda beslut och förbättring genom relevanta mätningar.',d:'Samlar in, analyserar och presenterar data om tjänster och praktiker.',r:['Rapportansvarig','Tjänsteägare'],i:['Rådata','Mål och SLA','Verksamhetsbehov'],o:['Dashboards','Rapporter','KPI:er'],k:['Andel beslut som stöds av data','Rapporters användbarhet'],m:['Mäter det som är lätt i stället för det som är viktigt','Rapporter ingen läser'],e:'En enkel dashboard visar incidenter per kategori så att teamet ser var problemen återkommer.'},
+  {n:'Organizational Change Management',c:'gen',s:'Säkerställa att förändringar införs smidigt och varaktigt hos människor.',d:'Hanterar den mänskliga sidan av förändring: kommunikation, engagemang och förankring.',r:['Förändringsledare','Sponsor'],i:['Förändringsinitiativ','Intressentanalys'],o:['Kommunikationsplan','Utbildning','Mindre motstånd'],k:['Adoptionsgrad','Medarbetarnöjdhet efter förändring'],m:['Fokus bara på teknik, inte människor','För lite kommunikation'],e:'Vid ett systembyte planeras utbildning och tydlig kommunikation så att användarna faktiskt börjar använda det nya.'},
+  {n:'Portfolio Management',c:'gen',s:'Säkerställa rätt mix av program, projekt och tjänster för att nå målen.',d:'Prioriterar och balanserar investeringar utifrån värde, risk och resurser.',r:['Portföljansvarig','Ledning'],i:['Strategi','Resurser','Tjänsteförslag'],o:['Prioriterad portfölj','Investeringsbeslut'],k:['Värde levererat per investerad krona','Andel initiativ kopplade till strategi'],m:['Säger ja till allt','Ingen avveckling av tjänster som tappat värde'],e:'Ett initiativ utan tydlig koppling till verksamhetsmålen pausas till förmån för ett med högre värde.'},
+  {n:'Project Management',c:'gen',s:'Säkerställa att projekt levereras framgångsrikt.',d:'Planerar, genomför och följer upp projekt. Integreras med Scrum, Prince2, PPS, PM3 m.fl.',r:['Projektledare','Styrgrupp'],i:['Projektmål','Resurser','Tidplan'],o:['Levererat resultat','Status och risker'],k:['Andel projekt i tid och budget','Måluppfyllnad'],m:['Otydligt scope','Glömmer överlämning till förvaltning'],e:'Ett systeminförande drivs som projekt med tydliga milstolpar och en plan för överlämning till drift.'},
+  {n:'Relationship Management',c:'gen',s:'Etablera och vårda relationer med intressenter.',d:'Förstår behov, hanterar förväntningar och löser intressekonflikter.',r:['Relationsansvarig','Tjänsteägare'],i:['Intressentbehov','Feedback'],o:['Goda relationer','Förankrade prioriteringar'],k:['Intressentnöjdhet','Antal eskalerade konflikter'],m:['Hör bara av sig när något gått fel','Lovar mer än som kan hållas'],e:'Regelbundna avstämningar med verksamheten gör att IT förstår kommande behov i tid.'},
+  {n:'Risk Management',c:'gen',s:'Förstå och hantera risker så att rätt beslut kan fattas.',d:'Identifierar, bedömer och behandlar risker kopplade till tjänster och förändringar.',r:['Riskansvarig','Tjänsteägare'],i:['Hot och sårbarheter','Verksamhetspåverkan'],o:['Riskregister','Åtgärdsplaner'],k:['Andel risker med åtgärdsplan','Realiserade incidenter från kända risker'],m:['Riskregister som aldrig uppdateras','Fokus bara på IT-risk, inte affärsrisk'],e:'Beroende av en enda nyckelleverantör loggas som risk med en plan för alternativ.'},
+  {n:'Service Financial Management',c:'gen',s:'Stödja beslut genom att synliggöra kostnad, budget och värde för tjänster.',d:'Hanterar budgetering, kostnadsfördelning och kostnadsuppföljning för tjänster.',r:['Ekonomiansvarig IT','Tjänsteägare'],i:['Kostnader','Förbrukning','Budget'],o:['Budget','Kostnad per tjänst','Beslutsunderlag'],k:['Budgetavvikelse','Kostnad per tjänst/användare'],m:['Ser bara kostnad, inte värde','Dold IT-kostnad utan ägare'],e:'Kostnaden per tjänst synliggörs så att dyra, lågt använda tjänster kan ifrågasättas.'},
+  {n:'Strategy Management',c:'gen',s:'Sätta mål och definiera hur de ska nås.',d:'Formar organisationens riktning och säkerställer att aktiviteter stödjer strategin.',r:['Ledning','Strateg'],i:['Marknad','Verksamhetsmål','Omvärld'],o:['Strategi','Mål','Prioriteringar'],k:['Andel mål uppnådda','Strategisk samstämmighet'],m:['Strategi i en låda','Ändras med varje vindkantring'],e:'IT-strategin tydliggör att molnförst är riktningen, vilket vägleder kommande tekniska val.'},
+  {n:'Supplier Management',c:'gen',s:'Säkerställa att leverantörer presterar enligt avtal och stödjer målen.',d:'Hanterar avtal, SLA:er och relationer med externa parter.',r:['Leverantörsansvarig','Inköp'],i:['Avtal','SLA','Prestanda'],o:['Leverantörsregister','Uppföljning','Förbättringar'],k:['Andel uppfyllda SLA:er','Leverantörsnöjdhet'],m:['Avtal som ingen följer upp','Beroende utan exitplan'],e:'Leverantörens svarstider följs upp mot avtalad SLA och avvikelser tas upp på driftmöten.'},
+  {n:'Workforce & Talent Management',c:'gen',s:'Säkerställa rätt kompetens på rätt plats nu och i framtiden.',d:'Hanterar rekrytering, utveckling och planering av personal och kompetens.',r:['HR','Teamledare'],i:['Kompetensbehov','Bemanning'],o:['Kompetensplan','Utbildning','Bemanningsplan'],k:['Kompetensgap','Personalomsättning'],m:['Reaktiv rekrytering','Ingen kompetensutveckling'],e:'En kompetensmatris visar var teamet saknar kunskap så att rätt utbildning kan planeras.'},
+  // ---- Service management (17) ----
+  {n:'Availability Management',c:'svc',s:'Säkerställa att tjänster är tillgängliga när de behövs.',d:'Planerar och mäter tillgänglighet utifrån verksamhetens behov.',r:['Availability manager','Tjänsteägare'],i:['Krav på tillgänglighet','Driftdata'],o:['Tillgänglighetsplan','Förbättringar'],k:['Uptime','MTTR (medelreparationstid)','MTBF (medeltid mellan fel)'],m:['Jagar 100% utan att räkna kostnaden','Mäter inte ur användarens perspektiv'],e:'En affärskritisk tjänst sätts till 99,9% tillgänglighet under kontorstid efter dialog med verksamheten.'},
+  {n:'Business Analysis',c:'svc',s:'Analysera verksamheten och föreslå lösningar som skapar värde.',d:'Identifierar behov och rekommenderar förbättringar i processer, tjänster eller system.',r:['Verksamhetsanalytiker'],i:['Verksamhetsproblem','Intressentbehov'],o:['Kravspecifikation','Lösningsförslag'],k:['Andel krav som möter behovet','Värde av införda lösningar'],m:['Dokumenterar lösning före problem','Tappar bort intressenter'],e:'Innan ett nytt verktyg byggs kartläggs det faktiska arbetsflödet för att hitta rätt lösning.'},
+  {n:'Capacity & Performance Management',c:'svc',s:'Säkerställa att tjänster presterar och har kapacitet för efterfrågan.',d:'Övervakar och planerar kapacitet så att prestanda möter behovet kostnadseffektivt.',r:['Capacity manager'],i:['Förbrukning','Prognoser','Krav'],o:['Kapacitetsplan','Larmtrösklar'],k:['CPU/RAM/disk/nätverksutnyttjande','Svarstider'],m:['Köper kapacitet i panik','Planerar inte för toppar'],e:'Trender i diskutnyttjande gör att lagring utökas innan den tar slut, inte efter ett driftstopp.'},
+  {n:'Change Enablement',c:'svc',s:'Maximera antalet lyckade förändringar genom kontrollerad hantering.',d:'Bedömer, godkänner och planerar förändringar så att risk och störning minimeras. Fråga: hanterar vi förändringen kontrollerat?',r:['Change manager','CAB (Change Advisory Board)'],i:['Ändringsförfrågan (RFC)','Riskbedömning'],o:['Godkänd/avvisad ändring','Schema','Tillbakarullningsplan'],k:['Andel lyckade ändringar','Andel akuta ändringar','Ändringar som orsakade incident'],m:['Allt blir akut','Byråkrati som bromsar standardändringar'],e:'En serveruppgradering planeras utanför changestopp med godkänd tillbakarullningsplan.'},
+  {n:'Incident Management',c:'svc',s:'Återställa normal tjänst så snabbt som möjligt och minimera påverkan.',d:'Hanterar avbrott och felfunktion. Fråga: "Vad gick sönder?" Målet är att få igång tjänsten — inte att hitta grundorsaken.',r:['Incidenthanterare','Service Desk'],i:['Felanmälan','Larm från övervakning'],o:['Återställd tjänst','Dokumenterad lösning'],k:['MTTR','Andel lösta inom SLA','Andel lösta vid första kontakt'],m:['Letar grundorsak i stället för att återställa','Saknar tydlig prioritering'],e:'Mailservern är nere: fokus ligger på att få igång den, t.ex. via omstart eller reserv, inte på varför just nu.'},
+  {n:'IT Asset Management',c:'svc',s:'Planera och hantera IT-tillgångar genom hela livscykeln.',d:'Håller koll på hårdvara, mjukvara och licenser från inköp till avveckling.',r:['Asset manager'],i:['Inköp','Inventering','Licensavtal'],o:['Tillgångsregister','Licensöversikt'],k:['Andel inventerade tillgångar','Licensefterlevnad'],m:['Inaktuellt register','Glömmer avveckling och licenskostnader'],e:'Livscykeln följs: beställning, inköp, leverans, installation, användning, återtag och avveckling.'},
+  {n:'Monitoring & Event Management',c:'svc',s:'Observera tjänster och reagera på relevanta händelser.',d:'Övervakar komponenter och tjänster, kategoriserar händelser och utlöser rätt åtgärd.',r:['Övervakningsansvarig','Drift'],i:['Loggar','Larm','Trösklar'],o:['Larm','Automatiska åtgärder','Incidenter'],k:['Andel incidenter upptäckta via övervakning','Falsklarmsgrad'],m:['Larm-trötthet av för många larm','Övervakar teknik men inte tjänsten'],e:'Övervakning på servrar, moln, nätverk och applikationer larmar innan användarna märker felet.'},
+  {n:'Problem Management',c:'svc',s:'Minska antalet incidenter genom att hitta och hantera grundorsaker.',d:'Analyserar orsaken bakom incidenter. Fråga: "Varför gick det sönder?" Verktyg: 5 Why, fiskbensdiagram, RCA.',r:['Problem manager'],i:['Incidenttrender','Kända fel'],o:['Kända fel (KEDB)','Permanenta lösningar','Tillfälliga lösningar (workarounds)'],k:['Antal återkommande incidenter','Andel problem med rotorsak åtgärdad'],m:['Blandar ihop incident och problem','Stannar vid symptom'],e:'Samma fel återkommer veckovis: en RCA hittar och åtgärdar grundorsaken så incidenterna upphör.'},
+  {n:'Release Management',c:'svc',s:'Göra nya och ändrade tjänster och funktioner tillgängliga för användning.',d:'Planerar, schemalägger och styr versioner och releaser till olika miljöer.',r:['Release manager'],i:['Godkända ändringar','Testresultat'],o:['Release-plan','Releasenoteringar'],k:['Andel lyckade releaser','Antal återställda releaser'],m:['Stora sällan-releaser med hög risk','Saknar releaseplan'],e:'Versioner samlas i planerade releaser med releasenoteringar i stället för okontrollerade enstaka utrullningar.'},
+  {n:'Service Catalogue Management',c:'svc',s:'Ge en samlad, korrekt bild av tillgängliga tjänster.',d:'Underhåller en katalog över tjänster som kan beställas eller används.',r:['Katalogansvarig'],i:['Tjänsteinformation','Beställningsbara objekt'],o:['Tjänstekatalog','Beställningssidor'],k:['Andel beställningar via katalogen','Aktualitet i katalogen'],m:['Inaktuell katalog','Tekniskt språk som ingen förstår'],e:'Användare beställer ny dator eller VPN via en tydlig katalog i stället för att mejla IT direkt.'},
+  {n:'Service Configuration Management',c:'svc',s:'Säkerställa korrekt information om konfigurationsobjekt och deras relationer.',d:'Hanterar en CMDB med komponenter (CI:er) och hur de hänger ihop.',r:['Configuration manager'],i:['Inventering','Ändringar'],o:['CMDB','Relationskartor'],k:['Andel korrekta CI:er','Täckningsgrad i CMDB'],m:['CMDB som inte underhålls','Försöker registrera allt i för stor detalj'],e:'Relationerna kartläggs: användare → dator → applikation → server → databas, så påverkan av en ändring syns.'},
+  {n:'Service Continuity Management',c:'svc',s:'Säkerställa att kritiska tjänster kan upprätthållas vid större avbrott.',d:'Planerar för katastrofscenarier och återställning (DR/BCP).',r:['Continuity manager'],i:['Riskanalys','Verksamhetspåverkan (BIA)'],o:['Kontinuitetsplan','Återställningsrutiner'],k:['RTO/RPO uppfyllda','Andel lyckade DR-tester'],m:['Plan som aldrig testas','Glömmer beroenden till leverantörer'],e:'En testövning av återställning visar att den kritiska tjänsten kan vara igång inom satt RTO.'},
+  {n:'Service Design',c:'svc',s:'Utforma tjänster så att de levererar värde och är hanterbara i drift.',d:'Designar tjänster med hänsyn till nytta, garanti, drift och hela livscykeln.',r:['Tjänstedesigner','Arkitekt'],i:['Krav','Arkitektur','Driftvillkor'],o:['Tjänstedesign','Driftbarhetskrav'],k:['Andel tjänster driftklara vid lansering','Omarbete efter lansering'],m:['Designar utan att tänka på drift','Glömmer säkerhet och tillgänglighet'],e:'En ny tjänst designas med övervakning och support inbyggt från start, inte påklistrat efteråt.'},
+  {n:'Service Desk',c:'svc',s:'Vara den enda kontaktpunkten (SPOC) mellan användare och IT.',d:'Tar emot, registrerar och hanterar ärenden samt kommunicerar med användare.',r:['Service Desk-agent','Teamledare SD'],i:['Felanmälningar','Beställningar','Frågor'],o:['Registrerade ärenden','Snabb hjälp','Statusinformation'],k:['Andel lösta vid första kontakt','Svarstid','Kundnöjdhet (CSAT)'],m:['Bara vidarekopplar utan att hjälpa','Otillräcklig kunskapsbas'],e:'Användaren når IT via ett ställe — ärende, chatt, telefon eller e-post — och får ett spårbart ärendenummer.'},
+  {n:'Service Level Management',c:'svc',s:'Sätta tydliga mål för tjänstenivå och följa upp dem.',d:'Förhandlar, dokumenterar och följer upp SLA:er mot verksamheten.',r:['Service level manager'],i:['Verksamhetsbehov','Tjänsteprestanda'],o:['SLA:er','Uppföljningsrapporter'],k:['Andel uppfyllda SLA:er','Antal SLA-brott'],m:['Tekniska mätetal i stället för upplevd nivå','SLA ingen följer upp'],e:'Kritisk incident ska åtgärdas inom 4 timmar, normal inom 3 dagar — och utfallet rapporteras.'},
+  {n:'Service Request Management',c:'svc',s:'Hantera fördefinierade användarförfrågningar smidigt och effektivt.',d:'Standardiserar vanliga beställningar så de kan hanteras snabbt och förutsägbart.',r:['Request fulfilment-team'],i:['Beställningar','Standardrutiner'],o:['Levererad beställning','Statusuppdateringar'],k:['Ledtid per begäran','Andel automatiserade beställningar'],m:['Blandar ihop med incidenter','Manuell hantering av allt'],e:'Begäran om ny användare, dator eller VPN-access följer en fast rutin med tydlig ledtid.'},
+  {n:'Service Validation & Testing',c:'svc',s:'Säkerställa att nya/ändrade tjänster möter krav på nytta och garanti.',d:'Verifierar att en tjänst fungerar som avsett innan den tas i drift.',r:['Testledare','QA'],i:['Krav','Acceptanskriterier'],o:['Testresultat','Godkännandebeslut'],k:['Andel fel hittade före produktion','Defekter i produktion'],m:['Testar bara att det fungerar, inte under last','Hoppar över test vid tidspress'],e:'En tjänst acceptanstestas mot uppsatta kriterier innan release godkänns.'},
+  // ---- Technical management (3) ----
+  {n:'Deployment Management',c:'tech',s:'Flytta ny eller ändrad mjukvara och hårdvara till driftmiljöer.',d:'Själva utrullningen av komponenter, ofta i samspel med Release Management.',r:['Deployment-team','Drift'],i:['Godkänd release','Utrullningsplan'],o:['Utrullad komponent','Driftsatt miljö'],k:['Andel lyckade utrullningar','Tid per utrullning'],m:['Manuell utrullning med många fel','Ingen återställningsplan'],e:'En ny version av M365, Windows eller ett ERP-system rullas ut enligt plan, gärna automatiserat.'},
+  {n:'Infrastructure & Platform Management',c:'tech',s:'Övervaka och hantera den infrastruktur och de plattformar tjänsterna bygger på.',d:'Ansvarar för servrar, nätverk, moln och plattformar genom hela livscykeln.',r:['Driftingenjör','Plattformsteam'],i:['Kapacitetskrav','Säkerhetskrav'],o:['Stabil infrastruktur','Plattformstjänster'],k:['Infrastrukturens tillgänglighet','Andel automatiserad provisionering'],m:['Manuell hantering som inte skalar','Glömmer patchning och härdning'],e:'Molnplattformen hanteras med infrastruktur-som-kod så att miljöer kan återskapas konsekvent.'},
+  {n:'Software Development & Management',c:'tech',s:'Säkerställa att applikationer möter intressenternas behov.',d:'Utvecklar och förvaltar mjukvara genom hela livscykeln, ofta agilt/DevOps.',r:['Utvecklare','Produktägare'],i:['Krav','Backlog','Feedback'],o:['Fungerande mjukvara','Releaser'],k:['Ledtid till produktion','Defektgrad','Andel automatiserade tester'],m:['Bygger funktioner ingen behöver','Teknisk skuld som ignoreras'],e:'Ett internt verktyg utvecklas iterativt med kontinuerlig leverans och automatiska tester.'}
+];
+
+// ---------- Quiz ----------
+var QUIZ=[
+  {q:'Vad är huvudsyftet med Incident Management?',o:['Hitta grundorsaken','Återställa normal tjänst så snabbt som möjligt','Godkänna förändringar','Hantera leverantörer'],c:1,e:'Incident Management handlar om att återställa tjänsten snabbt. Att hitta grundorsaken är Problem Managements jobb.'},
+  {q:'Vilken praktik äger frågan "Varför gick det sönder?"',o:['Incident Management','Change Enablement','Problem Management','Service Desk'],c:2,e:'Problem Management söker grundorsaken bakom incidenter, ofta med 5 Why eller RCA.'},
+  {q:'Hur många guiding principles finns i ITIL 4?',o:['5','6','7','9'],c:2,e:'Det finns sju grundprinciper, t.ex. "Fokusera på värde" och "Håll det enkelt och praktiskt".'},
+  {q:'Vilken princip uppmanar dig att inte riva allt och börja om?',o:['Börja där du är','Optimera och automatisera','Tänk holistiskt','Samarbeta'],c:0,e:'"Börja där du är" innebär att bygga vidare på det som redan fungerar och mäta nuläget.'},
+  {q:'Vad är Service Desk i ITIL?',o:['Ett övervakningsverktyg','Den enda kontaktpunkten (SPOC) mellan användare och IT','En databas över tillgångar','En lista över förändringar'],c:1,e:'Service Desk är Single Point of Contact för användare.'},
+  {q:'Vad mäter MTTR?',o:['Tid mellan fel','Medelreparationstid','Antal incidenter','Tillgänglighet i procent'],c:1,e:'MTTR = Mean Time To Restore/Repair, alltså hur lång tid återställning tar i snitt.'},
+  {q:'Vilken modell beskriver konfidentialitet, integritet och tillgänglighet?',o:['SVS','CIA','RCA','CAB'],c:1,e:'CIA-modellen används inom Information Security Management.'},
+  {q:'Vad innehåller en CMDB?',o:['Lösenord','Konfigurationsobjekt (CI) och deras relationer','Endast incidenter','Leverantörsavtal'],c:1,e:'CMDB hanteras av Service Configuration Management och beskriver CI:er och deras samband.'},
+  {q:'Vad är hjärtat i ITIL 4 som beskriver hur efterfrågan blir värde?',o:['Service Value Chain','Service Value System (SVS)','CAB','CMDB'],c:1,e:'SVS är det övergripande systemet; Service Value Chain är dess operativa kärna.'},
+  {q:'Vilken aktivitet i Service Value Chain handlar om löpande kontakt med intressenter?',o:['Plan','Engage','Improve','Obtain/build'],c:1,e:'Engage handlar om att förstå behov och hålla kontakt med intressenter.'},
+  {q:'Vad bör hanteras av Service Request Management snarare än Incident Management?',o:['En kraschad server','En begäran om ny VPN-access','Ett återkommande fel','Ett säkerhetsintrång'],c:1,e:'En fördefinierad beställning som VPN-access är en service request, inte en incident.'},
+  {q:'Vad är syftet med Change Enablement?',o:['Stoppa alla förändringar','Maximera antalet lyckade förändringar via kontroll','Bara dokumentera fel','Sätta SLA:er'],c:1,e:'Change Enablement vill att fler förändringar lyckas genom kontrollerad bedömning och planering.'},
+  {q:'Vilken princip säger "låt tekniken göra det repetitiva"?',o:['Håll det enkelt','Optimera och automatisera','Fokusera på värde','Börja där du är'],c:1,e:'"Optimera och automatisera" — optimera först, automatisera sedan.'},
+  {q:'Vad är en workaround?',o:['En permanent lösning','En tillfällig lösning som minskar påverkan','Ett SLA-brott','En typ av leverantörsavtal'],c:1,e:'En workaround är en tillfällig lösning, ofta dokumenterad som ett känt fel.'},
+  {q:'Vilken praktik håller koll på licenser och hårdvara genom livscykeln?',o:['IT Asset Management','Capacity Management','Release Management','Risk Management'],c:0,e:'IT Asset Management hanterar tillgångar från inköp till avveckling.'},
+  {q:'Vad är continual improvement?',o:['Ett engångsprojekt','En återkommande aktivitet i hela SVS','Endast för ledningen','Samma sak som Change'],c:1,e:'Continual improvement genomsyrar hela SVS och handlar om ständiga, ofta små, förbättringar.'},
+  {q:'Vem är typiskt Single Point of Contact för användare?',o:['CAB','Service Desk','Problem manager','CISO'],c:1,e:'Service Desk är SPOC.'},
+  {q:'Vilket är ett bra första steg enligt "Fokusera på värde"?',o:['Köpa ny teknik','Fråga vilket värde något ger kunden','Skriva en lång rapport','Lägga till fler processteg'],c:1,e:'Allt arbete bör kunna kopplas till värde för en intressent.'}
+];
+
+// ---------- Scenarios ----------
+var SCEN=[
+  {s:'En server är nere och tjänsten otillgänglig för användarna. Vilken praktik aktiveras i första hand?',o:['Problem Management','Incident Management','Change Enablement','Capacity Management'],c:1,e:'Först återställs tjänsten via Incident Management. Grundorsaken kan därefter hanteras av Problem Management.'},
+  {s:'Samma fel har orsakat incidenter varje vecka i en månad. Vad gör du?',o:['Stänger varje incident och går vidare','Startar en undersökning av grundorsaken','Höjer SLA-tiden','Avvecklar tjänsten direkt'],c:1,e:'Återkommande incidenter är ett tecken på ett underliggande problem — Problem Management och RCA.'},
+  {s:'En medarbetare behöver en ny dator. Hur hanteras det bäst?',o:['Som en incident','Som en service request via katalogen','Som en akut change','Som ett problem'],c:1,e:'En fördefinierad beställning hanteras av Service Request Management, gärna via tjänstekatalogen.'},
+  {s:'Ni ska uppgradera ett affärskritiskt system nästa vecka. Vad är viktigast?',o:['Köra direkt i produktion utan plan','Planera ändringen med risk- och tillbakarullningsplan','Hoppa över test','Vänta tills något går sönder'],c:1,e:'Change Enablement: bedöm risk, planera, schemalägg och ha en tillbakarullningsplan.'},
+  {s:'Disken på en server närmar sig full kapacitet enligt övervakningen. Vad är rätt åtgärd?',o:['Vänta tills den blir full','Agera proaktivt och utöka kapaciteten','Stänga av övervakningen','Skapa en incident först efter driftstopp'],c:1,e:'Capacity & Performance Management arbetar proaktivt utifrån trender, innan ett driftstopp inträffar.'},
+  {s:'Verksamheten klagar på att de inte vet status på sina ärenden. Vilken praktik förbättrar detta?',o:['Risk Management','Service Desk & Service Level Management','Deployment Management','Architecture Management'],c:1,e:'Service Desk ger en kontaktpunkt och statusinformation; SLM sätter och följer upp förväntningar.'}
+];
+
+// ---------- Maturity ----------
+var MAT_DIM=[
+  {k:'process',t:'Processer & rutiner',d:['Ad hoc, beror på person','Vissa grundprocesser finns','Processer är dokumenterade','Processer mäts och följs upp','Processer optimeras kontinuerligt']},
+  {k:'doc',t:'Dokumentation & kunskap',d:['Finns knappt','Spridd och inaktuell','Strukturerad kunskapsbas','Underhålls aktivt','Driver förbättring']},
+  {k:'measure',t:'Mätning & uppföljning',d:['Mäts inte','Enstaka mätetal','Regelbunden rapportering','Beslut bygger på data','Prediktivt och förbättringsdrivet']},
+  {k:'tools',t:'Verktyg & automation',d:['Mest manuellt','Enstaka verktyg','Gemensamt ärendesystem','Integrerat och delvis automatiserat','Hög grad av automation']},
+  {k:'improve',t:'Förbättringskultur',d:['Reaktiv brandkår','Förbättring ibland','Förbättringslogg finns','Förbättring är rutin','Ständig förbättring i DNA']}
+];
+var MAT_LEVELS=['','Nivå 1 — Kaos','Nivå 2 — Grundläggande','Nivå 3 — Dokumenterat','Nivå 4 — Mätbart','Nivå 5 — Optimerat'];
+var MAT_DESC=['','Arbetet är reaktivt och personberoende. Börja med att dokumentera de mest kritiska processerna.','Grundläggande processer finns men följs ojämnt. Skapa gemensamma rutiner och ett ärendesystem.','Processer är dokumenterade och följs. Nästa steg: börja mäta utfall och sätt KPI:er.','Ni mäter och fattar beslut på data. Fokusera på automation och proaktiva förbättringar.','Mogen organisation med ständig förbättring. Behåll momentum och dela era arbetssätt.'];
+
+// ---------- AI quick prompts ----------
+var AI_CHIPS=['Skillnaden mellan incident och problem','Förklara SVS som för en nybörjare','Ge mig ett övningsscenario','Vad är skillnaden mellan SLA och OLA?','När använder jag Change Enablement?'];
+
+// ====================== RENDER ======================
+var CAT_LBL={gen:'Allmän styrning',svc:'Tjänst',tech:'Teknisk'};
+
+// ---------- Sheets ----------
+var bg=$('sheet-bg');
+function openSheet(id){bg.classList.add('open');$(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+(function(){var x=document.querySelectorAll('[data-close]');for(var i=0;i<x.length;i++)x[i].onclick=closeSheets;
+  var ids=['info-x','detail-x','ticket-x','sync-x','aikey-x'];for(var j=0;j<ids.length;j++){if($(ids[j]))$(ids[j]).onclick=closeSheets;}})();
+
+function infoSheet(title,html){$('info-content').innerHTML='<h3>'+esc(title)+'</h3>'+html;openSheet('info-sheet');}
+
+// ---------- HEM: SVS ----------
+function renderSVS(){
+  var h='<div class="svs-io">Efterfrågan &amp; möjligheter</div><div class="svs-arrow">&#8595;</div>';
+  for(var i=0;i<SVS.length;i++){
+    var c=SVS[i];var cls='svs-comp'+(c.t.indexOf('Value Chain')>=0?' svs-chain':'');
+    h+='<div class="'+cls+'" data-svs="'+i+'"><b>'+esc(c.t)+'</b><small>'+esc(c.d)+'</small></div>';
+    if(i<SVS.length-1)h+='<div class="svs-arrow">&#8595;</div>';
+  }
+  h+='<div class="svs-arrow">&#8595;</div><div class="svs-io">Värde</div>';
+  $('svs-diagram').innerHTML=h;
+  var els=$('svs-diagram').querySelectorAll('[data-svs]');
+  for(var k=0;k<els.length;k++){els[k].onclick=function(){var c=SVS[+this.getAttribute('data-svs')];infoSheet(c.t,'<p style="font-size:14px;line-height:1.6;margin-top:8px">'+esc(c.x)+'</p>');};}
+}
+
+function renderPrinciples(){
+  var h='';for(var i=0;i<PRIN.length;i++){h+='<div class="tile" data-prin="'+i+'"><b>'+esc(PRIN[i].t)+'</b><small>'+esc(PRIN[i].q)+'</small></div>';}
+  $('principles-grid').innerHTML=h;
+  var els=$('principles-grid').querySelectorAll('[data-prin]');
+  for(var k=0;k<els.length;k++){els[k].onclick=function(){var p=PRIN[+this.getAttribute('data-prin')];
+    infoSheet(p.t,'<p style="font-size:14px;font-style:italic;color:var(--accent);margin:8px 0">'+esc(p.q)+'</p>'+
+      '<div class="d-block"><h4>Innebörd</h4><p>'+esc(p.a)+'</p></div>'+
+      '<div class="d-block"><h4>Exempel</h4><div class="exempel-box">'+esc(p.e)+'</div></div>');};}
+}
+
+function renderChain(){
+  var h='';for(var i=0;i<CHAIN.length;i++){h+='<div class="tile" data-chain="'+i+'"><span class="num">'+(i+1)+'</span><b>'+esc(CHAIN[i].t)+'</b><small>'+esc(CHAIN[i].x)+'</small></div>';}
+  $('chain-grid').innerHTML=h;
+  var els=$('chain-grid').querySelectorAll('[data-chain]');
+  for(var k=0;k<els.length;k++){els[k].onclick=function(){var c=CHAIN[+this.getAttribute('data-chain')];
+    infoSheet(c.t,'<div class="d-block"><h4>Vad</h4><p>'+esc(c.x)+'</p></div><div class="d-block"><h4>Exempel</h4><div class="exempel-box">'+esc(c.e)+'</div></div>');};}
+}
+
+// ---------- BIBLIOTEK ----------
+var libFilter='all';
+function renderLib(){
+  var q=($('lib-search').value||'').toLowerCase().trim();
+  var rows=[];
+  for(var i=0;i<P.length;i++){
+    var p=P[i];
+    if(libFilter==='gen'||libFilter==='svc'||libFilter==='tech'){if(p.c!==libFilter)continue;}
+    if(libFilter==='star'){if(!state.stars[p.n])continue;}
+    if(q){if(p.n.toLowerCase().indexOf(q)<0 && (p.s||'').toLowerCase().indexOf(q)<0)continue;}
+    rows.push(i);
+  }
+  if(!rows.length){$('lib-list').innerHTML='<div class="empty-msg">Inga practices matchar.</div>';return;}
+  var h='';var groups=[['gen','Allmän styrning'],['svc','Tjänst'],['tech','Teknisk']];
+  if(libFilter==='all'||libFilter==='star'){
+    for(var g=0;g<groups.length;g++){
+      var any=false,seg='';
+      for(var r=0;r<rows.length;r++){var p=P[rows[r]];if(p.c!==groups[g][0])continue;any=true;seg+=libRow(rows[r]);}
+      if(any)h+='<div class="lib-cat-head">'+esc(groups[g][1])+'</div>'+seg;
+    }
+  }else{for(var r2=0;r2<rows.length;r2++)h+=libRow(rows[r2]);}
+  $('lib-list').innerHTML=h;
+  var els=$('lib-list').querySelectorAll('[data-p]');
+  for(var k=0;k<els.length;k++){els[k].onclick=function(){openDetail(+this.getAttribute('data-p'));};}
+}
+function libRow(i){
+  var p=P[i];var star=state.stars[p.n]?'<span class="star">&#9733;</span>':'';
+  return '<div class="lib-item" data-p="'+i+'"><div class="lib-bar '+p.c+'"></div><div class="nm">'+esc(p.n)+'<small>'+esc(p.s)+'</small></div>'+star+'<span class="chev">&#8250;</span></div>';
+}
+function listBlock(title,arr,warn){
+  if(!arr||!arr.length)return '';
+  var h='<div class="d-block"><h4>'+esc(title)+'</h4><ul class="d-list'+(warn?' warn':'')+'">';
+  for(var i=0;i<arr.length;i++)h+='<li>'+esc(arr[i])+'</li>';
+  return h+'</ul></div>';
+}
+function openDetail(i){
+  var p=P[i];var starred=!!state.stars[p.n];
+  var h='<h3>'+esc(p.n)+'</h3>'+
+    '<span class="detail-tag '+p.c+'">'+esc(CAT_LBL[p.c])+'</span>'+
+    '<button class="btn ghost" id="star-btn" style="float:right">'+(starred?'&#9733; Sparad':'&#9734; Spara')+'</button>'+
+    '<div class="d-block"><h4>Syfte</h4><p>'+esc(p.s)+'</p></div>'+
+    '<div class="d-block"><h4>Definition</h4><p>'+esc(p.d)+'</p></div>'+
+    listBlock('Roller',p.r)+listBlock('Inputs',p.i)+listBlock('Outputs',p.o)+
+    listBlock('KPI:er',p.k)+listBlock('Vanliga misstag',p.m,true)+
+    '<div class="d-block"><h4>Exempel från verkligheten</h4><div class="exempel-box">'+esc(p.e)+'</div></div>'+
+    '<label>Min anteckning</label><textarea id="note-area" placeholder="Egna tankar, hur det funkar hos oss&hellip;">'+esc(state.notes[p.n]||'')+'</textarea>';
+  $('detail-content').innerHTML=h;
+  openSheet('detail-sheet');
+  $('star-btn').onclick=function(){state.stars[p.n]=!state.stars[p.n];if(!state.stars[p.n])delete state.stars[p.n];save();openDetail(i);renderLib();};
+  var ta=$('note-area');
+  ta.oninput=function(){var v=ta.value;if(v.trim())state.notes[p.n]=v;else delete state.notes[p.n];save();};
+}
+
+// ---------- ITSM ----------
+var itsmType='incident';
+var ITSM_HELP={
+  incident:'"Vad gick sönder?" — återställ tjänsten snabbt. Logga avbrott och fel här.',
+  problem:'"Varför gick det sönder?" — hitta grundorsaken bakom återkommande incidenter.',
+  change:'Kontrollerad förändring — bedöm risk och planera innan du genomför.',
+  improve:'Förbättringslogg (CIR) — fånga idéer och små förbättringar löpande.'
+};
+var TYPE_LBL={incident:'incident',problem:'problem',change:'change',improve:'förbättring'};
+function renderItsm(){
+  $('itsm-help').textContent=ITSM_HELP[itsmType];
+  var list=state.tickets.filter(function(t){return t.type===itsmType;});
+  list.sort(function(a,b){if(a.status!==b.status)return a.status==='open'?-1:1;if(a.pri!==b.pri)return a.pri-b.pri;return b.created-a.created;});
+  if(!list.length){$('itsm-list').innerHTML='<div class="empty-msg">Inga '+TYPE_LBL[itsmType]+'-ärenden ännu.</div>';return;}
+  var h='';
+  for(var i=0;i<list.length;i++){
+    var t=list[i];var d=new Date(t.created);
+    var ds=d.toLocaleDateString('sv-SE',{month:'short',day:'numeric'});
+    h+='<div class="ticket">'+
+      '<div class="ticket-top"><span class="tt">'+esc(t.title)+'</span><span class="pri p'+t.pri+'">P'+t.pri+'</span><button class="tk-del" data-del="'+t.id+'">&times;</button></div>'+
+      (t.desc?'<div class="tk-desc">'+esc(t.desc)+'</div>':'')+
+      '<div class="tk-meta" style="margin-top:6px"><button class="tk-status '+(t.status==='done'?'done':'open')+'" data-st="'+t.id+'">'+(t.status==='done'?'&#10003; Klar':'Öppen')+'</button><span>'+ds+'</span></div>'+
+    '</div>';
+  }
+  $('itsm-list').innerHTML=h;
+  var del=$('itsm-list').querySelectorAll('[data-del]');
+  for(var a=0;a<del.length;a++)del[a].onclick=function(){var id=this.getAttribute('data-del');state.tickets=state.tickets.filter(function(t){return t.id!==id;});save();renderItsm();};
+  var st=$('itsm-list').querySelectorAll('[data-st]');
+  for(var b=0;b<st.length;b++)st[b].onclick=function(){var id=this.getAttribute('data-st');for(var i=0;i<state.tickets.length;i++){if(state.tickets[i].id===id)state.tickets[i].status=state.tickets[i].status==='done'?'open':'done';}save();renderItsm();};
+}
+
+// ---------- QUIZ ----------
+var qOrder=[],qIdx=0,qScore=0,qAnswered=false;
+function startQuiz(){
+  qOrder=[];for(var i=0;i<QUIZ.length;i++)qOrder.push(i);
+  for(var j=qOrder.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var tmp=qOrder[j];qOrder[j]=qOrder[r];qOrder[r]=tmp;}
+  qIdx=0;qScore=0;qAnswered=false;renderQuiz();
+}
+function renderQuiz(){
+  var el=$('train-quiz');
+  if(qIdx>=qOrder.length){
+    var pct=Math.round(qScore/qOrder.length*100);
+    if(pct>state.quiz.best){state.quiz.best=pct;}
+    state.quiz.done=(state.quiz.done||0)+1;save();
+    el.innerHTML='<div class="card-panel" style="text-align:center"><div class="score-big">'+qScore+'/'+qOrder.length+'</div>'+
+      '<p class="soft" style="margin:6px 0 4px">'+pct+'% rätt</p>'+
+      '<p class="soft">Bästa resultat: '+state.quiz.best+'% &middot; Genomförda: '+state.quiz.done+'</p>'+
+      '<button class="btn fill" id="q-restart" style="width:100%;margin-top:14px">Gör om quizet</button></div>';
+    $('q-restart').onclick=startQuiz;return;
+  }
+  var q=QUIZ[qOrder[qIdx]];
+  var h='<div class="quiz-prog"><span>Fråga '+(qIdx+1)+' av '+qOrder.length+'</span><span>Rätt: '+qScore+'</span></div>'+
+    '<div class="card-panel"><div class="quiz-q">'+esc(q.q)+'</div><div id="q-opts">';
+  for(var i=0;i<q.o.length;i++)h+='<button class="quiz-opt" data-o="'+i+'">'+esc(q.o[i])+'</button>';
+  h+='</div><div id="q-after"></div></div>';
+  el.innerHTML=h;qAnswered=false;
+  var opts=el.querySelectorAll('[data-o]');
+  for(var k=0;k<opts.length;k++)opts[k].onclick=function(){answerQuiz(+this.getAttribute('data-o'));};
+}
+function answerQuiz(sel){
+  if(qAnswered)return;qAnswered=true;
+  var q=QUIZ[qOrder[qIdx]];
+  var opts=$('q-opts').querySelectorAll('[data-o]');
+  for(var i=0;i<opts.length;i++){var idx=+opts[i].getAttribute('data-o');if(idx===q.c)opts[i].classList.add('correct');else if(idx===sel)opts[i].classList.add('wrong');opts[i].onclick=null;}
+  if(sel===q.c)qScore++;
+  $('q-after').innerHTML='<div class="quiz-exp">'+(sel===q.c?'&#10003; Rätt! ':'&#10007; ')+esc(q.e)+'</div><button class="btn fill" id="q-next" style="width:100%;margin-top:10px">'+(qIdx+1>=qOrder.length?'Se resultat':'Nästa fråga')+'</button>';
+  $('q-next').onclick=function(){qIdx++;renderQuiz();};
+}
+
+// ---------- SCENARIO ----------
+var sIdx=0;
+function renderScenario(){
+  var el=$('train-scenario');var s=SCEN[sIdx];
+  var h='<div class="quiz-prog"><span>Scenario '+(sIdx+1)+' av '+SCEN.length+'</span></div>'+
+    '<div class="card-panel"><div class="quiz-q">'+esc(s.s)+'</div><div id="s-opts">';
+  for(var i=0;i<s.o.length;i++)h+='<button class="quiz-opt" data-o="'+i+'">'+esc(s.o[i])+'</button>';
+  h+='</div><div id="s-after"></div></div>';
+  el.innerHTML=h;
+  var opts=el.querySelectorAll('[data-o]');
+  for(var k=0;k<opts.length;k++)opts[k].onclick=function(){answerScenario(+this.getAttribute('data-o'));};
+}
+function answerScenario(sel){
+  var s=SCEN[sIdx];var opts=$('s-opts').querySelectorAll('[data-o]');
+  for(var i=0;i<opts.length;i++){var idx=+opts[i].getAttribute('data-o');if(idx===s.c)opts[i].classList.add('correct');else if(idx===sel)opts[i].classList.add('wrong');opts[i].onclick=null;}
+  $('s-after').innerHTML='<div class="quiz-exp">'+(sel===s.c?'&#10003; Rätt! ':'&#10007; ')+esc(s.e)+'</div>'+
+    '<button class="btn fill" id="s-next" style="width:100%;margin-top:10px">'+(sIdx+1>=SCEN.length?'Börja om':'Nästa scenario')+'</button>';
+  $('s-next').onclick=function(){sIdx=(sIdx+1)%SCEN.length;renderScenario();};
+}
+
+// ---------- MATURITY ----------
+function renderMaturity(){
+  var el=$('train-maturity');
+  var h='<p class="soft" style="margin-bottom:14px">Skatta er organisation på fem dimensioner (1&ndash;5). Resultatet ger en samlad mognadsnivå.</p>';
+  for(var i=0;i<MAT_DIM.length;i++){
+    var dim=MAT_DIM[i];var v=state.maturity[dim.k]||0;
+    h+='<div class="mat-dim"><div class="dl">'+esc(dim.t)+'<span>'+(v?v:'–')+'</span></div><div class="mat-dots" data-dim="'+dim.k+'">';
+    for(var n=1;n<=5;n++)h+='<button class="'+(v===n?'sel':'')+'" data-n="'+n+'" title="'+esc(dim.d[n-1])+'">'+n+'</button>';
+    h+='</div>'+(v?'<div class="soft" style="margin-top:4px">'+esc(dim.d[v-1])+'</div>':'')+'</div>';
+  }
+  h+='<div id="mat-out"></div>';
+  el.innerHTML=h;
+  var grps=el.querySelectorAll('[data-dim]');
+  for(var g=0;g<grps.length;g++){var btns=grps[g].querySelectorAll('[data-n]');for(var b=0;b<btns.length;b++){(function(grp){grp.onclick=function(){var key=grp.parentNode.getAttribute('data-dim');state.maturity[key]=+grp.getAttribute('data-n');save();renderMaturity();};})(btns[b]);}}
+  renderMatResult();
+}
+function renderMatResult(){
+  var vals=[],sum=0;for(var i=0;i<MAT_DIM.length;i++){var v=state.maturity[MAT_DIM[i].k]||0;if(v){vals.push(v);sum+=v;}}
+  if(vals.length<MAT_DIM.length){$('mat-out').innerHTML='<div class="empty-msg">Skatta alla fem dimensioner för att se nivån.</div>';return;}
+  var avg=sum/vals.length;var lvl=Math.round(avg);if(lvl<1)lvl=1;if(lvl>5)lvl=5;
+  $('mat-out').innerHTML='<div class="card-panel mat-result"><div class="mat-level">'+esc(MAT_LEVELS[lvl])+'</div>'+
+    '<div class="mat-bar"><div class="mat-fill" style="width:'+(avg/5*100)+'%"></div></div>'+
+    '<p class="soft">Snitt '+avg.toFixed(1)+' av 5</p>'+
+    '<p style="font-size:13px;line-height:1.55;margin-top:8px;text-align:left">'+esc(MAT_DESC[lvl])+'</p></div>';
+}
+
+// ---------- AI ----------
+var AI_KEY='itil_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function renderAiChips(){var h='';for(var i=0;i<AI_CHIPS.length;i++)h+='<button class="ai-chip" data-c="'+i+'">'+esc(AI_CHIPS[i])+'</button>';$('ai-chips').innerHTML=h;
+  var els=$('ai-chips').querySelectorAll('[data-c]');for(var k=0;k<els.length;k++)els[k].onclick=function(){$('ai-input').value=AI_CHIPS[+this.getAttribute('data-c')];sendAi();};}
+function renderAiLog(){
+  var h='';var log=state.aiLog||[];
+  if(!log.length)h='<div class="empty-msg">Ställ en fråga om ITIL så svarar Claude.</div>';
+  for(var i=0;i<log.length;i++){
+    if(log[i].r==='u')h+='<div class="ai-msg u">'+esc(log[i].t)+'</div>';
+    else h+='<div class="ai-msg a"><b>Claude</b>'+esc(log[i].t)+'</div>';
+  }
+  $('ai-log').innerHTML=h;
+}
+function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('aikey-sheet');return Promise.reject(new Error('NOKEY'));}
+  var sys='Du är en kunnig och pedagogisk ITIL 4-lärare. Svara på svenska, konkret och tydligt, gärna med ett exempel. Håll svaret under 200 ord om inget annat efterfrågas. Använd inga rubriker.';
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,system:sys,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function sendAi(){
+  var inp=$('ai-input');var q=(inp.value||'').trim();if(!q)return;
+  if(!getAiKey()){openSheet('aikey-sheet');return;}
+  state.aiLog=state.aiLog||[];state.aiLog.push({r:'u',t:q});inp.value='';renderAiLog();save();
+  $('ai-log').innerHTML+='<div class="ai-thinking" id="ai-think">Claude tänker&hellip;</div>';
+  $('ai-log').scrollIntoView({block:'end'});
+  aiCall(q).then(function(txt){
+    state.aiLog.push({r:'a',t:txt});if(state.aiLog.length>40)state.aiLog=state.aiLog.slice(-40);save();renderAiLog();
+  }).catch(function(e){
+    if($('ai-think'))$('ai-think').remove();
+    if(e.message!=='NOKEY')alert('Fel: '+e.message);
+    renderAiLog();
+  });
+}
+
+// ====================== WIRING ======================
+function renderAll(){
+  renderSVS();renderPrinciples();renderChain();renderLib();renderItsm();
+  if($('view-train').classList.contains('active')){/* keep current train sub-view */}
+  renderAiChips();renderAiLog();
+}
+
+// Nav
+(function(){var nb=document.querySelectorAll('.nav button');for(var i=0;i<nb.length;i++){nb[i].onclick=function(){
+  var v=this.getAttribute('data-v');
+  for(var j=0;j<nb.length;j++)nb[j].classList.remove('active');this.classList.add('active');
+  var views=document.querySelectorAll('.view');for(var k=0;k<views.length;k++)views[k].classList.remove('active');
+  $('view-'+v).classList.add('active');
+  if(v==='train'&&!qOrder.length)startQuiz();
+  window.scrollTo(0,0);
+};}})();
+
+// Library filters + search
+(function(){var ch=document.querySelectorAll('.cat-chip');for(var i=0;i<ch.length;i++)ch[i].onclick=function(){for(var j=0;j<ch.length;j++)ch[j].classList.remove('active');this.classList.add('active');libFilter=this.getAttribute('data-c');renderLib();};})();
+$('lib-search').oninput=renderLib;
+
+// ITSM segment + add
+(function(){var sb=$('itsm-seg').querySelectorAll('button');for(var i=0;i<sb.length;i++)sb[i].onclick=function(){for(var j=0;j<sb.length;j++)sb[j].classList.remove('active');this.classList.add('active');itsmType=this.getAttribute('data-t');renderItsm();};})();
+$('itsm-add').onclick=function(){$('tk-title').value='';$('tk-desc').value='';$('tk-pri').value='2';$('ticket-title').textContent='Nytt '+TYPE_LBL[itsmType]+'-ärende';openSheet('ticket-sheet');};
+$('tk-save').onclick=function(){var t=$('tk-title').value.trim();if(!t){alert('Skriv en rubrik.');return;}
+  state.tickets.push({id:'t'+Date.now()+Math.floor(Math.random()*1000),type:itsmType,title:t,desc:$('tk-desc').value.trim(),pri:+$('tk-pri').value,status:'open',created:Date.now()});
+  save();closeSheets();renderItsm();};
+
+// Train segment
+(function(){var tb=$('train-seg').querySelectorAll('button');var map={quiz:'train-quiz',scenario:'train-scenario',maturity:'train-maturity'};
+for(var i=0;i<tb.length;i++)tb[i].onclick=function(){var t=this.getAttribute('data-t');for(var j=0;j<tb.length;j++)tb[j].classList.remove('active');this.classList.add('active');
+  for(var key in map)$(map[key]).style.display='none';$(map[t]).style.display='block';
+  if(t==='quiz'&&!qOrder.length)startQuiz();
+  if(t==='scenario')renderScenario();
+  if(t==='maturity')renderMaturity();
+};})();
+
+// AI
+$('ai-send').onclick=sendAi;
+$('ai-key-btn').onclick=function(){$('ai-key-input').value=getAiKey();openSheet('aikey-sheet');};
+$('ai-key-save').onclick=function(){var k=$('ai-key-input').value.trim();if(k)localStorage.setItem(AI_KEY,k);else localStorage.removeItem(AI_KEY);closeSheets();};
+
+// Sync UI
+function setGhStatus(msg,type){var el=$('gh-status');el.style.display='block';el.textContent=msg;
+  el.style.background=type==='ok'?'var(--accent-soft)':type==='err'?'#F4DDD8':'var(--panel2)';
+  el.style.color=type==='ok'?'var(--accent-deep)':type==='err'?'#A24B3C':'var(--muted)';}
+$('sync-settings').onclick=function(){$('gh-owner').value=sync.owner;$('gh-repo').value=sync.repo;$('gh-token').value=sync.token;$('gh-status').style.display='none';openSheet('sync-sheet');};
+$('gh-save').onclick=function(){
+  sync.owner=$('gh-owner').value.trim();sync.repo=$('gh-repo').value.trim();sync.token=$('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(d){
+    if(d){setGhStatus('✓ Ansluten! Hämtar data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Repot är tomt — laddar upp lokal data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1100);}).catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och Contents-behörighet.','err');});
+};
+$('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// Backup
+$('export-btn').onclick=function(){
+  var payload={};for(var k in DEF)payload[k]=state[k];
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var d=new Date();a.download='itil-akademin-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';a.click();
+};
+$('import-btn').onclick=function(){$('import-file').click();};
+$('import-file').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);for(var k in DEF){if(d[k]!=null)state[k]=d[k];}save();renderAll();alert('Importerat.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);};
+
+// Theme
+function applyTheme(){
+  var m=state.theme;var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1C2321':'#EEF2F1';
+  var b=$('theme-btn');b.textContent=m==='auto'?'\u25D0':(m==='dark'?'\u263E':'\u2600');
+  b.title=m==='auto'?'Tema: auto':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+$('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ---------- Init ----------
+loadSync();load();renderAll();applyTheme();setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+
+
+</script>
+</body>
+</html>
