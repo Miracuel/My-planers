@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Andrum">
+<meta name="theme-color" content="#EEF1EB">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Andrum","short_name":"Andrum","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<title>Andrum</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--sun:#D9C27E;
+  --green:#7A8B6F;--yellow:#C7B06A;--red:#C08A7E;
+  --navbg:rgba(238,241,235,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.charge{border-color:var(--moss-soft)}
+.chip.charge:active{background:var(--moss-soft)}
+.chip.drain:active{background:#F2E3DE}
+
+/* Nu — ångestnivå */
+.level-wrap{text-align:center;padding:4px 0}
+.level-num{font-family:Georgia,serif;font-size:48px;color:var(--moss);line-height:1}
+.level-num small{font-size:18px;color:var(--muted)}
+.level-msg{font-size:14px;line-height:1.55;margin:8px 0 2px}
+input[type=range]{accent-color:var(--moss);padding:0}
+.level-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px}
+
+/* Våg */
+.wave-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.wave-cv{width:100%;height:120px}
+.wave-phase{font-family:Georgia,serif;font-size:15px;text-align:center;line-height:1.5;min-height:44px;display:flex;align-items:center;justify-content:center}
+
+/* Andning */
+.breath-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 0}
+.breath-circle{width:150px;height:150px;border-radius:50%;background:var(--moss-soft);border:2px solid var(--moss);transition:transform 4s ease-in-out;display:flex;align-items:center;justify-content:center}
+.breath-label{font-family:Georgia,serif;font-size:18px}
+.breath-count{font-size:12px;color:var(--muted);letter-spacing:.06em}
+
+/* Grunda / PMR */
+.ground-card{text-align:center;padding:10px 0}
+.ground-num{font-family:Georgia,serif;font-size:44px;color:var(--moss)}
+.ground-txt{font-size:15px;margin:6px 0 14px;line-height:1.5}
+
+/* Snälla ord */
+.kind-card{text-align:center;padding:16px 6px}
+.kind-txt{font-family:Georgia,serif;font-size:19px;line-height:1.5}
+
+/* Listor */
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row button{border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+.log-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-row .lv{font-weight:600;font-family:Georgia,serif;width:26px}
+.log-row time{color:var(--muted);font-size:11px;margin-left:auto}
+.log-row button.del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.thought-card{border-top:1px solid var(--line);padding:10px 0;font-size:13px;line-height:1.5}
+.thought-card:first-child{border-top:none}
+.thought-card .q{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:6px}
+.thought-card .bal{color:var(--moss);font-style:italic}
+.avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.avg-row:first-child{border-top:none}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--moss);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;position:sticky;bottom:0;margin-top:12px}
+.chiplist{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 8px}
+.chiplist button{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:7px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chiplist button.sel{background:var(--moss);border-color:var(--moss);color:#fff}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:16px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:8px;line-height:1.6}
+.sp-badge{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;background:var(--moss-soft);color:var(--moss);font-weight:600;letter-spacing:.04em}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#F4E8E4;color:#A2685B}
+.sheet code{background:var(--panel2);border-radius:5px;padding:1px 5px;font-size:12px}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --green:#8FA383;--yellow:#C2AC6B;--red:#C08A7E;--navbg:rgba(34,37,31,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🌊 Andrum</h1>
+
+<!-- NU -->
+<div class="view active" id="view-now">
+  <div class="card-panel">
+    <div class="level-wrap">
+      <div class="level-num"><span id="lv-num">3</span><small>/10</small></div>
+      <div class="level-msg" id="lv-msg"></div>
+      <input type="range" id="lv-range" min="0" max="10" step="1" value="3" style="margin-top:8px">
+      <div class="level-marks"><span>lugnt</span><span>överväldigande</span></div>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn fill" id="lv-log">Logga just nu</button>
+      <button class="btn" id="go-breath">Andas →</button>
+    </div>
+  </div>
+
+  <div class="section-title">Det som brukar hjälpa <button class="btn ghost" id="edit-helpers" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel">
+    <div class="soft">Tryck på det du gör nu — så minns appen vad som fungerar för dig.</div>
+    <div class="chips" id="helper-chips"></div>
+  </div>
+
+  <div class="section-title">Rid ut vågen</div>
+  <div class="card-panel">
+    <div class="wave-wrap">
+      <canvas class="wave-cv" id="wave" width="640" height="240"></canvas>
+      <div class="wave-phase" id="wave-phase">Ångest stiger och lägger sig — som en våg. Den kan inte hålla toppen. Följ med ut.</div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn fill" id="wave-go">Starta (90 sek)</button>
+        <button class="btn ghost" id="wave-stop">Stopp</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <button id="sync-btn">↻ Synka</button>
+    <button id="sync-settings">⚙ Synk</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy" style="margin-top:6px"><span id="sync-badge" class="sp-badge offline">Lokal</span></div>
+  <div class="privacy">Allt sparas bara i din enhet (och i ditt privata synk-repo om du slår på det). Andrum är ett självhjälpsstöd vid oro och ångest — inte vård.<br>Vid svår eller långvarig ångest: prata med vården eller 1177. Vid akut fara: ring 112. Du är värd stöd. 🌿</div>
+</div>
+
+<!-- ANDAS -->
+<div class="view" id="view-breath">
+  <div class="section-title" style="margin-top:0">Andas långsamt</div>
+  <div class="card-panel">
+    <div class="breath-wrap">
+      <div class="breath-circle" id="breath-circle"><span class="breath-label" id="breath-label">Redo</span></div>
+      <div class="breath-count" id="breath-count">&nbsp;</div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn fill" id="b-46">Förlängd utandning 4-6</button>
+      </div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn" id="b-478">Lugnande 4-7-8</button>
+        <button class="btn" id="b-box">Fyrkant 4-4-4-4</button>
+      </div>
+      <button class="btn ghost" id="b-stop" style="width:100%">Stopp</button>
+    </div>
+  </div>
+  <div class="card-panel" style="margin-top:12px">
+    <div class="soft">Längre utandning än inandning lugnar nervsystemet. Låt cirkeln leda — andas in när den växer, ut när den krymper. Inget behöver bli perfekt.</div>
+  </div>
+</div>
+
+<!-- VERKTYG -->
+<div class="view" id="view-tools">
+  <div class="section-title" style="margin-top:0">Tillbaka i rummet — 5·4·3·2·1</div>
+  <div class="card-panel">
+    <div class="ground-card">
+      <div class="ground-num" id="g-num">5</div>
+      <div class="ground-txt" id="g-txt">saker du kan <b>se</b></div>
+      <button class="btn fill" id="g-next" style="width:100%">Hittade dem — nästa</button>
+    </div>
+  </div>
+
+  <div class="section-title">Sant eller en tanke?</div>
+  <div class="card-panel">
+    <div class="soft">En orostanke känns sann — men är inte alltid det. Syna den lugnt.</div>
+    <button class="btn" id="open-thought" style="width:100%;margin-top:10px">Syna en orostanke</button>
+  </div>
+
+  <div class="section-title">Orostund</div>
+  <div class="card-panel">
+    <div class="soft">Parkera oron till en bestämd stund senare — så slipper huvudet bära den hela dagen.</div>
+    <div id="worry-list" style="margin-top:8px"></div>
+    <div class="add-row">
+      <input type="text" id="worry-in" placeholder="Vad oroar dig?">
+      <button id="worry-add">+</button>
+    </div>
+  </div>
+
+  <div class="section-title">Mjuka upp kroppen</div>
+  <div class="card-panel">
+    <div class="ground-card">
+      <div class="ground-txt" id="pmr-txt" style="margin-bottom:14px"></div>
+      <button class="btn fill" id="pmr-next" style="width:100%">Nästa</button>
+    </div>
+  </div>
+
+  <div class="section-title">Snälla ord</div>
+  <div class="card-panel">
+    <div class="kind-card"><div class="kind-txt" id="kind-txt"></div></div>
+    <div class="btn-row">
+      <button class="btn" id="kind-new">Ny rad</button>
+      <button class="btn ghost" id="edit-kind">Ändra</button>
+    </div>
+  </div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-pattern">
+  <div class="section-title" style="margin-top:0">Ångest senaste 14 dagarna <span class="soft">(högsta per dag)</span></div>
+  <div class="card-panel"><canvas id="trend" width="640" height="260"></canvas></div>
+
+  <div class="section-title">Vad triggar — och vad hjälper? <span class="soft">(30 dagar)</span></div>
+  <div class="card-panel" id="tops"></div>
+
+  <div class="section-title">Tillfällen idag</div>
+  <div class="card-panel" id="today-log"></div>
+
+  <div class="section-title">Synade tankar</div>
+  <div class="card-panel" id="thought-list"></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="now"><span>🌊</span>Nu</button>
+  <button data-v="breath"><span>🫧</span>Andas</button>
+  <button data-v="tools"><span>🧰</span>Verktyg</button>
+  <button data-v="pattern"><span>〰</span>Mönster</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="trigger-sheet">
+  <h3>Vad utlöste det?</h3>
+  <div class="soft">Frivilligt — hoppa över om du inte vet.</div>
+  <div class="chiplist" id="trigger-chips"></div>
+  <button class="sheet-close" id="trigger-save">Spara tillfället</button>
+</div>
+
+<div class="sheet" id="thought-sheet">
+  <h3>Sant eller en tanke?</h3>
+  <label>Orostanken</label>
+  <textarea id="t-worry" rows="2" placeholder="T.ex. allt kommer gå fel imorgon."></textarea>
+  <label>Vad talar för att den stämmer?</label>
+  <textarea id="t-for" rows="2" placeholder="Riktiga belägg…"></textarea>
+  <label>Vad talar emot?</label>
+  <textarea id="t-against" rows="2" placeholder="Andra gånger, andra utfall…"></textarea>
+  <label>En snällare, mer balanserad tanke</label>
+  <textarea id="t-bal" rows="2" placeholder="Något du faktiskt kan luta dig mot."></textarea>
+  <button class="sheet-close" id="t-save">Spara</button>
+</div>
+
+<div class="sheet" id="list-sheet">
+  <h3 id="list-title"></h3>
+  <div id="list-items"></div>
+  <div class="add-row"><input type="text" id="list-in" placeholder="Lägg till…"><button id="list-add">+</button></div>
+  <button class="sheet-close" id="list-done">Klar</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <div class="soft">Andrum sparar <code>andrum.json</code> i ett <b>privat</b> GitHub-repo, så att telefon och dator visar samma data. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="mittnamn" autocomplete="off">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="andrum-data" autocomplete="off">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="soft" style="margin-top:8px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+  <div id="gh-status" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:10px"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='andrum_v1';
+var state={
+  episodes:[],
+  helps:[],
+  triggers:['Jobb','Sociala situationer','Hälsa','Ekonomi','Framtiden','Konflikt','Vet inte riktigt'],
+  helpers:['Andades långsamt','5-4-3-2-1','Gick ut','Ringde någon','Drack vatten','Skrev ner det','Rörde på mig'],
+  kind:['Det här är jobbigt — och det går över.','Jag behöver inte lösa allt just nu.','Jag har klarat svåra stunder förut.','Det är okej att känna så här.','Jag gör så gott jag kan, och det räcker.','En sak i taget.'],
+  thoughts:[],
+  worries:[],
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(skipPush){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}if(!skipPush&&typeof syncOn==='function'&&syncOn())schedulePush();}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var nowTime=function(){return new Date().toTimeString().slice(0,5);};
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ss=document.querySelectorAll('.sheet');for(var i=0;i<ss.length;i++)ss[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Nu: ångestnivå ────────────────────────────────────
+var LEVELMSG=[
+  'Lugnt vatten. Bra läge att andas i lugn och ro eller bara checka in med dig själv.',
+  'Lugnt vatten. Bra läge att andas i lugn och ro eller bara checka in med dig själv.',
+  'Stilla. Notera hur det känns utan att göra något åt det.',
+  'Lite krusningar. Allt är okej. Andas några lugna andetag.',
+  'Det bubblar. Sänk tempot och gör en sak i taget.',
+  'Det bubblar. Sänk tempot och gör en sak i taget.',
+  'Stigande. Prova den förlängda utandningen eller 5·4·3·2·1.',
+  'Hög våg. Känslan är obehaglig men ofarlig och tillfällig. Prova andningen eller rid ut vågen.',
+  'Hög våg. Känslan är obehaglig men ofarlig och tillfällig. Prova andningen eller rid ut vågen.',
+  'Toppen av vågen. Det känns akut — men kroppen kan inte hålla det här länge. Andas långt ut. Det vänder snart.',
+  'Toppen av vågen. Det känns akut — men kroppen kan inte hålla det här länge. Andas långt ut. Det vänder snart.'
+];
+function renderLevel(){
+  var v=+document.getElementById('lv-range').value;
+  document.getElementById('lv-num').textContent=v;
+  document.getElementById('lv-msg').textContent=LEVELMSG[v];
+}
+document.getElementById('lv-range').oninput=renderLevel;
+var pendingLevel=3;
+document.getElementById('lv-log').onclick=function(){
+  pendingLevel=+document.getElementById('lv-range').value;
+  renderTriggerChips(null);
+  openSheet('trigger-sheet');
+};
+var chosenTrigger=null;
+function renderTriggerChips(sel){
+  chosenTrigger=sel;
+  var el=document.getElementById('trigger-chips');
+  el.innerHTML=state.triggers.map(function(t){return '<button data-t="'+esc(t)+'"'+(sel===t?' class="sel"':'')+'>'+esc(t)+'</button>';}).join('');
+  var bs=el.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++){bs[i].onclick=function(){renderTriggerChips(this.dataset.t===chosenTrigger?null:this.dataset.t);};}
+}
+document.getElementById('trigger-save').onclick=function(){
+  state.episodes.push({id:Date.now(),date:todayKey(),t:nowTime(),level:pendingLevel,trigger:chosenTrigger});
+  save();closeSheets();
+};
+document.getElementById('go-breath').onclick=function(){gotoView('breath');};
+
+// ── Det som hjälper ───────────────────────────────────
+function renderHelperChips(){
+  var el=document.getElementById('helper-chips');
+  el.innerHTML=state.helpers.map(function(h,i){return '<button class="chip charge" data-i="'+i+'">'+esc(h)+'</button>';}).join('');
+  var bs=el.querySelectorAll('.chip');
+  for(var i=0;i<bs.length;i++){bs[i].onclick=function(){
+    var label=state.helpers[+this.dataset.i];
+    state.helps.push({id:Date.now(),date:todayKey(),t:nowTime(),label:label});
+    save();
+    this.textContent='✓ '+label;
+    var self=this;setTimeout(function(){self.textContent=label;},1400);
+  };}
+}
+
+// ── Våg ───────────────────────────────────────────────
+var waveTimer=null,waveStart=0,waveDur=90000;
+var WPHASE=[
+  [0,'Den stiger. Det här är obehagligt — men ofarligt. Kroppen kan inte hålla toppen länge.'],
+  [0.30,'Toppen. Här är det som värst — och det är just här det vänder.'],
+  [0.52,'Det planar ut. Släpp axlarna. Andas långsamt ut.'],
+  [0.78,'På väg ner. Du höll i. Det blir lättare nu.']
+];
+function waveY(p){ // 0..1 -> 0(botten) .. 1(topp), klockform med topp ~0.34
+  var x=(p-0.34)/0.30;
+  return Math.exp(-x*x);
+}
+function drawWave(p){
+  var cv=document.getElementById('wave'),ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height,pad=18;
+  ctx.clearRect(0,0,W,H);
+  var css=getComputedStyle(document.documentElement);
+  var line=css.getPropertyValue('--line').trim();
+  var moss=css.getPropertyValue('--moss').trim();
+  var soft=css.getPropertyValue('--moss-soft').trim();
+  var base=H-pad,amp=H-pad*2;
+  // hela kurvan (svag)
+  ctx.strokeStyle=line;ctx.lineWidth=2;ctx.beginPath();
+  for(var i=0;i<=100;i++){var t=i/100;var x=pad+(W-2*pad)*t;var y=base-amp*waveY(t);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+  ctx.stroke();
+  // genomriden del (fylld)
+  ctx.strokeStyle=moss;ctx.lineWidth=4;ctx.beginPath();
+  var n=Math.max(1,Math.round(p*100));
+  for(var j=0;j<=n;j++){var t2=j/100;var x2=pad+(W-2*pad)*t2;var y2=base-amp*waveY(t2);if(j===0)ctx.moveTo(x2,y2);else ctx.lineTo(x2,y2);}
+  ctx.stroke();
+  // markör
+  var mx=pad+(W-2*pad)*p,my=base-amp*waveY(p);
+  ctx.fillStyle=moss;ctx.beginPath();ctx.arc(mx,my,9,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=soft;ctx.beginPath();ctx.arc(mx,my,4,0,Math.PI*2);ctx.fill();
+}
+function waveTick(){
+  var p=Math.min(1,(Date.now()-waveStart)/waveDur);
+  drawWave(p);
+  var msg=WPHASE[0][1];
+  for(var i=0;i<WPHASE.length;i++){if(p>=WPHASE[i][0])msg=WPHASE[i][1];}
+  document.getElementById('wave-phase').textContent=msg;
+  if(p>=1){stopWave(true);return;}
+  waveTimer=requestAnimationFrame(waveTick);
+}
+function stopWave(done){
+  if(waveTimer)cancelAnimationFrame(waveTimer);waveTimer=null;
+  if(done){
+    drawWave(1);
+    document.getElementById('wave-phase').textContent='Vågen har lagt sig. Bra kämpat. 🌿';
+  }else{
+    drawWave(0);
+    document.getElementById('wave-phase').textContent='Ångest stiger och lägger sig — som en våg. Den kan inte hålla toppen. Följ med ut.';
+  }
+}
+document.getElementById('wave-go').onclick=function(){stopWave(false);waveStart=Date.now();waveTick();};
+document.getElementById('wave-stop').onclick=function(){stopWave(false);};
+
+// ── Andning ───────────────────────────────────────────
+var breathTimeout=null,breathCycle=0;
+var BREATH={
+  b46:[['Andas in',4,1.55],['Andas ut',6,1]],
+  b478:[['Andas in',4,1.55],['Håll',7,1.55],['Andas ut',8,1]],
+  box:[['Andas in',4,1.55],['Håll',4,1.55],['Andas ut',4,1],['Håll',4,1]]
+};
+function runBreath(mode,idx){
+  var seq=BREATH[mode];
+  var step=seq[idx%seq.length];
+  var c=document.getElementById('breath-circle');
+  document.getElementById('breath-label').textContent=step[0];
+  c.style.transitionDuration=step[1]+'s';
+  c.style.transform='scale('+step[2]+')';
+  if(idx>0&&idx%seq.length===0){breathCycle++;document.getElementById('breath-count').textContent=breathCycle+' andetag';}
+  breathTimeout=setTimeout(function(){runBreath(mode,idx+1);},step[1]*1000);
+}
+function stopBreath(){
+  clearTimeout(breathTimeout);breathTimeout=null;breathCycle=0;
+  var c=document.getElementById('breath-circle');
+  c.style.transitionDuration='1s';c.style.transform='scale(1)';
+  document.getElementById('breath-label').textContent='Redo';
+  document.getElementById('breath-count').innerHTML='&nbsp;';
+}
+function startBreath(mode){stopBreath();runBreath(mode,0);}
+document.getElementById('b-46').onclick=function(){startBreath('b46');};
+document.getElementById('b-478').onclick=function(){startBreath('b478');};
+document.getElementById('b-box').onclick=function(){startBreath('box');};
+document.getElementById('b-stop').onclick=stopBreath;
+
+// ── Grunda 5-4-3-2-1 ──────────────────────────────────
+var GROUND=[[5,'saker du kan <b>se</b>'],[4,'saker du kan <b>ta på</b>'],[3,'ljud du kan <b>höra</b>'],[2,'dofter du <b>känner</b>'],[1,'sak du kan <b>smaka</b>']];
+var gIdx=0;
+function renderGround(){
+  if(gIdx>=GROUND.length){
+    document.getElementById('g-num').textContent='✓';
+    document.getElementById('g-txt').innerHTML='Tillbaka i rummet. Bra gjort.';
+    document.getElementById('g-next').textContent='Börja om';
+  }else{
+    document.getElementById('g-num').textContent=GROUND[gIdx][0];
+    document.getElementById('g-txt').innerHTML=GROUND[gIdx][1];
+    document.getElementById('g-next').textContent='Hittade dem — nästa';
+  }
+}
+document.getElementById('g-next').onclick=function(){gIdx=gIdx>=GROUND.length?0:gIdx+1;renderGround();};
+
+// ── Mjuka upp kroppen (PMR) ───────────────────────────
+var PMR=[
+  'Sätt dig bekvämt. Vi går igenom kroppen, en del i taget. Spänn lätt — bara så mycket att du känner det — och släpp sen helt.',
+  '<b>Händer.</b> Knyt händerna mjukt i 5 sekunder… och släpp. Känn hur de blir tunga.',
+  '<b>Axlar.</b> Lyft axlarna lätt mot öronen… håll… och låt dem sjunka ner.',
+  '<b>Ansikte.</b> Rynka pannan en aning… släpp och låt ansiktet bli mjukt.',
+  '<b>Mage.</b> Dra in magen försiktigt… släpp och andas ut.',
+  '<b>Ben och fötter.</b> Tryck hälarna lätt mot golvet… släpp.',
+  'Sitt kvar en stund. Märk hur kroppen känns lite tyngre och lugnare. Bra gjort. 🌿'
+];
+var pIdx=0;
+function renderPmr(){
+  document.getElementById('pmr-txt').innerHTML=PMR[pIdx];
+  document.getElementById('pmr-next').textContent=pIdx>=PMR.length-1?'Börja om':'Nästa';
+}
+document.getElementById('pmr-next').onclick=function(){pIdx=pIdx>=PMR.length-1?0:pIdx+1;renderPmr();};
+
+// ── Snälla ord ────────────────────────────────────────
+var kIdx=0;
+function renderKind(){
+  if(!state.kind.length){document.getElementById('kind-txt').textContent='Lägg till dina egna rader via Ändra.';return;}
+  if(kIdx>=state.kind.length)kIdx=0;
+  document.getElementById('kind-txt').textContent=state.kind[kIdx];
+}
+document.getElementById('kind-new').onclick=function(){if(state.kind.length){kIdx=(kIdx+1)%state.kind.length;renderKind();}};
+
+// ── Synade tankar ─────────────────────────────────────
+document.getElementById('open-thought').onclick=function(){
+  document.getElementById('t-worry').value='';
+  document.getElementById('t-for').value='';
+  document.getElementById('t-against').value='';
+  document.getElementById('t-bal').value='';
+  openSheet('thought-sheet');
+};
+document.getElementById('t-save').onclick=function(){
+  var w=document.getElementById('t-worry').value.trim();
+  if(!w){closeSheets();return;}
+  state.thoughts.unshift({
+    id:Date.now(),date:todayKey(),
+    worry:w,
+    fr:document.getElementById('t-for').value.trim(),
+    ag:document.getElementById('t-against').value.trim(),
+    bal:document.getElementById('t-bal').value.trim()
+  });
+  save();closeSheets();
+};
+function renderThoughts(){
+  var el=document.getElementById('thought-list');
+  if(!state.thoughts.length){el.innerHTML='<div class="empty-msg">Inga synade tankar ännu</div>';return;}
+  el.innerHTML=state.thoughts.map(function(t){
+    return '<div class="thought-card"><b>'+esc(t.worry)+'</b>'+
+      (t.fr?'<div class="q">Talar för</div>'+esc(t.fr):'')+
+      (t.ag?'<div class="q">Talar emot</div>'+esc(t.ag):'')+
+      (t.bal?'<div class="q">Balanserad tanke</div><span class="bal">'+esc(t.bal)+'</span>':'')+
+      '<div style="text-align:right"><button class="del" data-i="'+t.id+'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px">ta bort</button></div></div>';
+  }).join('');
+  var bs=el.querySelectorAll('.del');
+  for(var i=0;i<bs.length;i++){bs[i].onclick=function(){var id=+this.dataset.i;state.thoughts=state.thoughts.filter(function(x){return x.id!==id;});save();renderThoughts();};}
+}
+
+// ── Orostund ──────────────────────────────────────────
+function renderWorries(){
+  var el=document.getElementById('worry-list');
+  if(!state.worries.length){el.innerHTML='<div class="empty-msg">Inget parkerat just nu</div>';return;}
+  el.innerHTML=state.worries.map(function(w){return '<div class="edit-item"><span>'+esc(w.txt)+'</span><button data-i="'+w.id+'" title="Släpp">×</button></div>';}).join('');
+  var bs=el.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++){bs[i].onclick=function(){var id=+this.dataset.i;state.worries=state.worries.filter(function(x){return x.id!==id;});save();renderWorries();};}
+}
+document.getElementById('worry-add').onclick=function(){
+  var v=document.getElementById('worry-in').value.trim();if(!v)return;
+  state.worries.push({id:Date.now(),txt:v,t:nowTime()});save();
+  document.getElementById('worry-in').value='';renderWorries();
+};
+
+// ── Listredigerare (helpers / triggers / kind) ────────
+var listTarget=null;
+function openListEditor(target,title){listTarget=target;document.getElementById('list-title').textContent=title;renderListEditor();openSheet('list-sheet');}
+function renderListEditor(){
+  var arr=state[listTarget];
+  var el=document.getElementById('list-items');
+  el.innerHTML=arr.map(function(it,i){return '<div class="edit-item"><span>'+esc(it)+'</span><button data-i="'+i+'">×</button></div>';}).join('')||'<div class="empty-msg">Tomt</div>';
+  var bs=el.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++){bs[i].onclick=function(){arr.splice(+this.dataset.i,1);save();renderListEditor();};}
+}
+document.getElementById('list-add').onclick=function(){
+  var v=document.getElementById('list-in').value.trim();if(!v)return;
+  state[listTarget].push(v);save();document.getElementById('list-in').value='';renderListEditor();
+};
+document.getElementById('list-done').onclick=function(){closeSheets();renderHelperChips();renderKind();};
+document.getElementById('edit-helpers').onclick=function(){openListEditor('helpers','Det som brukar hjälpa');};
+document.getElementById('edit-kind').onclick=function(){openListEditor('kind','Snälla ord');};
+
+// ── Mönster ───────────────────────────────────────────
+function lvColor(v){return v>=7?'--red':v>=4?'--yellow':'--green';}
+function renderPattern(){
+  var cv=document.getElementById('trend'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  var css=getComputedStyle(document.documentElement);
+  var col=function(v){return css.getPropertyValue(v).trim();};
+  var days=[];
+  for(var i=13;i>=0;i--){
+    var dt=new Date();dt.setDate(dt.getDate()-i);var k=toISO(dt);
+    var maxL=null;
+    state.episodes.forEach(function(e){if(e.date===k){if(maxL===null||e.level>maxL)maxL=e.level;}});
+    days.push({k:k,max:maxL,lbl:dt.getDate()});
+  }
+  var W=cv.width,H=cv.height,pad=30,bw=(W-pad*2)/14;
+  ctx.strokeStyle=col('--line');ctx.lineWidth=1;
+  [0,5,10].forEach(function(v){var y=H-20-(H-50)*v/10;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();});
+  days.forEach(function(o,i){
+    var x=pad+i*bw+bw*0.18;
+    if(o.max!==null){
+      var h=(H-50)*o.max/10;
+      ctx.fillStyle=col(lvColor(o.max));
+      ctx.beginPath();ctx.roundRect(x,H-20-h,bw*0.64,h,5);ctx.fill();
+    }
+    ctx.fillStyle=col('--muted');ctx.font='16px -apple-system';ctx.textAlign='center';
+    ctx.fillText(o.lbl,x+bw*0.32,H-4);
+  });
+
+  // Toppar 30 dagar
+  var cut=new Date();cut.setDate(cut.getDate()-30);var cutK=toISO(cut);
+  var tcnt={},hcnt={};
+  state.episodes.forEach(function(e){if(e.date>=cutK&&e.trigger){tcnt[e.trigger]=(tcnt[e.trigger]||0)+1;}});
+  state.helps.forEach(function(h){if(h.date>=cutK){hcnt[h.label]=(hcnt[h.label]||0)+1;}});
+  var tEnt=Object.keys(tcnt).map(function(k){return [k,tcnt[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+  var hEnt=Object.keys(hcnt).map(function(k){return [k,hcnt[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+  var html='';
+  if(tEnt.length)html+=tEnt.map(function(e){return '<div class="avg-row"><span>'+esc(e[0])+'</span><b style="color:#A2685B">× '+e[1]+'</b></div>';}).join('');
+  if(hEnt.length)html+=hEnt.map(function(e){return '<div class="avg-row"><span>'+esc(e[0])+'</span><b style="color:var(--moss)">× '+e[1]+'</b></div>';}).join('');
+  document.getElementById('tops').innerHTML=html||'<div class="empty-msg">Logga några dagar så syns mönstren här</div>';
+
+  // Idag
+  var tl=document.getElementById('today-log');
+  var te=state.episodes.filter(function(e){return e.date===todayKey();});
+  if(!te.length){tl.innerHTML='<div class="empty-msg">Inga loggade tillfällen idag — och det är också okej.</div>';}
+  else{
+    tl.innerHTML=te.map(function(e){return '<div class="log-row"><span class="lv" style="color:var('+lvColor(e.level)+')">'+e.level+'</span><span>'+(e.trigger?esc(e.trigger):'<span style="color:var(--muted)">—</span>')+'</span><time>'+e.t+'</time><button class="del" data-i="'+e.id+'">×</button></div>';}).reverse().join('');
+    var bs=tl.querySelectorAll('.del');
+    for(var i=0;i<bs.length;i++){bs[i].onclick=function(){var id=+this.dataset.i;state.episodes=state.episodes.filter(function(x){return x.id!==id;});save();renderPattern();};}
+  }
+  renderThoughts();
+}
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='andrum-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.episodes||d.helpers)){state=Object.assign(state,d);save();renderHelperChips();renderKind();renderWorries();renderThoughts();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── GitHub-synk (likt Jobbplanering) ──────────────────
+var SYNC_KEY='andrumsync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+var SYNC_FIELDS=['episodes','helps','triggers','helpers','kind','thoughts','worries'];
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/andrum.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':(st==='err'?' err':' offline'));}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function adoptRemote(data){SYNC_FIELDS.forEach(function(f){if(data[f]!=null)state[f]=data[f];});save(true);}
+function renderAll(){
+  renderHelperChips();renderKind();renderWorries();renderThoughts();
+  if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){if(data)adoptRemote(data);setBadge('ok','Synkad');renderAll();})
+    .catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var payload={};SYNC_FIELDS.forEach(function(f){payload[f]=state[f];});payload.updated=new Date().toISOString();
+  var content=b64enc(JSON.stringify(payload));
+  function doPut(){var body={message:'Uppdatering via Andrum',content:content};if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});}
+  return doPut().then(function(r){if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}return r;})
+    .then(function(r){if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}return r.json();})
+    .then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');})
+    .catch(function(e){setBadge('err','Synkfel');});
+}
+var pushTimer=null;
+function schedulePush(){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush();},1200);}
+function setStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--moss-soft)':type==='err'?'#F4E8E4':'var(--panel2)';
+  el.style.color=type==='ok'?'var(--moss)':type==='err'?'#A2685B':'var(--muted)';el.textContent=msg;}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){setStatus('✓ Ansluten! Hämtar din data…','ok');return ghPull();}
+    setStatus('✓ Ansluten! Filen är tom — laddar upp din lokala data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1200);})
+    .catch(function(e){setStatus('Fel: '+e.message+'. Kontrollera namn och att token har Contents-behörighet.','err');});
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(document.getElementById('view-now').classList.contains('active'))stopWave(false);
+  if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+function gotoView(v){
+  var nb=document.querySelectorAll('.nav button');
+  for(var i=0;i<nb.length;i++){nb[i].classList.toggle('active',nb[i].dataset.v===v);}
+  var vs=document.querySelectorAll('.view');
+  for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  if(v!=='breath')stopBreath();
+  if(v!=='now')stopWave(false);
+  if(v==='pattern')renderPattern();
+}
+var navb=document.querySelectorAll('.nav button');
+for(var n=0;n<navb.length;n++){navb[n].onclick=function(){gotoView(this.dataset.v);};}
+
+// ── Init ──────────────────────────────────────────────
+renderLevel();
+renderHelperChips();
+renderGround();
+renderPmr();
+renderKind();
+renderWorries();
+renderThoughts();
+stopWave(false);
+applyTheme();
+setInterval(applyTheme,60000);
+loadSync();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}else setBadge('off','Lokal');
+</script>
+</body>
+</html>
