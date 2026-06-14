@@ -298,6 +298,29 @@ label.chk-item:last-child{border-bottom:none}
 .cal-up-h{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--pagar-text);margin:4px 0 7px}
 .cal-up-dot{width:7px;height:7px;border-radius:50%;background:var(--pagar);flex:0 0 auto}
 .cal-up-time{margin-left:auto;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+/* Kalenderhändelser + aktivitetsvy */
+.cal-ev-ico{flex:0 0 auto;font-size:13px}
+.cal-ev-lbl{font-size:11px;color:var(--ink-soft)}
+.hist-view-h{font-family:Georgia,serif;font-size:18px;margin:4px 2px 12px}
+.hist-view-empty{font-size:13px;color:var(--ink-soft);padding:22px 6px;text-align:center;line-height:1.6}
+.hist-day{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin:16px 2px 8px}
+.hist-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:6px;cursor:pointer;font-family:inherit}
+.hist-item-ico{flex:0 0 auto;font-size:15px}
+.hist-item-app{font-weight:600;color:var(--ink);font-size:14px}
+.hist-item-lbl{color:var(--ink-soft);font-size:12px}
+.hist-item-time{margin-left:auto;flex:0 0 auto;color:var(--ink-soft);font-size:12px;font-variant-numeric:tabular-nums}
+/* Portföljvärde + rekommendation */
+.pv-modal-line{margin-top:7px;font-size:13px;color:var(--ink)}
+.rec-box{background:linear-gradient(135deg,var(--pagar-soft),#EDF3ED);border:1px solid var(--pagar);border-radius:14px;padding:14px;margin-bottom:14px}
+.rec-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--pagar-text);margin-bottom:6px}
+.rec-name{font-family:Georgia,serif;font-size:20px;color:var(--ink);margin-bottom:4px}
+.rec-id{font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.rec-why{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:10px}
+.rec-btn{border:none;background:var(--pagar);color:#fff;font-size:13px;font-weight:600;padding:9px 18px;border-radius:10px;cursor:pointer;font-family:inherit}
+.pv-row{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:5px 0;cursor:pointer;font-family:inherit}
+.pv-name{flex:0 0 96px;font-size:13px;color:var(--ink);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-val{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--pagar-text);width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.reset-id-btn{width:100%;margin-top:8px;border:1px solid var(--warn);background:#fff;color:var(--warn);font-size:14px;font-weight:600;padding:11px;border-radius:11px;cursor:pointer;font-family:inherit}
 /* Klickbar dashboard + filterrad */
 .kpi.clickable{cursor:pointer;transition:transform .08s}
 .kpi.clickable:active{transform:scale(.96)}
@@ -401,6 +424,9 @@ label.chk-item:last-child{border-bottom:none}
     <button class="hbtn" id="export-btn">Säkerhetskopiera</button>
     <button class="hbtn" id="import-btn">Importera</button>
     <input type="file" id="import-file" accept=".json" style="display:none">
+  <label>App-ID</label>
+  <div class="sub">Tar bort alla tilldelade App-ID och börjar om på APP-001 vid nästa tilldelning.</div>
+  <button class="reset-id-btn" id="set-reset-ids">Nollställ alla App-ID</button>
     <button class="hbtn" id="sync-now">Synka</button>
     <button class="hbtn" id="open-settings">Inställningar</button>
     <button class="sync-pill offline" id="sync-badge">Lokal</button>
@@ -430,6 +456,7 @@ label.chk-item:last-child{border-bottom:none}
   <button class="view-btn active" data-v="cards">Appar</button>
   <button class="view-btn" data-v="today">Gör idag</button>
   <button class="view-btn" data-v="cal">Kalender</button>
+  <button class="view-btn" data-v="hist">Aktivitet</button>
 </div>
 <div id="today-head" style="display:none"></div>
 
@@ -449,13 +476,14 @@ label.chk-item:last-child{border-bottom:none}
 
   <div>
     <input type="text" id="search" class="search" placeholder="Sök app, punkt eller anteckning...">
-<div class="toolbar" id="toolbar"><span class="tlabel">Sortera</span><button class="fchip" id="sort-added">Tillagd</button><button class="fchip" id="sort-az">A–Ö</button><button class="fchip" id="sort-prio">Prio</button><button class="fchip" id="sort-upd">Senast uppd.</button><button class="fchip" id="sort-score">Poäng</button><button class="fchip" id="sort-status">Status</button><button class="fchip" id="sort-family">Familjer</button><button class="fchip" id="sort-appid">App-ID</button><span class="tdiv"></span><span class="tlabel">Visa</span><button class="fchip" id="f-mobil">✓ Mobil</button><button class="fchip" id="f-desktop">✓ Desktop</button><button class="fchip" id="f-token">✓ Token</button><button class="fchip" id="f-hidden">Dolda (0)</button><button class="fchip" id="f-archived">Arkiverade (0)</button><span class="tdiv"></span><select class="cat-filter" id="f-cat"><option value="">Alla kategorier</option><option>Produktivitet</option><option>Hälsa</option><option>NPF</option><option>Arbete</option><option>Hobby</option><option>Rollspel</option><option>Magi/Häxa</option><option>IT</option><option>Företag</option></select><select class="cat-filter" id="f-family"><option value="">Alla familjer</option></select></div>
+<div class="toolbar" id="toolbar"><span class="tlabel">Sortera</span><button class="fchip" id="sort-added">Tillagd</button><button class="fchip" id="sort-az">A–Ö</button><button class="fchip" id="sort-prio">Prio</button><button class="fchip" id="sort-upd">Senast uppd.</button><button class="fchip" id="sort-score">Poäng</button><button class="fchip" id="sort-status">Status</button><button class="fchip" id="sort-family">Familjer</button><button class="fchip" id="sort-appid">App-ID</button><button class="fchip" id="sort-value">Värde</button><span class="tdiv"></span><span class="tlabel">Visa</span><button class="fchip" id="f-mobil">✓ Mobil</button><button class="fchip" id="f-desktop">✓ Desktop</button><button class="fchip" id="f-token">✓ Token</button><button class="fchip" id="f-hidden">Dolda (0)</button><button class="fchip" id="f-archived">Arkiverade (0)</button><span class="tdiv"></span><select class="cat-filter" id="f-cat"><option value="">Alla kategorier</option><option>Produktivitet</option><option>Hälsa</option><option>NPF</option><option>Arbete</option><option>Hobby</option><option>Rollspel</option><option>Magi/Häxa</option><option>IT</option><option>Företag</option></select><select class="cat-filter" id="f-family"><option value="">Alla familjer</option></select></div>
     <div class="filt-bar" id="filt-bar" style="display:none"></div>
     <div class="cards" id="cards"></div>
   </div>
 </div>
 
 <div id="cal-wrap" style="display:none"></div>
+<div id="hist-wrap" style="display:none"></div>
 
 <div class="privacy">Data sparas lokalt på enheten — och i ditt privata GitHub-repo om synk är på.</div>
 </div>
@@ -764,23 +792,24 @@ var CATCOL={'Produktivitet':['#E2E9F2','#3E5E88'],'Hälsa':['#E4EDE4','#3E6B41']
 function catChip(c){if(!c)return'';var col=CATCOL[c]||['#f1efe8','#8A847C'];return'<span class="cat-chip" style="background:'+col[0]+';color:'+col[1]+'">'+esc(c)+'</span>';}
 function prioScore(a){var s=a.scores||{};if(typeof s.pot!=='number'||typeof s.fun!=='number'||typeof s.nytta!=='number'||typeof s.diff!=='number')return null;return Math.round((s.pot+s.fun+s.nytta+(10-s.diff))/4*10)/10;}
 function scoreDesc(x,y){var sx=prioScore(x),sy=prioScore(y);sx=(sx==null?-1:sx);sy=(sy==null?-1:sy);return sy-sx;}
-function updatePrioscore(a){var el=document.getElementById('prioscore');if(!el)return;var ps=prioScore(a);var bt=betygTotal(a);var psHtml=ps!==null?('Prioriteringsscore <b>'+ps+' / 10</b><br><small>(potential + rolighet + nytta + (10−svårighet)) ÷ 4</small>'):'<small>Sätt alla fyra reglagen för att räkna ut prioriteringsscore.</small>';var btHtml=bt!==null?('<div class="bt-line">Totalbetyg <b>'+bt+' / 10</b> <small>(snitt av '+(a.betyg||[]).length+' betyg)</small></div>'):'';el.innerHTML=psHtml+btHtml;}
+function updatePrioscore(a){var el=document.getElementById('prioscore');if(!el)return;var ps=prioScore(a);var bt=betygTotal(a);var psHtml=ps!==null?('Prioriteringsscore <b>'+ps+' / 10</b><br><small>(potential + rolighet + nytta + (10−svårighet)) ÷ 4</small>'):'<small>Sätt alla fyra reglagen för att räkna ut prioriteringsscore.</small>';var btHtml=bt!==null?('<div class="bt-line">Totalbetyg <b>'+bt+' / 10</b> <small>(snitt av '+(a.betyg||[]).length+' betyg)</small></div>'):'';var pvHtml='<div class="pv-modal-line">Portf\u00f6ljv\u00e4rde <b>'+portfolioValue(a)+'</b> <small>(po\u00e4ng + betyg + tid + status)</small></div>';el.innerHTML=psHtml+btHtml+pvHtml;}
 function renderBetyg(a){var list=a.betyg||[];document.getElementById('a-betyg').innerHTML=list.map(function(b){return'<div class="betyg-row" data-bid="'+b.id+'"><span class="betyg-area">'+esc(b.area)+'</span><span class="betyg-score">'+esc(b.score||'')+'</span><button class="betyg-x" data-act="del">×</button></div>';}).join('')||'<div class="empty-items">Inga betyg än.</div>';}
 function applyView(v){
   view=v;
-  var isCal=v==='cal',isToday=v==='today';
+  var isCal=v==='cal',isToday=v==='today',isHist=v==='hist';
   var cal=document.getElementById('cal-wrap');
+  var hw=document.getElementById('hist-wrap');if(hw)hw.style.display=isHist?'':'none';
   var search=document.getElementById('search'),tb=document.getElementById('toolbar'),cards=document.getElementById('cards'),idea=document.getElementById('idea-card'),addApp=document.getElementById('add-app'),mainEl=document.getElementById('main'),th=document.getElementById('today-head');
   cal.style.display=isCal?'':'none';
-  if(mainEl){mainEl.style.display=isCal?'none':'';mainEl.classList.toggle('solo',isToday);}
-  if(search)search.style.display=isCal?'none':'';
-  if(tb)tb.style.display=isCal?'none':'';
-  if(cards)cards.style.display=isCal?'none':'';
-  if(addApp)addApp.style.display=(isCal||isToday)?'none':'';
+  if(mainEl){mainEl.style.display=(isCal||isHist)?'none':'';mainEl.classList.toggle('solo',isToday);}
+  if(search)search.style.display=(isCal||isHist)?'none':'';
+  if(tb)tb.style.display=(isCal||isHist)?'none':'';
+  if(cards)cards.style.display=(isCal||isHist)?'none':'';var _fb=document.getElementById('filt-bar');if(_fb&&(isCal||isHist))_fb.style.display='none';
+  if(addApp)addApp.style.display=(isCal||isToday||isHist)?'none':'';
   if(idea)idea.style.display=(v==='cards')?'':'none';
   if(th){if(isToday){var n=state.apps.filter(function(a){return a.commit===todayISO()&&!a.hidden;}).length;th.style.display='';th.textContent='Gör idag — '+n+(n===1?' app planerad':' appar planerade');}else th.style.display='none';}
   document.querySelectorAll('#views .view-btn').forEach(function(b){b.classList.toggle('active',b.dataset.v===v);});
-  if(isCal)renderCalendar();else renderCards();
+  if(isCal)renderCalendar();else if(isHist)renderHistoryView();else renderCards();
 }
 function renderCalendar(){
   var wrap=document.getElementById('cal-wrap');if(!wrap)return;
@@ -790,7 +819,7 @@ function renderCalendar(){
   var daysInMonth=new Date(calY,calM+1,0).getDate();
   var counts={};
   state.apps.forEach(function(a){if(a.commit){counts[a.commit]=(counts[a.commit]||0)+1;}});
-  var ups={};state.apps.forEach(function(a){(a.uploads||[]).forEach(function(t){var dd=t.slice(0,10);(ups[dd]=ups[dd]||[]).push({name:a.name,ts:t,id:a.id});});});
+  var ups={};state.apps.forEach(function(a){(a.uploads||[]).forEach(function(t){var dd=t.slice(0,10);(ups[dd]=ups[dd]||[]).push({name:a.name,ts:t,id:a.id,type:'upload',label:'Uppladdad'});});(a.history||[]).forEach(function(hh){if(hh.type==='upload')return;var dd=hh.ts.slice(0,10);(ups[dd]=ups[dd]||[]).push({name:a.name,ts:hh.ts,id:a.id,type:hh.type,label:hh.label});});});
   var dow=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
   var head=dow.map(function(d){return'<div class="cal-dow">'+d+'</div>';}).join('');
   var cells='';
@@ -807,7 +836,7 @@ function renderCalendar(){
   var dayApps=state.apps.filter(function(a){return a.commit===calSel;}).slice().sort(function(x,y){return scoreDesc(x,y)||((x.prio||9)-(y.prio||9));});
   var listHtml=dayApps.map(function(a){var ps=prioScore(a);return'<button class="cal-app" data-id="'+a.id+'"><i class="status-dot '+STATUS[effStatus(a)].c+'"></i><span class="cal-app-name">'+esc(a.name)+'</span>'+catChip(a.cat)+(a.prio?'<span class="prio-badge p'+a.prio+'">P'+a.prio+'</span>':'')+(ps!==null?'<span class="score-badge">★'+ps+'</span>':'')+(betygTotal(a)!==null?'<span class="betyg-badge">\u2726'+betygTotal(a)+'</span>':'')+'</button>';}).join('')||'<div class="empty-items">Inga appar planerade '+(calSel===todayISO()?'idag':fmt(calSel))+'.</div>';
   var upDay=(ups[calSel]||[]).slice().sort(function(x,y){return x.ts<y.ts?-1:1;});
-  var upHtml=upDay.length?('<div class="cal-up-sec"><div class="cal-up-h">\U0001F4E4 Uppladdat denna dag</div>'+upDay.map(function(u){return'<button class="cal-app up" data-id="'+u.id+'"><span class="cal-up-dot"></span><span class="cal-app-name">'+esc(u.name)+'</span><span class="cal-up-time">'+new Date(u.ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})+'</span></button>';}).join('')+'</div>'):'';
+  var upHtml=upDay.length?('<div class="cal-up-sec"><div class="cal-up-h">Händelser denna dag</div>'+upDay.map(function(u){return'<button class="cal-app up" data-id="'+u.id+'"><span class="cal-ev-ico">'+evIcon(u.type)+'</span><span class="cal-app-name">'+esc(u.name)+'</span><span class="cal-ev-lbl">'+esc(u.label||'')+'</span><span class="cal-up-time">'+new Date(u.ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})+'</span></button>';}).join('')+'</div>'):'';
   wrap.innerHTML='<div class="cal-head"><button class="cal-nav" id="cal-prev">‹</button><div class="cal-title">'+monthName+'</div><button class="cal-nav" id="cal-next">›</button><button class="cal-today-btn" id="cal-today">Idag</button></div><div class="cal-grid">'+head+cells+'</div><div class="cal-daylist"><div class="cal-daylist-h">'+(calSel===todayISO()?'Gör idag':('Planerat '+fmt(calSel)))+'</div>'+upHtml+listHtml+'</div>';
   document.getElementById('cal-prev').onclick=function(){calM--;if(calM<0){calM=11;calY--;}renderCalendar();};
   document.getElementById('cal-next').onclick=function(){calM++;if(calM>11){calM=0;calY++;}renderCalendar();};
@@ -821,7 +850,7 @@ function timerActive(a){return!!(state.timer&&state.timer.id===a.id);}
 function startTimer(id){if(state.timer){var prev=appById(state.timer.id);if(prev)prev.timeMs=(prev.timeMs||0)+(Date.now()-state.timer.start);}state.timer={id:id,start:Date.now()};persist();renderTimerBar();renderCards();}
 function stopTimer(){if(!state.timer)return;var a=appById(state.timer.id);if(a)a.timeMs=(a.timeMs||0)+(Date.now()-state.timer.start);state.timer=null;persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTimer(ca);}}
 function renderTimerBar(){var bar=document.getElementById('timer-bar');if(!bar)return;if(state.timer){var a=appById(state.timer.id);if(!a){state.timer=null;bar.style.display='none';return;}bar.style.display='';bar.innerHTML='<span class="tb-dot"></span><span class="tb-name">Spårar: '+esc(a.name)+'</span><span class="tb-time" id="tb-time">'+fmtClock(appElapsed(a))+'</span><button class="tb-stop" id="tb-stop">Stoppa</button>';document.getElementById('tb-stop').onclick=function(){stopTimer();};}else bar.style.display='none';}
-function renderAppTimer(a){var disp=document.getElementById('tm-display'),btn=document.getElementById('tm-toggle');if(!disp||!btn)return;disp.textContent=fmtClock(appElapsed(a));var on=timerActive(a);disp.classList.toggle('running',on);btn.textContent=on?'Stoppa':'Starta';btn.classList.toggle('stop',on);}
+function renderAppTimer(a){var disp=document.getElementById('tm-display'),btn=document.getElementById('tm-toggle');if(!disp||!btn)return;disp.textContent=fmtClock(appElapsed(a));var on=timerActive(a);disp.classList.toggle('running',on);btn.textContent=on?'Stoppa':'Starta';btn.classList.toggle('stop',on);if(typeof updatePrioscore==='function')updatePrioscore(a);}
 function famChip(f){if(!f)return'';return'<span class="fam-chip">'+esc(f)+'</span>';}
 function famList(){var s=state.families?state.families.slice():[];state.apps.forEach(function(a){if(a.family&&s.indexOf(a.family)<0)s.push(a.family);});return s;}
 function appIdStr(n){var s=''+n;while(s.length<3)s='0'+s;return 'APP-'+s;}
@@ -868,7 +897,12 @@ function renderDashboard(){
     '<div class="chart-box"><div class="chart-h">Appar per prioritering</div>'+barRows(prioItems)+'</div>'+
     '<div class="chart-box"><div class="chart-h">Utveckling över tid</div>'+buildTimeline(apps)+'</div></div>';
   var healthHtml='<div class="health-box"><div class="chart-h">Portföljhälsa</div>'+healthBar('Färdigställandegrad',pctOf(cntKlar,tot))+healthBar('Kvalitetsgrad',nS?Math.round(avgS*10):0)+healthBar('Synkgrad',pctOf(cntTok,tot))+healthBar('Dokumentationsgrad',pctOf(cntDoc,tot))+'</div>';
-  body.innerHTML=kpiHtml+chartsHtml+healthHtml;
+  var rec=recommendApp();
+  var recHtml=rec?('<div class="rec-box"><div class="rec-h">\u2b50 N\u00e4sta app att jobba p\u00e5</div><div class="rec-name">'+esc(rec.name)+(rec.appNo?' <span class="rec-id">'+appIdStr(rec.appNo)+'</span>':'')+'</div><div class="rec-why">Baserat p\u00e5 prioritet, projektpo\u00e4ng, status och senaste aktivitet'+(rec.prio?' \u00b7 P'+rec.prio:'')+' \u00b7 '+STATUS[effStatus(rec)].label+'</div><button class="rec-btn" data-recid="'+rec.id+'">\u00d6ppna</button></div>'):'<div class="rec-box"><div class="rec-h">\u2b50 N\u00e4sta app att jobba p\u00e5</div><div class="rec-why">Allt klart \u2014 inga oavslutade appar just nu \ud83c\udf89</div></div>';
+  var pvItems=apps.map(function(a){return{a:a,v:portfolioValue(a)};}).sort(function(x,y){return y.v-x.v;}).slice(0,8);
+  var maxV=pvItems.length?pvItems[0].v:0;
+  var topHtml='<div class="chart-box"><div class="chart-h">Portf\u00f6ljv\u00e4rde \u2014 topplista</div>'+(pvItems.length?pvItems.map(function(it){var w=maxV?Math.round(it.v/maxV*100):0;return'<button class="pv-row" data-recid="'+it.a.id+'"><span class="pv-name">'+esc(it.a.name)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+w+'%;background:var(--pagar)"></span></span><span class="pv-val">'+it.v+'</span></button>';}).join(''):'<div class="dash-empty">Ingen data \u00e4n.</div>')+'</div>';
+  body.innerHTML=recHtml+kpiHtml+chartsHtml+topHtml+healthHtml;
 }
 function betygTotal(a){var L=(a.betyg||[]);var vals=[];L.forEach(function(b){var m=String(b.score||'').match(/-?\d+(\.\d+)?/);if(m)vals.push(parseFloat(m[0]));});if(!vals.length)return null;var s=0;vals.forEach(function(v){s+=v;});return Math.round(s/vals.length*10)/10;}
 function fmtDateTime(ts){var d=new Date(ts);return d.toLocaleString('sv-SE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
@@ -893,9 +927,29 @@ function applyDashFilter(tok){if(!tok){clearFilters();if(view!=='cards')applyVie
 function pushHistory(a,type,label){if(!a.history)a.history=[];a.history.push({ts:new Date().toISOString(),type:type,label:label||''});}
 function histText(h){var ic={created:'\ud83c\udd95',upload:'\ud83d\udce4',done:'\u2705',undone:'\u21a9\ufe0f',status:'\ud83d\udd04',archive:'\ud83d\udce6',unarchive:'\ud83d\udce4',time:'\u23f1',idassign:'\ud83d\udd22',idreset:'\ud83d\udd22'}[h.type]||'\u2022';return ic+'  '+(h.label||h.type);}
 function renderHistory(a){var el=document.getElementById('a-history');if(!el)return;var L=(a.history||[]).slice().reverse();el.innerHTML=L.length?L.slice(0,40).map(function(h){return'<div class="hist-row"><span class="hist-when">'+fmtDateTime(h.ts)+'</span><span class="hist-what">'+histText(h)+'</span></div>';}).join(''):'<div class="empty-items">Ingen historik än.</div>';}
+function evIcon(type){return {created:'\ud83c\udd95',upload:'\ud83d\udce4',done:'\u2705',undone:'\u21a9\ufe0f',status:'\ud83d\udd04',archive:'\ud83d\udce6',unarchive:'\ud83d\udce4',time:'\u23f1',idassign:'\ud83d\udd22',idreset:'\ud83d\udd22'}[type]||'\u2022';}
+function renderHistoryView(){
+  var wrap=document.getElementById('hist-wrap');if(!wrap)return;
+  var evs=[];
+  state.apps.forEach(function(a){
+    (a.history||[]).forEach(function(h){evs.push({ts:h.ts,type:h.type,label:h.label,name:a.name,id:a.id});});
+    (a.uploads||[]).forEach(function(t){if(!(a.history||[]).some(function(h){return h.type==='upload'&&h.ts===t;}))evs.push({ts:t,type:'upload',label:'Uppladdad',name:a.name,id:a.id});});
+  });
+  evs.sort(function(x,y){return x.ts<y.ts?1:-1;});
+  if(!evs.length){wrap.innerHTML='<div class="hist-view-empty">Ingen aktivitet loggad än.<br>Skapande, uppladdningar, statusändringar och arkivering dyker upp här.</div>';return;}
+  var html='<div class="hist-view-h">Aktivitet</div>';var curDay=null;
+  evs.forEach(function(e){var dd=e.ts.slice(0,10);if(dd!==curDay){curDay=dd;html+='<div class="hist-day">'+(dd===todayISO()?'Idag':fmt(dd))+'</div>';}var tm=new Date(e.ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});html+='<button class="hist-item" data-id="'+e.id+'"><span class="hist-item-ico">'+evIcon(e.type)+'</span><span class="hist-item-app">'+esc(e.name)+'</span><span class="hist-item-lbl">'+esc(e.label||e.type)+'</span><span class="hist-item-time">'+tm+'</span></button>';});
+  wrap.innerHTML=html;
+}
+var STATUSVAL={klar:10,test:7,pagar:5,back:3,none:1};
+function lastActivity(a){var t=a.upd||0;var lu=lastUpload(a);if(lu)t=Math.max(t,Date.parse(lu));if(a.history&&a.history.length){var h=Date.parse(a.history[a.history.length-1].ts);if(h>t)t=h;}return t;}
+function portfolioValue(a){var ps=prioScore(a);var bt=betygTotal(a);var hrs=(a.timeMs||0)/3600000;var pv=(ps!=null?ps:0)+(bt!=null?bt:0)+Math.min(10,hrs)+(STATUSVAL[effStatus(a)]||0);return Math.round(pv*10)/10;}
+function recScore(a){if(a.archived||a.hidden||effStatus(a)==='klar')return -1;var prioW=(a.prio?(6-a.prio):0)*2;var ps=prioScore(a);var scoreW=(ps!=null?ps:5);var stW=({pagar:4,back:3,test:2,none:1})[effStatus(a)]||0;var la=lastActivity(a);var days=la?((Date.now()-la)/86400000):999;var recW=la?(days<=7?2:(days<=30?1:0.5)):0;return prioW+scoreW+stW+recW;}
+function recommendApp(){var best=null,bs=-1;state.apps.forEach(function(a){var s=recScore(a);if(s>bs){bs=s;best=a;}});return best;}
 function renderAll(){
   renderStats();renderIdeas();renderCards();renderReset();
   if(view==='cal')renderCalendar();
+  if(view==='hist')renderHistoryView();
   renderTimerBar();
   renderDashboard();
   if(curId){if(appById(curId))syncAppModal();else closeAll();}
@@ -1009,7 +1063,8 @@ function renderCards(){
   else if(state.sort==='score')list=list.slice().sort((x,y)=>scoreDesc(x,y)||svName(x,y));
   else if(state.sort==='status')list=list.slice().sort((x,y)=>(STORDER[effStatus(x)]-STORDER[effStatus(y)])||svName(x,y));
   else if(state.sort==='appid')list=list.slice().sort((x,y)=>{var ax=x.appNo||1e9,ay=y.appNo||1e9;return (ax-ay)||svName(x,y);});
-  document.getElementById('sort-added').classList.toggle('sel',['az','prio','upd','score','status','family','appid'].indexOf(state.sort)===-1);
+  else if(state.sort==='value')list=list.slice().sort((x,y)=>(portfolioValue(y)-portfolioValue(x))||svName(x,y));
+  document.getElementById('sort-added').classList.toggle('sel',['az','prio','upd','score','status','family','appid','value'].indexOf(state.sort)===-1);
   document.getElementById('sort-az').classList.toggle('sel',state.sort==='az');
   document.getElementById('sort-prio').classList.toggle('sel',state.sort==='prio');
   document.getElementById('sort-upd').classList.toggle('sel',state.sort==='upd');
@@ -1017,6 +1072,7 @@ function renderCards(){
   document.getElementById('sort-status').classList.toggle('sel',state.sort==='status');
   document.getElementById('sort-family').classList.toggle('sel',state.sort==='family');
   document.getElementById('sort-appid').classList.toggle('sel',state.sort==='appid');
+  document.getElementById('sort-value').classList.toggle('sel',state.sort==='value');
   document.getElementById('f-mobil').classList.toggle('sel',chkFilt.mobil);
   document.getElementById('f-desktop').classList.toggle('sel',chkFilt.desktop);
   document.getElementById('f-token').classList.toggle('sel',chkFilt.token);
@@ -1255,9 +1311,11 @@ document.getElementById('sort-score').onclick=()=>{state.sort='score';persist();
 document.getElementById('sort-status').onclick=()=>{state.sort='status';persist();renderCards();};
 document.getElementById('sort-family').onclick=()=>{state.sort='family';persist();renderCards();};
 document.getElementById('sort-appid').onclick=()=>{state.sort='appid';persist();renderCards();};
+document.getElementById('sort-value').onclick=()=>{state.sort='value';persist();renderCards();};
 document.getElementById('f-cat').onchange=e=>{catFilt=e.target.value;renderCards();};
 document.getElementById('f-family').onchange=e=>{famFilt=e.target.value;renderCards();};
 document.getElementById('views').onclick=e=>{const b=e.target.closest('.view-btn');if(b)applyView(b.dataset.v);};
+var _hw=document.getElementById('hist-wrap');if(_hw)_hw.onclick=function(e){var b=e.target.closest('.hist-item');if(b)openApp(b.dataset.id);};
 document.getElementById('cal-wrap').onclick=e=>{const dd=e.target.closest('.cal-cell[data-d]');if(dd){calSel=dd.dataset.d;renderCalendar();return;}const ab=e.target.closest('.cal-app');if(ab){openApp(ab.dataset.id);}};
 document.getElementById('tm-toggle').onclick=function(){var a=appById(curId);if(!a)return;if(timerActive(a))stopTimer();else startTimer(a.id);renderAppTimer(a);};
 document.getElementById('tm-reset').onclick=function(){var a=appById(curId);if(!a)return;if(timerActive(a))stopTimer();a.timeMs=0;persist();renderAppTimer(a);renderCards();};
@@ -1381,6 +1439,8 @@ document.getElementById('export-btn').onclick=exportData;
 document.getElementById('set-export').onclick=exportData;
 document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
 document.getElementById('set-import').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('set-reset-ids').onclick=function(){var n=state.apps.filter(function(a){return a.appNo;}).length;if(!confirm('Nollställa alla App-ID? '+n+' app'+(n===1?'':'ar')+' har ett ID. Numreringen börjar om på APP-001. Detta går inte att ångra.'))return;state.apps.forEach(function(a){a.appNo=null;});state.nextAppId=1;persist();renderCards();if(typeof renderDashboard==='function')renderDashboard();if(curId)syncAppModal();alert('Klart — alla App-ID nollställda. Nästa app blir APP-001.');};
+
 document.getElementById('import-file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -1405,7 +1465,7 @@ fixCounter();
 renderAll();
 startResetTick();
 document.getElementById('dash-toggle').onclick=()=>{dashOpen=!dashOpen;renderDashboard();};
-var _db=document.getElementById('dash-body');if(_db)_db.onclick=function(e){var el=e.target.closest('[data-filter]');if(el)applyDashFilter(el.getAttribute('data-filter'));};
+var _db=document.getElementById('dash-body');if(_db)_db.onclick=function(e){var rc=e.target.closest('[data-recid]');if(rc){openApp(rc.getAttribute('data-recid'));return;}var el=e.target.closest('[data-filter]');if(el)applyDashFilter(el.getAttribute('data-filter'));};
 applyView('cards');
 if(syncOn())ghPull();
 </script>
