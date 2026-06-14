@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Insikten Desktop">
+<meta name="theme-color" content="#ECEFEE">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Insikten","short_name":"Insikten","display":"standalone","background_color":"%23ECEFEE","theme_color":"%23ECEFEE","start_url":"."}'>
+<title>Insikten — desktop</title>
+<style>
+:root{
+  --bg:#ECEFEE;--panel:#F6F8F7;--panel2:#E4E9E7;--line:#D3DAD8;
+  --ink:#323E3D;--muted:#73807D;--accent:#2E7D7B;--accent-soft:#D2E4E2;
+  --green:#5E9A87;--yellow:#C2A86A;--red:#C08A7E;
+  --navbg:rgba(236,239,238,.95);--grid:#DDE3E1;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Källkort */
+.src-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.src-row:first-child{border-top:none}
+.src-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;color:#fff}
+.src-meta{flex:1;min-width:0}
+.src-name{font-size:14px;font-weight:600}
+.src-sub{font-size:11px;color:var(--muted)}
+.src-badge{font-size:10px;padding:3px 8px;border-radius:9px;white-space:nowrap;font-weight:500}
+.src-on{background:var(--accent-soft);color:var(--accent)}
+.src-off{background:var(--panel2);color:var(--muted)}
+
+/* Statrutor */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.stat .v{font-family:Georgia,serif;font-size:20px;color:var(--ink);line-height:1.1}
+.stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+
+/* Chips */
+.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.metric-chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:7px 11px;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.metric-chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.metric-chip.sel{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+
+.range-row{display:flex;gap:6px;margin:6px 0 4px}
+.range-btn{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:10px;padding:6px 0;font-size:11px;cursor:pointer;font-family:inherit}
+.range-btn.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+canvas{display:block;width:100%;height:auto;border-radius:12px}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.legend i.d{height:0;border-top:2px dashed var(--muted);width:16px}
+
+.corr-pickers{display:flex;gap:8px;margin-bottom:10px}
+.corr-pickers>div{flex:1;min-width:0}
+.corr-result{text-align:center;padding:10px 0}
+.corr-r{font-family:Georgia,serif;font-size:40px;line-height:1}
+.corr-lbl{font-size:13px;margin-top:6px;line-height:1.5}
+
+.bar-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.bar-row .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1.4;height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;background:var(--accent)}
+.bar-val{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;min-width:34px;text-align:right}
+
+.cat-list .bar-row{border-top:1px solid var(--line)}
+.cat-list .bar-row:first-child{border-top:none}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:8px;line-height:1.6}
+
+/* Synk-badge i header */
+.sync-badge{position:fixed;top:calc(10px + env(safe-area-inset-top));left:max(12px,calc(50vw - 228px));font-size:10px;padding:5px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);border:1px solid var(--line);cursor:pointer;z-index:45;font-weight:500}
+.sync-badge.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(40,50,48,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet .hint{font-size:11px;color:var(--muted);margin-top:-2px;margin-bottom:10px;font-family:monospace;background:var(--panel2);padding:5px 8px;border-radius:8px;line-height:1.5}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:12px}
+#gh-status{display:none;margin-bottom:10px;font-size:12px;padding:8px 12px;border-radius:8px;line-height:1.5}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1F2423;--panel:#29302E;--panel2:#323836;--line:#3F4744;
+  --ink:#DFE6E3;--muted:#93A09C;--accent:#5FA9A4;--accent-soft:#2F4441;
+  --green:#74A693;--yellow:#C2AC6B;--red:#C08A7E;
+  --navbg:rgba(31,36,35,.95);--grid:#363D3B;
+}
+</style>
+
+<!-- DESKTOP-OVERRIDES (injicerade) -->
+<style>
+@media (min-width:760px){
+  body{padding-left:96px}
+  .app{max-width:1040px;margin:0 auto;padding:26px 26px 40px}
+  h1.brand{font-size:26px;margin:2px 0 20px}
+
+  /* Bottennav -> vänster sidofält */
+  .nav{flex-direction:column;left:0;right:auto;top:0;bottom:0;width:96px;max-width:96px;margin:0;
+       border-top:none;border-right:1px solid var(--line);padding:18px 0 0;justify-content:flex-start;gap:4px;backdrop-filter:none;background:var(--panel)}
+  .nav button{flex:none;width:100%;font-size:11px;padding:12px 4px;border-radius:0}
+  .nav button span{font-size:20px;margin-bottom:3px}
+  .nav button.active{background:var(--accent-soft)}
+
+  /* Knappar i hörnet, inte centrerat */
+  .sync-badge{left:auto;right:150px;top:18px}
+  .theme-btn{right:26px;top:14px}
+
+  /* Bredare innehåll */
+  .stat-grid{grid-template-columns:repeat(4,1fr)}
+  #ov-body{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;align-items:start}
+  #ov-body .section-title:first-child{margin-top:0}
+  canvas{max-height:300px}
+
+  /* Modaler centrerade i stället för bottensheet */
+  .sheet-bg{background:rgba(40,50,48,.5)}
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-46%) scale(.98);
+         width:460px;max-width:92vw;border-radius:20px;max-height:88vh;
+         transition:transform .2s ease,opacity .2s ease;opacity:0;box-shadow:0 24px 60px rgba(0,0,0,.22)}
+  .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1}
+  .sheet-close{position:static}
+
+  /* Trender/Mönster: ge graferna luft */
+  #view-trends .card-panel,#view-corr .card-panel,#view-patterns .card-panel{max-width:760px}
+  .chips{flex-wrap:wrap;overflow:visible}
+}
+@media (min-width:760px) and (hover:hover){
+  .nav button:hover{color:var(--accent)}
+  .metric-chip:hover{border-color:var(--accent)}
+  .btn:hover{background:var(--accent-soft)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="sync-badge" id="sync-badge" title="Synk">Lokal</button>
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">📊 Insikten</h1>
+
+<!-- KÄLLOR -->
+<div class="view active" id="view-sources">
+  <div class="section-title" style="margin-top:0">Datakällor</div>
+  <div class="card-panel">
+    <div id="src-list"></div>
+  </div>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn" id="scan-btn">Läs av appar här</button>
+    <button class="btn" id="import-btn">Importera fil</button>
+  </div>
+  <input type="file" id="import-file" accept=".json" multiple style="display:none">
+  <div id="scan-note" class="soft" style="text-align:center;margin-top:8px"></div>
+
+  <div class="section-title">Klistra in en säkerhetskopia</div>
+  <div class="card-panel">
+    <textarea id="paste-in" rows="3" placeholder="Klistra in JSON exporterad från en av dina appar…"></textarea>
+    <button class="btn ghost" id="paste-btn" style="margin-top:8px;width:100%">Läs in inklistrad data</button>
+  </div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera Insikten</button>
+    <button id="clear-btn">Rensa all data</button>
+  </div>
+  <div class="privacy">All data stannar på din enhet. Synk sker bara mot ditt egna privata GitHub-repo som du själv ställer in. Insikten är ett reflektionsstöd — inte vård. 📊</div>
+</div>
+
+<!-- ÖVERSIKT -->
+<div class="view" id="view-overview">
+  <div class="section-title" style="margin-top:0">Översikt</div>
+  <div id="ov-body"></div>
+</div>
+
+<!-- TRENDER -->
+<div class="view" id="view-trends">
+  <div class="section-title" style="margin-top:0">Trender över tid</div>
+  <div class="chips" id="tr-chips"></div>
+  <div class="range-row" id="tr-range">
+    <button class="range-btn" data-r="30">30 dagar</button>
+    <button class="range-btn sel" data-r="90">90 dagar</button>
+    <button class="range-btn" data-r="0">Allt</button>
+  </div>
+  <div class="card-panel">
+    <canvas id="tr-canvas"></canvas>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Värde</span><span><i class="d"></i>7-dagars snitt</span></div>
+    <div class="stat-grid" id="tr-stats"></div>
+  </div>
+  <div id="tr-empty" class="empty-msg" style="display:none">Inga mätvärden ännu. Lägg till en datakälla under fliken Källor.</div>
+</div>
+
+<!-- SAMBAND -->
+<div class="view" id="view-corr">
+  <div class="section-title" style="margin-top:0">Samband</div>
+  <div class="soft" style="margin-bottom:10px">Se hur två mätvärden hänger ihop på samma datum — t.ex. om sömn påverkar din energi.</div>
+  <div class="corr-pickers">
+    <div><label>Värde A</label><select id="corr-a"></select></div>
+    <div><label>Värde B</label><select id="corr-b"></select></div>
+  </div>
+  <div class="card-panel">
+    <div class="corr-result">
+      <div class="corr-r" id="corr-r">–</div>
+      <div class="corr-lbl" id="corr-lbl">Välj två mätvärden.</div>
+    </div>
+    <canvas id="corr-canvas"></canvas>
+    <div class="soft" id="corr-n" style="text-align:center;margin-top:6px"></div>
+  </div>
+  <div class="card-panel" style="margin-top:10px;display:none" id="corr-disc-wrap">
+    <div class="soft">Samband betyder inte orsak. Ett tydligt mönster är en ledtråd att utforska, inte ett facit.</div>
+  </div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-patterns">
+  <div class="section-title" style="margin-top:0">Mönster</div>
+  <div class="chips" id="pt-chips"></div>
+  <div class="section-title">Snitt per veckodag</div>
+  <div class="card-panel">
+    <canvas id="pt-canvas"></canvas>
+    <div class="soft" id="pt-note" style="margin-top:8px"></div>
+  </div>
+  <div class="section-title">Vanligaste posterna</div>
+  <div class="card-panel">
+    <div class="chips" id="cat-chips"></div>
+    <div class="cat-list" id="cat-list"></div>
+  </div>
+  <div id="pt-empty" class="empty-msg" style="display:none">Inga mätvärden ännu.</div>
+</div>
+
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <button class="active" data-v="sources"><span>🗂️</span>Källor</button>
+  <button data-v="overview"><span>📋</span>Översikt</button>
+  <button data-v="trends"><span>📈</span>Trender</button>
+  <button data-v="corr"><span>🔗</span>Samband</button>
+  <button data-v="patterns"><span>🧭</span>Mönster</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <p class="soft" style="margin-bottom:10px">Insikten sparar sin data i <code>insikten-data.json</code> i ett <strong>privat</strong> GitHub-repo, så att du ser samma analyser på alla enheter. Token sparas bara lokalt — aldrig i koden.</p>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label>Repo (privat)</label>
+  <input type="text" id="gh-repo" placeholder="appdata">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Ge åtkomst till ENDAST repot, med Contents: Read and write.</div>
+  <div id="gh-status"></div>
+  <button class="btn fill" id="gh-save" style="width:100%">Spara &amp; synka</button>
+  <button class="btn ghost" id="gh-pull" style="width:100%;margin-top:8px">Hämta senaste nu</button>
+  <button class="sheet-close" id="sync-close">Stäng</button>
+</div>
+
+<script>
+var KEY='insikten_v1';
+var SYNC_KEY='insikten_sync_v1';
+var GH_FILE='insikten-data.json';
+
+/* ── Appregister + extraktorer ───────────────────────────── */
+var SERIES_COLORS=['#2E7D7B','#5E9A87','#3E84B8','#7F77DD','#C2607E','#D9A23A','#C08A7E','#639922'];
+var APPS=[
+  {key:'batteriet_v1',label:'Batteriet',emoji:'🔋',color:'#5E9A87',extract:extractBatteriet,detect:function(o){return o&&o.days&&(o.drains||o.charges);}},
+  {key:'dagstavlan_v1',label:'Dagstavlan',emoji:'🗓️',color:'#3E84B8',extract:extractDagstavlan,detect:function(o){return o&&o.days&&(o.habits||o.templates);}},
+  {key:'manen_v1',label:'Månen',emoji:'🌙',color:'#7F77DD',extract:extractManen,detect:function(o){return o&&Array.isArray(o.journal);}},
+  {key:'tarot_v1',label:'Tarot',emoji:'🃏',color:'#C2607E',extract:extractTarot,detect:function(o){return o&&o.draws&&typeof o.draws==='object';}},
+  {key:'mp_v1',label:'Planering',emoji:'🍽️',color:'#D9A23A',extract:extractPlanering,detect:function(o){return o&&o.days&&('partner'in o);}}
+];
+function appByKey(k){for(var i=0;i<APPS.length;i++)if(APPS[i].key===k)return APPS[i];return null;}
+function detectApp(o){for(var i=0;i<APPS.length;i++){try{if(APPS[i].detect(o))return APPS[i];}catch(e){}}return null;}
+
+function isDate(k){return /^\d{4}-\d{2}-\d{2}$/.test(k);}
+function num(v){return typeof v==='number'&&!isNaN(v);}
+
+function extractBatteriet(s){
+  var days=s.days||{};var energi=[],somn=[],stress=[],sensoriskt=[],dagsbetyg=[];
+  var labelCount={},labelDelta={};
+  Object.keys(days).forEach(function(d){
+    if(!isDate(d))return;var x=days[d];if(!x)return;
+    if(num(x.val))energi.push({date:d,value:x.val});
+    if(x.checkin){if(num(x.checkin.sleep))somn.push({date:d,value:x.checkin.sleep});
+      if(num(x.checkin.stress))stress.push({date:d,value:x.checkin.stress});
+      if(num(x.checkin.sensory))sensoriskt.push({date:d,value:x.checkin.sensory});}
+    if(x.evening&&num(x.evening.dayRating))dagsbetyg.push({date:d,value:x.evening.dayRating});
+    (x.log||[]).forEach(function(l){if(!l)return;var nm=l.label||'?';labelCount[nm]=(labelCount[nm]||0)+1;labelDelta[nm]=(labelDelta[nm]||0)+(l.delta||0);});
+  });
+  var cats=[];
+  var drain=Object.keys(labelCount).filter(function(n){return labelDelta[n]<0;}).map(function(n){return{name:n,value:labelCount[n]};});
+  var charge=Object.keys(labelCount).filter(function(n){return labelDelta[n]>0;}).map(function(n){return{name:n,value:labelCount[n]};});
+  if(drain.length)cats.push({id:'drain',label:'Det som dränerar (antal)',items:drain});
+  if(charge.length)cats.push({id:'charge',label:'Det som laddar (antal)',items:charge});
+  return {metrics:[
+    {id:'energi',label:'Energinivå',unit:'%',min:0,max:100,points:energi},
+    {id:'somn',label:'Sömn',unit:'/5',min:1,max:5,points:somn},
+    {id:'stress',label:'Stress',unit:'/5',min:1,max:5,points:stress},
+    {id:'sensoriskt',label:'Sensoriskt',unit:'/5',min:1,max:5,points:sensoriskt},
+    {id:'dagsbetyg',label:'Dagsbetyg',unit:'/5',min:1,max:5,points:dagsbetyg}
+  ],cats:cats};
+}
+
+function extractDagstavlan(s){
+  var days=s.days||{};var plan=[],klar=[],antal=[],andel=[];var actCount={},actMin={};
+  Object.keys(days).forEach(function(d){
+    if(!isDate(d))return;var arr=days[d];if(!Array.isArray(arr)||!arr.length)return;
+    var pm=0,dm=0,dn=0;
+    arr.forEach(function(a){if(!a)return;var du=num(a.dur)?a.dur:0;pm+=du;if(a.done){dm+=du;dn++;}
+      var nm=a.txt||'?';actCount[nm]=(actCount[nm]||0)+1;actMin[nm]=(actMin[nm]||0)+du;});
+    plan.push({date:d,value:pm});klar.push({date:d,value:dm});antal.push({date:d,value:arr.length});
+    andel.push({date:d,value:arr.length?Math.round(dn/arr.length*100):0});
+  });
+  var freq=Object.keys(actCount).map(function(n){return{name:n,value:actCount[n]};});
+  var mins=Object.keys(actMin).map(function(n){return{name:n,value:actMin[n]};});
+  return {metrics:[
+    {id:'planmin',label:'Planerade minuter',unit:'min',min:0,max:null,points:plan},
+    {id:'klarmin',label:'Genomförda minuter',unit:'min',min:0,max:null,points:klar},
+    {id:'antal',label:'Antal aktiviteter',unit:'st',min:0,max:null,points:antal},
+    {id:'andel',label:'Andel klart',unit:'%',min:0,max:100,points:andel}
+  ],cats:[
+    {id:'freq',label:'Aktiviteter (antal gånger)',items:freq},
+    {id:'mins',label:'Tid per aktivitet (min)',items:mins}
+  ]};
+}
+
+function extractManen(s){
+  var j=s.journal||[];var perDay={},charsDay={};
+  j.forEach(function(e){if(!e)return;var d=e.date;if(!isDate(d))return;perDay[d]=(perDay[d]||0)+1;charsDay[d]=(charsDay[d]||0)+((e.txt||'').length);});
+  var inlagg=Object.keys(perDay).map(function(d){return{date:d,value:perDay[d]};});
+  var tecken=Object.keys(charsDay).map(function(d){return{date:d,value:charsDay[d]};});
+  return {metrics:[
+    {id:'inlagg',label:'Journalinlägg',unit:'st',min:0,max:null,points:inlagg},
+    {id:'tecken',label:'Skrivna tecken',unit:'tkn',min:0,max:null,points:tecken}
+  ],cats:[]};
+}
+
+function extractTarot(s){
+  var dr=s.draws||{};var perDay=[];
+  Object.keys(dr).forEach(function(d){if(!isDate(d))return;var a=dr[d];if(Array.isArray(a)&&a.length)perDay.push({date:d,value:a.length});});
+  return {metrics:[
+    {id:'drag',label:'Dragningar',unit:'kort',min:0,max:null,points:perDay}
+  ],cats:[]};
+}
+
+function extractPlanering(s){
+  var days=s.days||{};var poster=[];
+  Object.keys(days).forEach(function(d){if(!isDate(d))return;var x=days[d];var c=0;
+    if(Array.isArray(x))c=x.length;else if(x&&typeof x==='object')c=Object.keys(x).filter(function(k){var v=x[k];return v&&(Array.isArray(v)?v.length:String(v).trim());}).length;
+    if(c)poster.push({date:d,value:c});});
+  return {metrics:[
+    {id:'poster',label:'Ifyllda poster',unit:'st',min:0,max:null,points:poster}
+  ],cats:[]};
+}
+
+/* ── State ───────────────────────────────────────────────── */
+var data={cache:{},settings:{theme:'auto',range:90,trMetric:null,ptMetric:null,catSel:null,corrA:null,corrB:null}};
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p.cache)data.cache=p.cache;if(p.settings)Object.assign(data.settings,p.settings);}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+var sources={};   /* key -> {app, metrics, cats} */
+var metrics=[];   /* flat list of metric objects with maps */
+
+function rebuild(){
+  sources={};metrics=[];
+  Object.keys(data.cache).forEach(function(k){
+    var app=appByKey(k);if(!app)return;var st=data.cache[k];if(!st)return;
+    var ex;try{ex=app.extract(st);}catch(e){return;}
+    var ms=(ex.metrics||[]).filter(function(m){return m.points&&m.points.length;});
+    if(!ms.length&&!(ex.cats||[]).length)return;
+    sources[k]={app:app,metrics:ms,cats:ex.cats||[]};
+    ms.forEach(function(m){
+      var map={};m.points.forEach(function(p){map[p.date]=p.value;});
+      var dates=Object.keys(map).sort();
+      metrics.push({uid:k+'::'+m.id,srcKey:k,srcLabel:app.label,emoji:app.emoji,color:app.color,
+        id:m.id,label:m.label,unit:m.unit,min:m.min,max:m.max,map:map,dates:dates});
+    });
+  });
+}
+
+/* ── Ingest ──────────────────────────────────────────────── */
+function ingestLive(){
+  var found=[];
+  APPS.forEach(function(app){
+    try{var s=localStorage.getItem(app.key);if(!s)return;var o=JSON.parse(s);if(o&&typeof o==='object'){data.cache[app.key]=o;found.push(app.label);}}catch(e){}
+  });
+  return found;
+}
+function ingestObject(o){
+  var app=detectApp(o);if(!app)return null;data.cache[app.key]=o;return app;
+}
+
+/* ── GitHub-synk (samma motor som övriga appar) ──────────── */
+var sync={owner:'',repo:'',token:'',sha:null};
+try{var ss=localStorage.getItem(SYNC_KEY);if(ss){var sd=JSON.parse(ss);sync.owner=sd.owner||'';sync.repo=sd.repo||'';sync.token=sd.token||'';}}catch(e){}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+GH_FILE;}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(state,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sync-badge'+(state==='ok'?' on':'');}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(d){
+    if(d){if(d.cache&&typeof d.cache==='object')data.cache=d.cache;if(d.settings)Object.assign(data.settings,d.settings);save();rebuild();renderAll();}
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({cache:data.cache,settings:data.settings,updated:new Date().toISOString()}));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),
+    body:JSON.stringify(Object.assign({message:'Uppdatering via Insikten',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  });
+}
+
+/* ── Hjälpfunktioner ─────────────────────────────────────── */
+var WD=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+var MS=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function fmtDate(d){var p=d.split('-');return parseInt(p[2],10)+' '+MS[parseInt(p[1],10)-1];}
+function weekdayIdx(d){var dt=new Date(d+'T00:00:00');return (dt.getDay()+6)%7;}
+function round1(n){return Math.round(n*10)/10;}
+function avgOf(arr){if(!arr.length)return null;var s=0;for(var i=0;i<arr.length;i++)s+=arr[i];return s/arr.length;}
+function filterRange(metric,range){
+  var ds=metric.dates;if(!range)return ds.slice();
+  var cut=new Date();cut.setDate(cut.getDate()-range);var c=cut.getFullYear()+'-'+String(cut.getMonth()+1).padStart(2,'0')+'-'+String(cut.getDate()).padStart(2,'0');
+  return ds.filter(function(d){return d>=c;});
+}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function setupCanvas(cv,h){
+  var w=cv.parentElement.clientWidth-28;if(w<240)w=240;var dpr=window.devicePixelRatio||1;
+  cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  var ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx:ctx,w:w,h:h};
+}
+
+/* ── Render: Källor ──────────────────────────────────────── */
+function renderSources(){
+  var el=document.getElementById('src-list');var html='';
+  APPS.forEach(function(app){
+    var has=!!data.cache[app.key];var src=sources[app.key];
+    var sub='Ingen data inläst';
+    if(has&&src){
+      var pts=0,allDates={};src.metrics.forEach(function(m){pts+=m.points.length;m.points.forEach(function(p){allDates[p.date]=1;});});
+      var dl=Object.keys(allDates).sort();
+      sub=src.metrics.length+' mätvärden · '+dl.length+' dagar';
+      if(dl.length)sub+=' · '+fmtDate(dl[0])+'–'+fmtDate(dl[dl.length-1]);
+    }else if(has){sub='Inläst, inga analyserbara värden';}
+    html+='<div class="src-row"><div class="src-ico" style="background:'+app.color+'">'+app.emoji+'</div>'+
+      '<div class="src-meta"><div class="src-name">'+esc(app.label)+'</div><div class="src-sub">'+esc(sub)+'</div></div>'+
+      '<span class="src-badge '+(has?'src-on':'src-off')+'">'+(has?'Inläst':'Tom')+'</span></div>';
+  });
+  el.innerHTML=html;
+}
+
+/* ── Render: Översikt ────────────────────────────────────── */
+function renderOverview(){
+  var el=document.getElementById('ov-body');
+  var keys=Object.keys(sources);
+  if(!keys.length){el.innerHTML='<div class="empty-msg">Ingen data ännu. Gå till Källor och läs av dina appar.</div>';return;}
+  var html='';
+  keys.forEach(function(k){
+    var src=sources[k];var app=src.app;
+    html+='<div class="section-title">'+app.emoji+' '+esc(app.label)+'</div><div class="card-panel"><div class="stat-grid">';
+    src.metrics.forEach(function(m){
+      var map={};m.points.forEach(function(p){map[p.date]=p.value;});
+      var vals=m.points.map(function(p){return p.value;});
+      var a=avgOf(vals);var last=vals[m.points.length-1];
+      var show=(m.unit==='%'||m.unit==='min'||m.unit==='st'||m.unit==='kort'||m.unit==='tkn')?Math.round(a):round1(a);
+      html+='<div class="stat"><div class="v">'+show+'<span style="font-size:11px;color:var(--muted)"> '+esc(m.unit)+'</span></div><div class="l">'+esc(m.label)+' · snitt</div></div>';
+    });
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+/* ── Render: Trender ─────────────────────────────────────── */
+function ensureMetricSel(field,fallback){
+  if(data.settings[field]&&metrics.some(function(m){return m.uid===data.settings[field];}))return data.settings[field];
+  data.settings[field]=metrics.length?metrics[0].uid:null;return data.settings[field];
+}
+function metricByUid(u){for(var i=0;i<metrics.length;i++)if(metrics[i].uid===u)return metrics[i];return null;}
+
+function renderTrendChips(){
+  var el=document.getElementById('tr-chips');
+  el.innerHTML=metrics.map(function(m){return '<button class="metric-chip'+(m.uid===data.settings.trMetric?' sel':'')+'" data-u="'+m.uid+'"><span class="dot" style="background:'+m.color+'"></span>'+m.emoji+' '+esc(m.label)+'</button>';}).join('');
+  el.querySelectorAll('.metric-chip').forEach(function(b){b.onclick=function(){data.settings.trMetric=b.dataset.u;save();renderTrends();};});
+}
+function renderTrends(){
+  var empty=document.getElementById('tr-empty');
+  if(!metrics.length){empty.style.display='block';document.getElementById('tr-canvas').style.display='none';document.getElementById('tr-chips').innerHTML='';document.getElementById('tr-stats').innerHTML='';return;}
+  empty.style.display='none';document.getElementById('tr-canvas').style.display='block';
+  ensureMetricSel('trMetric');renderTrendChips();
+  document.getElementById('tr-range').querySelectorAll('.range-btn').forEach(function(b){b.classList.toggle('sel',parseInt(b.dataset.r,10)===data.settings.range);});
+  var m=metricByUid(data.settings.trMetric);if(!m)return;
+  var dates=filterRange(m,data.settings.range);
+  var vals=dates.map(function(d){return m.map[d];});
+  drawLine('tr-canvas',dates,vals,m);
+  var a=avgOf(vals),mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);
+  var trend='';
+  if(vals.length>=4){var h=vals.length>>1;var first=avgOf(vals.slice(0,h)),last=avgOf(vals.slice(h));var diff=last-first;
+    trend=diff>0?'▲ stigande':(diff<0?'▼ fallande':'– stabil');}
+  document.getElementById('tr-stats').innerHTML=
+    '<div class="stat"><div class="v">'+round1(a)+'</div><div class="l">Snitt</div></div>'+
+    '<div class="stat"><div class="v">'+mn+'–'+mx+'</div><div class="l">Lägsta–högsta</div></div>'+
+    '<div class="stat"><div class="v">'+dates.length+'</div><div class="l">Datapunkter</div></div>'+
+    '<div class="stat"><div class="v" style="font-size:15px;padding-top:4px">'+(trend||'–')+'</div><div class="l">Riktning</div></div>';
+}
+function drawLine(id,dates,vals,m){
+  var cv=document.getElementById(id);var s=setupCanvas(cv,180);var ctx=s.ctx,w=s.w,h=s.h;
+  var pad={l:30,r:8,t:10,b:22};var iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
+  ctx.clearRect(0,0,w,h);
+  if(!vals.length)return;
+  var lo=m.min!=null?m.min:Math.min.apply(null,vals);var hi=m.max!=null?m.max:Math.max.apply(null,vals);
+  if(hi===lo)hi=lo+1;
+  var grid=cssVar('--grid'),muted=cssVar('--muted'),acc=cssVar('--accent');
+  ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.fillStyle=muted;ctx.font='9px -apple-system,sans-serif';ctx.textBaseline='middle';
+  for(var g=0;g<=4;g++){var y=pad.t+ih*g/4;var v=hi-(hi-lo)*g/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.textAlign='right';ctx.fillText(String(Math.round(v)),pad.l-4,y);}
+  function X(i){return pad.l+(vals.length<=1?iw/2:iw*i/(vals.length-1));}
+  function Y(v){return pad.t+ih*(1-(v-lo)/(hi-lo));}
+  /* moving average */
+  if(vals.length>=4){var ma=[];for(var i=0;i<vals.length;i++){var st=Math.max(0,i-6);ma.push(avgOf(vals.slice(st,i+1)));}
+    ctx.strokeStyle=muted;ctx.setLineDash([4,3]);ctx.lineWidth=1.5;ctx.beginPath();
+    for(var i2=0;i2<ma.length;i2++){var xx=X(i2),yy=Y(ma[i2]);i2?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);}ctx.stroke();ctx.setLineDash([]);}
+  /* line */
+  ctx.strokeStyle=acc;ctx.lineWidth=2;ctx.beginPath();
+  for(var j=0;j<vals.length;j++){var x=X(j),y=Y(vals[j]);j?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+  ctx.fillStyle=acc;for(var k=0;k<vals.length;k++){if(vals.length>40&&k%Math.ceil(vals.length/40)!==0)continue;ctx.beginPath();ctx.arc(X(k),Y(vals[k]),2,0,7);ctx.fill();}
+  /* x labels */
+  ctx.fillStyle=muted;ctx.textAlign='center';ctx.textBaseline='top';
+  var step=Math.max(1,Math.ceil(vals.length/5));
+  for(var d=0;d<dates.length;d+=step){ctx.fillText(fmtDate(dates[d]),X(d),h-14);}
+}
+
+/* ── Render: Samband ─────────────────────────────────────── */
+function fillCorrSelect(id,sel){
+  var el=document.getElementById(id);
+  el.innerHTML=metrics.map(function(m){return '<option value="'+m.uid+'"'+(m.uid===sel?' selected':'')+'>'+m.emoji+' '+esc(m.srcLabel)+' · '+esc(m.label)+'</option>';}).join('');
+}
+function renderCorr(){
+  if(!metrics.length){document.getElementById('corr-r').textContent='–';document.getElementById('corr-lbl').textContent='Ingen data ännu.';document.getElementById('corr-a').innerHTML='';document.getElementById('corr-b').innerHTML='';document.getElementById('corr-n').textContent='';return;}
+  if(!data.settings.corrA||!metricByUid(data.settings.corrA))data.settings.corrA=metrics[0].uid;
+  if(!data.settings.corrB||!metricByUid(data.settings.corrB))data.settings.corrB=metrics[Math.min(1,metrics.length-1)].uid;
+  fillCorrSelect('corr-a',data.settings.corrA);fillCorrSelect('corr-b',data.settings.corrB);
+  var A=metricByUid(data.settings.corrA),B=metricByUid(data.settings.corrB);
+  var pairs=[];A.dates.forEach(function(d){if(d in B.map)pairs.push([A.map[d],B.map[d]]);});
+  var rEl=document.getElementById('corr-r'),lEl=document.getElementById('corr-lbl'),nEl=document.getElementById('corr-n');
+  document.getElementById('corr-disc-wrap').style.display=pairs.length>=4?'block':'none';
+  if(pairs.length<4){rEl.textContent='–';lEl.textContent='För få gemensamma datum ('+pairs.length+'). Det behövs minst 4.';nEl.textContent='';drawScatter('corr-canvas',[],A,B);return;}
+  var xs=pairs.map(function(p){return p[0];}),ys=pairs.map(function(p){return p[1];});
+  var mx=avgOf(xs),my=avgOf(ys);var sxy=0,sx=0,sy=0;
+  for(var i=0;i<pairs.length;i++){var dx=xs[i]-mx,dy=ys[i]-my;sxy+=dx*dy;sx+=dx*dx;sy+=dy*dy;}
+  var r=(sx>0&&sy>0)?sxy/Math.sqrt(sx*sy):0;
+  rEl.textContent=(r>0?'+':'')+round1(r*100)/100;
+  rEl.style.color=Math.abs(r)<0.2?cssVar('--muted'):(r>0?cssVar('--green'):cssVar('--red'));
+  var abs=Math.abs(r);var strength=abs<0.2?'inget tydligt':abs<0.4?'svagt':abs<0.6?'måttligt':abs<0.8?'tydligt':'starkt';
+  var dir=r>0?'När '+A.label.toLowerCase()+' är högre tenderar '+B.label.toLowerCase()+' också vara högre.':'När '+A.label.toLowerCase()+' är högre tenderar '+B.label.toLowerCase()+' vara lägre.';
+  lEl.textContent=(abs<0.2?'Inget tydligt samband mellan '+A.label.toLowerCase()+' och '+B.label.toLowerCase()+'.':strength.charAt(0).toUpperCase()+strength.slice(1)+' samband. '+dir);
+  nEl.textContent=pairs.length+' gemensamma datum';
+  drawScatter('corr-canvas',pairs,A,B);
+}
+function drawScatter(id,pairs,A,B){
+  var cv=document.getElementById(id);var s=setupCanvas(cv,180);var ctx=s.ctx,w=s.w,h=s.h;
+  var pad={l:30,r:10,t:10,b:24};var iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
+  ctx.clearRect(0,0,w,h);
+  var grid=cssVar('--grid'),muted=cssVar('--muted'),acc=cssVar('--accent');
+  if(!pairs.length){ctx.fillStyle=muted;ctx.font='11px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText('Inget att visa',w/2,h/2);return;}
+  var xs=pairs.map(function(p){return p[0];}),ys=pairs.map(function(p){return p[1];});
+  var xlo=A.min!=null?A.min:Math.min.apply(null,xs),xhi=A.max!=null?A.max:Math.max.apply(null,xs);
+  var ylo=B.min!=null?B.min:Math.min.apply(null,ys),yhi=B.max!=null?B.max:Math.max.apply(null,ys);
+  if(xhi===xlo)xhi=xlo+1;if(yhi===ylo)yhi=ylo+1;
+  ctx.strokeStyle=grid;ctx.lineWidth=1;
+  for(var g=0;g<=3;g++){var y=pad.t+ih*g/3;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();}
+  function X(v){return pad.l+iw*(v-xlo)/(xhi-xlo);}
+  function Y(v){return pad.t+ih*(1-(v-ylo)/(yhi-ylo));}
+  ctx.fillStyle=acc;ctx.globalAlpha=.6;
+  pairs.forEach(function(p){ctx.beginPath();ctx.arc(X(p[0]),Y(p[1]),3.2,0,7);ctx.fill();});
+  ctx.globalAlpha=1;
+  ctx.fillStyle=muted;ctx.font='9px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText(A.label+' →',w/2,h-12);
+  ctx.save();ctx.translate(9,pad.t+ih/2);ctx.rotate(-Math.PI/2);ctx.fillText('↑ '+B.label,0,0);ctx.restore();
+}
+
+/* ── Render: Mönster ─────────────────────────────────────── */
+function renderPatternChips(){
+  var el=document.getElementById('pt-chips');
+  el.innerHTML=metrics.map(function(m){return '<button class="metric-chip'+(m.uid===data.settings.ptMetric?' sel':'')+'" data-u="'+m.uid+'"><span class="dot" style="background:'+m.color+'"></span>'+m.emoji+' '+esc(m.label)+'</button>';}).join('');
+  el.querySelectorAll('.metric-chip').forEach(function(b){b.onclick=function(){data.settings.ptMetric=b.dataset.u;save();renderPatterns();};});
+}
+function renderPatterns(){
+  var empty=document.getElementById('pt-empty');
+  if(!metrics.length){empty.style.display='block';document.getElementById('pt-chips').innerHTML='';document.getElementById('cat-chips').innerHTML='';document.getElementById('cat-list').innerHTML='';document.getElementById('pt-note').textContent='';document.getElementById('pt-canvas').style.display='none';return;}
+  empty.style.display='none';document.getElementById('pt-canvas').style.display='block';
+  ensureMetricSel('ptMetric');renderPatternChips();
+  var m=metricByUid(data.settings.ptMetric);
+  var buckets=[[],[],[],[],[],[],[]];
+  m.dates.forEach(function(d){buckets[weekdayIdx(d)].push(m.map[d]);});
+  var avgs=buckets.map(function(b){return b.length?avgOf(b):null;});
+  drawWeekdayBars('pt-canvas',avgs,m);
+  var valid=avgs.map(function(a,i){return {i:i,a:a};}).filter(function(o){return o.a!=null;});
+  if(valid.length>=2){valid.sort(function(a,b){return a.a-b.a;});
+    document.getElementById('pt-note').textContent='Lägst '+m.label.toLowerCase()+' på '+WD[valid[0].i].toLowerCase()+'dagar, högst på '+WD[valid[valid.length-1].i].toLowerCase()+'dagar.';}
+  else document.getElementById('pt-note').textContent='';
+  renderCats();
+}
+function drawWeekdayBars(id,avgs,m){
+  var cv=document.getElementById(id);var s=setupCanvas(cv,160);var ctx=s.ctx,w=s.w,h=s.h;
+  var pad={l:28,r:8,t:10,b:20};var iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
+  ctx.clearRect(0,0,w,h);
+  var vals=avgs.filter(function(a){return a!=null;});
+  var grid=cssVar('--grid'),muted=cssVar('--muted'),acc=cssVar('--accent');
+  var lo=m.min!=null?m.min:0;var hi=m.max!=null?m.max:(vals.length?Math.max.apply(null,vals):1);if(hi<=lo)hi=lo+1;
+  ctx.strokeStyle=grid;ctx.fillStyle=muted;ctx.font='9px -apple-system,sans-serif';ctx.textBaseline='middle';ctx.textAlign='right';
+  for(var g=0;g<=3;g++){var y=pad.t+ih*g/3;var v=hi-(hi-lo)*g/3;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(String(Math.round(v)),pad.l-4,y);}
+  var bw=iw/7;
+  for(var i=0;i<7;i++){var a=avgs[i];var cx=pad.l+bw*i+bw*0.5;
+    if(a!=null){var bh=ih*(a-lo)/(hi-lo);ctx.fillStyle=acc;var bx=cx-bw*0.33;ctx.fillRect(bx,pad.t+ih-bh,bw*0.66,bh);}
+    ctx.fillStyle=muted;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(WD[i],cx,h-14);}
+}
+function renderCats(){
+  var withCats=Object.keys(sources).filter(function(k){return sources[k].cats.length;});
+  var allCats=[];withCats.forEach(function(k){sources[k].cats.forEach(function(c){allCats.push({uid:k+'::'+c.id,key:k,label:sources[k].app.emoji+' '+c.label,items:c.items,color:sources[k].app.color});});});
+  var cc=document.getElementById('cat-chips'),cl=document.getElementById('cat-list');
+  if(!allCats.length){cc.innerHTML='';cl.innerHTML='<div class="empty-msg">Inga kategoriposter i datan.</div>';return;}
+  if(!data.settings.catSel||!allCats.some(function(c){return c.uid===data.settings.catSel;}))data.settings.catSel=allCats[0].uid;
+  cc.innerHTML=allCats.map(function(c){return '<button class="metric-chip'+(c.uid===data.settings.catSel?' sel':'')+'" data-u="'+c.uid+'">'+esc(c.label)+'</button>';}).join('');
+  cc.querySelectorAll('.metric-chip').forEach(function(b){b.onclick=function(){data.settings.catSel=b.dataset.u;save();renderCats();};});
+  var cat=allCats.filter(function(c){return c.uid===data.settings.catSel;})[0];
+  var items=cat.items.slice().sort(function(a,b){return b.value-a.value;}).slice(0,10);
+  var mx=items.length?items[0].value:1;
+  cl.innerHTML=items.map(function(it){return '<div class="bar-row"><span class="nm">'+esc(it.name)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+(mx?Math.round(it.value/mx*100):0)+'%;background:'+cat.color+'"></span></span><span class="bar-val">'+it.value+'</span></div>';}).join('');
+}
+
+/* ── Render all ──────────────────────────────────────────── */
+function renderAll(){renderSources();renderOverview();renderTrends();renderCorr();renderPatterns();}
+
+/* ── Sheets / Synk-UI ────────────────────────────────────── */
+var sbg=document.getElementById('sheet-bg');
+function openSheet(id){sbg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){sbg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+sbg.onclick=closeSheets;
+document.getElementById('sync-close').onclick=closeSheets;
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--accent-soft)':type==='err'?'#F4E2DC':'var(--panel2)';
+  el.style.color=type==='ok'?'var(--accent)':type==='err'?'#9A5040':'var(--muted)';el.textContent=msg;}
+document.getElementById('sync-badge').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();sync.repo=document.getElementById('gh-repo').value.trim();sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(d){
+    if(d){setGhStatus('✓ Ansluten! Hämtar din data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Filen är tom — laddar upp din lokala data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1100);}).catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');});
+};
+document.getElementById('gh-pull').onclick=function(){ghPull();};
+
+/* ── Källor: knappar ─────────────────────────────────────── */
+document.getElementById('scan-btn').onclick=function(){
+  var found=ingestLive();save();rebuild();renderAll();
+  var note=document.getElementById('scan-note');
+  if(found.length)note.textContent='Hittade: '+found.join(', ')+'.';
+  else note.textContent='Inga app-data hittades i denna webbläsare. Importera en säkerhetskopia istället om apparna ligger på en annan adress.';
+  if(syncOn())ghPush().catch(function(){});
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var files=e.target.files;if(!files||!files.length)return;var done=0,ok=[],fail=0;
+  for(var i=0;i<files.length;i++){(function(f){var r=new FileReader();
+    r.onload=function(){done++;try{var o=JSON.parse(r.result);var app=ingestObject(o);if(app)ok.push(app.label);else fail++;}catch(err){fail++;}
+      if(done===files.length){save();rebuild();renderAll();
+        document.getElementById('scan-note').textContent=(ok.length?'Importerade: '+ok.join(', ')+'. ':'')+(fail?fail+' fil(er) kändes inte igen.':'');
+        if(syncOn())ghPush().catch(function(){});}};
+    r.readAsText(f);})(files[i]);}
+  e.target.value='';
+};
+document.getElementById('paste-btn').onclick=function(){
+  var t=document.getElementById('paste-in').value.trim();if(!t)return;
+  try{var o=JSON.parse(t);var app=ingestObject(o);
+    if(app){save();rebuild();renderAll();document.getElementById('scan-note').textContent='Läste in '+app.label+'.';document.getElementById('paste-in').value='';if(syncOn())ghPush().catch(function(){});}
+    else document.getElementById('scan-note').textContent='Kände inte igen datan. Är det en export från en av apparna?';
+  }catch(err){document.getElementById('scan-note').textContent='Kunde inte tolka texten som JSON.';}
+};
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);var d=new Date();
+  a.download='insikten-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';a.click();
+};
+document.getElementById('clear-btn').onclick=function(){
+  if(!confirm('Rensa all inläst data i Insikten? (Dina ursprungsappar påverkas inte.)'))return;
+  data.cache={};save();rebuild();renderAll();document.getElementById('scan-note').textContent='Rensat.';if(syncOn())ghPush().catch(function(){});
+};
+document.getElementById('corr-a').onchange=function(){data.settings.corrA=this.value;save();renderCorr();};
+document.getElementById('corr-b').onchange=function(){data.settings.corrB=this.value;save();renderCorr();};
+document.getElementById('tr-range').querySelectorAll('.range-btn').forEach(function(b){b.onclick=function(){data.settings.range=parseInt(b.dataset.r,10);save();renderTrends();};});
+
+/* ── Tema ────────────────────────────────────────────────── */
+function applyTheme(){
+  var m=data.settings.theme;var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1F2423':'#ECEFEE';
+  var b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(document.querySelector('.view.active'))redrawActive();
+}
+document.getElementById('theme-btn').onclick=function(){data.settings.theme=data.settings.theme==='auto'?'dark':data.settings.theme==='dark'?'light':'auto';save();applyTheme();};
+function redrawActive(){
+  var v=document.querySelector('.nav button.active');if(!v)return;var name=v.dataset.v;
+  if(name==='trends')renderTrends();else if(name==='corr')renderCorr();else if(name==='patterns')renderPatterns();
+}
+
+/* ── Nav ─────────────────────────────────────────────────── */
+document.querySelectorAll('.nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    redrawActive();
+  };
+});
+window.addEventListener('resize',function(){redrawActive();});
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+/* ── Init ────────────────────────────────────────────────── */
+ingestLive();save();rebuild();applyTheme();renderAll();
+setBadge(syncOn()?'ok':'off',syncOn()?'Synkad':'Lokal');
+if(syncOn())ghPull();
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
