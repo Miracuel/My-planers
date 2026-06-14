@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ArbetsMiljö">
+<meta name="theme-color" content="#ECEFF2">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234E7C8B'/%3E%3Cpath d='M20 14l12 6 12-6v16c0 12-8 18-12 20-4-2-12-8-12-20z' fill='%23ECEFF2'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234E7C8B'/%3E%3Cpath d='M20 14l12 6 12-6v16c0 12-8 18-12 20-4-2-12-8-12-20z' fill='%23ECEFF2'/%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"ArbetsMiljö","short_name":"ArbetsMiljö","display":"standalone","background_color":"%23ECEFF2","theme_color":"%23ECEFF2","start_url":"."}'>
+<title>ArbetsMiljö</title>
+<style>
+:root{
+  --bg:#ECEFF2;--panel:#F7F9FB;--panel2:#E2E8EE;--line:#D3DBE3;
+  --ink:#2F3A45;--muted:#74808C;--teal:#4E7C8B;--teal-soft:#D5E3E6;
+  --green:#6E9B7E;--yellow:#C5A24B;--red:#C07A6E;--amber:#C99654;
+  --navbg:rgba(236,239,242,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.card-panel + .card-panel{margin-top:10px}
+.btn{border:1px solid var(--teal);background:var(--panel);color:var(--teal);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--teal-soft)}
+.btn.fill{background:var(--teal);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Batteri */
+.batt-wrap{display:flex;gap:16px;align-items:center}
+.batt{width:92px;height:170px;border:3px solid var(--ink);border-radius:18px;position:relative;overflow:hidden;flex-shrink:0;background:var(--panel2);cursor:pointer}
+.batt::before{content:'';position:absolute;top:-11px;left:32px;width:28px;height:9px;background:var(--ink);border-radius:4px 4px 0 0}
+.batt-fill{position:absolute;left:0;right:0;bottom:0;background:var(--green);transition:height .5s ease,background .5s}
+.batt-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:var(--ink);text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.zone-msg{flex:1}
+.zone-msg b{font-family:Georgia,serif;font-weight:400;font-size:16px;display:block;margin-bottom:4px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip small{color:var(--muted);margin-left:4px}
+.chip.drain:active{background:#F2E3DE}
+.chip.charge:active{background:var(--teal-soft)}
+.chip.charge{border-color:var(--teal-soft)}
+.log-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-row .d{font-weight:600}
+.log-row .d.neg{color:#A2685B}
+.log-row .d.pos{color:var(--teal)}
+.log-row time{color:var(--muted);font-size:11px}
+.log-row button{margin-left:auto;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.checkin-btn{width:100%;margin-top:10px}
+
+/* Paus */
+.paus-time{font-family:Georgia,serif;font-size:30px;text-align:center;font-variant-numeric:tabular-nums;margin:4px 0 2px}
+.paus-label{text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+
+/* Mood faces */
+.faces{display:flex;gap:6px;justify-content:space-between;margin:4px 0 4px}
+.face{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:8px 2px;font-size:20px;cursor:pointer;text-align:center}
+.face.sel{border-color:var(--teal);background:var(--teal-soft)}
+.face small{display:block;font-size:9px;color:var(--muted);margin-top:2px}
+.slider-val{float:right;color:var(--ink);font-weight:600}
+input[type=range]{accent-color:var(--teal);padding:0}
+
+/* Risk / Åtgärd */
+.item{padding:11px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:none}
+.item-head{display:flex;align-items:center;gap:8px}
+.sev{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.sev.g{background:var(--green)}.sev.y{background:var(--yellow)}.sev.r{background:var(--red)}
+.item-title{flex:1;font-size:14px}
+.item-meta{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5}
+.item-tag{display:inline-block;font-size:10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px 7px;color:var(--muted);margin-right:4px}
+.item button.x{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.status-pill{font-size:11px;border:1px solid var(--line);border-radius:10px;padding:3px 8px;background:var(--panel2);color:var(--ink);cursor:pointer;font-family:inherit}
+.status-pill.planerad{color:var(--muted)}
+.status-pill.pagaende{border-color:var(--teal);color:var(--teal)}
+.status-pill.klar{border-color:var(--green);color:var(--green)}
+.status-pill.forsenad{border-color:var(--red);color:var(--red);background:#F4E8E4}
+.cat-chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:7px 10px;font-size:12px;cursor:pointer;color:var(--ink)}
+.cat-chip.sel{border-color:var(--teal);background:var(--teal-soft);color:var(--teal)}
+.sev-pick{display:flex;gap:8px;margin:4px 0}
+.sev-pick button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.sev-pick button.sel.g{border-color:var(--green);background:#E2EDE5}
+.sev-pick button.sel.y{border-color:var(--yellow);background:#F3ECD8}
+.sev-pick button.sel.r{border-color:var(--red);background:#F4E8E4}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;cursor:pointer}
+.toggle input{width:auto;accent-color:var(--teal)}
+
+/* NPF */
+.npf-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.npf-row:first-child{border-top:none}
+.npf-row .lab{flex:1;font-size:14px}
+.lvl{display:flex;gap:6px}
+.lvl button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:12px;color:var(--muted)}
+.lvl button.s1.sel{background:var(--green);border-color:var(--green);color:#fff}
+.lvl button.s2.sel{background:var(--yellow);border-color:var(--yellow);color:#fff}
+.lvl button.s3.sel{background:var(--red);border-color:var(--red);color:#fff}
+.focus-pick{display:flex;gap:8px;margin-top:4px}
+.focus-pick button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.focus-pick button.sel.g{border-color:var(--green);background:#E2EDE5}
+.focus-pick button.sel.y{border-color:var(--yellow);background:#F3ECD8}
+.focus-pick button.sel.r{border-color:var(--red);background:#F4E8E4}
+
+/* Dashboard */
+.avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.avg-row:first-child{border-top:none}
+.bar{height:7px;border-radius:4px;background:var(--panel2);overflow:hidden;width:120px}
+.bar i{display:block;height:100%;background:var(--teal)}
+.insight{background:var(--teal-soft);border:1px solid var(--teal);border-radius:14px;padding:11px 13px;font-size:13px;line-height:1.6;color:#2B4750;margin-bottom:8px}
+
+/* AI */
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.msg.user{background:var(--teal-soft);align-self:flex-end;max-width:85%;border-bottom-right-radius:4px}
+.msg.ai{background:var(--panel2);align-self:flex-start;max-width:90%;border-bottom-left-radius:4px}
+.msg.sys{font-size:12px;color:var(--muted);text-align:center;background:none;padding:4px}
+.quick{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.warn-banner{background:#F4E8E4;border:1px solid #E0C4BB;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#6E4A40;margin-top:12px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 1px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--teal);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(47,58,69,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--teal);color:#fff;font-size:14px;cursor:pointer;position:sticky;bottom:0;margin-top:12px}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+.sync-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px}
+.sp-badge{font-size:11px;padding:3px 10px;border-radius:11px;background:var(--teal-soft);color:var(--teal);font-weight:600}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#F4E8E4;color:#A2685B}
+.gh-status{display:none;margin:8px 0 0;font-size:12px;padding:8px 11px;border-radius:10px;line-height:1.5}
+.gh-status.ok{background:#E2EDE5;color:#3F5E48}
+.gh-status.err{background:#F4E8E4;color:#6E4A40}
+.gh-status.info{background:var(--teal-soft);color:#2B4750}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1B2127;--panel:#232B33;--panel2:#2C353E;--line:#3A454F;
+  --ink:#DCE3E9;--muted:#8B97A2;--teal:#7FA8B2;--teal-soft:#2E4047;
+  --green:#7FA38C;--yellow:#C2AC6B;--red:#C58E80;--amber:#C9A36B;
+  --navbg:rgba(27,33,39,.95);
+}
+html[data-theme=dark] .batt-pct{text-shadow:none}
+html[data-theme=dark] .chip.drain:active{background:#4A3833}
+html[data-theme=dark] .log-row .d.neg{color:#D49C8C}
+html[data-theme=dark] .status-pill.forsenad{background:#3A2D29}
+html[data-theme=dark] .sev-pick button.sel.g{background:#2C3A30}
+html[data-theme=dark] .sev-pick button.sel.y{background:#3A3322}
+html[data-theme=dark] .sev-pick button.sel.r{background:#3A2D29}
+html[data-theme=dark] .focus-pick button.sel.g{background:#2C3A30}
+html[data-theme=dark] .focus-pick button.sel.y{background:#3A3322}
+html[data-theme=dark] .focus-pick button.sel.r{background:#3A2D29}
+html[data-theme=dark] .insight{color:#CFE0E4}
+html[data-theme=dark] .warn-banner{background:#3A2D29;border-color:#5C443D;color:#E2C2B7}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+.set-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));left:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="set-btn" id="set-btn" aria-label="Inställningar">⚙</button>
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🦺 ArbetsMiljö</h1>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <div class="card-panel">
+    <div class="batt-wrap">
+      <div class="batt" id="batt">
+        <div class="batt-fill" id="batt-fill"></div>
+        <div class="batt-pct" id="batt-pct">80</div>
+      </div>
+      <div class="zone-msg">
+        <b id="zone-title"></b>
+        <div class="soft" id="zone-text"></div>
+        <button class="btn ghost checkin-btn" id="open-checkin">Arbetsmiljöcheck</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Nästa paus</div>
+  <div class="card-panel">
+    <div class="paus-time" id="paus-time">—</div>
+    <div class="paus-label" id="paus-label">Tryck för att starta en paus</div>
+    <div class="btn-row">
+      <button class="btn" data-paus="1">Mikro 1 min</button>
+      <button class="btn" data-paus="5">Rörelse 5 min</button>
+      <button class="btn" data-paus="15">Återhämtning 15</button>
+    </div>
+    <button class="btn ghost" id="paus-stop" style="width:100%;margin-top:8px;display:none">Avbryt paus</button>
+  </div>
+
+  <div class="section-title">Det som dränerar</div>
+  <div class="card-panel"><div class="chips" id="drain-chips"></div></div>
+
+  <div class="section-title">Det som fyller</div>
+  <div class="card-panel"><div class="chips" id="charge-chips"></div></div>
+
+  <div class="section-title">Läget just nu</div>
+  <div class="card-panel" id="status-summary"></div>
+
+  <div class="section-title">Dagens logg</div>
+  <div class="card-panel"><div id="day-log"></div></div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="sync-row">
+    <span id="sync-badge" class="sp-badge offline">Lokal</span>
+    <button class="btn ghost" id="sync-btn" style="display:none">↻ Synka teamet</button>
+  </div>
+  <div class="privacy">Allt sparas bara i din enhet. ArbetsMiljö är ett stöd för det förebyggande arbetet — inte vård eller myndighetsrapportering.<br>Vid hot, allvarliga tillbud eller utmattning: kontakta chef, skyddsombud, företagshälsa eller vården. 🦺</div>
+</div>
+
+<!-- RISK -->
+<div class="view" id="view-risk">
+  <button class="btn fill" id="open-risk" style="width:100%;margin-top:0">⚠️ Rapportera risk eller tillbud</button>
+  <div class="section-title">Rapporterade risker</div>
+  <div class="card-panel"><div id="risk-list"></div></div>
+
+  <button class="btn" id="open-action" style="width:100%;margin-top:12px">🛠️ Ny åtgärd</button>
+  <div class="section-title">Åtgärder</div>
+  <div class="card-panel"><div id="action-list"></div></div>
+</div>
+
+<!-- NPF -->
+<div class="view" id="view-npf">
+  <div class="soft" style="margin-top:0">Logga dagens belastning utan att värdera den. Mönstren längre fram blir tydligare för varje dag.</div>
+  <div class="section-title">Sensorisk logg</div>
+  <div class="card-panel"><div id="npf-list"></div></div>
+
+  <div class="section-title">Social energi kvar <span class="slider-val" id="soc-val">50</span></div>
+  <div class="card-panel">
+    <input type="range" id="soc-range" min="0" max="100" step="5" value="50">
+    <div class="soft" id="soc-text" style="margin-top:6px"></div>
+  </div>
+
+  <div class="section-title">Fokusmiljö idag</div>
+  <div class="card-panel">
+    <div class="focus-pick" id="focus-pick">
+      <button class="g" data-f="1">🟢 Fungerar</button>
+      <button class="y" data-f="2">🟡 Okej</button>
+      <button class="r" data-f="3">🔴 Överbelastar</button>
+    </div>
+  </div>
+
+  <div class="section-title">Vad NPF-loggen märkt</div>
+  <div class="card-panel" id="npf-insights"></div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-pattern">
+  <div id="pattern-insights"></div>
+  <div class="section-title" style="margin-top:0">Energi & stress senaste 14 dagarna</div>
+  <div class="card-panel"><canvas id="trend" width="640" height="280" style="width:100%;height:auto"></canvas>
+    <div class="soft" style="text-align:center;margin-top:6px"><span style="color:var(--teal)">●</span> Energi &nbsp; <span style="color:var(--red)">●</span> Stress</div>
+  </div>
+  <div class="section-title">Snitt senaste 7 dagarna</div>
+  <div class="card-panel" id="avgs"></div>
+  <div class="section-title">Risker per kategori <span class="soft">(30 dagar)</span></div>
+  <div class="card-panel" id="risk-summary"></div>
+</div>
+
+<!-- RÅD (AI) -->
+<div class="view" id="view-ai">
+  <div class="soft" style="margin-top:0">AI-rådgivare för arbetsmiljö, OSA och ergonomi. Den ser inga personuppgifter automatiskt — du väljer vad du skriver.</div>
+  <div class="quick" id="quick-prompts" style="margin-top:10px"></div>
+  <div class="card-panel"><div class="chat" id="chat"></div></div>
+  <div class="add-row">
+    <input type="text" id="ai-in" placeholder="Skriv din fråga…">
+    <button id="ai-send">→</button>
+  </div>
+  <div class="warn-banner">AI-rådgivaren ger generella råd, inte myndighetsbeslut eller vård. Vid allvarliga risker, kränkningar eller ohälsa: koppla in skyddsombud, chef eller företagshälsa.</div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="today"><span>🔋</span>Idag</button>
+  <button data-v="risk"><span>⚠️</span>Risk</button>
+  <button data-v="npf"><span>🌱</span>NPF</button>
+  <button data-v="pattern"><span>📊</span>Mönster</button>
+  <button data-v="ai"><span>🤖</span>Råd</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="checkin-sheet">
+  <h3>Arbetsmiljöcheck</h3>
+  <div class="soft">Tar 20–30 sekunder. Ingen prestation — bara en ärlig bild av dagen.</div>
+  <label>Hur mår du idag?</label>
+  <div class="faces" id="ci-faces"></div>
+  <label>Energi <span class="slider-val" id="ci-energy-v">60</span></label>
+  <input type="range" id="ci-energy" min="0" max="100" step="5" value="60">
+  <label>Stress <span class="slider-val" id="ci-stress-v">40</span></label>
+  <input type="range" id="ci-stress" min="0" max="100" step="5" value="40">
+  <label>Motivation <span class="slider-val" id="ci-motiv-v">60</span></label>
+  <input type="range" id="ci-motiv" min="0" max="100" step="5" value="60">
+  <label>Fokus <span class="slider-val" id="ci-focus-v">60</span></label>
+  <input type="range" id="ci-focus" min="0" max="100" step="5" value="60">
+  <label>Social belastning <span class="slider-val" id="ci-social-v">40</span></label>
+  <input type="range" id="ci-social" min="0" max="100" step="5" value="40">
+  <label>Sensorisk belastning <span class="slider-val" id="ci-sensory-v">40</span></label>
+  <input type="range" id="ci-sensory" min="0" max="100" step="5" value="40">
+  <label>Var startar batteriet idag? <span class="slider-val" id="ci-batt-v">80</span>%</label>
+  <input type="range" id="ci-batt" min="0" max="100" step="5" value="80">
+  <button class="sheet-close" id="ci-save">Klart — så här är det idag</button>
+</div>
+
+<div class="sheet" id="adjust-sheet">
+  <h3>Justera batteriet</h3>
+  <label>Nuvarande nivå: <span id="adj-val">80</span>%</label>
+  <input type="range" id="adj-batt" min="0" max="100" step="5" value="80">
+  <button class="sheet-close" id="adj-save">Spara</button>
+</div>
+
+<div class="sheet" id="risk-sheet">
+  <h3>Rapportera risk</h3>
+  <label>Typ</label>
+  <div class="chips" id="risk-cats"></div>
+  <label>Allvarlighet</label>
+  <div class="sev-pick" id="risk-sev">
+    <button class="g" data-s="g">🟢 Låg</button>
+    <button class="y" data-s="y">🟡 Åtgärd</button>
+    <button class="r" data-s="r">🔴 Kritisk</button>
+  </div>
+  <label>Beskrivning</label>
+  <textarea id="risk-desc" rows="3" placeholder="Vad hände, var och vad blev följden?"></textarea>
+  <label>Var?</label>
+  <input type="text" id="risk-place" placeholder="T.ex. kontoret, lagret, hemmakontor">
+  <label class="toggle"><input type="checkbox" id="risk-anon"> Rapportera anonymt</label>
+  <button class="sheet-close" id="risk-save">Spara rapport</button>
+</div>
+
+<div class="sheet" id="action-sheet">
+  <h3 id="action-h">Ny åtgärd</h3>
+  <label>Problem</label>
+  <input type="text" id="ac-problem" placeholder="T.ex. för hög mötesbelastning">
+  <label>Åtgärd</label>
+  <input type="text" id="ac-fix" placeholder="T.ex. mötesfria onsdagar">
+  <label>Ansvarig</label>
+  <input type="text" id="ac-owner" placeholder="T.ex. chef, skyddsombud, jag själv">
+  <label>Deadline</label>
+  <input type="date" id="ac-deadline">
+  <label>Status</label>
+  <select id="ac-status">
+    <option value="planerad">Planerad</option>
+    <option value="pagaende">Pågående</option>
+    <option value="klar">Klar</option>
+  </select>
+  <button class="sheet-close" id="ac-save">Spara åtgärd</button>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <h3>Inställningar</h3>
+  <label>Arbetsläge</label>
+  <select id="mode-sel">
+    <option value="standard">Standard</option>
+    <option value="it">IT-läge</option>
+    <option value="butik">Butiksläge</option>
+  </select>
+  <div class="soft" style="margin-top:6px">Läget lägger till relevanta chips och ger AI-rådgivaren rätt sammanhang.</div>
+  <label style="margin-top:14px">Anthropic API-nyckel <span class="soft" style="text-transform:none">(för AI-rådgivaren)</span></label>
+  <input type="password" id="api-key" placeholder="sk-ant-…">
+  <div class="soft" style="margin-top:6px">Nyckeln sparas bara lokalt i din enhet och skickas direkt till Anthropic. Skapa en på console.anthropic.com.</div>
+
+  <h3 style="margin-top:20px">Teamsynk via GitHub</h3>
+  <div class="soft">Risker och åtgärder delas med teamet via en <b>data-fil</b> i ett <b>privat</b> GitHub-repo. Dina personliga checkar, batteri, NPF-loggar och AI-chatt delas aldrig — de stannar i din enhet. Token sparas bara lokalt.</div>
+  <label>GitHub-användarnamn (ägare av repot)</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="arbetsmiljo-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:6px">Skapas på github.com → Settings → Developer settings → Fine-grained tokens. Ge åtkomst till endast detta repo, med Contents: Read and write.</div>
+  <div class="gh-status" id="gh-status"></div>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="gh-save" style="flex:1">Spara & synka</button>
+    <button class="btn ghost" id="gh-clear">Koppla bort</button>
+  </div>
+  <button class="sheet-close" id="settings-save">Stäng</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='arbetsmiljo_v1';
+var state={
+  days:{},
+  drains:[['Mötesmaraton',18],['Avbrott',10],['Buller',12],['Stress',15],['Övertid',15],['Konflikt',20]],
+  charges:[['Paus',10],['Fokusarbete',12],['Bra ergonomi',8],['Återhämtning',12],['Tydlig prioritering',10]],
+  risks:[],
+  actions:[],
+  mode:'standard',
+  apiKey:'',
+  chat:[],
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var clamp=function(v){return Math.max(0,Math.min(100,v));};
+function day(){
+  var k=todayKey();
+  if(!state.days[k]){
+    state.days[k]={val:80,start:null,checkin:null,log:[],pauses:[],npf:{},soc:50,focus:0};
+  }
+  var d=state.days[k];
+  d.log=d.log||[];d.pauses=d.pauses||[];d.npf=d.npf||{};
+  if(typeof d.soc!=='number')d.soc=50;
+  return d;
+}
+
+// Mode-specific extra chips
+var MODE_DRAINS={
+  it:[['Ärendekö',12],['Jourstress',18],['Larmtrötthet',12],['Systemstrul',12]],
+  butik:[['Tunga lyft',14],['Ensamarbete',12],['Hotfull kund',20],['Stående hela dag',12]],
+  standard:[]
+};
+function activeDrains(){return state.drains.concat(MODE_DRAINS[state.mode]||[]);}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ns=document.querySelectorAll('.sheet');for(var i=0;i<ns.length;i++)ns[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Batteri ───────────────────────────────────────────
+function zone(v){return v>60?'green':v>=30?'yellow':'red';}
+var ZONES={
+  green:['God marginal','Bra arbetsmiljö just nu. Passa på med fokusarbete — och håll i pauserna.'],
+  yellow:['Håll koll','Belastningen börjar märkas. Prioritera, ta en paus och flytta det som kan vänta.'],
+  red:['Hög belastning','Sänk ribban nu. Kortare pass, fler pauser, och säg till om något behöver lyftas.']
+};
+function renderBattery(){
+  var d=day();var v=d.val;var z=zone(v);
+  var fill=document.getElementById('batt-fill');
+  fill.style.height=v+'%';
+  fill.style.background='var(--'+z+')';
+  document.getElementById('batt-pct').textContent=v;
+  document.getElementById('zone-title').textContent=ZONES[z][0];
+  document.getElementById('zone-text').textContent=ZONES[z][1];
+  document.getElementById('open-checkin').textContent=d.checkin?'Arbetsmiljöcheck ✓':'Arbetsmiljöcheck';
+}
+function addLog(label,delta){
+  var d=day();
+  d.val=clamp(d.val+delta);
+  d.log.push({t:new Date().toTimeString().slice(0,5),label:label,delta:delta});
+  save();renderToday();
+}
+function renderChips(){
+  var dc=document.getElementById('drain-chips');var ds=activeDrains();
+  dc.innerHTML=ds.map(function(a,i){return '<button class="chip drain" data-i="'+i+'">'+esc(a[0])+'<small>−'+a[1]+'</small></button>';}).join('');
+  var dbtn=dc.querySelectorAll('.chip');for(var i=0;i<dbtn.length;i++){(function(b){b.onclick=function(){var a=ds[+b.dataset.i];addLog(a[0],-a[1]);};})(dbtn[i]);}
+  var cc=document.getElementById('charge-chips');
+  cc.innerHTML=state.charges.map(function(a,i){return '<button class="chip charge" data-i="'+i+'">'+esc(a[0])+'<small>+'+a[1]+'</small></button>';}).join('');
+  var cbtn=cc.querySelectorAll('.chip');for(var j=0;j<cbtn.length;j++){(function(b){b.onclick=function(){var a=state.charges[+b.dataset.i];addLog(a[0],a[1]);};})(cbtn[j]);}
+}
+function renderLog(){
+  var d=day();var el=document.getElementById('day-log');
+  if(!d.log.length){el.innerHTML='<div class="empty-msg">Inget loggat ännu idag.</div>';return;}
+  el.innerHTML=d.log.map(function(l,i){return '<div class="log-row"><span class="d '+(l.delta<0?'neg':'pos')+'">'+(l.delta>0?'+':'')+l.delta+'</span><span>'+esc(l.label)+'</span><time>'+l.t+'</time><button data-i="'+i+'">×</button></div>';}).reverse().join('');
+  var bs=el.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.onclick=function(){var k=+b.dataset.i;var e=d.log[k];d.val=clamp(d.val-e.delta);d.log.splice(k,1);save();renderToday();};})(bs[i]);}
+}
+function renderStatusSummary(){
+  var el=document.getElementById('status-summary');
+  var openRisks=state.risks.length;
+  var t=todayKey();
+  var overdue=state.actions.filter(function(a){return a.status!=='klar'&&a.deadline&&a.deadline<t;}).length;
+  var ongoing=state.actions.filter(function(a){return a.status==='pagaende';}).length;
+  var d=day();
+  var html='';
+  html+='<div class="avg-row"><span>⚠️ Aktiva riskrapporter</span><b>'+openRisks+'</b></div>';
+  html+='<div class="avg-row"><span>🛠️ Pågående åtgärder</span><b>'+ongoing+'</b></div>';
+  html+='<div class="avg-row"><span>⏰ Försenade åtgärder</span><b style="'+(overdue?'color:var(--red)':'')+'">'+overdue+'</b></div>';
+  html+='<div class="avg-row"><span>☕ Pauser idag</span><b>'+d.pauses.length+'</b></div>';
+  el.innerHTML=html;
+}
+document.getElementById('batt').onclick=function(){
+  document.getElementById('adj-batt').value=day().val;
+  document.getElementById('adj-val').textContent=day().val;
+  openSheet('adjust-sheet');
+};
+document.getElementById('adj-batt').oninput=function(e){document.getElementById('adj-val').textContent=e.target.value;};
+document.getElementById('adj-save').onclick=function(){day().val=+document.getElementById('adj-batt').value;save();closeSheets();renderToday();};
+
+// ── Arbetsmiljöcheck ──────────────────────────────────
+var FACES=[['😫','Över'],['😟','Stress'],['😐','Trött'],['🙂','Okej'],['😊','Bra']];
+var ci={mood:4};
+function renderFaces(){
+  var el=document.getElementById('ci-faces');
+  el.innerHTML=FACES.map(function(f,i){return '<button class="face'+(ci.mood===(i+1)?' sel':'')+'" data-n="'+(i+1)+'">'+f[0]+'<small>'+f[1]+'</small></button>';}).join('');
+  var bs=el.querySelectorAll('.face');for(var i=0;i<bs.length;i++){(function(b){b.onclick=function(){ci.mood=+b.dataset.n;renderFaces();};})(bs[i]);}
+}
+function bindSlider(id,vid){var r=document.getElementById(id);r.oninput=function(){document.getElementById(vid).textContent=r.value;};}
+bindSlider('ci-energy','ci-energy-v');bindSlider('ci-stress','ci-stress-v');bindSlider('ci-motiv','ci-motiv-v');
+bindSlider('ci-focus','ci-focus-v');bindSlider('ci-social','ci-social-v');bindSlider('ci-sensory','ci-sensory-v');bindSlider('ci-batt','ci-batt-v');
+document.getElementById('open-checkin').onclick=function(){
+  var d=day();var c=d.checkin||{};
+  ci={mood:c.mood||4};
+  renderFaces();
+  function set(id,vid,val){document.getElementById(id).value=val;document.getElementById(vid).textContent=val;}
+  set('ci-energy','ci-energy-v',c.energy!=null?c.energy:60);
+  set('ci-stress','ci-stress-v',c.stress!=null?c.stress:40);
+  set('ci-motiv','ci-motiv-v',c.motiv!=null?c.motiv:60);
+  set('ci-focus','ci-focus-v',c.focus!=null?c.focus:60);
+  set('ci-social','ci-social-v',c.social!=null?c.social:40);
+  set('ci-sensory','ci-sensory-v',c.sensory!=null?c.sensory:40);
+  set('ci-batt','ci-batt-v',d.start!=null?d.start:d.val);
+  openSheet('checkin-sheet');
+};
+document.getElementById('ci-save').onclick=function(){
+  var d=day();var g=function(id){return +document.getElementById(id).value;};
+  d.checkin={mood:ci.mood,energy:g('ci-energy'),stress:g('ci-stress'),motiv:g('ci-motiv'),focus:g('ci-focus'),social:g('ci-social'),sensory:g('ci-sensory')};
+  var v=g('ci-batt');
+  if(d.start==null){d.start=v;d.val=v;}else{d.val=clamp(d.val+(v-d.start));d.start=v;}
+  save();closeSheets();renderToday();
+};
+
+// ── Pauser ────────────────────────────────────────────
+var pausTimer=null,pausEnd=0,pausMin=0;
+function fmtMS(s){var m=Math.floor(s/60),x=s%60;return m+':'+String(x).padStart(2,'0');}
+function startPaus(min){
+  clearInterval(pausTimer);pausMin=min;pausEnd=Date.now()+min*60000;
+  document.getElementById('paus-stop').style.display='block';
+  tickPaus();pausTimer=setInterval(tickPaus,1000);
+}
+function tickPaus(){
+  var left=Math.round((pausEnd-Date.now())/1000);
+  if(left<=0){
+    clearInterval(pausTimer);pausTimer=null;
+    document.getElementById('paus-time').textContent='Klart ✓';
+    document.getElementById('paus-label').textContent='Bra jobbat — det räknas.';
+    document.getElementById('paus-stop').style.display='none';
+    var d=day();d.pauses.push({t:new Date().toTimeString().slice(0,5),min:pausMin});
+    addLog('Paus '+pausMin+' min',Math.min(12,Math.round(pausMin*1.2)+4));
+    return;
+  }
+  document.getElementById('paus-time').textContent=fmtMS(left);
+  document.getElementById('paus-label').textContent='Paus pågår — '+pausMin+' min';
+}
+var pbtns=document.querySelectorAll('[data-paus]');for(var pi=0;pi<pbtns.length;pi++){(function(b){b.onclick=function(){startPaus(+b.dataset.paus);};})(pbtns[pi]);}
+document.getElementById('paus-stop').onclick=function(){clearInterval(pausTimer);pausTimer=null;document.getElementById('paus-time').textContent='—';document.getElementById('paus-label').textContent='Paus avbruten';document.getElementById('paus-stop').style.display='none';};
+
+// ── Risk ──────────────────────────────────────────────
+var RISK_CATS=['Tillbud','Nästanolycka','Olycka','Skada','Psykosocialt','Stress','Mobbning','Konflikt','Kränkning','Ergonomi: rygg','Ergonomi: nacke','Ergonomi: handled','Ergonomi: ögon','Teams-trötthet','Systemproblem','Informationsstress'];
+var rsel={cats:[],sev:'y'};
+function renderRiskCats(){
+  var el=document.getElementById('risk-cats');
+  el.innerHTML=RISK_CATS.map(function(c){return '<button class="cat-chip'+(rsel.cats.indexOf(c)>=0?' sel':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>';}).join('');
+  var bs=el.querySelectorAll('.cat-chip');for(var i=0;i<bs.length;i++){(function(b){b.onclick=function(){var c=b.dataset.c;var k=rsel.cats.indexOf(c);if(k>=0)rsel.cats.splice(k,1);else rsel.cats.push(c);renderRiskCats();};})(bs[i]);}
+  var sb=document.getElementById('risk-sev').querySelectorAll('button');
+  for(var j=0;j<sb.length;j++){sb[j].className=sb[j].dataset.s+(sb[j].dataset.s===rsel.sev?' sel':'');(function(b){b.onclick=function(){rsel.sev=b.dataset.s;renderRiskCats();};})(sb[j]);}
+}
+document.getElementById('open-risk').onclick=function(){rsel={cats:[],sev:'y'};document.getElementById('risk-desc').value='';document.getElementById('risk-place').value='';document.getElementById('risk-anon').checked=false;renderRiskCats();openSheet('risk-sheet');};
+document.getElementById('risk-save').onclick=function(){
+  var desc=document.getElementById('risk-desc').value.trim();
+  if(!rsel.cats.length&&!desc){closeSheets();return;}
+  state.risks.unshift({id:Date.now(),date:todayKey(),cats:rsel.cats.slice(),sev:rsel.sev,desc:desc,place:document.getElementById('risk-place').value.trim(),anon:document.getElementById('risk-anon').checked});
+  save();closeSheets();renderRisks();renderToday();pushIfOn();
+};
+function renderRisks(){
+  var el=document.getElementById('risk-list');
+  if(!state.risks.length){el.innerHTML='<div class="empty-msg">Inga rapporter ännu.</div>';return;}
+  el.innerHTML=state.risks.map(function(r){
+    var tags=r.cats.map(function(c){return '<span class="item-tag">'+esc(c)+'</span>';}).join('');
+    return '<div class="item"><div class="item-head"><span class="sev '+r.sev+'"></span><span class="item-title">'+(esc(r.desc)||'(ingen beskrivning)')+'</span><button class="x" data-del="'+r.id+'">×</button></div><div class="item-meta">'+tags+(r.place?' · '+esc(r.place):'')+' · '+r.date+(r.anon?' · anonym':'')+'</div><button class="status-pill" data-act="'+r.id+'" style="margin-top:7px">→ Skapa åtgärd</button></div>';
+  }).join('');
+  var dels=el.querySelectorAll('[data-del]');for(var i=0;i<dels.length;i++){(function(b){b.onclick=function(){var id=+b.dataset.del;state.risks=state.risks.filter(function(r){return r.id!==id;});save();renderRisks();renderToday();pushIfOn();};})(dels[i]);}
+  var acts=el.querySelectorAll('[data-act]');for(var j=0;j<acts.length;j++){(function(b){b.onclick=function(){var r=state.risks.filter(function(x){return x.id===+b.dataset.act;})[0];openAction(r?r.desc:'');};})(acts[j]);}
+}
+
+// ── Åtgärder ──────────────────────────────────────────
+var editActionId=null;
+function openAction(problem){
+  editActionId=null;
+  document.getElementById('action-h').textContent='Ny åtgärd';
+  document.getElementById('ac-problem').value=problem||'';
+  document.getElementById('ac-fix').value='';
+  document.getElementById('ac-owner').value='';
+  document.getElementById('ac-deadline').value='';
+  document.getElementById('ac-status').value='planerad';
+  openSheet('action-sheet');
+}
+document.getElementById('open-action').onclick=function(){openAction('');};
+document.getElementById('ac-save').onclick=function(){
+  var problem=document.getElementById('ac-problem').value.trim();
+  var fix=document.getElementById('ac-fix').value.trim();
+  if(!problem&&!fix){closeSheets();return;}
+  var obj={id:editActionId||Date.now(),problem:problem,fix:fix,owner:document.getElementById('ac-owner').value.trim(),deadline:document.getElementById('ac-deadline').value,status:document.getElementById('ac-status').value};
+  if(editActionId){state.actions=state.actions.map(function(a){return a.id===editActionId?obj:a;});}
+  else state.actions.unshift(obj);
+  save();closeSheets();renderActions();renderToday();pushIfOn();
+};
+var STATUS_LABEL={planerad:'Planerad',pagaende:'Pågående',klar:'Klar',forsenad:'Försenad'};
+function effStatus(a){var t=todayKey();if(a.status!=='klar'&&a.deadline&&a.deadline<t)return 'forsenad';return a.status;}
+function renderActions(){
+  var el=document.getElementById('action-list');
+  if(!state.actions.length){el.innerHTML='<div class="empty-msg">Inga åtgärder ännu.</div>';return;}
+  el.innerHTML=state.actions.map(function(a){
+    var st=effStatus(a);
+    var meta=[];if(a.owner)meta.push('👤 '+esc(a.owner));if(a.deadline)meta.push('📅 '+a.deadline);if(a.fix)meta.push(esc(a.fix));
+    return '<div class="item"><div class="item-head"><span class="item-title">'+(esc(a.problem)||esc(a.fix))+'</span><button class="x" data-del="'+a.id+'">×</button></div><div class="item-meta">'+meta.join(' · ')+'</div><div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap"><button class="status-pill '+st+'" data-cyc="'+a.id+'">'+STATUS_LABEL[st]+'</button><button class="status-pill" data-edit="'+a.id+'">Ändra</button></div></div>';
+  }).join('');
+  var dels=el.querySelectorAll('[data-del]');for(var i=0;i<dels.length;i++){(function(b){b.onclick=function(){var id=+b.dataset.del;state.actions=state.actions.filter(function(a){return a.id!==id;});save();renderActions();renderToday();pushIfOn();};})(dels[i]);}
+  var cyc=el.querySelectorAll('[data-cyc]');for(var j=0;j<cyc.length;j++){(function(b){b.onclick=function(){var id=+b.dataset.cyc;state.actions=state.actions.map(function(a){if(a.id===id){var order=['planerad','pagaende','klar'];var cur=order.indexOf(a.status);a.status=order[(cur+1)%order.length];}return a;});save();renderActions();renderToday();pushIfOn();};})(cyc[j]);}
+  var eds=el.querySelectorAll('[data-edit]');for(var k=0;k<eds.length;k++){(function(b){b.onclick=function(){var a=state.actions.filter(function(x){return x.id===+b.dataset.edit;})[0];if(!a)return;editActionId=a.id;document.getElementById('action-h').textContent='Ändra åtgärd';document.getElementById('ac-problem').value=a.problem;document.getElementById('ac-fix').value=a.fix;document.getElementById('ac-owner').value=a.owner;document.getElementById('ac-deadline').value=a.deadline;document.getElementById('ac-status').value=a.status==='forsenad'?'pagaende':a.status;openSheet('action-sheet');};})(eds[k]);}
+}
+
+// ── NPF ───────────────────────────────────────────────
+var NPF_KEYS=[['ljud','Ljud'],['ljus','Ljus'],['lukt','Lukt'],['manniskor','Människor'],['stok','Stök']];
+function renderNpf(){
+  var d=day();var el=document.getElementById('npf-list');
+  el.innerHTML=NPF_KEYS.map(function(k){
+    var v=d.npf[k[0]]||0;
+    var lvl=[1,2,3].map(function(n){return '<button class="s'+n+(v===n?' sel':'')+'" data-k="'+k[0]+'" data-n="'+n+'">'+n+'</button>';}).join('');
+    return '<div class="npf-row"><span class="lab">'+k[1]+'</span><span class="lvl">'+lvl+'</span></div>';
+  }).join('');
+  var bs=el.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.onclick=function(){var key=b.dataset.k,n=+b.dataset.n;d.npf[key]=(d.npf[key]===n)?0:n;save();renderNpf();renderNpfInsights();};})(bs[i]);}
+  document.getElementById('soc-range').value=d.soc;
+  document.getElementById('soc-val').textContent=d.soc;
+  socText(d.soc);
+  var fp=document.getElementById('focus-pick').querySelectorAll('button');
+  for(var j=0;j<fp.length;j++){fp[j].className=fp[j].dataset.f==='1'?'g':fp[j].dataset.f==='2'?'y':'r';if(+fp[j].dataset.f===d.focus)fp[j].className+=' sel';}
+}
+function socText(v){document.getElementById('soc-text').textContent=v>60?'Du har social energi kvar — men spara gärna lite.':v>=30?'Halvfullt. Korta av eller skjut upp det socialt tunga om du kan.':'Nästan tomt. Skydda dig från fler intryck och möten idag om det går.';}
+document.getElementById('soc-range').oninput=function(e){var d=day();d.soc=+e.target.value;document.getElementById('soc-val').textContent=d.soc;socText(d.soc);save();};
+var fpb=document.getElementById('focus-pick').querySelectorAll('button');for(var fi=0;fi<fpb.length;fi++){(function(b){b.onclick=function(){var d=day();d.focus=+b.dataset.f;save();renderNpf();};})(fpb[fi]);}
+function renderNpfInsights(){
+  var el=document.getElementById('npf-insights');
+  var keys=Object.keys(state.days).sort();
+  var msgs=[];
+  // 3 dagar i rad hög sensorisk
+  var streak=0;
+  for(var i=keys.length-1;i>=0&&i>keys.length-8;i--){
+    var n=state.days[keys[i]].npf||{};
+    var high=NPF_KEYS.some(function(k){return (n[k[0]]||0)===3;});
+    if(high)streak++;else break;
+  }
+  if(streak>=3)msgs.push('🔴 '+streak+' dagar i rad med hög sensorisk belastning. Det här tär — planera in återhämtning och färre intryck.');
+  // genomsnittlig social
+  var socs=keys.slice(-7).map(function(k){return state.days[k].soc;}).filter(function(v){return typeof v==='number';});
+  if(socs.length>=4){var avg=Math.round(socs.reduce(function(a,b){return a+b;},0)/socs.length);if(avg<40)msgs.push('🟡 Din sociala energi har legat lågt senaste veckan (snitt '+avg+'). Färre möten och mer fokustid kan hjälpa.');}
+  el.innerHTML=msgs.length?msgs.map(function(m){return '<div class="insight">'+m+'</div>';}).join(''):'<div class="empty-msg">Logga några dagar så dyker mönstren upp här.</div>';
+}
+
+// ── Dashboard ─────────────────────────────────────────
+function renderTrend(){
+  var c=document.getElementById('trend');if(!c.getContext)return;
+  var ctx=c.getContext('2d');var W=c.width,H=c.height;ctx.clearRect(0,0,W,H);
+  var keys=[];var base=new Date();
+  for(var i=13;i>=0;i--){var d=new Date(base);d.setDate(d.getDate()-i);keys.push(toISO(d));}
+  var pad=30,bw=(W-pad*2)/keys.length;
+  var line=getComputedStyle(document.documentElement).getPropertyValue('--line').trim()||'#ccc';
+  ctx.strokeStyle=line;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,H-pad);ctx.lineTo(W-pad,H-pad);ctx.stroke();
+  function plot(field,color){
+    ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.beginPath();var started=false;
+    keys.forEach(function(k,i){
+      var d=state.days[k];var v=d&&d.checkin?d.checkin[field]:null;
+      if(field==='energy'&&d&&!d.checkin&&typeof d.val==='number')v=d.val;
+      if(v==null)return;
+      var x=pad+bw*i+bw/2;var y=H-pad-(v/100)*(H-pad*2);
+      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+      ctx.fillStyle=color;ctx.fillRect(x-2,y-2,4,4);
+    });
+    ctx.stroke();
+  }
+  var teal=getComputedStyle(document.documentElement).getPropertyValue('--teal').trim()||'#4E7C8B';
+  var red=getComputedStyle(document.documentElement).getPropertyValue('--red').trim()||'#C07A6E';
+  plot('energy',teal);plot('stress',red);
+}
+function avg(arr){return arr.length?Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length):null;}
+function renderAvgs(){
+  var keys=Object.keys(state.days).sort().slice(-7);
+  var fields=[['energy','Energi'],['stress','Stress'],['motiv','Motivation'],['focus','Fokus'],['social','Social belastning'],['sensory','Sensorisk belastning']];
+  var el=document.getElementById('avgs');var html='';var any=false;
+  fields.forEach(function(f){
+    var vals=keys.map(function(k){var c=state.days[k].checkin;return c?c[f[0]]:null;}).filter(function(v){return v!=null;});
+    var a=avg(vals);if(a==null)return;any=true;
+    html+='<div class="avg-row"><span>'+f[1]+'</span><span class="bar"><i style="width:'+a+'%"></i></span></div>';
+  });
+  el.innerHTML=any?html:'<div class="empty-msg">Gör några arbetsmiljöcheckar så fylls det här.</div>';
+}
+var WD=['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+function renderPatternInsights(){
+  var el=document.getElementById('pattern-insights');var msgs=[];
+  var keys=Object.keys(state.days);
+  // weekday energy dip
+  var byWd={};
+  keys.forEach(function(k){var c=state.days[k].checkin;if(!c||c.energy==null)return;var wd=new Date(k).getDay();(byWd[wd]=byWd[wd]||[]).push(c.energy);});
+  var lowWd=null,lowAvg=200;
+  Object.keys(byWd).forEach(function(wd){if(byWd[wd].length>=2){var a=avg(byWd[wd]);if(a<lowAvg){lowAvg=a;lowWd=wd;}}});
+  if(lowWd!=null&&lowAvg<55)msgs.push('📉 '+WD[lowWd].charAt(0).toUpperCase()+WD[lowWd].slice(1)+'ar ger en återkommande energidipp (snitt '+lowAvg+'). Lägg lättare uppgifter där om du kan.');
+  // high stress streak
+  var sorted=keys.sort();var streak=0;
+  for(var i=sorted.length-1;i>=0;i--){var c=state.days[sorted[i]].checkin;if(c&&c.stress>=70)streak++;else break;}
+  if(streak>=3)msgs.push('🔴 '+streak+' dagar i rad med hög stress. Det här är en tydlig signal — prata med chef eller skyddsombud och se över belastningen.');
+  el.innerHTML=msgs.map(function(m){return '<div class="insight">'+m+'</div>';}).join('');
+}
+function renderRiskSummary(){
+  var el=document.getElementById('risk-summary');
+  var cut=new Date();cut.setDate(cut.getDate()-30);var cutK=toISO(cut);
+  var counts={};
+  state.risks.forEach(function(r){if(r.date>=cutK)r.cats.forEach(function(c){counts[c]=(counts[c]||0)+1;});});
+  var ks=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+  if(!ks.length){el.innerHTML='<div class="empty-msg">Inga risker rapporterade senaste 30 dagarna.</div>';return;}
+  var max=counts[ks[0]];
+  el.innerHTML=ks.map(function(c){return '<div class="avg-row"><span>'+esc(c)+'</span><span class="bar"><i style="width:'+Math.round(counts[c]/max*100)+'%"></i></span></div>';}).join('');
+}
+function renderPattern(){renderTrend();renderAvgs();renderPatternInsights();renderRiskSummary();}
+
+// ── AI-rådgivare ──────────────────────────────────────
+var QUICK=[
+  ['Riskbedömning','Hjälp mig göra en enkel riskbedömning. Ställ följdfrågor om det behövs.'],
+  ['OSA','Vi har stigande stress i teamet. Hur jobbar vi med den organisatoriska och sociala arbetsmiljön?'],
+  ['Ergonomi','Ge mig en kort checklista för bra ergonomi vid skärmarbete.'],
+  ['Chefstöd','Jag är chef och ser ökande stress i teamet. Vad bör jag göra konkret?'],
+  ['Medarbetarstöd','Jag känner mig nära utmattning på jobbet. Vad kan jag göra och vart vänder jag mig?']
+];
+function renderQuick(){
+  var el=document.getElementById('quick-prompts');
+  el.innerHTML=QUICK.map(function(q,i){return '<button class="cat-chip" data-q="'+i+'">'+esc(q[0])+'</button>';}).join('');
+  var bs=el.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.onclick=function(){document.getElementById('ai-in').value=QUICK[+b.dataset.q][1];};})(bs[i]);}
+}
+function renderChat(){
+  var el=document.getElementById('chat');
+  if(!state.chat.length){el.innerHTML='<div class="msg sys">Ställ en fråga, eller välj ett snabbval ovan. Inget av det du skriver lämnar din enhet förutom just det meddelande du skickar till Anthropic.</div>';return;}
+  el.innerHTML=state.chat.map(function(m){return '<div class="msg '+m.role+'">'+esc(m.text)+'</div>';}).join('');
+  el.scrollTop=el.scrollHeight;
+}
+function sysContext(){
+  var d=day();var c=d.checkin;
+  var ctx='Du är en svensk arbetsmiljörådgivare i en app som heter ArbetsMiljö. Svara kortfattat, konkret och varmt på svenska. Ge praktiska råd om systematiskt arbetsmiljöarbete (SAM), OSA, ergonomi och hållbart arbetsliv. Du ger inte vård eller myndighetsbeslut; vid allvarliga risker, kränkningar eller ohälsa hänvisa till chef, skyddsombud, företagshälsa eller vården. Arbetsläge: '+state.mode+'.';
+  if(c)ctx+=' Användarens egen check idag (0-100): energi '+c.energy+', stress '+c.stress+', motivation '+c.motiv+', fokus '+c.focus+', social belastning '+c.social+', sensorisk belastning '+c.sensory+'.';
+  return ctx;
+}
+var aiBusy=false;
+function sendAI(){
+  if(aiBusy)return;
+  var input=document.getElementById('ai-in');var text=input.value.trim();if(!text)return;
+  if(!state.apiKey){state.chat.push({role:'ai',text:'Lägg till din Anthropic API-nyckel under ⚙ Inställningar först, så kan jag svara.'});renderChat();return;}
+  state.chat.push({role:'user',text:text});input.value='';save();renderChat();
+  state.chat.push({role:'ai',text:'…tänker'});renderChat();aiBusy=true;
+  var history=state.chat.filter(function(m){return m.text!=='…tänker';}).map(function(m){return {role:m.role==='user'?'user':'assistant',content:m.text};});
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':state.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1024,system:sysContext(),messages:history})
+  }).then(function(r){return r.json();}).then(function(data){
+    state.chat.pop();
+    var out='';
+    if(data&&data.content)out=data.content.map(function(b){return b.type==='text'?b.text:'';}).join('').trim();
+    if(!out&&data&&data.error)out='Fel: '+(data.error.message||'okänt fel')+'. Kontrollera API-nyckeln.';
+    state.chat.push({role:'ai',text:out||'Inget svar kom tillbaka. Försök igen.'});
+    aiBusy=false;save();renderChat();
+  }).catch(function(e){
+    state.chat.pop();state.chat.push({role:'ai',text:'Kunde inte nå Anthropic ('+e.message+'). Kontrollera nätverk och nyckel.'});aiBusy=false;save();renderChat();
+  });
+}
+document.getElementById('ai-send').onclick=sendAI;
+document.getElementById('ai-in').addEventListener('keydown',function(e){if(e.key==='Enter')sendAI();});
+
+// ── Inställningar ─────────────────────────────────────
+document.getElementById('set-btn').onclick=function(){
+  document.getElementById('mode-sel').value=state.mode;
+  document.getElementById('api-key').value=state.apiKey||'';
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('settings-sheet');
+};
+document.getElementById('settings-save').onclick=function(){
+  state.mode=document.getElementById('mode-sel').value;
+  state.apiKey=document.getElementById('api-key').value.trim();
+  save();closeSheets();renderChips();
+};
+
+// ── Teamsynk via GitHub (likt Jobbplanering) ──────────
+var SYNC_KEY='arbetsmiljosync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/arbetsmiljo.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(st,msg){
+  var b=document.getElementById('sync-badge');if(!b)return;
+  b.textContent=msg;
+  b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':st==='load'?'':' offline');
+  document.getElementById('sync-btn').style.display=syncOn()?'inline-block':'none';
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){
+      if(Array.isArray(data.risks))state.risks=data.risks;
+      if(Array.isArray(data.actions))state.actions=data.actions;
+      save();
+      renderToday();
+      if(document.getElementById('view-risk').classList.contains('active')){renderRisks();renderActions();}
+      if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({risks:state.risks,actions:state.actions,updated:new Date().toISOString()}));
+  function doPut(){
+    var body={message:'Uppdatering via ArbetsMiljö',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(function(){
+      var b={message:'Uppdatering via ArbetsMiljö',content:content};if(sync.sha)b.sha=sync.sha;
+      return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(b)});
+    });}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function pushIfOn(){if(syncOn())ghPush();}
+function ghStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.className='gh-status '+type;el.textContent=msg;}
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){ghStatus('Fyll i användarnamn, repo och token.','err');return;}
+  saveSync();ghStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){ghStatus('✓ Ansluten! Hämtar teamets risker och åtgärder…','ok');return ghPull();}
+    ghStatus('✓ Ansluten! Repot är tomt — laddar upp dina risker och åtgärder…','ok');return ghPush();
+  }).then(function(){setBadge('ok','Synkad');}).catch(function(e){ghStatus('Fel: '+e.message+'. Kontrollera repo och att token har Contents: Read and write.','err');});
+};
+document.getElementById('gh-clear').onclick=function(){
+  sync={owner:'',repo:'',token:'',sha:null};saveSync();
+  document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';
+  ghStatus('Bortkopplad. Data ligger nu bara lokalt.','info');setBadge('offline','Lokal');
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='arbetsmiljo-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){try{state=Object.assign(state,JSON.parse(rd.result));save();location.reload();}catch(err){alert('Kunde inte läsa filen.');}};
+  rd.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1B2127':'#ECEFF2';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+var navbtns=document.querySelectorAll('.nav button');
+for(var ni=0;ni<navbtns.length;ni++){(function(b){
+  b.onclick=function(){
+    for(var i=0;i<navbtns.length;i++)navbtns[i].classList.remove('active');
+    b.classList.add('active');
+    var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='pattern')renderPattern();
+    if(b.dataset.v==='npf'){renderNpf();renderNpfInsights();}
+    if(b.dataset.v==='risk'){renderRisks();renderActions();}
+    if(b.dataset.v==='ai'){renderQuick();renderChat();}
+  };
+})(navbtns[ni]);}
+
+function renderToday(){renderBattery();renderChips();renderLog();renderStatusSummary();}
+loadSync();
+renderToday();
+setBadge(syncOn()?'ok':'offline',syncOn()?'Synkad':'Lokal');
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

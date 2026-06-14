@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#EEF1EB">
+<title>Tillbaka — desktop</title>
+<style>
+:root{
+  --bg:#EEF1EB;--panel:#F7F8F4;--panel2:#E7EBE2;--line:#D8DECF;
+  --ink:#3C4237;--muted:#7E8676;--moss:#7A8B6F;--moss-soft:#DBE3D3;
+  --clay:#C2A38B;--clay-soft:#EBDCCF;--sun:#D9C27E;
+  --green:#7A8B6F;--yellow:#C7B06A;--rest:#9FA9C4;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s}
+.shell{display:flex;min-height:100vh;max-width:1180px;margin:0 auto}
+
+/* Sidofält */
+.side{width:248px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side .brand{font-family:Georgia,serif;font-weight:400;font-size:22px;letter-spacing:.04em;text-align:center;margin-bottom:8px}
+.side .tag{font-size:11px;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:14px}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;border-radius:12px;color:var(--muted);font-size:14px;padding:11px 13px;cursor:pointer;font-family:inherit}
+.nav button:hover{background:var(--panel2)}
+.nav button.active{background:var(--moss-soft);color:var(--ink);font-weight:600}
+.nav button span{font-size:17px;width:22px;text-align:center}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:6px;padding-top:14px;border-top:1px solid var(--line)}
+.side-foot button{background:none;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:12px;padding:8px 10px;cursor:pointer;font-family:inherit;text-align:left}
+.side-foot button:hover{background:var(--panel2)}
+.side-foot .sync-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);padding:2px 4px}
+.side-foot .sync-row b{color:var(--ink);font-weight:600}
+.privacy{font-size:10px;color:var(--muted);opacity:.8;line-height:1.6;margin-top:6px}
+
+/* Innehåll */
+.main{flex:1;padding:30px 36px 60px;min-width:0}
+.main-h{font-family:Georgia,serif;font-weight:400;font-size:24px;margin-bottom:4px}
+.main-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.view{display:none}
+.view.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.block{min-width:0}
+.block.wide{grid-column:1 / -1}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+/* Gemensamma komponenter (matchar mobil) */
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:0 0 8px;letter-spacing:.02em}
+.block .section-title:not(:first-child){margin-top:14px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}
+.btn{border:1px solid var(--moss);background:var(--panel);color:var(--moss);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn:hover{background:var(--moss-soft)}
+.btn.fill{background:var(--moss);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus{border-color:var(--moss)}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.lead{font-size:14px;line-height:1.7;color:var(--ink)}
+.cap-wrap{text-align:center;padding:4px 0 2px}
+.cap-num{font-family:Georgia,serif;font-size:46px;line-height:1;color:var(--moss)}
+.cap-zone{font-family:Georgia,serif;font-size:17px;margin:8px 0 2px}
+.cap-text{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+input[type=range]{accent-color:var(--moss);padding:0}
+.stance-row{display:flex;gap:8px;margin-top:4px}
+.stance{flex:1;border:1.5px solid var(--line);background:var(--panel);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink)}
+.stance:hover{background:var(--panel2)}
+.stance b{display:block;font-family:Georgia,serif;font-size:15px;font-weight:400}
+.stance small{font-size:10px;color:var(--muted)}
+.stance.sel{border-color:var(--moss);background:var(--moss-soft)}
+.permit{background:var(--clay-soft);border:1px solid var(--clay);border-radius:16px;padding:18px 20px;font-family:Georgia,serif;font-size:17px;line-height:1.6;color:#5C4A3C;text-align:center}
+.tap-chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.tap-chip:hover{background:var(--panel2)}
+.tap-chip.done{background:var(--moss-soft);border-color:var(--moss-soft);color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.log-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-row time{color:var(--muted);font-size:11px;margin-left:auto}
+.log-row button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.rest-type{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.rest-type:first-child{border-top:none}
+.rest-type:hover{background:var(--panel2);border-radius:8px;margin:0 -6px;padding-left:6px;padding-right:6px}
+.rest-type .ico{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.rest-type b{font-size:14px;font-weight:600;display:block}
+.rest-type small{font-size:12px;color:var(--muted);line-height:1.5}
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0}
+.ring{width:200px;height:200px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--rest) 0%,var(--panel2) 0)}
+.ring-inner{width:168px;height:168px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-time{font-size:40px;font-weight:600;font-variant-numeric:tabular-nums}
+.ring-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;text-align:center;padding:0 14px}
+.phrase{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5;margin-bottom:8px;cursor:pointer;position:relative}
+.phrase:hover{background:var(--moss-soft)}
+.phrase .cp{position:absolute;right:10px;top:9px;font-size:10px;color:var(--muted)}
+.phase{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.phase:first-child{border-top:none}
+.phase:hover{background:var(--panel2);border-radius:8px;margin:0 -6px;padding-left:6px;padding-right:6px}
+.phase .dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);font-family:Georgia,serif}
+.phase.cur .dot{background:var(--moss);border-color:var(--moss);color:#fff}
+.phase b{font-size:14px;display:block}
+.phase.cur b{color:var(--moss)}
+.phase small{font-size:12px;color:var(--muted);line-height:1.5}
+.step-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.step-item:first-child{border-top:none}
+.step-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--moss);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center}
+.step-check.done{background:var(--moss)}
+.step-item .txt{flex:1;font-size:14px}
+.step-item .txt.done{text-decoration:line-through;color:var(--muted)}
+.step-item .del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row button{border:1px solid var(--moss);background:var(--moss);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+.val-chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;cursor:pointer;color:var(--ink);font-family:inherit}
+.val-chip:hover{background:var(--panel2)}
+.val-chip.sel{border-color:var(--moss);background:var(--moss-soft)}
+.cap-bars{display:flex;align-items:flex-end;gap:4px;height:130px;padding-top:6px}
+.cap-bars .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.cap-bars .bar{width:100%;border-radius:4px 4px 0 0;min-height:3px}
+.cap-bars .lbl{font-size:9px;color:var(--muted);text-align:center;margin-top:3px}
+.warn-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.warn-row:first-child{border-top:none}
+.warn-row input{width:auto;accent-color:var(--moss)}
+.warn-banner{background:#F4E8E4;border:1px solid #E0C4BB;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#6E4A40;margin-top:12px;display:none}
+.res-item{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
+.res-item:first-child{border-top:none}
+.res-item .ico{font-size:16px;width:22px;flex-shrink:0}
+.res-item b{display:block}
+.care-banner{background:var(--moss-soft);border:1px solid var(--moss);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.6;color:#3F4A38;margin-bottom:4px}
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+
+/* Sheets som centrerade modaler */
+.sheet-bg{position:fixed;inset:0;background:rgba(60,66,55,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);width:min(560px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 24px;z-index:51;opacity:0;pointer-events:none;transition:transform .2s ease,opacity .2s ease;max-height:88vh;overflow-y:auto;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+.sheet h3{font-family:Georgia,serif;font-size:19px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--moss);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.theme-btn{width:100%}
+
+html[data-theme=dark]{
+  --bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#41463C;
+  --ink:#E3E7DC;--muted:#9AA192;--moss:#8FA383;--moss-soft:#3A4434;
+  --clay:#9C7E66;--clay-soft:#3D332A;--sun:#C2AC6B;
+  --green:#8FA383;--yellow:#C2AC6B;--rest:#7B86A6;
+}
+html[data-theme=dark] .permit{color:#E6D6C6}
+html[data-theme=dark] .warn-banner{background:#3A2D29;border-color:#5C443D;color:#E2C2B7}
+html[data-theme=dark] .care-banner{color:#DCE3D3}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">🌱 Tillbaka</div>
+    <div class="tag">Ett mjukt stöd tillbaka från utmattning</div>
+    <div class="nav">
+      <button class="active" data-v="today"><span>🌱</span>Idag</button>
+      <button data-v="rest"><span>☁️</span>Vila</button>
+      <button data-v="back"><span>🪜</span>Tillbaka</button>
+      <button data-v="pattern"><span>〰</span>Mönster</button>
+    </div>
+    <div class="side-foot">
+      <div class="sync-row">⟳ Synk: <b id="sync-badge">Lokal</b></div>
+      <button id="sync-open">Synkinställningar</button>
+      <button id="export-btn">Säkerhetskopiera</button>
+      <button id="import-btn">Importera</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+      <button class="theme-btn" id="theme-btn">◐ Tema</button>
+      <div class="privacy">Allt sparas i din enhet (och ev. ditt privata repo). Tillbaka är ett vardagsstöd — inte vård. Vid utmattningssyndrom: ta hjälp av vårdcentral eller företagshälsa. 🌱</div>
+    </div>
+  </aside>
+  <main class="main">
+<div class="view active" id="view-today">
+<div class="main-h">Idag</div><div class="main-sub">Möt dagen som den är. Inget krav, bara en ärlig avstämning.</div>
+
+<div class="grid">
+  <div class="block ">
+    <div class="card-panel">
+    <div class="cap-wrap">
+      <div class="cap-num" id="cap-num">50</div>
+      <div class="cap-zone" id="cap-zone"></div>
+      <div class="cap-text" id="cap-text"></div>
+      <input type="range" id="cap-range" min="0" max="100" step="5" value="50">
+      <div class="soft" style="margin-top:4px">Hur mycket finns i dig idag? Inget rätt svar — bara ärligt.</div>
+    </div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Dagens hållning</div>
+  <div class="card-panel">
+    <div class="stance-row" id="stance-row">
+      <button class="stance" data-s="vila"><b>Vila</b><small>idag räcker det</small></button>
+      <button class="stance" data-s="lite"><b>Lite</b><small>en liten sak</small></button>
+      <button class="stance" data-s="lagom"><b>Lagom</b><small>med marginal</small></button>
+    </div>
+    <div class="soft" id="stance-note" style="margin-top:10px;display:none"></div>
+  </div>
+  </div>
+  <div class="block wide">
+    <div class="section-title">En påminnelse</div>
+  <div class="permit" id="permit-card"></div>
+  <div class="btn-row" style="margin-top:8px"><button class="btn ghost" id="permit-next">En till →</button></div>
+  </div>
+  <div class="block ">
+    <div class="section-title">En liten sak idag <span class="soft" style="font-weight:400">— inget krav, bara om det blev av</span></div>
+  <div class="card-panel">
+    <div class="add-row" style="margin-top:0">
+      <input type="text" id="win-in" placeholder="T.ex. kom ut en stund, drack vatten…">
+      <button id="win-add">+</button>
+    </div>
+    <div id="win-log" style="margin-top:6px"></div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">En snäll rad till dig själv</div>
+  <div class="card-panel">
+    <textarea id="reflect" rows="2" placeholder="Hur var det att vara du idag?"></textarea>
+    <div class="soft" id="reflect-saved" style="margin-top:6px;display:none">Sparat 🌱</div>
+  </div>
+  </div>
+</div>
+</div>
+
+
+
+<div class="view" id="view-rest">
+<div class="main-h">Vila</div><div class="main-sub">Vid utmattning är vila läkning. Ge dig själv mer än det känns rimligt.</div>
+
+<div class="grid">
+  <div class="block wide">
+    <div class="card-panel">
+    <div class="lead">Vid utmattning är vila inte lathet — det är läkning. Kroppen behöver mer återhämtning än vanligt, längre än det känns rimligt. Att vila <i>är</i> arbetet just nu.</div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Sju sorters vila</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:4px">Trött trots att du sovit? Då saknas ofta en annan sorts vila. Tryck för en mjuk idé.</div>
+    <div id="rest-types"></div>
+  </div>
+  </div>
+  <div class="block wide">
+    <div class="section-title">Nedvarvning</div>
+  <div class="card-panel">
+    <div class="timer-wrap">
+      <div class="ring" id="ring">
+        <div class="ring-inner">
+          <div class="ring-time" id="ring-time">03:00</div>
+          <div class="ring-label" id="ring-label">Lägg ner allt en stund</div>
+        </div>
+      </div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn fill" id="t-3">3 min</button>
+        <button class="btn" id="t-10">10 min</button>
+        <button class="btn" id="t-20">20 min</button>
+        <button class="btn ghost" id="t-stop">Stopp</button>
+      </div>
+      <div class="soft">Du behöver inte göra något. Bara vara här tills det ringer.</div>
+    </div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Gränser & nej-fraser <button class="btn ghost" id="edit-phr" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Färdiga rader att luta sig mot. Tryck för att kopiera.</div>
+    <div id="phrase-list"></div>
+  </div>
+  </div>
+</div>
+</div>
+
+
+
+<div class="view" id="view-back">
+<div class="main-h">Tillbaka</div><div class="main-sub">Vägen tillbaka går i vågor. Små steg räknas — i din takt.</div>
+
+<div class="grid">
+  <div class="block wide">
+    <div class="card-panel">
+    <div class="lead">Återhämtning går i vågor, inte rakt uppåt. Bra dagar följs av sämre — det är inte ett bakslag, det är så det ser ut. Markera var du ungefär är just nu.</div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Faser i återhämtning</div>
+  <div class="card-panel" id="phase-list"></div>
+  <div class="soft" style="margin-top:6px;text-align:center">Du kan röra dig fram och tillbaka. Det betyder inte att du börjar om.</div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Vad är viktigt för dig?</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Utmattning suddar ofta ut vad man tyckte om. Välj några som påminner dig om vart du är på väg.</div>
+    <div class="chips" id="value-chips"></div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Återintroducera glädje <button class="btn ghost" id="edit-joy" style="float:right;margin-top:-4px">Ändra</button></div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Små dofter av liv. Tryck på en du gjort idag — den landar bland dagens segrar.</div>
+    <div class="chips" id="joy-chips"></div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Mina mikrosteg</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:6px">Dela upp vägen tillbaka i löjligt små steg. Ett i taget, i din takt.</div>
+    <div id="ladder-list"></div>
+    <div class="add-row">
+      <input type="text" id="ladder-in" placeholder="T.ex. promenad runt kvarteret">
+      <button id="ladder-add">+</button>
+    </div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Veckans enda mål <span class="soft" style="font-weight:400">— frivilligt</span></div>
+  <div class="card-panel">
+    <input type="text" id="week-goal" placeholder="En enda mjuk sak den här veckan…">
+    <div class="soft" id="week-saved" style="margin-top:6px;display:none">Sparat 🌱</div>
+  </div>
+  </div>
+</div>
+</div>
+
+
+
+<div class="view" id="view-pattern">
+<div class="main-h">Mönster</div><div class="main-sub">Se hur det rör sig över tid, och fånga tidiga signaler.</div>
+
+<div class="grid">
+  <div class="block wide">
+    <div class="care-banner" id="care-banner" style="display:none"></div>
+  </div>
+  <div class="block wide">
+    <div class="section-title" style="margin-top:0">Förmåga senaste 14 dagarna</div>
+  <div class="card-panel">
+    <div class="cap-bars" id="cap-bars"></div>
+    <div class="soft" id="cap-summary" style="margin-top:10px"></div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Tidiga varningssignaler</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:6px">Kryssa det du känner igen just nu. Det här hjälper dig sakta ner i tid.</div>
+    <div id="warn-list"></div>
+    <button class="btn ghost" id="warn-save" style="width:100%;margin-top:10px">Spara dagens koll</button>
+    <div class="warn-banner" id="warn-banner"></div>
+  </div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Reflektioner</div>
+  <div class="card-panel"><div id="reflect-log"></div></div>
+  </div>
+  <div class="block ">
+    <div class="section-title">Om du behöver mer än en app</div>
+  <div class="card-panel">
+    <div class="res-item"><div class="ico">📞</div><div><b>1177 Vårdguiden</b>Ring 1177 för sjukvårdsrådgivning dygnet runt — de hjälper dig vidare.</div></div>
+    <div class="res-item"><div class="ico">🩺</div><div><b>Vårdcentral / företagshälsa</b>Utmattningssyndrom är en riktig diagnos. De kan hjälpa med bedömning, samtal och eventuell sjukskrivning.</div></div>
+    <div class="res-item"><div class="ico">💬</div><div><b>Mind — Självmordslinjen</b>Om det känns riktigt mörkt: ring eller chatta 90101 (mind.se). Du behöver inte bära det ensam.</div></div>
+    <div class="res-item"><div class="ico">🚑</div><div><b>Akut</b>Vid fara för ditt liv eller någon annans — ring 112.</div></div>
+  </div>
+  </div>
+</div>
+</div>
+  </main>
+</div>
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="rest-sheet">
+  <h3 id="rest-sheet-title"></h3>
+  <div class="lead" id="rest-sheet-body"></div>
+  <button class="sheet-close" id="rest-sheet-close">Stäng</button>
+</div>
+
+<div class="sheet" id="phase-sheet">
+  <h3 id="phase-sheet-title"></h3>
+  <div class="lead" id="phase-sheet-body"></div>
+  <button class="sheet-close" id="phase-sheet-set">Det här är ungefär jag nu</button>
+</div>
+
+<div class="sheet" id="list-sheet">
+  <h3 id="list-title"></h3>
+  <div id="list-items"></div>
+  <div class="add-row"><input type="text" id="list-in" placeholder="Lägg till…"><button id="list-add">+</button></div>
+  <button class="sheet-close" id="list-done">Klar</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⟳ Synk mellan enheter</h3>
+  <div class="soft">Din data sparas i en privat fil (<code>data.json</code>) i ditt eget GitHub-repo, så att telefon och dator visar samma sak. Din token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="dittnamn">
+  <label>Privat repo för din data</label>
+  <input type="text" id="gh-repo" placeholder="tillbaka-data">
+  <label>Fine-grained token (Contents: Read and write)</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge åtkomst till <i>enbart</i> data-repot.</div>
+  <div id="gh-status" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:10px"></div>
+  <button class="btn ghost" id="gh-pull" style="width:100%;margin-top:10px">Hämta senaste nu</button>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='tillbaka_v1';
+var state={
+  days:{},
+  phase:1,
+  values:[],
+  ladder:[],
+  weekGoal:'',
+  joys:['Stå i solen 2 min','En kopp te i lugn','Lyssna på en låt jag älskar','Klappa ett djur','Titta på himlen','Dofta på något gott','Sträcka på kroppen','Skriva en rad','Ringa någon snäll','Bok eller serie utan krav'],
+  joyDone:{},
+  phrases:[
+    'Jag återkommer i morgon — jag kollar i lugn och ro då.',
+    'Det funkar inte för mig just nu.',
+    'Jag behöver vila och kan inte ta det den här gången.',
+    'Kan vi ta det när jag är tillbaka?',
+    'Jag måste säga nej idag.',
+    'Jag orkar inte just nu, och det får vara så.'
+  ],
+  warnHistory:{},
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}if(typeof schedulePush==='function')schedulePush();}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var clamp=function(v){return Math.max(0,Math.min(100,v));};
+function day(){
+  var k=todayKey();
+  if(!state.days[k]){
+    var v=50;
+    var yd=new Date();yd.setDate(yd.getDate()-1);
+    var prev=state.days[toISO(yd)];
+    if(prev&&typeof prev.cap==='number')v=prev.cap;
+    state.days[k]={cap:v,stance:null,wins:[],reflection:''};
+  }
+  var d=state.days[k];
+  d.wins=d.wins||[];
+  return d;
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ss=document.querySelectorAll('.sheet');for(var i=0;i<ss.length;i++)ss[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Förmåga ───────────────────────────────────────────
+var ZONES={
+  rest:['Djup vila','Kroppen ber om vila. Gör det minsta möjliga. Att vila räknas som att göra något — det är faktiskt det viktigaste idag.'],
+  yellow:['Försiktigt','Lite går bra. Välj en enda liten sak och låt resten vänta utan dåligt samvete.'],
+  green:['Stabilare','Du har lite marginal. Ta det ändå försiktigt — bra dagar skyddas av att inte göra för mycket.']
+};
+function capZone(v){return v>60?'green':v>=31?'yellow':'rest';}
+function capColor(z){return z==='green'?'var(--green)':z==='yellow'?'var(--yellow)':'var(--rest)';}
+function renderCap(){
+  var d=day();var z=capZone(d.cap);
+  document.getElementById('cap-num').textContent=d.cap;
+  document.getElementById('cap-num').style.color=capColor(z);
+  document.getElementById('cap-zone').textContent=ZONES[z][0];
+  document.getElementById('cap-text').textContent=ZONES[z][1];
+  document.getElementById('cap-range').value=d.cap;
+}
+document.getElementById('cap-range').oninput=function(){
+  var d=day();d.cap=clamp(parseInt(this.value,10));
+  document.getElementById('cap-num').textContent=d.cap;
+};
+document.getElementById('cap-range').onchange=function(){save();renderCap();};
+
+// ── Hållning ──────────────────────────────────────────
+var STANCE_NOTE={
+  vila:'Idag räcker det att du finns. Inga krav.',
+  lite:'En liten sak. Sen får du vara nöjd — på riktigt.',
+  lagom:'Lagom med marginal kvar. Spara lite till dig själv.'
+};
+function renderStance(){
+  var d=day();
+  var btns=document.querySelectorAll('#stance-row .stance');
+  for(var i=0;i<btns.length;i++){
+    btns[i].classList.toggle('sel',btns[i].dataset.s===d.stance);
+  }
+  var note=document.getElementById('stance-note');
+  if(d.stance){note.style.display='block';note.textContent=STANCE_NOTE[d.stance];}
+  else note.style.display='none';
+}
+(function(){
+  var btns=document.querySelectorAll('#stance-row .stance');
+  for(var i=0;i<btns.length;i++){
+    btns[i].onclick=function(){
+      var d=day();d.stance=(d.stance===this.dataset.s)?null:this.dataset.s;
+      save();renderStance();
+    };
+  }
+})();
+
+// ── Tillåtelsekort ────────────────────────────────────
+var PERMITS=[
+  'Du behöver inte förtjäna din vila.',
+  'Att sakta ner är inte att misslyckas.',
+  'Din kropp är inte trasig — den är klok och ber om mer tid.',
+  'Det är okej att en dag bara handlar om att ta sig igenom den.',
+  'Du gör så gott du kan med det du har idag. Det räcker.',
+  'Du behöver inte vara tillbaka idag. Bara lite närmare.',
+  'Att be om hjälp är styrka, inte svaghet.',
+  'Små steg är fortfarande steg.',
+  'Du är inte lat. Du är utmattad — och det är något helt annat.',
+  'Det går framåt även när det inte känns så.'
+];
+function renderPermit(){
+  var i=Math.floor(Math.random()*PERMITS.length);
+  document.getElementById('permit-card').textContent=PERMITS[i];
+}
+document.getElementById('permit-next').onclick=renderPermit;
+
+// ── Segrar ────────────────────────────────────────────
+function addWin(label){
+  var d=day();
+  d.wins.push({t:new Date().toTimeString().slice(0,5),label:label});
+  save();renderWins();
+}
+function renderWins(){
+  var d=day();var el=document.getElementById('win-log');
+  if(!d.wins.length){el.innerHTML='<div class="empty-msg">Allt räknas — även det allra minsta.</div>';return;}
+  var html='';
+  for(var i=d.wins.length-1;i>=0;i--){
+    var w=d.wins[i];
+    html+='<div class="log-row"><span>'+esc(w.label)+'</span><time>'+esc(w.t)+'</time><button data-i="'+i+'">×</button></div>';
+  }
+  el.innerHTML=html;
+  var bs=el.querySelectorAll('button');
+  for(var j=0;j<bs.length;j++){
+    bs[j].onclick=function(){var i=parseInt(this.dataset.i,10);day().wins.splice(i,1);save();renderWins();};
+  }
+}
+document.getElementById('win-add').onclick=function(){
+  var inp=document.getElementById('win-in');var v=inp.value.trim();
+  if(v){addWin(v);inp.value='';}
+};
+document.getElementById('win-in').onkeydown=function(e){if(e.key==='Enter')document.getElementById('win-add').onclick();};
+
+// ── Reflektion ────────────────────────────────────────
+var reflectEl=document.getElementById('reflect');
+reflectEl.oninput=function(){
+  var d=day();d.reflection=this.value;save();
+  var sv=document.getElementById('reflect-saved');sv.style.display='block';
+  clearTimeout(reflectEl._t);reflectEl._t=setTimeout(function(){sv.style.display='none';},1500);
+};
+function renderReflect(){reflectEl.value=day().reflection||'';}
+
+// ── Vila: sju sorter ──────────────────────────────────
+var REST_TYPES=[
+  ['🛏️','Fysisk vila','Sömn, ligga ner, släppa spänd käke och axlar.','Lägg dig ner 10 minuter utan mål. Märk var i kroppen du håller — släpp en aning. Vila är inte beroende av att du somnar.'],
+  ['🧠','Mental vila','Pauser från att tänka, planera och bevaka.','Töm huvudet på papper: skriv ner allt som snurrar, så slipper hjärnan hålla det. Lägg sedan undan listan helt en stund.'],
+  ['🔇','Sensorisk vila','Mindre ljud, ljus, skärm och intryck.','Dimma ljuset, lägg undan telefonen, sätt på brus eller tystnad. Låt sinnena vila även om bara i några minuter.'],
+  ['💗','Emotionell vila','Att få vara ärlig och slippa hålla masken.','Säg eller skriv hur du faktiskt mår, utan att putsa till det. Du behöver inte vara stark för någon just nu.'],
+  ['👥','Social vila','Tid från krävande relationer — eller med trygga.','Tacka nej till det som dränerar. Sök det sällskap som inte kostar något att vara med.'],
+  ['🌿','Kreativ & natur','Skönhet utan prestation: natur, musik, färg.','Gå ut, titta på något vackert, lyssna på musik. Inget ska bli något — bara att ta emot.'],
+  ['🕊️','Vila från krav','Att få vara utan att prestera eller vara nyttig.','Tillåt dig en stund där ingenting ska uppnås. Du behöver inte motivera din existens med vad du gör.']
+];
+function renderRestTypes(){
+  var el=document.getElementById('rest-types');var html='';
+  for(var i=0;i<REST_TYPES.length;i++){
+    var r=REST_TYPES[i];
+    html+='<div class="rest-type" data-i="'+i+'"><div class="ico">'+r[0]+'</div><div><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div></div>';
+  }
+  el.innerHTML=html;
+  var rows=el.querySelectorAll('.rest-type');
+  for(var j=0;j<rows.length;j++){
+    rows[j].onclick=function(){
+      var r=REST_TYPES[parseInt(this.dataset.i,10)];
+      document.getElementById('rest-sheet-title').textContent=r[0]+' '+r[1];
+      document.getElementById('rest-sheet-body').textContent=r[3];
+      openSheet('rest-sheet');
+    };
+  }
+}
+document.getElementById('rest-sheet-close').onclick=closeSheets;
+
+// ── Nedvarvningstimer ─────────────────────────────────
+var timer={left:180,total:180,id:null};
+function fmtT(s){var m=Math.floor(s/60);return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function renderRing(){
+  var pct=timer.total?(timer.total-timer.left)/timer.total*100:0;
+  document.getElementById('ring').style.background='conic-gradient(var(--rest) '+pct+'%,var(--panel2) 0)';
+  document.getElementById('ring-time').textContent=fmtT(timer.left);
+}
+function startTimer(sec){
+  stopTimer();
+  timer.total=sec;timer.left=sec;
+  document.getElementById('ring-label').textContent='Lägg ner allt — andas';
+  renderRing();
+  timer.id=setInterval(function(){
+    timer.left--;
+    if(timer.left<=0){stopTimer();timer.left=0;renderRing();document.getElementById('ring-label').textContent='Klart. Bra att du gav dig detta.';try{if(navigator.vibrate)navigator.vibrate(200);}catch(e){}return;}
+    renderRing();
+  },1000);
+}
+function stopTimer(){if(timer.id){clearInterval(timer.id);timer.id=null;}}
+document.getElementById('t-3').onclick=function(){startTimer(180);};
+document.getElementById('t-10').onclick=function(){startTimer(600);};
+document.getElementById('t-20').onclick=function(){startTimer(1200);};
+document.getElementById('t-stop').onclick=function(){stopTimer();timer.left=timer.total;renderRing();document.getElementById('ring-label').textContent='Lägg ner allt en stund';};
+
+// ── Gränser / fraser ──────────────────────────────────
+function renderPhrases(){
+  var el=document.getElementById('phrase-list');var html='';
+  for(var i=0;i<state.phrases.length;i++){
+    html+='<div class="phrase" data-i="'+i+'">'+esc(state.phrases[i])+'<span class="cp">kopiera</span></div>';
+  }
+  el.innerHTML=html;
+  var rows=el.querySelectorAll('.phrase');
+  for(var j=0;j<rows.length;j++){
+    rows[j].onclick=function(){
+      var txt=state.phrases[parseInt(this.dataset.i,10)];
+      var cp=this.querySelector('.cp');
+      try{navigator.clipboard.writeText(txt);cp.textContent='kopierat ✓';}catch(e){cp.textContent='markera & kopiera';}
+      var sp=cp;setTimeout(function(){sp.textContent='kopiera';},1400);
+    };
+  }
+}
+document.getElementById('edit-phr').onclick=function(){openListEditor('phrases','Gränser & nej-fraser');};
+
+// ── Faser ─────────────────────────────────────────────
+var PHASES=[
+  ['Krisen','Kroppen säger stopp. Allt fokus på trygghet, sömn och vila.','Det här är inte tiden för att lösa något eller komma igen. Det är tiden att låta dig själv landa. Sänk alla krav till noll. Be om hjälp med det praktiska. Sömn, mat, vatten och trygghet går först — resten kan vänta.'],
+  ['Stabilisering','Det värsta lägger sig. Mikrorutiner och regelbundenhet.','Energin är fortfarande låg men mindre kaotisk. Bygg pyttesmå rutiner: samma sängtid, måltider, en kort stund ute. Förutsägbarhet lugnar nervsystemet. Förvänta dig inte mer än så än.'],
+  ['Återuppbyggnad','Energi kommer tillbaka i vågor. Försiktig aktivering.','Du orkar lite mer, men oregelbundet. Här är fällan att göra för mycket en bra dag. Pacing är allt: gör mindre än du kan, även när det känns bra. Lägg in vila innan du blir trött, inte efter.'],
+  ['Återgång','Steg tillbaka mot vardag och arbete — i din takt.','Du närmar dig en mer vanlig vardag. Gå tillbaka stegvis och med marginal, gärna med stöd från vården eller arbetsgivaren. Behåll dina gränser och din vila — det är de som håller dig kvar.']
+];
+var phaseSel=0;
+function renderPhases(){
+  var el=document.getElementById('phase-list');var html='';
+  for(var i=0;i<PHASES.length;i++){
+    html+='<div class="phase'+((i+1)===state.phase?' cur':'')+'" data-i="'+i+'"><div class="dot">'+(i+1)+'</div><div><b>'+esc(PHASES[i][0])+'</b><small>'+esc(PHASES[i][1])+'</small></div></div>';
+  }
+  el.innerHTML=html;
+  var rows=el.querySelectorAll('.phase');
+  for(var j=0;j<rows.length;j++){
+    rows[j].onclick=function(){
+      phaseSel=parseInt(this.dataset.i,10);
+      var p=PHASES[phaseSel];
+      document.getElementById('phase-sheet-title').textContent='Fas '+(phaseSel+1)+': '+p[0];
+      document.getElementById('phase-sheet-body').textContent=p[2];
+      openSheet('phase-sheet');
+    };
+  }
+}
+document.getElementById('phase-sheet-set').onclick=function(){state.phase=phaseSel+1;save();renderPhases();closeSheets();};
+
+// ── Värderingar ───────────────────────────────────────
+var VALUES=['Lugn','Hälsa','Närhet','Tid','Lek','Natur','Kreativitet','Trygghet','Frihet','Mening','Kärlek','Nyfikenhet','Vila','Ärlighet','Glädje','Enkelhet'];
+function renderValues(){
+  var el=document.getElementById('value-chips');var html='';
+  for(var i=0;i<VALUES.length;i++){
+    html+='<button class="val-chip'+(state.values.indexOf(VALUES[i])>=0?' sel':'')+'" data-v="'+esc(VALUES[i])+'">'+esc(VALUES[i])+'</button>';
+  }
+  el.innerHTML=html;
+  var bs=el.querySelectorAll('.val-chip');
+  for(var j=0;j<bs.length;j++){
+    bs[j].onclick=function(){
+      var v=this.dataset.v;var k=state.values.indexOf(v);
+      if(k>=0)state.values.splice(k,1);else state.values.push(v);
+      save();renderValues();
+    };
+  }
+}
+
+// ── Glädje ────────────────────────────────────────────
+function renderJoys(){
+  var el=document.getElementById('joy-chips');var done=state.joyDone[todayKey()]||[];var html='';
+  for(var i=0;i<state.joys.length;i++){
+    html+='<button class="tap-chip'+(done.indexOf(i)>=0?' done':'')+'" data-i="'+i+'">'+esc(state.joys[i])+(done.indexOf(i)>=0?' ✓':'')+'</button>';
+  }
+  el.innerHTML=html;
+  var bs=el.querySelectorAll('.tap-chip');
+  for(var j=0;j<bs.length;j++){
+    bs[j].onclick=function(){
+      var i=parseInt(this.dataset.i,10);var k=todayKey();
+      state.joyDone[k]=state.joyDone[k]||[];
+      if(state.joyDone[k].indexOf(i)<0){state.joyDone[k].push(i);addWin(state.joys[i]);}
+      save();renderJoys();
+    };
+  }
+}
+document.getElementById('edit-joy').onclick=function(){openListEditor('joys','Återintroducera glädje');};
+
+// ── Mikrosteg ─────────────────────────────────────────
+function renderLadder(){
+  var el=document.getElementById('ladder-list');
+  if(!state.ladder.length){el.innerHTML='<div class="empty-msg">Lägg till ditt första lilla steg nedan.</div>';return;}
+  var html='';
+  for(var i=0;i<state.ladder.length;i++){
+    var s=state.ladder[i];
+    html+='<div class="step-item"><div class="step-check'+(s.done?' done':'')+'" data-i="'+i+'">'+(s.done?'✓':'')+'</div><div class="txt'+(s.done?' done':'')+'">'+esc(s.text)+'</div><button class="del" data-d="'+i+'">×</button></div>';
+  }
+  el.innerHTML=html;
+  var checks=el.querySelectorAll('.step-check');
+  for(var j=0;j<checks.length;j++){checks[j].onclick=function(){var i=parseInt(this.dataset.i,10);state.ladder[i].done=!state.ladder[i].done;if(state.ladder[i].done)addWin(state.ladder[i].text);save();renderLadder();};}
+  var dels=el.querySelectorAll('.del');
+  for(var m=0;m<dels.length;m++){dels[m].onclick=function(){state.ladder.splice(parseInt(this.dataset.d,10),1);save();renderLadder();};}
+}
+document.getElementById('ladder-add').onclick=function(){
+  var inp=document.getElementById('ladder-in');var v=inp.value.trim();
+  if(v){state.ladder.push({text:v,done:false});inp.value='';save();renderLadder();}
+};
+document.getElementById('ladder-in').onkeydown=function(e){if(e.key==='Enter')document.getElementById('ladder-add').onclick();};
+
+// ── Veckans mål ───────────────────────────────────────
+var weekEl=document.getElementById('week-goal');
+weekEl.value=state.weekGoal||'';
+weekEl.oninput=function(){
+  state.weekGoal=this.value;save();
+  var sv=document.getElementById('week-saved');sv.style.display='block';
+  clearTimeout(weekEl._t);weekEl._t=setTimeout(function(){sv.style.display='none';},1500);
+};
+
+// ── Mönster: förmåga-staplar ──────────────────────────
+function renderCapBars(){
+  var el=document.getElementById('cap-bars');var html='';var vals=[];
+  for(var i=13;i>=0;i--){
+    var d=new Date();d.setDate(d.getDate()-i);
+    var rec=state.days[toISO(d)];
+    var v=(rec&&typeof rec.cap==='number')?rec.cap:null;
+    if(v!==null)vals.push(v);
+    var z=v!==null?capZone(v):null;
+    var col=z?capColor(z):'var(--line)';
+    var h=v!==null?Math.max(3,v):3;
+    var lbl=String(d.getDate());
+    html+='<div class="col"><div class="bar" style="height:'+h+'%;background:'+col+(v===null?';opacity:.3':'')+'"></div><div class="lbl">'+lbl+'</div></div>';
+  }
+  el.innerHTML=html;
+  var sum=document.getElementById('cap-summary');
+  if(vals.length>=3){
+    var avg=Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);
+    var first=vals.slice(0,Math.ceil(vals.length/2));var last=vals.slice(Math.ceil(vals.length/2));
+    var fa=first.reduce(function(a,b){return a+b;},0)/first.length;
+    var la=last.reduce(function(a,b){return a+b;},0)/last.length;
+    var trend=la-fa>5?'Det pekar försiktigt uppåt — fint. Fortsätt skydda vilan.':fa-la>5?'Det har dippat lite. Inget bakslag — sänk kraven igen en period.':'Ganska jämnt. Stabilitet är värdefullt i sig.';
+    sum.textContent='Snitt '+avg+' senaste tiden. '+trend;
+  }else sum.textContent='Fyll i några dagar så ser du mönstret växa fram.';
+}
+
+// ── Varningssignaler ──────────────────────────────────
+var WARNS=['Sömnen vänder igen','Spänd kropp / hjärtat rusar','Allt känns övermäktigt','Drar mig undan från andra','Tål inte ljud och ljus','Glömmer äta eller dricka','Cynisk eller likgiltig','Minne och fokus sviktar'];
+var warnPick=[];
+function renderWarns(){
+  var el=document.getElementById('warn-list');var html='';
+  for(var i=0;i<WARNS.length;i++){
+    html+='<label class="warn-row" style="text-transform:none;letter-spacing:0;margin:0;color:var(--ink);font-size:14px"><input type="checkbox" data-i="'+i+'"'+(warnPick.indexOf(i)>=0?' checked':'')+'>'+esc(WARNS[i])+'</label>';
+  }
+  el.innerHTML=html;
+  var cbs=el.querySelectorAll('input');
+  for(var j=0;j<cbs.length;j++){
+    cbs[j].onchange=function(){
+      var i=parseInt(this.dataset.i,10);
+      if(this.checked){if(warnPick.indexOf(i)<0)warnPick.push(i);}else{warnPick=warnPick.filter(function(x){return x!==i;});}
+      updateWarnBanner();
+    };
+  }
+}
+function updateWarnBanner(){
+  var b=document.getElementById('warn-banner');
+  if(warnPick.length>=3){
+    b.style.display='block';
+    b.textContent='Det här är kroppens tidiga signaler. Sakta ner nu — innan, inte sen. Sänk kraven och hör gärna av dig till vårdcentral eller företagshälsa. Du hinner.';
+  }else b.style.display='none';
+}
+document.getElementById('warn-save').onclick=function(){
+  state.warnHistory[todayKey()]=warnPick.slice();
+  save();updateWarnBanner();
+  var btn=document.getElementById('warn-save');btn.textContent='Sparat ✓';
+  setTimeout(function(){btn.textContent='Spara dagens koll';},1400);
+};
+
+// ── Reflektionslogg ───────────────────────────────────
+function renderReflectLog(){
+  var el=document.getElementById('reflect-log');var keys=Object.keys(state.days).sort().reverse();var html='';var n=0;
+  for(var i=0;i<keys.length;i++){
+    var r=state.days[keys[i]];
+    if(r&&r.reflection){html+='<div class="log-row"><span>'+esc(r.reflection)+'</span><time>'+esc(keys[i].slice(5))+'</time></div>';n++;}
+    if(n>=14)break;
+  }
+  el.innerHTML=html||'<div class="empty-msg">Dina snälla rader samlas här.</div>';
+}
+
+// ── Care-banner (Mönster) ─────────────────────────────
+function renderCareBanner(){
+  var b=document.getElementById('care-banner');
+  var vals=[];
+  for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var rec=state.days[toISO(d)];if(rec&&typeof rec.cap==='number')vals.push(rec.cap);}
+  if(vals.length>=3){
+    var avg=vals.reduce(function(a,b){return a+b;},0)/vals.length;
+    if(avg<=25){b.style.display='block';b.textContent='Förmågan har legat lågt en tid. Det är helt okej — och det kan vara värt att låta vården följa dig nu. Du behöver inte göra återhämtningen ensam. 🌱';return;}
+  }
+  b.style.display='none';
+}
+
+// ── Listredigerare (delad) ────────────────────────────
+var editKey='';
+function openListEditor(key,title){
+  editKey=key;
+  document.getElementById('list-title').textContent=title;
+  renderListEditor();
+  openSheet('list-sheet');
+}
+function renderListEditor(){
+  var el=document.getElementById('list-items');var arr=state[editKey];var html='';
+  for(var i=0;i<arr.length;i++){html+='<div class="edit-item"><span>'+esc(arr[i])+'</span><button data-i="'+i+'">×</button></div>';}
+  el.innerHTML=html||'<div class="empty-msg">Tomt — lägg till nedan.</div>';
+  var bs=el.querySelectorAll('button');
+  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){state[editKey].splice(parseInt(this.dataset.i,10),1);save();renderListEditor();refreshEdited();};}
+}
+function refreshEdited(){
+  if(editKey==='phrases')renderPhrases();
+  if(editKey==='joys')renderJoys();
+}
+document.getElementById('list-add').onclick=function(){
+  var inp=document.getElementById('list-in');var v=inp.value.trim();
+  if(v){state[editKey].push(v);inp.value='';save();renderListEditor();refreshEdited();}
+};
+document.getElementById('list-in').onkeydown=function(e){if(e.key==='Enter')document.getElementById('list-add').onclick();};
+document.getElementById('list-done').onclick=closeSheets;
+
+// ── Export / Import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='tillbaka-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{state=Object.assign(state,JSON.parse(r.result));save();location.reload();}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Synk (GitHub — likt appkollen) ────────────────────
+var SYNC_KEY='tillbakasync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.style.color=st==='ok'?'var(--moss)':st==='err'?'#A2685B':'var(--muted)';}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function applyRemote(data){
+  if(!data)return;
+  delete data.updated;
+  state=Object.assign(state,data);
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+  renderAll();
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){applyRemote(data);setBadge('ok','Synkad');}).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(Object.assign({},state,{updated:new Date().toISOString()})));
+  function doPut(){
+    var body={message:'Uppdatering via Tillbaka',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});
+  }
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');}).catch(function(e){setBadge('err','Synkfel');});
+}
+var pushT=null;
+function schedulePush(){if(!syncOn())return;clearTimeout(pushT);pushT=setTimeout(function(){ghPush();},1500);}
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.style.background=type==='ok'?'var(--moss-soft)':type==='err'?'#F4E8E4':'var(--panel2)';el.style.color=type==='err'?'#6E4A40':'var(--ink)';el.textContent=msg;}
+document.getElementById('sync-open').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){setGhStatus('✓ Ansluten! Hämtar din data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Filen är tom — laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1200);}).catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');});
+};
+document.getElementById('gh-pull').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Rita om allt (efter synk) ─────────────────────────
+function renderAll(){
+  renderCap();renderStance();renderWins();renderReflect();
+  renderPhrases();renderPhases();renderValues();renderJoys();renderLadder();
+  var wg=document.getElementById('week-goal');if(wg)wg.value=state.weekGoal||'';
+  if(document.getElementById('view-pattern').classList.contains('active')){renderCapBars();renderWarns();updateWarnBanner();renderReflectLog();renderCareBanner();}
+}
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#22251F':'#EEF1EB';
+  var b=document.getElementById('theme-btn');
+  b.textContent=(m==='auto'?'◐':(m==='dark'?'☾':'☀'))+' Tema';
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+(function(){
+  var btns=document.querySelectorAll('.nav button');
+  for(var i=0;i<btns.length;i++){
+    btns[i].onclick=function(){
+      var all=document.querySelectorAll('.nav button');for(var k=0;k<all.length;k++)all[k].classList.remove('active');
+      this.classList.add('active');
+      var vs=document.querySelectorAll('.view');for(var m=0;m<vs.length;m++)vs[m].classList.remove('active');
+      document.getElementById('view-'+this.dataset.v).classList.add('active');
+      if(this.dataset.v==='pattern'){renderCapBars();renderWarns();updateWarnBanner();renderReflectLog();renderCareBanner();}
+    };
+  }
+})();
+
+// ── Init ──────────────────────────────────────────────
+renderCap();
+renderStance();
+renderPermit();
+renderWins();
+renderReflect();
+renderRestTypes();
+renderRing();
+renderPhrases();
+renderPhases();
+renderValues();
+renderJoys();
+renderLadder();
+applyTheme();
+setInterval(applyTheme,60000);
+loadSync();
+setBadge(syncOn()?'ok':'off',syncOn()?'Synkad':'Lokal');
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
