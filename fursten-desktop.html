@@ -131,6 +131,25 @@ label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;lett
 .note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px}
 .prin-srcline{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--bronze);opacity:.8;margin-bottom:6px}
 .cat-row{flex-wrap:wrap}
+.act-toggle{display:flex;gap:6px;margin-bottom:12px}
+.act-toggle button{flex:1;font-size:12px;padding:8px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit}
+.act-toggle button.on{color:var(--ink);border-color:var(--bronze-dim);background:var(--panel2)}
+.net-wrap{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:8px}
+.temp-badge{font-size:10px;padding:2px 9px;border-radius:9px;white-space:nowrap;font-weight:500}
+.tb-key{background:#1E3326;color:#8FCF9A}.tb-risk{background:#3A1E1E;color:#E5A0A6}
+.tb-heavy{background:#3A2A1A;color:var(--bronze)}.tb-trust{background:#1E2E33;color:#9AD0D8}.tb-peri{background:var(--panel2);color:var(--muted)}
+.pchip{display:inline-block;font-size:10px;padding:2px 8px;border-radius:8px;background:var(--panel2);color:var(--bronze);margin:2px 4px 0 0}
+.out-badge{font-size:10px;padding:2px 8px;border-radius:9px;white-space:nowrap}
+.ob-bra{background:#1E3326;color:#8FCF9A}.ob-delvis{background:#3A2A1A;color:var(--bronze)}.ob-daligt{background:#3A1E1E;color:#E5A0A6}
+.jentry{padding:11px;border:1px solid var(--line);border-radius:13px;margin-bottom:9px;background:var(--panel)}
+.jentry .jdate{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.jentry .jq{font-size:11px;color:var(--bronze);margin-top:6px}
+.insight{border:1px solid var(--bronze-dim);background:linear-gradient(160deg,#241B16,#1B1611);border-radius:12px;padding:12px 13px;font-size:13px;line-height:1.6;margin-bottom:12px}
+.insight .il{font-family:Georgia,serif;color:var(--bronze);font-size:12px;display:block;margin-bottom:5px}
+.prin-pick-list{max-height:170px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:2px 8px;margin-top:4px}
+.prin-pick{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:12px}
+.prin-pick:first-child{border-top:none}.prin-pick input{width:auto}
+.node-label{font-size:9px;fill:var(--muted);font-family:inherit}
 
 /* ── Desktop-overlägg (separat fil, delar data: fursten.json) ── */
 @media(min-width:860px){
@@ -218,10 +237,27 @@ label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;lett
 <div class="view" id="view-act">
   <div class="section-title">Aktörer</div>
   <div class="note" style="margin-bottom:10px">Kartlägg dem som rör sig i ditt maktlandskap &mdash; allierade, rivaler, neutrala. Spåra deras inflytande och hur mycket de förtjänar din tillit.</div>
-  <div class="btn-row" style="margin-bottom:12px">
+  <div class="btn-row" style="margin-bottom:10px">
     <button class="btn gold" id="new-act">+ Ny aktör</button>
   </div>
+  <div class="act-toggle">
+    <button id="act-view-list" class="on">Lista</button>
+    <button id="act-view-map">Relationskarta</button>
+  </div>
+  <div id="act-map-wrap" style="display:none">
+    <div class="net-wrap" id="act-map"></div>
+    <div class="note" style="margin-top:6px">Du i mitten. Färg = relation, nodstorlek = inflytande, linjens tjocklek = tillit, röd linje = konflikt. Tryck på en nod för att öppna aktören.</div>
+  </div>
   <div id="act-list"></div>
+</div>
+
+<!-- DAGBOK -->
+<div class="view" id="view-dag">
+  <div class="section-title">Furstens dagbok</div>
+  <div class="note" style="margin-bottom:10px">Logga vad som hände, vilken princip du kände igen, vad du gjorde och hur det gick. Med tiden hittar Fursten mönster i ditt maktlandskap.</div>
+  <div id="dag-insights"></div>
+  <div class="btn-row" style="margin-bottom:12px"><button class="btn gold" id="new-jr">+ Ny anteckning</button></div>
+  <div id="dag-list"></div>
 </div>
 
 <!-- MER -->
@@ -236,6 +272,7 @@ label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;lett
     <div class="stat-row"><span>Aktörer</span><b id="s-act">0</b></div>
     <div class="stat-row"><span>&mdash; allierade</span><b id="s-alli">0</b></div>
     <div class="stat-row"><span>&mdash; rivaler</span><b id="s-rival">0</b></div>
+    <div class="stat-row"><span>Dagboksanteckningar</span><b id="s-jr">0</b></div>
   </div>
   <div class="section-title">Om Fursten</div>
   <div class="card-panel">
@@ -255,6 +292,7 @@ label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;lett
   <button data-v="prin"><span>&#128220;</span>Principer</button>
   <button data-v="sit"><span>&#9876;</span>Situationer</button>
   <button data-v="act"><span>&#128101;</span>Aktörer</button>
+  <button data-v="dag"><span>&#128214;</span>Dagbok</button>
   <button data-v="mer"><span>&#9776;</span>Mer</button>
 </div>
 </div>
@@ -272,6 +310,18 @@ label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;lett
   <input type="text" id="sit-f-goal" placeholder="Vad vill du uppnå?">
   <label class="fld">Inblandade aktörer</label>
   <div id="sit-f-actors"></div>
+  <label class="fld">Principer du använde</label>
+  <input type="text" id="sit-f-prinfilter" placeholder="Sök princip&hellip;">
+  <div class="prin-pick-list" id="sit-f-prin-list"></div>
+  <label class="fld">Beslut du tog</label>
+  <textarea id="sit-f-decision" rows="2" placeholder="Vad valde du att göra?"></textarea>
+  <label class="fld">Utfall</label>
+  <select id="sit-f-outcome">
+    <option value="">Ännu inte avgjort</option>
+    <option value="bra">Gick bra</option>
+    <option value="delvis">Delvis</option>
+    <option value="daligt">Gick dåligt</option>
+  </select>
   <div class="btn-row" style="margin-top:12px">
     <button class="btn gold" id="sit-save">Spara</button>
   </div>
@@ -294,6 +344,12 @@ label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;lett
   <input type="number" id="act-f-inf" min="1" max="5" value="3">
   <label class="fld">Tillit (1&ndash;5)</label>
   <input type="number" id="act-f-trust" min="1" max="5" value="3">
+  <label class="fld">Konfliktstatus</label>
+  <select id="act-f-conflict">
+    <option value="ingen">Ingen</option>
+    <option value="spand">Spänd</option>
+    <option value="oppen">Öppen konflikt</option>
+  </select>
   <label class="fld">Anteckningar</label>
   <textarea id="act-f-notes" rows="2" placeholder="Drivkrafter, beteende, vad du iakttagit&hellip;"></textarea>
   <div class="btn-row" style="margin-top:12px">
@@ -331,12 +387,44 @@ label.fld{display:block;font-size:11px;color:var(--muted);margin:10px 0 4px;lett
   <button class="sheet-close" id="sync-close">Stäng</button>
 </div>
 
+<div class="sheet" id="jr-sheet">
+  <h3 id="jr-sheet-title">Ny anteckning</h3>
+  <label class="fld">Datum</label>
+  <input type="date" id="jr-f-date">
+  <label class="fld">Typ av situation</label>
+  <select id="jr-f-type">
+    <option value="konflikt">Konflikt</option>
+    <option value="forhandling">Förhandling</option>
+    <option value="samarbete">Samarbete</option>
+    <option value="annat">Annat</option>
+  </select>
+  <label class="fld">Vad hände?</label>
+  <textarea id="jr-f-event" rows="3" placeholder="Beskriv läget&hellip;"></textarea>
+  <label class="fld">Vilken princip såg du?</label>
+  <select id="jr-f-principle"></select>
+  <label class="fld">Vad gjorde du?</label>
+  <textarea id="jr-f-action" rows="2" placeholder="Hur agerade du?"></textarea>
+  <label class="fld">Hur gick det?</label>
+  <select id="jr-f-outcome">
+    <option value="">Oklart ännu</option>
+    <option value="bra">Gick bra</option>
+    <option value="delvis">Delvis</option>
+    <option value="daligt">Gick dåligt</option>
+  </select>
+  <label class="fld">Inblandade aktörer</label>
+  <div id="jr-f-actors"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn gold" id="jr-save">Spara</button>
+  </div>
+  <button class="sheet-close" id="jr-close">Stäng</button>
+</div>
+
 <script>
 // ── Data ─────────────────────────────────────────────────
 var KEY='fursten_v1';
 var AI_KEY='fursten_ai_key';
 var SYNC_KEY='furstensync_v1';
-var state={favorites:[],read:[],situations:[],actors:[]};
+var state={favorites:[],read:[],situations:[],actors:[],journal:[]};
 
 var CATS={
   makt:{name:'Makt & inflytande',col:'var(--c-makt)'},
@@ -586,7 +674,7 @@ function uid(){return 's'+Date.now().toString(36)+Math.floor(Math.random()*1e4).
 var pushTimer=null;
 function queuePush(){if(!syncOn())return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(function(){pushTimer=null;ghPush().catch(function(){});},1200);}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}queuePush();}
-function load(){try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);state={favorites:d.favorites||[],read:d.read||[],situations:d.situations||[],actors:d.actors||[]};}}catch(e){}}
+function load(){try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);state={favorites:d.favorites||[],read:d.read||[],situations:d.situations||[],actors:d.actors||[],journal:d.journal||[]};}}catch(e){}}
 
 var REL_LABELS={allierad:'Allierad',rival:'Rival',neutral:'Neutral',overordnad:'\u00d6verordnad',underordnad:'Underordnad'};
 var REL_COL={allierad:'var(--c-alli)',rival:'var(--c-makt)',neutral:'var(--muted)',overordnad:'var(--c-led)',underordnad:'var(--c-klok)'};
@@ -691,6 +779,7 @@ function renderSit(){
       (s.desc?'<div class="sit-desc">'+esc(s.desc)+'</div>':'')+
       (s.goal?'<div class="sit-goal">\u2192 '+esc(s.goal)+'</div>':'')+
       actorTxt+
+      prinChips(s)+decLine(s)+outLine(s)+
       (s.ai?'<div class="ai-box"><span class="ai-lbl">\u2728 Strategiskt r\u00e5d</span>'+esc(s.ai)+'</div>':'')+
       '<div class="sit-acts">'+
         '<button class="mini-btn" data-ai="'+s.id+'">\u2728 '+(s.ai?'Nytt r\u00e5d':'F\u00e5 r\u00e5d')+'</button>'+
@@ -721,6 +810,9 @@ function openSitSheet(id){
   $('sit-f-title').value=s?s.title:'';
   $('sit-f-desc').value=s?s.desc:'';
   $('sit-f-goal').value=s?s.goal:'';
+  $('sit-f-decision').value=s?(s.decision||''):'';
+  $('sit-f-outcome').value=s?(s.outcome||''):'';
+  buildSitPrinPicker(s&&s.principles?s.principles:[]);
   // actor picker
   var sel=s&&s.actors?s.actors:[];
   if(!state.actors.length){$('sit-f-actors').innerHTML='<div class="note">Inga aktörer skapade \u00e4nnu. L\u00e4gg till dem under fliken Aktörer.</div>';}
@@ -739,11 +831,12 @@ $('sit-save').onclick=function(){
   if(!title){alert('Ge situationen en titel.');return;}
   var picks=$('sit-f-actors').querySelectorAll('input[type=checkbox]:checked');
   var actors=[];for(var i=0;i<picks.length;i++)actors.push(picks[i].value);
+  var decision=$('sit-f-decision').value.trim(),outcome=$('sit-f-outcome').value,principles=sitPrinSel.slice();
   if(editSitId){
     var s=findSit(editSitId);
-    s.title=title;s.desc=$('sit-f-desc').value.trim();s.goal=$('sit-f-goal').value.trim();s.actors=actors;
+    s.title=title;s.desc=$('sit-f-desc').value.trim();s.goal=$('sit-f-goal').value.trim();s.actors=actors;s.decision=decision;s.outcome=outcome;s.principles=principles;
   }else{
-    state.situations.unshift({id:uid(),title:title,desc:$('sit-f-desc').value.trim(),goal:$('sit-f-goal').value.trim(),actors:actors,status:'pag',ai:'',created:Date.now()});
+    state.situations.unshift({id:uid(),title:title,desc:$('sit-f-desc').value.trim(),goal:$('sit-f-goal').value.trim(),actors:actors,status:'pag',ai:'',decision:decision,outcome:outcome,principles:principles,created:Date.now()});
   }
   save();closeSheets();renderSit();renderOverview();renderStats();
 };
@@ -751,22 +844,28 @@ $('sit-save').onclick=function(){
 // ── Actors ────────────────────────────────────────────────
 var editActId=null;
 function renderAct(){
-  if(!state.actors.length){$('act-list').innerHTML='<div class="empty-msg">Inga aktörer \u00e4nnu.</div>';return;}
+  renderActMap();
+  if(!state.actors.length){$('act-list').innerHTML='<div class="empty-msg">Inga aktörer ännu.</div>';return;}
   var html='';
   for(var i=0;i<state.actors.length;i++){
-    var a=state.actors[i];
+    var a=state.actors[i];var tp=actorTemp(a);var conf=(a.conflict||'ingen');
+    var confLine=conf!=='ingen'?'<div class="jq" style="color:#E5A0A6">'+(conf==='oppen'?'Öppen konflikt':'Spänd relation')+'</div>':'';
     html+='<div class="actor" data-id="'+a.id+'">'+
       '<div class="actor-head">'+
         '<div class="actor-name">'+esc(a.name)+'</div>'+
         '<span class="rel-badge" style="background:'+REL_COL[a.rel]+'33;color:'+REL_COL[a.rel]+'">'+REL_LABELS[a.rel]+'</span>'+
-        '<span class="actor-del" data-del="'+a.id+'">\u00d7</span>'+
+        '<span class="actor-del" data-del="'+a.id+'">×</span>'+
       '</div>'+
-      '<div class="actor-meta">'+
-        meterHtml('Inflytande',a.inf,'var(--c-makt)')+
-        meterHtml('Tillit',a.trust,'var(--c-alli)')+
-      '</div>'+
+      '<div style="margin-top:6px"><span class="temp-badge '+tp.cls+'">'+tp.label+'</span></div>'+
+      confLine+
+      '<div class="actor-meta" style="margin-top:8px">'+meterPct('Risknivå',tp.risk,'#C0494F')+'</div>'+
+      '<div class="actor-meta">'+meterHtml('Tillit',a.trust,'var(--c-alli)')+meterHtml('Inflytande',a.inf,'var(--c-makt)')+'</div>'+
       (a.notes?'<div class="actor-notes">'+esc(a.notes)+'</div>':'')+
-      '<div class="sit-acts"><button class="mini-btn" data-edit="'+a.id+'">\u270e Redigera</button></div>'+
+      (a.ai?'<div class="ai-box"><span class="ai-lbl">✨ AI-analys</span>'+esc(a.ai)+'</div>':'')+
+      '<div class="sit-acts">'+
+        '<button class="mini-btn" data-ai="'+a.id+'">✨ '+(a.ai?'Ny analys':'AI-analys')+'</button>'+
+        '<button class="mini-btn" data-edit="'+a.id+'">✎ Redigera</button>'+
+      '</div>'+
     '</div>';
   }
   $('act-list').innerHTML=html;
@@ -774,6 +873,8 @@ function renderAct(){
   for(var d=0;d<dl.length;d++)dl[d].onclick=function(){var id=this.getAttribute('data-del');if(confirm('Ta bort aktören?')){for(var k=0;k<state.actors.length;k++)if(state.actors[k].id===id){state.actors.splice(k,1);break;}save();renderAct();renderOverview();renderStats();}};
   var ed=$('act-list').querySelectorAll('[data-edit]');
   for(var e=0;e<ed.length;e++)ed[e].onclick=function(){openActSheet(this.getAttribute('data-edit'));};
+  var ab=$('act-list').querySelectorAll('[data-ai]');
+  for(var b=0;b<ab.length;b++)ab[b].onclick=function(){runActorAi(this.getAttribute('data-ai'),this);};
 }
 function meterHtml(label,val,col){
   val=Math.max(1,Math.min(5,val||3));
@@ -787,6 +888,7 @@ function openActSheet(id){
   $('act-f-rel').value=a?a.rel:'allierad';
   $('act-f-inf').value=a?a.inf:3;
   $('act-f-trust').value=a?a.trust:3;
+  $('act-f-conflict').value=a?(a.conflict||'ingen'):'ingen';
   $('act-f-notes').value=a?a.notes:'';
   openSheet('act-sheet');
 }
@@ -794,11 +896,12 @@ $('act-save').onclick=function(){
   var name=$('act-f-name').value.trim();
   if(!name){alert('Ge aktören ett namn.');return;}
   var inf=parseInt($('act-f-inf').value)||3,trust=parseInt($('act-f-trust').value)||3;
+  var conflict=$('act-f-conflict').value;
   if(editActId){
     var a=findActor(editActId);
-    a.name=name;a.rel=$('act-f-rel').value;a.inf=inf;a.trust=trust;a.notes=$('act-f-notes').value.trim();
+    a.name=name;a.rel=$('act-f-rel').value;a.inf=inf;a.trust=trust;a.conflict=conflict;a.notes=$('act-f-notes').value.trim();
   }else{
-    state.actors.push({id:uid(),name:name,rel:$('act-f-rel').value,inf:inf,trust:trust,notes:$('act-f-notes').value.trim(),created:Date.now()});
+    state.actors.push({id:uid(),name:name,rel:$('act-f-rel').value,inf:inf,trust:trust,conflict:conflict,notes:$('act-f-notes').value.trim(),created:Date.now()});
   }
   save();closeSheets();renderAct();renderOverview();renderStats();
 };
@@ -866,6 +969,7 @@ function renderStats(){
   $('s-act').textContent=state.actors.length;
   $('s-alli').textContent=alli;
   $('s-rival').textContent=rival;
+  $('s-jr').textContent=state.journal.length;
 }
 
 // ── Sheets / Nav ──────────────────────────────────────────
@@ -883,7 +987,7 @@ for(var i=0;i<navBtns.length;i++){
     this.classList.add('active');
     var views=document.querySelectorAll('.view');for(var k=0;k<views.length;k++)views[k].classList.remove('active');
     $('view-'+this.getAttribute('data-v')).classList.add('active');
-    if(this.getAttribute('data-v')==='mer')renderStats();
+    var dv=this.getAttribute('data-v');if(dv==='mer')renderStats();if(dv==='dag')renderJournal();
   };
 }
 
@@ -900,7 +1004,7 @@ $('import-btn').onclick=$('import-btn2').onclick=function(){$('import-file').cli
 $('import-file').onchange=function(e){
   var f=e.target.files[0];if(!f)return;
   var r=new FileReader();
-  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.situations||d.actors||d.favorites)){state={favorites:d.favorites||[],read:d.read||[],situations:d.situations||[],actors:d.actors||[]};save();renderAll();}else alert('Ogiltig s\u00e4kerhetskopia.');}catch(err){alert('Kunde inte l\u00e4sa filen.');}};
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&(d.situations||d.actors||d.favorites)){state={favorites:d.favorites||[],read:d.read||[],situations:d.situations||[],actors:d.actors||[],journal:d.journal||[]};save();renderAll();}else alert('Ogiltig s\u00e4kerhetskopia.');}catch(err){alert('Kunde inte l\u00e4sa filen.');}};
   r.readAsText(f);
 };
 
@@ -925,14 +1029,14 @@ function ghPull(){
   if(!syncOn())return Promise.resolve();
   setSyncLine('Synkar\u2026');
   return ghGet().then(function(data){
-    if(data){state={favorites:data.favorites||[],read:data.read||[],situations:data.situations||[],actors:data.actors||[]};try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}renderAll();}
+    if(data){state={favorites:data.favorites||[],read:data.read||[],situations:data.situations||[],actors:data.actors||[],journal:data.journal||[]};try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}renderAll();}
     setSyncLine('Synkad',' sync-ok');
   }).catch(function(){setSyncLine('Synkfel',' sync-err');});
 }
 function ghPush(){
   if(!syncOn())return Promise.resolve();
   setSyncLine('Sparar\u2026');
-  var payload=JSON.stringify({favorites:state.favorites,read:state.read,situations:state.situations,actors:state.actors,updated:new Date().toISOString()});
+  var payload=JSON.stringify({favorites:state.favorites,read:state.read,situations:state.situations,actors:state.actors,journal:state.journal,updated:new Date().toISOString()});
   function doPut(){var body={message:'Uppdatering via Fursten',content:b64enc(payload)};if(sync.sha)body.sha=sync.sha;return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});}
   return doPut().then(function(r){
     if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
@@ -957,7 +1061,198 @@ $('gh-pull').onclick=function(){ghPull();};
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
 
 // ── Init ──────────────────────────────────────────────────
-function renderAll(){renderMaxim();renderSrc();renderCats();renderPrin();renderSit();renderAct();renderOverview();renderStats();}
+// ── Feature helpers ───────────────────────────────────────
+function findPrin(id){for(var i=0;i<PRINCIPLES.length;i++)if(PRINCIPLES[i].id===id)return PRINCIPLES[i];return null;}
+function findJr(id){for(var i=0;i<state.journal.length;i++)if(state.journal[i].id===id)return state.journal[i];return null;}
+function meterPct(label,pct,col){pct=Math.max(0,Math.min(100,Math.round(pct)));return '<div class="meter"><div class="ml"><span>'+label+'</span><span>'+pct+'%</span></div><div class="bar-bg"><div class="bar" style="width:'+pct+'%;background:'+col+'"></div></div></div>';}
+function actorTemp(a){
+  var inf=a.inf||3,trust=a.trust||3,c=a.conflict||'ingen';
+  var cf=c==='oppen'?1:(c==='spand'?0.5:0);
+  var risk=Math.round(((inf/5)*0.45+((6-trust)/5)*0.35+cf*0.20)*100);
+  if(risk<0)risk=0;if(risk>100)risk=100;
+  var t,cls;
+  if(c==='oppen'){t='Aktiv konflikt';cls='tb-risk';}
+  else if(inf>=4&&trust>=4){t='Nyckelperson';cls='tb-key';}
+  else if(inf>=4&&trust<=2){t='Potentiell risk';cls='tb-risk';}
+  else if(inf>=4){t='Tung spelare';cls='tb-heavy';}
+  else if(trust>=4){t='Pålitlig';cls='tb-trust';}
+  else{t='Perifer';cls='tb-peri';}
+  return {risk:risk,label:t,cls:cls};
+}
+function outcomeBadge(o){if(!o)return '';var m={bra:['Gick bra','ob-bra'],delvis:['Delvis','ob-delvis'],daligt:['Gick dåligt','ob-daligt']};var x=m[o];return x?'<span class="out-badge '+x[1]+'">'+x[0]+'</span>':'';}
+function prinChips(s){if(!s.principles||!s.principles.length)return '';var h='';for(var i=0;i<s.principles.length;i++){var p=findPrin(s.principles[i]);if(p)h+='<span class="pchip">'+esc(p.name)+'</span>';}return h?'<div style="margin:6px 0 2px">'+h+'</div>':'';}
+function decLine(s){return s.decision?'<div class="sit-desc"><b style="color:var(--ink)">Beslut.</b> '+esc(s.decision)+'</div>':'';}
+function outLine(s){return s.outcome?'<div style="margin-top:4px">'+outcomeBadge(s.outcome)+'</div>':'';}
+
+// ── Relationskarta (SVG network) ──────────────────────────
+function renderActMap(){
+  var el=$('act-map');if(!el)return;
+  var n=state.actors.length;
+  if(!n){el.innerHTML='<div class="empty-msg">Lägg till aktörer för att se relationskartan.</div>';return;}
+  var W=320,H=300,cx=160,cy=150;
+  var pts=[];
+  for(var i=0;i<n;i++){
+    var a=state.actors[i];
+    var ang=(-Math.PI/2)+(i/n)*Math.PI*2;
+    var dist=60+(5-(a.trust||3))*15;
+    pts.push({a:a,x:cx+Math.cos(ang)*dist,y:cy+Math.sin(ang)*dist});
+  }
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">';
+  for(i=0;i<pts.length;i++){
+    var p=pts[i],c=(p.a.conflict||'ingen');
+    var sw=1+(p.a.trust||3)*0.9;
+    var col=c==='ingen'?'var(--line)':'#C0494F';
+    var dash=c==='spand'?' stroke-dasharray="4 3"':'';
+    if(c==='oppen'&&sw<3)sw=3;
+    svg+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p.x.toFixed(1)+'" y2="'+p.y.toFixed(1)+'" stroke="'+col+'" stroke-width="'+sw.toFixed(1)+'" stroke-linecap="round"'+dash+' opacity="0.85"/>';
+  }
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="20" fill="var(--bronze)"/>';
+  svg+='<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="11" fill="#15110E" font-family="Georgia,serif">Du</text>';
+  for(i=0;i<pts.length;i++){
+    var q=pts[i],aa=q.a,r=8+(aa.inf||3)*1.8;
+    var rc=REL_COL[aa.rel]||'var(--muted)';
+    svg+='<g class="node" data-id="'+aa.id+'" style="cursor:pointer">';
+    if((aa.conflict||'ingen')!=='ingen')svg+='<circle cx="'+q.x.toFixed(1)+'" cy="'+q.y.toFixed(1)+'" r="'+(r+3).toFixed(1)+'" fill="none" stroke="#C0494F" stroke-width="1.5"/>';
+    svg+='<circle cx="'+q.x.toFixed(1)+'" cy="'+q.y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+rc+'" opacity="0.92"/>';
+    var nm=aa.name.length>11?aa.name.slice(0,10)+'…':aa.name;
+    svg+='<text x="'+q.x.toFixed(1)+'" y="'+(q.y+r+11).toFixed(1)+'" text-anchor="middle" class="node-label">'+esc(nm)+'</text>';
+    svg+='</g>';
+  }
+  svg+='</svg>';
+  el.innerHTML=svg;
+  var nodes=el.querySelectorAll('.node');
+  for(var k=0;k<nodes.length;k++)nodes[k].onclick=function(){openActSheet(this.getAttribute('data-id'));};
+}
+var actView='list';
+function setActView(v){
+  actView=v;
+  $('act-view-list').classList.toggle('on',v==='list');
+  $('act-view-map').classList.toggle('on',v==='map');
+  $('act-list').style.display=v==='list'?'':'none';
+  $('act-map-wrap').style.display=v==='map'?'':'none';
+  if(v==='map')renderActMap();
+}
+
+// ── AI-analys av aktör ────────────────────────────────────
+var ACTOR_FRAME='Du är en skarp men jordnära strategisk rådgivare i traditionen från Machiavellis "Fursten" — realistisk men aldrig cynisk. Analysera EN aktör i användarens maktlandskap och ge en kort, konkret läsning på svenska (högst 90 ord, prosa, inga punktlistor): vad relationen mellan personens inflytande och tillit innebär, och 1–2 konkreta råd för hur användaren bör hantera personen klokt och med bevarad integritet. Var nyanserad, döm inte personen, fjärrdiagnosticera aldrig, och kom ihåg att detta är en iakttagelse — inte en sanning om vem personen är.';
+function runActorAi(id,btn){
+  var a=findActor(id);if(!a)return;
+  var orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  var tp=actorTemp(a);
+  var cstr=a.conflict==='oppen'?'öppen konflikt':(a.conflict==='spand'?'spänd':'ingen');
+  var prompt=ACTOR_FRAME+'\n\nAktör: '+a.name+'\nRelation: '+REL_LABELS[a.rel]+'\nInflytande: '+a.inf+'/5\nTillit: '+a.trust+'/5\nKonfliktstatus: '+cstr+'\nUppskattad risknivå: '+tp.risk+'%'+(a.notes?'\nAnteckningar: '+a.notes:'');
+  aiCall(prompt).then(function(text){a.ai=text;save();renderAct();}).catch(function(e){if(e.message!=='NOKEY')alert('Kunde inte hämta analys: '+e.message);btn.textContent=orig;btn.disabled=false;});
+}
+
+// ── Situation: princippicker ──────────────────────────────
+var sitPrinSel=[];
+function buildSitPrinPicker(sel){
+  sitPrinSel=sel.slice();
+  $('sit-f-prinfilter').value='';
+  renderSitPrinList('');
+  $('sit-f-prinfilter').oninput=function(){renderSitPrinList(this.value.toLowerCase());};
+}
+function renderSitPrinList(q){
+  var h='';
+  for(var i=0;i<PRINCIPLES.length;i++){
+    var p=PRINCIPLES[i];
+    if(q&&p.name.toLowerCase().indexOf(q)<0)continue;
+    h+='<label class="prin-pick"><input type="checkbox" value="'+p.id+'"'+(sitPrinSel.indexOf(p.id)>-1?' checked':'')+'> '+esc(p.name)+'</label>';
+  }
+  $('sit-f-prin-list').innerHTML=h||'<div class="note">Inga träffar.</div>';
+  var ins=$('sit-f-prin-list').querySelectorAll('input');
+  for(var k=0;k<ins.length;k++)ins[k].onchange=function(){var v=this.value;if(this.checked){if(sitPrinSel.indexOf(v)<0)sitPrinSel.push(v);}else{var ix=sitPrinSel.indexOf(v);if(ix>-1)sitPrinSel.splice(ix,1);}};
+}
+
+// ── Furstens dagbok ───────────────────────────────────────
+var editJrId=null;
+var JTYPE={konflikt:'Konflikt',forhandling:'Förhandling',samarbete:'Samarbete',annat:'Annat'};
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function avg(arr){if(!arr.length)return 0;var s=0;for(var i=0;i<arr.length;i++)s+=arr[i];return s/arr.length;}
+function fillPrinSelect(sel,selId){
+  var h='<option value="">— ingen —</option>';
+  for(var i=0;i<PRINCIPLES.length;i++){var p=PRINCIPLES[i];h+='<option value="'+p.id+'"'+(p.id===selId?' selected':'')+'>'+esc(p.name)+'</option>';}
+  sel.innerHTML=h;
+}
+function fillActorChecks(box,sel){
+  if(!state.actors.length){box.innerHTML='<div class="note">Inga aktörer skapade ännu.</div>';return;}
+  var h='';for(var i=0;i<state.actors.length;i++){var a=state.actors[i];h+='<label class="actor-pick"><input type="checkbox" value="'+a.id+'"'+(sel.indexOf(a.id)>-1?' checked':'')+'> '+esc(a.name)+'</label>';}
+  box.innerHTML=h;
+}
+function deriveInsights(){
+  var el=$('dag-insights');if(!el)return;
+  var j=state.journal;
+  if(j.length<3){el.innerHTML='<div class="insight"><span class="il">✨ Mönster</span>Logga minst tre anteckningar så börjar Fursten leta efter mönster i ditt maktlandskap.</div>';return;}
+  var lines=[];
+  var confTrust=[],confInf=[],confHiLo=0,confLinks=0;
+  for(var i=0;i<j.length;i++){if(j[i].type==='konflikt'&&j[i].actors){for(var k=0;k<j[i].actors.length;k++){var a=findActor(j[i].actors[k]);if(a){confLinks++;confInf.push(a.inf||3);confTrust.push(a.trust||3);if((a.inf||3)>=4&&(a.trust||3)<=2)confHiLo++;}}}}
+  if(confLinks>=3){
+    if(confHiLo/confLinks>=0.5)lines.push('De flesta av dina konflikter uppstår med personer som har hög påverkan men låg tillit.');
+    else lines.push('Dina konflikter tenderar att vara med personer som har '+(avg(confInf)>=3.5?'hög':'måttlig')+' påverkan och '+(avg(confTrust)>=3.5?'relativt hög':'låg')+' tillit.');
+  }
+  var cnt={},top=null,topn=0;
+  for(i=0;i<j.length;i++){var pid=j[i].principleId;if(pid){cnt[pid]=(cnt[pid]||0)+1;if(cnt[pid]>topn){topn=cnt[pid];top=pid;}}}
+  if(top&&topn>=2){var pr=findPrin(top);if(pr)lines.push('Den princip du oftast känner igen i vardagen: ”'+pr.name+'”.');}
+  var ob=0,od=0,tot=0;
+  for(i=0;i<j.length;i++){if(j[i].outcome){tot++;if(j[i].outcome==='bra')ob++;if(j[i].outcome==='daligt')od++;}}
+  if(tot>=3)lines.push('Av '+tot+' loggade utfall gick '+Math.round(ob/tot*100)+'% bra och '+Math.round(od/tot*100)+'% dåligt.');
+  if(!lines.length)lines.push('Fortsätt logga — koppla anteckningar till aktörer och principer så blir mönstren tydligare.');
+  var out='';for(i=0;i<lines.length;i++)out+=esc(lines[i])+' ';
+  el.innerHTML='<div class="insight"><span class="il">✨ Mönster Fursten ser</span>'+out+'</div>';
+}
+function renderJournal(){
+  deriveInsights();
+  if(!state.journal.length){$('dag-list').innerHTML='<div class="empty-msg">Inga anteckningar ännu. Logga vad som hände, vilken princip du såg, vad du gjorde och hur det gick — så hittar appen mönster över tid.</div>';return;}
+  var html='';
+  for(var i=0;i<state.journal.length;i++){
+    var jj=state.journal[i];
+    var pr=jj.principleId?findPrin(jj.principleId):null;
+    var actxt='';
+    if(jj.actors&&jj.actors.length){var ns=[];for(var k=0;k<jj.actors.length;k++){var nm=actorName(jj.actors[k]);if(nm)ns.push(nm);}if(ns.length)actxt='<div class="sit-actors">⧉ '+esc(ns.join(', '))+'</div>';}
+    html+='<div class="jentry" data-id="'+jj.id+'">'+
+      '<div class="actor-head"><div class="jdate" style="flex:1">'+esc(jj.date)+' · '+esc(JTYPE[jj.type]||'')+'</div>'+outcomeBadge(jj.outcome)+'<span class="actor-del" data-del="'+jj.id+'">×</span></div>'+
+      (jj.event?'<div class="actor-notes" style="margin-top:6px"><b style="color:var(--ink)">Hände.</b> '+esc(jj.event)+'</div>':'')+
+      (pr?'<div class="jq">Princip: '+esc(pr.name)+'</div>':'')+
+      (jj.action?'<div class="actor-notes" style="margin-top:4px"><b style="color:var(--ink)">Gjorde.</b> '+esc(jj.action)+'</div>':'')+
+      actxt+
+      '<div class="sit-acts"><button class="mini-btn" data-edit="'+jj.id+'">✎ Redigera</button></div>'+
+    '</div>';
+  }
+  $('dag-list').innerHTML=html;
+  var dl=$('dag-list').querySelectorAll('[data-del]');
+  for(var d=0;d<dl.length;d++)dl[d].onclick=function(){var id=this.getAttribute('data-del');if(confirm('Ta bort anteckningen?')){for(var k=0;k<state.journal.length;k++)if(state.journal[k].id===id){state.journal.splice(k,1);break;}save();renderJournal();renderStats();}};
+  var ed=$('dag-list').querySelectorAll('[data-edit]');
+  for(var e=0;e<ed.length;e++)ed[e].onclick=function(){openJournalSheet(this.getAttribute('data-edit'));};
+}
+function openJournalSheet(id){
+  editJrId=id||null;var j=id?findJr(id):null;
+  $('jr-sheet-title').textContent=j?'Redigera anteckning':'Ny anteckning';
+  $('jr-f-date').value=j?j.date:todayStr();
+  $('jr-f-type').value=j?j.type:'konflikt';
+  $('jr-f-event').value=j?j.event:'';
+  $('jr-f-action').value=j?(j.action||''):'';
+  $('jr-f-outcome').value=j?(j.outcome||''):'';
+  fillPrinSelect($('jr-f-principle'),j?(j.principleId||''):'');
+  fillActorChecks($('jr-f-actors'),j&&j.actors?j.actors:[]);
+  openSheet('jr-sheet');
+}
+
+// ── Bindings for new static controls ──────────────────────
+$('new-jr').onclick=function(){openJournalSheet(null);};
+$('jr-close').onclick=closeSheets;
+$('jr-save').onclick=function(){
+  var ev=$('jr-f-event').value.trim();
+  if(!ev){alert('Skriv åtminstone vad som hände.');return;}
+  var picks=$('jr-f-actors').querySelectorAll('input:checked');var acts=[];for(var i=0;i<picks.length;i++)acts.push(picks[i].value);
+  var rec={date:$('jr-f-date').value||todayStr(),type:$('jr-f-type').value,event:ev,principleId:$('jr-f-principle').value||'',action:$('jr-f-action').value.trim(),outcome:$('jr-f-outcome').value||'',actors:acts};
+  if(editJrId){var j=findJr(editJrId);if(j){for(var key in rec)j[key]=rec[key];}}
+  else{rec.id=uid();rec.created=Date.now();state.journal.unshift(rec);}
+  save();closeSheets();renderJournal();renderStats();
+};
+$('act-view-list').onclick=function(){setActView('list');};
+$('act-view-map').onclick=function(){setActView('map');};
+
+function renderAll(){renderMaxim();renderSrc();renderCats();renderPrin();renderSit();renderAct();renderJournal();renderOverview();renderStats();}
 loadSync();
 load();
 renderAll();
