@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Projektkompassen">
+<meta name="theme-color" content="#EDF1F0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%232C7A7B'/%3E%3Cpolygon points='32,14 39,32 32,50 25,32' fill='%23F6F9F8'/%3E%3Cpolygon points='32,14 39,32 32,30' fill='%23D5E6E5'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23F6F9F8'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%232C7A7B'/%3E%3Cpolygon points='32,14 39,32 32,50 25,32' fill='%23F6F9F8'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23F6F9F8'/%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Projektkompassen","short_name":"Kompassen","display":"standalone","background_color":"%23EDF1F0","theme_color":"%23EDF1F0","start_url":"."}'>
+<title>Projektkompassen</title>
+<style>
+:root{
+  --bg:#EDF1F0;--panel:#F6F9F8;--panel2:#E4ECEA;--line:#CFDAD7;
+  --ink:#2A3431;--muted:#6E7C78;--accent:#2C7A7B;--accent-soft:#D5E6E5;
+  --good:#3F8F6E;--navbg:rgba(237,241,240,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.05em;margin-bottom:12px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.section-title:first-child{margin-top:0}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Metodkort */
+.method-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:13px 14px;cursor:pointer;font-family:inherit;margin-bottom:9px;transition:background .2s}
+.method-card:active{background:var(--accent-soft)}
+.method-ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.method-meta{flex:1;min-width:0}
+.method-name{font-size:15px;color:var(--ink);font-weight:600}
+.method-tag{font-size:12px;color:var(--muted);margin-top:1px}
+.method-arrow{color:var(--muted);font-size:18px;flex-shrink:0}
+
+/* Metodvy i sheet */
+.m-overview{font-size:14px;line-height:1.65;color:var(--ink);margin-bottom:4px}
+.m-label{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin:16px 0 6px}
+.m-text{font-size:13.5px;line-height:1.6;color:var(--ink)}
+.flow{display:flex;flex-direction:column;gap:0}
+.flow-step{position:relative;padding:0 0 12px 24px;font-size:13.5px;line-height:1.5;color:var(--ink)}
+.flow-step::before{content:'';position:absolute;left:6px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.flow-step::after{content:'';position:absolute;left:10px;top:14px;bottom:0;width:1px;background:var(--line)}
+.flow-step:last-child{padding-bottom:0}
+.flow-step:last-child::after{display:none}
+.pill-list{list-style:none}
+.pill-list li{font-size:13.5px;line-height:1.5;color:var(--ink);padding:4px 0 4px 18px;position:relative}
+.pill-list li::before{content:'';position:absolute;left:2px;top:11px;width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.proscons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.pc-box{border:1px solid var(--line);border-radius:14px;padding:10px 11px}
+.pc-box h4{font-size:12px;margin-bottom:6px;font-weight:600}
+.pc-box.pro h4{color:var(--good)}
+.pc-box.con h4{color:#B57A6B}
+.pc-box ul{list-style:none}
+.pc-box li{font-size:12.5px;line-height:1.45;color:var(--ink);padding:3px 0 3px 13px;position:relative}
+.pc-box li::before{position:absolute;left:0;top:2px;font-size:12px}
+.pc-box.pro li::before{content:'+';color:var(--good)}
+.pc-box.con li::before{content:'\2212';color:#B57A6B}
+.tip-box{background:var(--accent-soft);border-radius:14px;padding:11px 13px;font-size:13px;line-height:1.55;color:var(--ink);margin-top:14px}
+.tip-box b{font-family:Georgia,serif;font-weight:400}
+
+/* Väljare */
+.q-block{margin-bottom:6px}
+.q-text{font-size:14px;color:var(--ink);margin-bottom:8px;font-weight:500}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{border:1.5px solid var(--line);background:var(--panel);border-radius:13px;padding:10px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;font-family:inherit;text-align:left;transition:all .2s}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft);font-weight:500}
+.result-card{border:1px solid var(--accent);background:var(--accent-soft);border-radius:16px;padding:14px;margin-bottom:10px}
+.result-rank{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:3px}
+.result-name{font-family:Georgia,serif;font-size:18px;margin-bottom:5px}
+.result-why{font-size:13px;line-height:1.55;color:var(--ink)}
+.score-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:5px 0}
+.score-bar{flex:1;height:6px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.score-fill{height:100%;background:var(--accent);border-radius:4px}
+
+/* Projektspår */
+.proj-card{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:13px 14px;margin-bottom:10px;cursor:pointer}
+.proj-top{display:flex;align-items:center;gap:8px}
+.proj-name{flex:1;font-size:15px;font-weight:600;color:var(--ink)}
+.proj-method{font-size:11px;color:var(--accent);background:var(--accent-soft);padding:3px 9px;border-radius:9px;white-space:nowrap}
+.proj-bar{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:9px}
+.proj-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s}
+.proj-pct{font-size:11px;color:var(--muted);margin-top:5px}
+.step-item{display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-top:1px solid var(--line)}
+.step-item:first-child{border-top:none}
+.step-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--accent);background:var(--panel);flex-shrink:0;cursor:pointer;font-size:14px;color:#fff;line-height:20px;text-align:center}
+.step-check.done{background:var(--accent)}
+.step-txt{flex:1;font-size:14px;line-height:1.4;padding-top:2px}
+.step-txt.done{text-decoration:line-through;color:var(--muted)}
+.back-link{background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;font-family:inherit;padding:0;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+
+/* Ordlista */
+.gloss-search{margin-bottom:12px}
+.gloss-item{padding:11px 0;border-top:1px solid var(--line)}
+.gloss-item:first-child{border-top:none}
+.gloss-term{font-size:14px;font-weight:600;color:var(--ink)}
+.gloss-def{font-size:13px;line-height:1.55;color:var(--muted);margin-top:2px}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(42,52,49,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sheet-head .ic{width:36px;height:36px;border-radius:11px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sheet h3{font-family:Georgia,serif;font-size:18px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;position:sticky;bottom:0;margin-top:14px;font-family:inherit}
+.sync-status{font-size:12px;line-height:1.5;border-radius:10px;padding:8px 10px;margin-top:8px;display:none}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.sync-badge{display:block;text-align:center;font-size:10px;color:var(--muted);margin-bottom:10px;min-height:13px}
+.sync-badge.ok{color:var(--good)}
+.sync-badge.err{color:#B57A6B}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1B2422;--panel:#222D2B;--panel2:#2A3633;--line:#3A4744;
+  --ink:#DEE7E4;--muted:#93A29E;--accent:#5FA8A6;--accent-soft:#2E423F;
+  --good:#6FB892;--navbg:rgba(27,36,34,.95);
+}
+.topbtn{position:fixed;top:calc(10px + env(safe-area-inset-top));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+.theme-btn{right:max(12px,calc(50vw - 228px))}
+.settings-btn{left:max(12px,calc(50vw - 228px))}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="topbtn settings-btn" id="settings-btn" aria-label="Inställningar">⚙</button>
+<button class="topbtn theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🧭 Projektkompassen</h1>
+<div class="brand-sub">GUIDE TILL PROJEKTMETODER</div>
+<div class="sync-badge" id="sync-badge"></div>
+
+<!-- METODER -->
+<div class="view active" id="view-methods">
+  <div class="soft" style="margin-bottom:12px">Tryck på en metod för översikt, faser, roller och tips.</div>
+  <div id="method-list"></div>
+</div>
+
+<!-- VÄLJARE -->
+<div class="view" id="view-chooser">
+  <div class="section-title">Hitta rätt metod</div>
+  <div class="soft" style="margin-bottom:12px">Svara på fem frågor så föreslår kompassen en metod. Det finns inget facit — använd det som en startpunkt.</div>
+  <div class="card-panel" id="chooser-qs"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="chooser-go">Visa förslag</button>
+    <button class="btn ghost" id="chooser-reset">Börja om</button>
+  </div>
+  <div id="chooser-result" style="margin-top:16px"></div>
+</div>
+
+<!-- SPÅR -->
+<div class="view" id="view-track">
+  <div id="track-list-view">
+    <div class="section-title">Mina projekt</div>
+    <div id="proj-list"></div>
+    <button class="btn fill" id="new-proj" style="width:100%;margin-top:6px">+ Nytt projekt</button>
+    <div class="privacy" style="margin-top:18px">Projekten sparas i din enhet och synkas via GitHub om du ställt in det.</div>
+  </div>
+  <div id="track-detail-view" style="display:none"></div>
+</div>
+
+<!-- ORDLISTA -->
+<div class="view" id="view-gloss">
+  <div class="section-title">Ordlista</div>
+  <input type="text" class="gloss-search" id="gloss-search" placeholder="Sök begrepp…">
+  <div class="card-panel" id="gloss-list"></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="methods"><span>📚</span>Metoder</button>
+  <button data-v="chooser"><span>🧭</span>Väljare</button>
+  <button data-v="track"><span>✓</span>Spår</button>
+  <button data-v="gloss"><span>📖</span>Ordlista</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="method-sheet">
+  <div class="sheet-head"><div class="ic" id="ms-ic">📘</div><h3 id="ms-name"></h3></div>
+  <div id="ms-body"></div>
+  <button class="sheet-close" id="ms-close">Stäng</button>
+</div>
+
+<div class="sheet" id="proj-sheet">
+  <div class="sheet-head"><div class="ic">✓</div><h3>Nytt projekt</h3></div>
+  <label>Projektnamn</label>
+  <input type="text" id="np-name" placeholder="T.ex. Migrering intranät">
+  <label>Metod</label>
+  <select id="np-method"></select>
+  <div class="soft" id="np-hint" style="margin-top:8px"></div>
+  <button class="sheet-close" id="np-save">Skapa projekt</button>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <div class="sheet-head"><div class="ic">⚙</div><h3>Inställningar</h3></div>
+  <div class="m-label" style="margin-top:6px">GitHub-synk</div>
+  <div class="soft">Synka projekt mellan dina enheter via ett privat GitHub-repo (fine-grained token med Contents-behörighet).</div>
+  <label>Användarnamn (owner)</label>
+  <input type="text" id="gh-owner" placeholder="ditt-github-namn" autocapitalize="off" autocomplete="off">
+  <label>Repo</label>
+  <input type="text" id="gh-repo" placeholder="mina-appar" autocapitalize="off" autocomplete="off">
+  <label>Token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…" autocapitalize="off" autocomplete="off">
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="gh-save">Spara &amp; anslut</button>
+    <button class="btn ghost" id="gh-pull">Hämta nu</button>
+  </div>
+  <div class="sync-status" id="gh-status"></div>
+  <div class="m-label">Säkerhetskopiering</div>
+  <div class="btn-row">
+    <button class="btn" id="export-btn">Exportera</button>
+    <button class="btn" id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Projektkompassen är ett stöd för att välja och följa arbetssätt — inte en officiell beskrivning av någon metod. Metoderna är förenklade översikter.</div>
+  <button class="sheet-close" id="settings-close">Klar</button>
+</div>
+
+<script>
+// ── Innehåll: metoder ─────────────────────────────────────
+var METHODS={
+  pps:{
+    name:'PPS',icon:'🗂️',tag:'Plandriven · nordisk projektstyrning',
+    overview:'PPS (Praktisk ProjektStyrning) är en nordisk projektstyrningsmodell som funkar oavsett bransch. Den bygger på tydliga roller och beslutspunkter där styrgruppen tar ställning till om projektet ska fortsätta.',
+    when:'Organisationer som vill ha en gemensam projektmodell med tydlig styrning och beslutsstöd. Vanlig i svenska företag och offentlig sektor.',
+    flowLabel:'Faser',
+    flow:['Förberedelser — ta fram projektdirektiv och projektplan','Genomförande — bygg och leverera mot plan, med avstämningar','Avslut — överlämning, utvärdering och slutrapport'],
+    extraLabel:'Beslutspunkter (BP)',
+    extra:'Mellan och inom faserna ligger beslutspunkter där styrgruppen beslutar: starta förberedelser, godkänna projektplan, fortsätta eller avbryta under genomförandet, godkänna leverans och avsluta.',
+    roles:['Beställare — äger nyttan och finansieringen','Styrgrupp — beslutar i beslutspunkterna','Projektledare — driver det dagliga arbetet','Projektgrupp — utför arbetet','Resursägare & referensgrupp — bidrar med resurser och kunskap'],
+    pros:['Tydlig styrning och ansvar','Bra beslutsstöd','Gemensamt språk i organisationen'],
+    cons:['Kan bli dokumenttungt','Mindre lämpad för snabb, osäker utveckling'],
+    tip:'Skala beslutspunkterna efter projektets storlek — små projekt behöver inte alla BP:er.',
+    steps:['Ta fram projektdirektiv','Beslutspunkt: starta förberedelser','Ta fram projektplan','Beslutspunkt: godkänn plan & starta genomförande','Genomför och följ upp mot plan','Avstämning / beslutspunkt under genomförande','Leverans och överlämning','Slutrapport & beslutspunkt: avsluta']
+  },
+  scrum:{
+    name:'Scrum',icon:'🔁',tag:'Agilt · iterativ produktutveckling',
+    overview:'Scrum är ett agilt ramverk för komplex produktutveckling. Arbetet sker i korta, tidsboxade sprintar och styrs empiriskt genom transparens, inspektion och anpassning.',
+    when:'Oklara eller föränderliga krav, produktutveckling och team som kan leverera ett fungerande inkrement ofta.',
+    flowLabel:'Sprintens händelser',
+    flow:['Sprintplanering — sätt sprintmål och plocka arbete','Daily Scrum — 15 min varje dag för att synka','Utveckling mot Definition of Done','Sprintgranskning — visa inkrementet och ta feedback','Sprintåterblick — förbättra arbetssättet'],
+    extraLabel:'Artefakter',
+    extra:'Produktbacklogg (allt som kan göras), sprintbacklogg (det sprinten valt) och inkrement (det färdiga resultatet). Knutna åtaganden: produktmål, sprintmål och Definition of Done.',
+    roles:['Produktägare (PO) — prioriterar och maximerar värdet','Scrum Master — coachar och röjer hinder','Utvecklare — bygger inkrementet'],
+    pros:['Snabb feedback och flexibilitet','Hög transparens','Levererar värde löpande'],
+    cons:['Kräver disciplin och engagerad PO','Svårt med fasta tidsplaner och budget','Skalar inte automatiskt'],
+    tip:'Skydda sprintmålet — undvik att proppa in nytt arbete mitt i en sprint.',
+    steps:['Bygg och prioritera produktbacklogg','Sätt produktmål','Sprintplanering & sprintmål','Daily Scrum varje dag','Utveckla mot Definition of Done','Sprintgranskning (review)','Sprintåterblick (retrospektiv)','Uppdatera backlogg inför nästa sprint']
+  },
+  kanban:{
+    name:'Kanban',icon:'📋',tag:'Agilt · visualisera & styr flöde',
+    overview:'Kanban handlar om att visualisera arbetet och styra flödet. Arbete dras (pull) i stället för att tryckas, och pågående arbete begränsas med WIP-gränser.',
+    when:'Kontinuerligt inflöde av arbete som support, drift och underhåll — eller som ett komplement till en process du redan har.',
+    flowLabel:'Principer',
+    flow:['Visualisera arbetet på en tavla','Begränsa pågående arbete (WIP)','Styr och mät flödet','Gör policyer och regler tydliga','Förbättra tillsammans, löpande'],
+    extraLabel:'Mätetal',
+    extra:'Ledtid (från beställning till klart), genomloppstid (cykeltid i arbete) och genomflöde (hur mycket som blir klart per tidsenhet).',
+    roles:['Inga föreskrivna roller — bygger på de roller ni redan har'],
+    pros:['Lätt att börja med','Flexibelt vid ändrade prioriteringar','Synliggör flaskhalsar'],
+    cons:['Mindre struktur kan göra att saker drar ut','Kräver disciplin med WIP-gränser'],
+    tip:'Sätt WIP-gränser lågt nog att det känns — det är där förbättringen sitter.',
+    steps:['Kartlägg nuvarande flöde','Bygg kanban-tavla med kolumner','Sätt WIP-gränser','Gör policyer tydliga','Visualisera & dra arbete','Mät ledtid & genomflöde','Identifiera flaskhalsar','Förbättra flödet löpande']
+  },
+  prince2:{
+    name:'PRINCE2',icon:'🏛️',tag:'Plandriven · processbaserad standard',
+    overview:'PRINCE2 (PRojects IN Controlled Environments) är en processbaserad projektledningsmetod med ursprung i Storbritannien. Affärsnyttan styr — projektet ska vara berättigat hela vägen.',
+    when:'Större projekt som behöver tydlig styrning, dokumentation och spårbarhet, ofta i offentlig sektor eller reglerade miljöer.',
+    flowLabel:'Struktur',
+    flow:['7 principer — bl.a. affärsmässig motivering och styr i faser','7 teman — t.ex. affärsnytta, risk, kvalitet, ändring','7 processer — från uppstart till avslut'],
+    extraLabel:'Principer (urval)',
+    extra:'Fortlöpande affärsmässig motivering, lär av erfarenheter, definierade roller och ansvar, styr i faser, styr genom undantag, fokus på produkter och anpassa till miljön.',
+    roles:['Projektstyrelse — uppdragsgivare, senior användare, senior leverantör','Projektledare — leder det dagliga arbetet','Teamledare — ansvarar för leveranser','Projektsäkring & projektstöd — granskning och administration'],
+    pros:['Mycket tydlig styrning och ansvar','Skalbar och anpassningsbar','Gemensam internationell standard'],
+    cons:['Kan upplevas tung och dokumentstyrd','Overhead för små projekt'],
+    tip:'"Anpassa till projektet" är en egen princip — kör inte allt rakt av.',
+    steps:['Starta upp projektet (mandat → brief)','Ta fram business case','Initiera projektet (PID)','Definiera roller & projektstyrelse','Styr i faser (fasgränser)','Hantera produktleverans','Styr genom undantag & rapportera','Avsluta projektet & utvärdera']
+  },
+  vattenfall:{
+    name:'Vattenfall',icon:'⬇️',tag:'Plandriven · sekventiell',
+    overview:'Vattenfallsmodellen är sekventiell: varje fas avslutas innan nästa börjar. Allt planeras i förväg utifrån fastställda krav.',
+    when:'Stabila, väldefinierade krav, regulatoriska krav eller fysiska leveranser som bygg och hårdvara.',
+    flowLabel:'Faser',
+    flow:['Krav — samla in och fastställ','Design — ta fram lösning och arkitektur','Bygg — utveckla enligt design','Test — verifiera mot kraven','Driftsättning','Förvaltning'],
+    extraLabel:'',
+    extra:'',
+    roles:['Projektledare','Kravställare / beställare','Utvecklings- eller byggteam','Test','Förvaltning'],
+    pros:['Förutsägbart och lätt att planera','Tydliga milstolpar och dokumentation','Enkelt att följa upp'],
+    cons:['Oflexibelt vid ändringar','Fel upptäcks sent','Lång tid till första leverans'],
+    tip:'Använd bara när kraven verkligen är stabila — annars blir ändringshanteringen dyr.',
+    steps:['Kravinsamling & kravspec','Design / lösningsarkitektur','Utveckling / bygg','Test & verifiering','Driftsättning','Överlämning till förvaltning','Utvärdering']
+  },
+  safe:{
+    name:'SAFe',icon:'🚆',tag:'Agilt · skalat till många team',
+    overview:'SAFe (Scaled Agile Framework) är ett ramverk för att skala agilt arbete till många team, program och hela organisationen, med en gemensam kadens.',
+    when:'Stora organisationer där många team behöver samverka mot gemensamma mål.',
+    flowLabel:'Bärande delar',
+    flow:['Agile Release Train (ART) — samlar flera team','PI Planning — gemensam planering var 8–12:e vecka','Team kör sprintar eller Kanban','System Demo löpande','Inspect & Adapt — förbättra i stort'],
+    extraLabel:'Nivåer',
+    extra:'Beroende på konfiguration: Team, Program (ART), Large Solution och Portfölj — för att koppla strategi till genomförande.',
+    roles:['Release Train Engineer — leder tåget','Product Management — prioriterar i stort','System Architect — teknisk riktning','Scrum-/Kanban-roller per team'],
+    pros:['Samordning i stor skala','Gemensam takt och planering','Kopplar strategi till leverans'],
+    cons:['Komplext och tungt','Kritiseras för mycket process och mindre agilitet i praktiken'],
+    tip:'Inför stegvis — börja med ett enda ART, inte hela ramverket på en gång.',
+    steps:['Sätt upp Agile Release Train','Bygg & prioritera programbacklogg','PI Planning','Team kör sprintar / iterationer','System Demo löpande','Inspect & Adapt-workshop','Planera nästa PI']
+  },
+  lean:{
+    name:'Lean',icon:'♻️',tag:'Filosofi · värde & flöde',
+    overview:'Lean är en filosofi med ursprung hos Toyota: maximera kundvärdet och minimera slöseriet. Den ligger till grund för bl.a. Kanban och Lean startup.',
+    when:'När ni vill förbättra befintliga flöden, korta ledtider och bygga en kultur av ständig förbättring.',
+    flowLabel:'Principer',
+    flow:['Definiera värde ur kundens ögon','Kartlägg värdeflödet','Skapa flöde utan avbrott','Inför pull — gör först när det behövs','Sträva efter perfektion'],
+    extraLabel:'Slöserier',
+    extra:'Lean pekar ut sju (ibland åtta) typer av slöseri att eliminera, t.ex. väntan, omarbete, överproduktion och onödiga steg.',
+    roles:['Inga föreskrivna roller — alla deltar i förbättringsarbetet (kaizen)'],
+    pros:['Tydligt fokus på kundvärde','Kortare ledtider','Engagerar hela teamet'],
+    cons:['Kulturförändring tar tid','Kan missförstås som att bara skära kostnader'],
+    tip:'Börja med att kartlägga värdeflödet (value stream map) — då blir slöseriet synligt.',
+    steps:['Definiera kundvärde','Kartlägg värdeflödet (VSM)','Identifiera slöserier','Skapa flöde','Inför pull','Mät & följ upp','Ständig förbättring (kaizen)']
+  }
+};
+var METHOD_ORDER=['pps','scrum','kanban','prince2','vattenfall','safe','lean'];
+
+// ── Innehåll: väljare ─────────────────────────────────────
+var CHOOSER=[
+  {q:'Hur tydliga är kraven?',opts:[
+    {t:'Mycket tydliga och stabila',s:{vattenfall:3,prince2:2,pps:1}},
+    {t:'Delvis kända',s:{pps:2,prince2:1,scrum:1,safe:1}},
+    {t:'Oklara, ändras ofta',s:{scrum:3,kanban:2,lean:1,safe:1}}
+  ]},
+  {q:'Hur ofta vill ni leverera?',opts:[
+    {t:'En gång, i slutet',s:{vattenfall:3,prince2:1,pps:1}},
+    {t:'Med jämna mellanrum',s:{scrum:3,safe:2,pps:1}},
+    {t:'Kontinuerligt, löpande',s:{kanban:3,lean:2,scrum:1}}
+  ]},
+  {q:'Hur stort är arbetet?',opts:[
+    {t:'Litet team',s:{kanban:2,scrum:2,lean:1}},
+    {t:'Ett team',s:{scrum:2,pps:1,kanban:1}},
+    {t:'Många team som ska samverka',s:{safe:3,prince2:2,pps:1}}
+  ]},
+  {q:'Behov av formell styrning och dokumentation?',opts:[
+    {t:'Högt',s:{prince2:3,pps:2,vattenfall:1}},
+    {t:'Medel',s:{pps:2,safe:1,scrum:1}},
+    {t:'Lågt',s:{kanban:2,scrum:2,lean:1}}
+  ]},
+  {q:'Vilken typ av arbete?',opts:[
+    {t:'Avgränsat projekt',s:{pps:2,prince2:2,vattenfall:1}},
+    {t:'Produktutveckling',s:{scrum:3,safe:1,lean:1}},
+    {t:'Löpande drift och support',s:{kanban:3,lean:2}}
+  ]}
+];
+
+// ── Innehåll: ordlista ────────────────────────────────────
+var GLOSS=[
+  ['Agil','Arbetssätt som bygger på korta iterationer, samarbete och anpassning till förändring.'],
+  ['Agile Release Train (ART)','I SAFe: ett antal team som tillsammans levererar mot gemensamma mål i en gemensam takt.'],
+  ['Backlogg','Prioriterad lista över allt som kan göras i ett projekt eller en produkt.'],
+  ['Beslutspunkt (BP)','I PPS: en punkt där styrgruppen beslutar om projektet ska fortsätta, ändras eller avslutas.'],
+  ['Beställare','Den som äger nyttan med projektet och oftast finansierar det.'],
+  ['Burndown','Diagram som visar hur mycket arbete som återstår över tid i en sprint eller ett projekt.'],
+  ['Business case','Underlag som motiverar varför projektet är värt att genomföra.'],
+  ['Daily Scrum','Kort dagligt möte (max 15 min) där teamet synkar arbetet mot sprintmålet.'],
+  ['Definition of Done','Gemensam överenskommelse om vad som krävs för att något ska räknas som färdigt.'],
+  ['Epic / Epos','Ett större arbete som bryts ner i mindre delar (t.ex. user stories).'],
+  ['Förvaltning','Det löpande arbetet med att underhålla och vidareutveckla en levererad lösning.'],
+  ['Gantt-schema','Stapeldiagram som visar aktiviteter och deras tidsperioder i ett projekt.'],
+  ['Inkrement','Det fungerande resultat som skapas under en sprint och läggs till tidigare arbete.'],
+  ['Iteration','En tidsavgränsad arbetscykel som upprepas, t.ex. en sprint.'],
+  ['Kaizen','Japanskt begrepp för ständig, stegvis förbättring som alla deltar i.'],
+  ['Kanban-tavla','Visuell tavla med kolumner som visar arbetets status genom flödet.'],
+  ['Ledtid','Tiden från att något beställs till att det är klart och levererat.'],
+  ['Milstolpe','En tydlig delpunkt i projektet som markerar att något viktigt är uppnått.'],
+  ['MVP','Minimum Viable Product — minsta version som ger värde och går att lära av.'],
+  ['PI Planning','I SAFe: gemensam planeringsworkshop för ett program-increment (8–12 veckor).'],
+  ['Produktägare','I Scrum: den som prioriterar backloggen och maximerar produktens värde.'],
+  ['Retrospektiv','Möte där teamet reflekterar över arbetssättet och beslutar om förbättringar.'],
+  ['Riskregister','Lista över identifierade risker med sannolikhet, konsekvens och åtgärder.'],
+  ['Scrum Master','Den som coachar teamet i Scrum och hjälper till att röja hinder.'],
+  ['Sprint','Tidsboxad period (1–4 veckor) där teamet skapar ett färdigt inkrement.'],
+  ['Styrgrupp','Grupp som fattar övergripande beslut och styr projektet på hög nivå.'],
+  ['Tidsbox','En fast tidsram som inte förlängs — arbetet anpassas efter tiden.'],
+  ['User story','Kort beskrivning av ett behov ur användarens perspektiv.'],
+  ['Value Stream Map','Karta över alla steg i ett flöde som synliggör värde och slöseri.'],
+  ['Velocity','Mått på hur mycket arbete ett team brukar klara per sprint.'],
+  ['Vattenfall','Sekventiell modell där varje fas avslutas innan nästa börjar.'],
+  ['WIP-gräns','Begränsning av hur mycket arbete som får pågå samtidigt i ett steg.']
+];
+
+// ── State ─────────────────────────────────────────────────
+var KEY='projektkompassen_v1';
+var state={projects:[],theme:'auto'};
+try{var _s=localStorage.getItem(KEY);if(_s)state=Object.assign(state,JSON.parse(_s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({projects:state.projects,theme:state.theme}));}catch(e){}}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+// ── GitHub-synk (samma mönster som jobb.html) ─────────────
+var SYNC_KEY='projektkompassensync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/projektkompassen.json';};
+var ghHeaders=function(){return{'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+
+function setBadge(stt,msg){
+  var b=document.getElementById('sync-badge');
+  if(!syncOn()&&!msg){b.textContent='';b.className='sync-badge';return;}
+  b.textContent=msg||'';
+  b.className='sync-badge'+(stt==='ok'?' ok':stt==='err'?' err':'');
+}
+
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+
+function mergeProjects(remote){
+  // union-by-id: behåll lokala och fjärrprojekt, nyaste vinner per id
+  var byId={};
+  (state.projects||[]).forEach(function(p){byId[p.id]=p;});
+  (remote||[]).forEach(function(p){
+    var ex=byId[p.id];
+    if(!ex){byId[p.id]=p;}
+    else{var a=ex.updated||'',b=p.updated||'';if(b>a)byId[p.id]=p;}
+  });
+  return Object.keys(byId).map(function(k){return byId[k];});
+}
+
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data&&Array.isArray(data.projects)){
+      state.projects=mergeProjects(data.projects);
+      save();renderProjList();if(curProj)openProj(curProj);
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({projects:state.projects,updated:new Date().toISOString()}));
+  var doPut=function(){
+    var body={message:'Uppdatering via Projektkompassen',content:content};
+    if(sync.sha)body.sha=sync.sha;
+    return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(body)});
+  };
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json();
+  }).then(function(j){
+    if(j.content&&j.content.sha)sync.sha=j.content.sha;
+    setBadge('ok','Synkad');
+  });
+}
+
+var _pushTimer=null;
+function persist(){save();if(syncOn()){clearTimeout(_pushTimer);_pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}}
+
+// ── Sheets ────────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+document.getElementById('ms-close').onclick=closeSheets;
+document.getElementById('settings-close').onclick=closeSheets;
+
+// ── Metoder ───────────────────────────────────────────────
+function renderMethods(){
+  var html='';
+  for(var i=0;i<METHOD_ORDER.length;i++){
+    var k=METHOD_ORDER[i];var m=METHODS[k];
+    html+='<button class="method-card" data-k="'+k+'">'
+      +'<div class="method-ic">'+m.icon+'</div>'
+      +'<div class="method-meta"><div class="method-name">'+m.name+'</div><div class="method-tag">'+m.tag+'</div></div>'
+      +'<div class="method-arrow">›</div></button>';
+  }
+  var el=document.getElementById('method-list');
+  el.innerHTML=html;
+  var cards=el.querySelectorAll('.method-card');
+  for(var j=0;j<cards.length;j++){cards[j].onclick=function(){openMethod(this.dataset.k);};}
+}
+function openMethod(k){
+  var m=METHODS[k];
+  document.getElementById('ms-ic').textContent=m.icon;
+  document.getElementById('ms-name').textContent=m.name;
+  var h='<div class="m-overview">'+m.overview+'</div>';
+  h+='<div class="m-label">När den passar</div><div class="m-text">'+m.when+'</div>';
+  h+='<div class="m-label">'+m.flowLabel+'</div><div class="flow">';
+  for(var i=0;i<m.flow.length;i++)h+='<div class="flow-step">'+m.flow[i]+'</div>';
+  h+='</div>';
+  if(m.extra){h+='<div class="m-label">'+m.extraLabel+'</div><div class="m-text">'+m.extra+'</div>';}
+  h+='<div class="m-label">Roller</div><ul class="pill-list">';
+  for(var r=0;r<m.roles.length;r++)h+='<li>'+m.roles[r]+'</li>';
+  h+='</ul>';
+  h+='<div class="proscons"><div class="pc-box pro"><h4>Fördelar</h4><ul>';
+  for(var p=0;p<m.pros.length;p++)h+='<li>'+m.pros[p]+'</li>';
+  h+='</ul></div><div class="pc-box con"><h4>Nackdelar</h4><ul>';
+  for(var c=0;c<m.cons.length;c++)h+='<li>'+m.cons[c]+'</li>';
+  h+='</ul></div></div>';
+  h+='<div class="tip-box"><b>Tips:</b> '+m.tip+'</div>';
+  document.getElementById('ms-body').innerHTML=h;
+  openSheet('method-sheet');
+}
+
+// ── Väljare ───────────────────────────────────────────────
+var answers=[];
+function renderChooser(){
+  var html='';
+  for(var i=0;i<CHOOSER.length;i++){
+    var q=CHOOSER[i];
+    html+='<div class="q-block" style="margin-bottom:'+(i<CHOOSER.length-1?'18px':'0')+'"><div class="q-text">'+(i+1)+'. '+q.q+'</div><div class="opts">';
+    for(var o=0;o<q.opts.length;o++){
+      var sel=answers[i]===o?' sel':'';
+      html+='<button class="opt'+sel+'" data-q="'+i+'" data-o="'+o+'">'+q.opts[o].t+'</button>';
+    }
+    html+='</div></div>';
+  }
+  var el=document.getElementById('chooser-qs');
+  el.innerHTML=html;
+  var opts=el.querySelectorAll('.opt');
+  for(var j=0;j<opts.length;j++){opts[j].onclick=function(){answers[+this.dataset.q]=+this.dataset.o;renderChooser();};}
+}
+function runChooser(){
+  if(answers.filter(function(a){return a!==undefined;}).length<CHOOSER.length){
+    document.getElementById('chooser-result').innerHTML='<div class="empty-msg">Svara på alla fem frågorna först.</div>';
+    return;
+  }
+  var sc={};METHOD_ORDER.forEach(function(k){sc[k]=0;});
+  for(var i=0;i<CHOOSER.length;i++){
+    var s=CHOOSER[i].opts[answers[i]].s;
+    for(var k in s){if(sc[k]!==undefined)sc[k]+=s[k];}
+  }
+  var ranked=METHOD_ORDER.slice().sort(function(a,b){return sc[b]-sc[a];});
+  var max=sc[ranked[0]]||1;
+  var why={
+    pps:'tydlig styrning och beslutspunkter passar avgränsade projekt med behov av kontroll.',
+    scrum:'korta sprintar och snabb feedback passar när kraven ändras och ni levererar ofta.',
+    kanban:'flöde och WIP-gränser passar löpande arbete utan fasta iterationer.',
+    prince2:'stark struktur och dokumentation passar större, formella projekt.',
+    vattenfall:'sekventiella faser passar när kraven är stabila och leveransen sker i slutet.',
+    safe:'gemensam kadens och ART passar när många team ska samverka.',
+    lean:'fokus på värde och att ta bort slöseri passar förbättring av befintliga flöden.'
+  };
+  var h='';
+  for(var rIdx=0;rIdx<2;rIdx++){
+    var k=ranked[rIdx];var m=METHODS[k];
+    h+='<div class="result-card"><div class="result-rank">'+(rIdx===0?'Bäst match':'Värt att överväga')+'</div>'
+      +'<div class="result-name">'+m.icon+' '+m.name+'</div>'
+      +'<div class="result-why">'+m.name+' kan passa för att '+why[k]+'</div>'
+      +'<button class="btn ghost" style="margin-top:10px" data-read="'+k+'">Läs om '+m.name+'</button></div>';
+  }
+  h+='<div class="card-panel"><div class="m-label" style="margin-top:0">Poäng</div>';
+  for(var ri=0;ri<ranked.length;ri++){
+    var kk=ranked[ri];
+    var pct=Math.round((sc[kk]/max)*100);
+    h+='<div class="score-row"><span style="width:78px">'+METHODS[kk].name+'</span><div class="score-bar"><div class="score-fill" style="width:'+pct+'%"></div></div><span>'+sc[kk]+'</span></div>';
+  }
+  h+='</div>';
+  var rel=document.getElementById('chooser-result');
+  rel.innerHTML=h;
+  var rbs=rel.querySelectorAll('[data-read]');
+  for(var b=0;b<rbs.length;b++){rbs[b].onclick=function(){openMethod(this.dataset.read);};}
+}
+document.getElementById('chooser-go').onclick=runChooser;
+document.getElementById('chooser-reset').onclick=function(){answers=[];renderChooser();document.getElementById('chooser-result').innerHTML='';};
+
+// ── Projektspår ───────────────────────────────────────────
+var curProj=null;
+function renderProjList(){
+  var el=document.getElementById('proj-list');
+  if(!state.projects.length){el.innerHTML='<div class="empty-msg">Inga projekt än. Skapa ditt första nedan.</div>';return;}
+  var html='';
+  for(var i=0;i<state.projects.length;i++){
+    var p=state.projects[i];var m=METHODS[p.method];
+    var total=m.steps.length;var done=(p.done||[]).length;
+    var pct=total?Math.round(done/total*100):0;
+    html+='<div class="proj-card" data-id="'+p.id+'">'
+      +'<div class="proj-top"><div class="proj-name">'+esc(p.name)+'</div><div class="proj-method">'+m.icon+' '+m.name+'</div></div>'
+      +'<div class="proj-bar"><div class="proj-fill" style="width:'+pct+'%"></div></div>'
+      +'<div class="proj-pct">'+done+' av '+total+' steg klara · '+pct+'%</div></div>';
+  }
+  el.innerHTML=html;
+  var cards=el.querySelectorAll('.proj-card');
+  for(var j=0;j<cards.length;j++){cards[j].onclick=function(){openProj(this.dataset.id);};}
+}
+function findProj(id){for(var i=0;i<state.projects.length;i++)if(state.projects[i].id===id)return state.projects[i];return null;}
+function openProj(id){
+  var p=findProj(id);if(!p){closeProj();return;}
+  curProj=id;
+  var m=METHODS[p.method];
+  document.getElementById('track-list-view').style.display='none';
+  var dv=document.getElementById('track-detail-view');
+  dv.style.display='block';
+  var total=m.steps.length;var done=(p.done||[]).length;var pct=total?Math.round(done/total*100):0;
+  var h='<button class="back-link" id="proj-back">‹ Alla projekt</button>';
+  h+='<div class="card-panel"><div class="proj-top"><div class="proj-name">'+esc(p.name)+'</div><div class="proj-method">'+m.icon+' '+m.name+'</div></div>';
+  h+='<div class="proj-bar"><div class="proj-fill" style="width:'+pct+'%"></div></div>';
+  h+='<div class="proj-pct">'+done+' av '+total+' steg · '+pct+'%</div></div>';
+  h+='<div class="section-title">Faser & steg</div><div class="card-panel" id="step-box"></div>';
+  h+='<div class="btn-row" style="margin-top:14px"><button class="btn ghost" id="proj-readmethod">Om '+m.name+'</button><button class="btn ghost" id="proj-del">Ta bort projekt</button></div>';
+  dv.innerHTML=h;
+  renderSteps(p,m);
+  document.getElementById('proj-back').onclick=closeProj;
+  document.getElementById('proj-readmethod').onclick=function(){openMethod(p.method);};
+  document.getElementById('proj-del').onclick=function(){
+    if(confirm('Ta bort "'+p.name+'"?')){
+      state.projects=state.projects.filter(function(x){return x.id!==id;});
+      persist();closeProj();
+    }
+  };
+}
+function renderSteps(p,m){
+  p.done=p.done||[];
+  var box=document.getElementById('step-box');
+  var html='';
+  for(var i=0;i<m.steps.length;i++){
+    var dn=p.done.indexOf(i)>-1;
+    html+='<div class="step-item"><div class="step-check'+(dn?' done':'')+'" data-i="'+i+'">'+(dn?'✓':'')+'</div><div class="step-txt'+(dn?' done':'')+'">'+m.steps[i]+'</div></div>';
+  }
+  box.innerHTML=html;
+  var checks=box.querySelectorAll('.step-check');
+  for(var j=0;j<checks.length;j++){checks[j].onclick=function(){
+    var i=+this.dataset.i;var idx=p.done.indexOf(i);
+    if(idx>-1)p.done.splice(idx,1);else p.done.push(i);
+    p.updated=new Date().toISOString();
+    persist();openProj(p.id);
+  };}
+}
+function closeProj(){
+  curProj=null;
+  document.getElementById('track-detail-view').style.display='none';
+  document.getElementById('track-list-view').style.display='block';
+  renderProjList();
+}
+// nytt projekt
+function fillMethodSelect(){
+  var sel=document.getElementById('np-method');
+  var h='';
+  for(var i=0;i<METHOD_ORDER.length;i++){var k=METHOD_ORDER[i];h+='<option value="'+k+'">'+METHODS[k].name+'</option>';}
+  sel.innerHTML=h;
+  updateHint();
+}
+function updateHint(){
+  var k=document.getElementById('np-method').value;
+  document.getElementById('np-hint').textContent=METHODS[k]?METHODS[k].tag+' — '+METHODS[k].steps.length+' steg i checklistan.':'';
+}
+document.getElementById('np-method').onchange=updateHint;
+document.getElementById('new-proj').onclick=function(){
+  document.getElementById('np-name').value='';
+  fillMethodSelect();
+  openSheet('proj-sheet');
+};
+document.getElementById('np-save').onclick=function(){
+  var name=document.getElementById('np-name').value.trim();
+  var method=document.getElementById('np-method').value;
+  if(!name){document.getElementById('np-name').focus();return;}
+  state.projects.push({id:uid(),name:name,method:method,done:[],updated:new Date().toISOString()});
+  persist();closeSheets();
+  document.getElementById('track-detail-view').style.display='none';
+  document.getElementById('track-list-view').style.display='block';
+  renderProjList();
+};
+
+// ── Ordlista ──────────────────────────────────────────────
+function renderGloss(filter){
+  filter=(filter||'').toLowerCase().trim();
+  var el=document.getElementById('gloss-list');
+  var rows=GLOSS.filter(function(g){return !filter||g[0].toLowerCase().indexOf(filter)>-1||g[1].toLowerCase().indexOf(filter)>-1;});
+  if(!rows.length){el.innerHTML='<div class="empty-msg">Inga träffar.</div>';return;}
+  var html='';
+  for(var i=0;i<rows.length;i++)html+='<div class="gloss-item"><div class="gloss-term">'+esc(rows[i][0])+'</div><div class="gloss-def">'+esc(rows[i][1])+'</div></div>';
+  el.innerHTML=html;
+}
+document.getElementById('gloss-search').oninput=function(){renderGloss(this.value);};
+
+// ── Inställningar / synk-UI ───────────────────────────────
+document.getElementById('settings-btn').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  var st=document.getElementById('gh-status');st.style.display='none';
+  openSheet('settings-sheet');
+};
+function showStatus(msg,type){
+  var st=document.getElementById('gh-status');
+  st.style.display='block';
+  st.style.background=type==='ok'?'rgba(63,143,110,.15)':type==='err'?'rgba(181,122,107,.15)':'var(--panel2)';
+  st.style.color=type==='ok'?'var(--good)':type==='err'?'#B57A6B':'var(--muted)';
+  st.textContent=msg;
+}
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){showStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  showStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){showStatus('✓ Ansluten! Hämtar dina projekt…','ok');return ghPull();}
+    showStatus('✓ Ansluten! Repot är tomt — laddar upp dina projekt…','ok');return ghPush();
+  }).catch(function(e){
+    showStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');
+  });
+};
+document.getElementById('gh-pull').onclick=function(){
+  if(!syncOn()){showStatus('Ställ in synk först.','err');return;}
+  showStatus('Hämtar…','info');
+  ghPull().then(function(){showStatus('✓ Hämtat.','ok');}).catch(function(){showStatus('Synkfel.','err');});
+};
+
+// export / import
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify({projects:state.projects},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var d=new Date();
+  a.download='projektkompassen-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
+  a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      if(d&&Array.isArray(d.projects)){state.projects=d.projects;persist();renderProjList();showStatus('✓ Importerat.','ok');}
+      else alert('Filen verkar inte vara en giltig säkerhetskopia.');
+    }catch(err){alert('Kunde inte läsa filen.');}
+  };
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#1B2422':'#EDF1F0';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navBtns.length;n++){
+  navBtns[n].onclick=function(){
+    for(var x=0;x<navBtns.length;x++)navBtns[x].classList.remove('active');
+    this.classList.add('active');
+    var views=document.querySelectorAll('.view');
+    for(var v=0;v<views.length;v++)views[v].classList.remove('active');
+    document.getElementById('view-'+this.dataset.v).classList.add('active');
+    if(this.dataset.v==='track'){closeProj();}
+  };
+}
+
+// ── Init ──────────────────────────────────────────────────
+loadSync();
+renderMethods();
+renderChooser();
+renderProjList();
+renderGloss('');
+applyTheme();
+setInterval(applyTheme,60000);
+setBadge('', syncOn()?'Synk aktiv':'');
+if(syncOn())ghPull();
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>
