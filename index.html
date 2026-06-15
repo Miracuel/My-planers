@@ -249,6 +249,7 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
 /* Arbetsyta (overlay: app + meny) */
 /* Arbetsyta (vy: app + meny) */
 .ws{display:flex;flex-direction:row;border:1px solid var(--line);border-radius:16px;overflow:hidden;height:72vh;min-height:440px;background:var(--paper);margin-top:4px}
+.ws[hidden]{display:none}
 .ws-app{flex:1;min-width:0;display:flex;flex-direction:column}
 .ws-meny{width:248px;flex:0 0 248px;display:flex;flex-direction:column;background:var(--paper);border-right:1px solid var(--line)}
 .ws-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--card)}
@@ -963,17 +964,24 @@ function rita(){
   // ----- Senaste uppdateringar (egen vy) -----
   if(visarFlode){ ritaFlodeVy(wrap); return; }
 
-  // ----- Mina favoriter (egen vy) -----
+  // ----- Mina favoriter (egen vy) – samma layout som Alla appar, fast bara favoriter -----
   if(visarFavoriter){
     const favs = APPS.map(medAndringar).filter(a => (a.mobil || a.desktop) && arFavorit(a.id));
-    wrap.appendChild(sekRubrik(favs.length ? ("⭐ Mina favoriter (" + favs.length + ")") : "⭐ Mina favoriter"));
-    if(favs.length) wrap.appendChild(byggGrid(favs, senast));
-    else {
+    if(!favs.length){
+      wrap.appendChild(sekRubrik("⭐ Mina favoriter"));
       const tom = document.createElement("div");
       tom.className = "logg-tom";
       tom.textContent = "Inga favoriter ännu — tryck på stjärnan på ett appkort för att lägga till.";
       wrap.appendChild(tom);
+      return;
     }
+    const sektioner = [...new Set(favs.map(a => a.sektion))];
+    sektioner.forEach(s => {
+      const appar = favs.filter(a => a.sektion === s);
+      if(appar.length === 0) return;
+      wrap.appendChild(sekRubrik(s));
+      wrap.appendChild(byggGrid(appar, senast));
+    });
     return;
   }
 
