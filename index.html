@@ -246,6 +246,41 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
 @media(hover:hover){ .dash-card:hover{filter:brightness(0.985)} }
 .dash-card:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
+/* Arbetsyta (overlay: app + meny) */
+.ws{position:fixed;inset:0;z-index:300;background:var(--paper);display:flex;flex-direction:row}
+.ws-app{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.ws-meny{width:280px;flex:0 0 280px;display:flex;flex-direction:column;background:var(--paper)}
+.ws-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--card)}
+.ws-titel{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-back{display:none;background:none;border:none;font:inherit;color:var(--ink);cursor:pointer;padding:4px 6px;border-radius:8px}
+.ws-close{background:none;border:none;font-size:22px;line-height:1;color:var(--ink-soft);cursor:pointer;padding:0 4px}
+.ws-frame{flex:1;position:relative;min-height:0}
+.ws-frame iframe{width:100%;height:100%;border:none;display:block;background:#fff}
+.ws-tom{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:15px;text-align:center;padding:20px}
+.ws-meny-topp{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 8px}
+.ws-meny-topp strong{font-family:Georgia,'Times New Roman',serif;font-size:18px}
+.ws-meny-topp .ws-close{display:none}
+.ws-sok{margin:0 14px 8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--card);color:var(--ink)}
+.ws-lista{flex:1;overflow:auto;padding:0 8px 14px}
+.ws-grupp{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);padding:12px 8px 4px}
+.ws-rad{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;font:inherit;color:var(--ink);padding:8px;border-radius:10px;cursor:pointer}
+@media(hover:hover){ .ws-rad:hover{background:var(--card)} }
+.ws-rad.aktiv{background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
+.ws-rad .wk-ikon{width:28px;height:28px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--ti);}
+.ws-rad .wk-namn{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-tomlista{color:var(--ink-soft);font-size:13px;padding:14px 8px}
+@media(max-width:760px){
+  .ws{flex-direction:column}
+  .ws-app,.ws-meny{width:auto;flex:1 1 auto;border-right:none}
+  .ws-meny{display:flex}
+  .ws-app{display:none}
+  .ws.app-open .ws-meny{display:none}
+  .ws.app-open .ws-app{display:flex}
+  .ws.app-open .ws-back{display:inline-block}
+  .ws-bar .ws-close{display:none}
+  .ws-meny-topp .ws-close{display:inline-block}
+}
+
 /* Sökrad */
 .sok-rad{position:relative;margin-top:14px}
 .sok-rad .sok-ikon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.55;pointer-events:none}
@@ -361,6 +396,9 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
       <div class="mode" role="group" aria-label="Välj läge">
         <button id="btn-mobil" type="button">📱 Mobil</button>
         <button id="btn-desktop" type="button">🖥️ Desktop</button>
+      </div>
+      <div class="mode">
+        <button id="btn-arbetsyta" type="button">▣ Arbetsyta</button>
       </div>
       <div class="mode">
         <button id="btn-dash" type="button">▦ Översikt</button>
@@ -495,6 +533,29 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
       <button class="kn" id="logg-stang" type="button">Stäng</button>
     </div>
   </div>
+</div>
+
+<!-- Arbetsyta: app till vänster, app-meny till höger -->
+<div class="ws" id="workspace" hidden>
+  <div class="ws-app">
+    <div class="ws-bar">
+      <button class="ws-back" id="ws-tillbaka" type="button">‹ Appar</button>
+      <span class="ws-titel" id="ws-titel">Arbetsyta</span>
+      <button class="ws-close" id="ws-stang" type="button" aria-label="Stäng arbetsyta">×</button>
+    </div>
+    <div class="ws-frame">
+      <iframe id="ws-iframe" title="Vald app"></iframe>
+      <div class="ws-tom" id="ws-tom">Välj en app i menyn.</div>
+    </div>
+  </div>
+  <aside class="ws-meny" id="ws-meny">
+    <div class="ws-meny-topp">
+      <strong>Appar</strong>
+      <button class="ws-close" id="ws-stang2" type="button" aria-label="Stäng arbetsyta">×</button>
+    </div>
+    <input id="ws-sok" type="search" class="ws-sok" placeholder="Sök app…" autocomplete="off" aria-label="Sök app i arbetsytan">
+    <div class="ws-lista" id="ws-lista"></div>
+  </aside>
 </div>
 
 <script>
@@ -1753,6 +1814,101 @@ async function laddaDash(){
   dashTid = new Date().toLocaleTimeString("sv-SE", {hour:"2-digit", minute:"2-digit"});
   if(visarDash) rita();
 }
+
+// ----- Arbetsyta (app + meny) -----
+const workspace = document.getElementById("workspace");
+const wsIframe = document.getElementById("ws-iframe");
+const wsTitel = document.getElementById("ws-titel");
+const wsTom = document.getElementById("ws-tom");
+const wsLista = document.getElementById("ws-lista");
+const wsSokInput = document.getElementById("ws-sok");
+let wsAktiv = null;
+let wsSok = "";
+
+function wsAppar(){
+  return APPS.map(medAndringar).filter(a => a.mobil || a.desktop);
+}
+
+function byggWsLista(){
+  wsLista.innerHTML = "";
+  const q = wsSok.trim().toLowerCase();
+  const finns = wsAppar();
+
+  function rad(a){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ws-rad" + (a.id === wsAktiv ? " aktiv" : "");
+    b.style.setProperty("--ti", a.farger.iconbg);
+    b.innerHTML = '<span class="wk-ikon">' + esc(a.ikon) + '</span><span class="wk-namn">' + esc(a.namn) + '</span>';
+    b.addEventListener("click", () => valjWsApp(a.id));
+    return b;
+  }
+
+  if(q){
+    const traff = finns.filter(a =>
+      (a.namn || "").toLowerCase().includes(q) ||
+      (a.desc || "").toLowerCase().includes(q) ||
+      (a.sektion || "").toLowerCase().includes(q));
+    if(!traff.length){
+      const t = document.createElement("div");
+      t.className = "ws-tomlista";
+      t.textContent = "Inga appar matchar.";
+      wsLista.appendChild(t);
+    } else traff.forEach(a => wsLista.appendChild(rad(a)));
+    return;
+  }
+
+  const sektioner = [...new Set(finns.map(a => a.sektion))];
+  sektioner.forEach(s => {
+    const appar = finns.filter(a => a.sektion === s);
+    if(!appar.length) return;
+    const h = document.createElement("div");
+    h.className = "ws-grupp";
+    h.textContent = s;
+    wsLista.appendChild(h);
+    appar.forEach(a => wsLista.appendChild(rad(a)));
+  });
+}
+
+function valjWsApp(id){
+  const bas = APPS.find(x => x.id === id);
+  if(!bas) return;
+  const a = medAndringar(bas);
+  const annat = lage === "mobil" ? "desktop" : "mobil";
+  const fil = a[lage] || a[annat];
+  if(!fil) return;
+  wsAktiv = id;
+  wsIframe.src = fil;
+  wsTitel.textContent = a.namn;
+  wsTom.hidden = true;
+  workspace.classList.add("app-open");
+  try{ localStorage.setItem("centralen-senast", id); }catch(e){}
+  byggWsLista();
+}
+
+function oppnaArbetsyta(){
+  byggWsLista();
+  workspace.hidden = false;
+  document.body.style.overflow = "hidden";
+  if(!wsAktiv){ wsTom.hidden = false; workspace.classList.remove("app-open"); }
+  setTimeout(() => wsSokInput.focus(), 50);
+}
+
+function stangArbetsyta(){
+  workspace.hidden = true;
+  document.body.style.overflow = "";
+  wsIframe.src = "about:blank";
+  wsAktiv = null;
+  workspace.classList.remove("app-open");
+  wsTom.hidden = false;
+}
+
+document.getElementById("btn-arbetsyta").addEventListener("click", oppnaArbetsyta);
+document.getElementById("ws-stang").addEventListener("click", stangArbetsyta);
+document.getElementById("ws-stang2").addEventListener("click", stangArbetsyta);
+document.getElementById("ws-tillbaka").addEventListener("click", () => workspace.classList.remove("app-open"));
+wsSokInput.addEventListener("input", () => { wsSok = wsSokInput.value; byggWsLista(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape" && !workspace.hidden) stangArbetsyta(); });
 
 // ----- Sökruta -----
 (function(){
