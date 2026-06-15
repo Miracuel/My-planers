@@ -179,13 +179,72 @@ body.edit .tile{cursor:pointer}
 /* Sidfot */
 .foot{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:26px;opacity:.85;line-height:1.6}
 
-/* Liten prick på kort med ny uppdatering */
+/* Notis-prick på appikonen (ny uppdatering) */
+.tile .ikon{position:relative}
 .tile .ny-prick{
-  position:absolute;top:11px;left:12px;
-  width:8px;height:8px;border-radius:50%;
-  background:var(--t-accent,var(--ink));
-  box-shadow:0 0 0 3px var(--t-bg,var(--card));
+  position:absolute;top:-3px;right:-3px;
+  width:9px;height:9px;border-radius:50%;
+  background:#C25B5B;box-shadow:0 0 0 2px var(--t-bg,var(--card));
 }
+
+/* Statusprick uppe till vänster */
+.tile .status-prick{
+  position:absolute;top:13px;left:13px;
+  width:9px;height:9px;border-radius:50%;
+  box-shadow:0 0 0 2px var(--t-bg,var(--card));
+}
+
+/* Favoritstjärna uppe till höger */
+.tile .fav-stj{
+  position:absolute;top:8px;right:9px;z-index:2;
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;line-height:1;cursor:pointer;font-family:inherit;
+  color:var(--t-muted,var(--ink-soft));background:transparent;border:none;
+}
+.tile .fav-stj.pa{color:#D9A53A}
+@media(hover:hover){ .tile .fav-stj:hover{background:var(--t-iconbg,var(--paper))} }
+.tile .fav-stj:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.tile .hage-senast{right:40px}
+
+/* Info-knapp: funktioner & changelog */
+.tile .info-knapp{
+  position:absolute;bottom:9px;right:10px;z-index:2;
+  width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;line-height:1;cursor:pointer;font-family:inherit;
+  color:var(--t-muted,var(--ink-soft));
+  background:var(--t-iconbg,var(--paper));
+  border:1px solid var(--t-line,var(--line));
+}
+@media(hover:hover){ .tile .info-knapp:hover{color:var(--t-accent,var(--ink))} }
+.tile .info-knapp:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+
+/* Sökrad */
+.sok-rad{position:relative;margin-top:14px}
+.sok-rad .sok-ikon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.55;pointer-events:none}
+.sok-rad input{
+  width:100%;border:1px solid var(--line);border-radius:999px;
+  padding:11px 40px;font-size:14px;background:#fff;outline:none;
+  font-family:inherit;color:var(--ink);
+}
+.sok-rad input:focus{border-color:var(--ink)}
+.sok-rad input::-webkit-search-cancel-button{display:none}
+.sok-rad #sok-rensa{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--line);color:var(--ink);font-size:17px;line-height:1;
+  display:flex;align-items:center;justify-content:center;font-family:inherit;
+}
+.sok-rad #sok-rensa[hidden]{display:none}
+
+/* Status-chips & favorit-knapp i redigeraren */
+.status-chips button .pk{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.fav-toggle{
+  width:100%;text-align:left;border:1px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;cursor:pointer;
+}
+.fav-toggle.pa{border-color:#D9A53A;color:#9A7414;background:#FBF4E2}
 
 /* Nyhetsflöde – "Senaste uppdateringar" överst */
 .flode{display:flex;flex-direction:column;gap:8px}
@@ -288,6 +347,12 @@ body.edit .tile{cursor:pointer}
     </div>
   </div>
 
+  <div class="sok-rad">
+    <span class="sok-ikon" aria-hidden="true">🔍</span>
+    <input id="sok" type="search" placeholder="Sök app…" autocomplete="off" aria-label="Sök app">
+    <button id="sok-rensa" type="button" aria-label="Rensa sökning" hidden>×</button>
+  </div>
+
   <div id="sektioner"></div>
 
   <div class="foot">
@@ -326,6 +391,14 @@ body.edit .tile{cursor:pointer}
     <div class="falt">
       <label>Färgtema</label>
       <div class="teman" id="teman"></div>
+    </div>
+    <div class="falt">
+      <label>Status</label>
+      <div class="chips status-chips" id="status-chips"></div>
+    </div>
+    <div class="falt">
+      <label>Favorit</label>
+      <button type="button" id="in-fav" class="fav-toggle" aria-pressed="false">☆ Lägg till i favoriter</button>
     </div>
     <div class="sheet-knappar">
       <button class="kn" id="btn-avbryt" type="button">Avbryt</button>
@@ -563,6 +636,31 @@ function medAndringar(a){
   return Object.assign({}, a, o, {farger: Object.assign({}, a.farger, o.farger || {})});
 }
 
+/* Favoriter, status och sökning (favoriter + status synkas i centralen.json) */
+const STATUSAR = [
+  {key:"klar",       namn:"Klar",              farg:"#5E9C62"},
+  {key:"testas",     namn:"Testas",            farg:"#4A6FA5"},
+  {key:"uppdateras", namn:"Uppdateras",        farg:"#8A63B0"},
+  {key:"utveckling", namn:"Under utveckling",  farg:"#D2A53A"},
+  {key:"ide",        namn:"Idé",               farg:"#C25B5B"},
+  {key:"parkerad",   namn:"Parkerad",          farg:"#7C766E"},
+];
+function statusObj(key){ return STATUSAR.find(s => s.key === key) || null; }
+
+let FAVORITER = {};
+let STATUS = {};
+try{ FAVORITER = JSON.parse(localStorage.getItem("centralen-favoriter") || "{}"); }catch(e){ FAVORITER = {}; }
+try{ STATUS = JSON.parse(localStorage.getItem("centralen-status") || "{}"); }catch(e){ STATUS = {}; }
+function sparaFavoriter(){ try{ localStorage.setItem("centralen-favoriter", JSON.stringify(FAVORITER)); }catch(e){} }
+function sparaStatus(){ try{ localStorage.setItem("centralen-status", JSON.stringify(STATUS)); }catch(e){} }
+function arFavorit(id){ return !!FAVORITER[id]; }
+function vaxlaFavorit(id){
+  if(FAVORITER[id]) delete FAVORITER[id]; else FAVORITER[id] = true;
+  sparaFavoriter();
+  pushaSnart();
+}
+let sokText = "";
+
 function esc(s){
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
@@ -634,16 +732,74 @@ function byggTile(a, val){
   el.style.setProperty("--t-muted", f.muted);
   el.style.setProperty("--t-accent", f.accent);
   el.style.setProperty("--t-iconbg", f.iconbg);
+  const stjarna = val.favbar
+    ? '<span class="fav-stj' + (val.fav ? ' pa' : '') + '" role="button" tabindex="0" aria-label="' + (val.fav ? 'Ta bort favorit' : 'Markera som favorit') + '">' + (val.fav ? '★' : '☆') + '</span>'
+    : '';
   const hage = val.penna ? '<span class="hage">✎</span>'
-             : val.senast ? '<span class="hage">Senast</span>' : '';
+             : val.senast ? '<span class="hage hage-senast">Senast</span>' : '';
+  const statusPrick = val.status
+    ? '<span class="status-prick" style="background:' + val.status.farg + '" title="' + esc(val.status.namn) + '"></span>'
+    : '';
+  const infoKn = val.infobar
+    ? '<span class="info-knapp" role="button" tabindex="0" aria-label="Visa funktioner och changelog">ⓘ</span>'
+    : '';
   el.innerHTML =
-    hage +
-    (val.nytt ? '<span class="ny-prick" aria-hidden="true"></span>' : '') +
-    '<span class="ikon">' + esc(a.ikon) + '</span>' +
+    stjarna + hage + statusPrick + infoKn +
+    '<span class="ikon">' + esc(a.ikon) + (val.nytt ? '<span class="ny-prick" aria-hidden="true"></span>' : '') + '</span>' +
     '<span class="namn">' + esc(a.namn) + '</span>' +
     '<span class="desc">' + esc(a.desc) + '</span>' +
     (val.fallback ? '<span class="endast">' + (a.mobil ? "📱 endast mobil" : "🖥️ endast desktop") + '</span>' : '');
   return el;
+}
+
+// Bygg ett klickbart kort för en (redan medAndringar-bearbetad) app
+function tileFor(a, senast){
+  const annat = lage === "mobil" ? "desktop" : "mobil";
+  const fil = a[lage] || a[annat];   // saknas versionen för läget öppnas den andra
+  const el = byggTile(a, {
+    lank:true, fil:fil,
+    fallback: !a[lage],
+    senast: senast === a.id && !redigerar && !arFavorit(a.id),
+    nytt: !redigerar && harNyUppdatering(a.id),
+    penna: redigerar,
+    favbar: !redigerar,
+    infobar: !redigerar,
+    fav: arFavorit(a.id),
+    status: STATUS[a.id] ? statusObj(STATUS[a.id]) : null
+  });
+  el.addEventListener("click", (e) => {
+    if(redigerar){ e.preventDefault(); oppnaEditor(a.id); return; }
+    try{ localStorage.setItem("centralen-senast", a.id); }catch(err){}
+  });
+  // Favoritstjärna – ska inte öppna appen
+  const stj = el.querySelector(".fav-stj");
+  if(stj){
+    const toggla = (e) => { e.preventDefault(); e.stopPropagation(); vaxlaFavorit(a.id); rita(); };
+    stj.addEventListener("click", toggla);
+    stj.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " ") toggla(e); });
+  }
+  // Info-knapp – öppnar funktioner & changelog, ska inte öppna appen
+  const infoKn = el.querySelector(".info-knapp");
+  if(infoKn){
+    const oppna = (e) => { e.preventDefault(); e.stopPropagation(); openLogg(a.id); };
+    infoKn.addEventListener("click", oppna);
+    infoKn.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " ") oppna(e); });
+  }
+  return el;
+}
+
+function byggGrid(appar, senast){
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  appar.forEach(a => grid.appendChild(tileFor(a, senast)));
+  return grid;
+}
+
+function sekRubrik(text){
+  const t = document.createElement("div");
+  t.className = "sec-title";
+  t.textContent = text;
+  return t;
 }
 
 // Rita upp sektioner och appkort utifrån aktuellt läge
@@ -659,45 +815,45 @@ function rita(){
   const wrap = document.getElementById("sektioner");
   wrap.innerHTML = "";
 
-  if(!redigerar) ritaFlode(wrap);
-
-  const annat = lage === "mobil" ? "desktop" : "mobil";
   const alla = APPS.map(medAndringar);
-  const sektioner = [...new Set(alla.map(a => a.sektion))];
+  const finns = alla.filter(a => a.mobil || a.desktop);
 
+  // ----- Sökläge: platt filtrerad lista, inget flöde/favoriter -----
+  const q = sokText.trim().toLowerCase();
+  if(q){
+    const traff = finns.filter(a =>
+      (a.namn || "").toLowerCase().includes(q) ||
+      (a.desc || "").toLowerCase().includes(q) ||
+      (a.sektion || "").toLowerCase().includes(q));
+    wrap.appendChild(sekRubrik(traff.length ? ("Sökresultat (" + traff.length + ")") : "Inga träffar"));
+    if(traff.length) wrap.appendChild(byggGrid(traff, senast));
+    else {
+      const tom = document.createElement("div");
+      tom.className = "logg-tom";
+      tom.textContent = "Inga appar matchar “" + sokText.trim() + "”.";
+      wrap.appendChild(tom);
+    }
+    return;
+  }
+
+  // ----- Favoriter överst -----
+  if(!redigerar){
+    const favs = finns.filter(a => arFavorit(a.id));
+    if(favs.length){
+      wrap.appendChild(sekRubrik("⭐ Favoriter"));
+      wrap.appendChild(byggGrid(favs, senast));
+    }
+    // ----- Senaste uppdateringar (changelog-flöde) -----
+    ritaFlode(wrap);
+  }
+
+  // ----- Vanliga sektioner -----
+  const sektioner = [...new Set(finns.map(a => a.sektion))];
   sektioner.forEach(s => {
-    const appar = alla.filter(a => a.sektion === s && (a.mobil || a.desktop));
+    const appar = finns.filter(a => a.sektion === s);
     if(appar.length === 0) return;
-
-    const t = document.createElement("div");
-    t.className = "sec-title";
-    t.textContent = s;
-    wrap.appendChild(t);
-
-    const grid = document.createElement("div");
-    grid.className = "grid";
-
-    appar.forEach(a => {
-      const fil = a[lage] || a[annat];   // saknas versionen för läget öppnas den andra
-      const el = byggTile(a, {
-        lank:true, fil:fil,
-        fallback: !a[lage],
-        senast: senast === a.id && !redigerar,
-        nytt: !redigerar && harNyUppdatering(a.id),
-        penna: redigerar
-      });
-      el.addEventListener("click", (e) => {
-        if(redigerar){
-          e.preventDefault();
-          oppnaEditor(a.id);
-          return;
-        }
-        try{ localStorage.setItem("centralen-senast", a.id); }catch(err){}
-      });
-      grid.appendChild(el);
-    });
-
-    wrap.appendChild(grid);
+    wrap.appendChild(sekRubrik(s));
+    wrap.appendChild(byggGrid(appar, senast));
   });
 }
 
@@ -706,6 +862,8 @@ const skal = document.getElementById("skal");
 let editorId = null;
 let valdFarger = null;
 let valdSektion = "";
+let valdStatus = "";
+let valdFavorit = false;
 
 function v(id){ return document.getElementById(id).value.trim(); }
 
@@ -721,6 +879,8 @@ function oppnaEditor(id){
   document.getElementById("in-sektion-ny").value = "";
   valdSektion = a.sektion;
   valdFarger = Object.assign({}, a.farger);
+  valdStatus = STATUS[id] || "";
+  valdFavorit = arFavorit(id);
 
   const filer = [a.mobil, a.desktop].filter(Boolean).join(" · ");
   document.getElementById("fil-info").textContent = filer || "—";
@@ -728,6 +888,8 @@ function oppnaEditor(id){
   document.getElementById("btn-aterstall").hidden = !ANDRINGAR[id];
 
   byggSektionChips();
+  byggStatusChips();
+  uppdateraFavToggle();
   byggTeman();
   uppdateraPreview();
   skal.hidden = false;
@@ -754,6 +916,32 @@ function byggSektionChips(){
     });
     holder.appendChild(b);
   });
+}
+
+function byggStatusChips(){
+  const holder = document.getElementById("status-chips");
+  holder.innerHTML = "";
+  const ingen = document.createElement("button");
+  ingen.type = "button";
+  ingen.textContent = "Ingen";
+  ingen.classList.toggle("on", !valdStatus);
+  ingen.addEventListener("click", () => { valdStatus = ""; byggStatusChips(); });
+  holder.appendChild(ingen);
+  STATUSAR.forEach(s => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<span class="pk" style="background:' + s.farg + '"></span>' + s.namn;
+    b.classList.toggle("on", valdStatus === s.key);
+    b.addEventListener("click", () => { valdStatus = s.key; byggStatusChips(); });
+    holder.appendChild(b);
+  });
+}
+
+function uppdateraFavToggle(){
+  const b = document.getElementById("in-fav");
+  b.classList.toggle("pa", valdFavorit);
+  b.setAttribute("aria-pressed", valdFavorit ? "true" : "false");
+  b.textContent = (valdFavorit ? "★ I favoriter" : "☆ Lägg till i favoriter");
 }
 
 function byggTeman(){
@@ -788,7 +976,7 @@ function uppdateraPreview(){
   };
   const holder = document.getElementById("preview-wrap");
   holder.innerHTML = "";
-  holder.appendChild(byggTile(a, {lank:false}));
+  holder.appendChild(byggTile(a, {lank:false, status: valdStatus ? statusObj(valdStatus) : null, fav: valdFavorit, favbar: valdFavorit}));
 }
 
 function sparaEditor(){
@@ -801,7 +989,11 @@ function sparaEditor(){
     sektion: ny || valdSektion || "Övrigt",
     farger: valdFarger
   };
+  if(valdStatus) STATUS[editorId] = valdStatus; else delete STATUS[editorId];
+  if(valdFavorit) FAVORITER[editorId] = true; else delete FAVORITER[editorId];
   sparaAndringar();
+  sparaStatus();
+  sparaFavoriter();
   pushaSnart();
   rita();
   stangEditor();
@@ -820,6 +1012,7 @@ function aterstallEditor(){
 document.getElementById("btn-spara").addEventListener("click", sparaEditor);
 document.getElementById("btn-avbryt").addEventListener("click", stangEditor);
 document.getElementById("btn-aterstall").addEventListener("click", aterstallEditor);
+document.getElementById("in-fav").addEventListener("click", () => { valdFavorit = !valdFavorit; uppdateraFavToggle(); uppdateraPreview(); });
 ["in-namn","in-ikon","in-desc"].forEach(id => {
   document.getElementById(id).addEventListener("input", uppdateraPreview);
 });
@@ -921,8 +1114,14 @@ async function ghPull(){
     if(data && data.andringar && typeof data.andringar === "object"){
       ANDRINGAR = data.andringar;
       sparaAndringar();
-      rita();
     }
+    if(data && data.favoriter && typeof data.favoriter === "object"){
+      FAVORITER = data.favoriter; sparaFavoriter();
+    }
+    if(data && data.status && typeof data.status === "object"){
+      STATUS = data.status; sparaStatus();
+    }
+    if(data) rita();
     setBadge("ok","Synkad");
   }catch(e){ setBadge("err","Synkfel"); }
 }
@@ -930,7 +1129,7 @@ async function ghPull(){
 async function ghPush(){
   if(!synkPa()) return;
   setBadge("load","Sparar…");
-  const content = b64enc(JSON.stringify({andringar:ANDRINGAR, updated:new Date().toISOString()}));
+  const content = b64enc(JSON.stringify({andringar:ANDRINGAR, favoriter:FAVORITER, status:STATUS, updated:new Date().toISOString()}));
   const doPut = () => fetch(ghDataUrl(), {
     method:"PUT",
     headers:Object.assign({"Content-Type":"application/json"}, ghAuthHeaders()),
@@ -995,7 +1194,7 @@ document.getElementById("gh-save").addEventListener("click", async () => {
 
 // Export / import av ändringarna
 function exportData(){
-  const blob = new Blob([JSON.stringify({andringar:ANDRINGAR, exported:new Date().toISOString()}, null, 2)], {type:"application/json"});
+  const blob = new Blob([JSON.stringify({andringar:ANDRINGAR, favoriter:FAVORITER, status:STATUS, exported:new Date().toISOString()}, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "centralen-backup-" + new Date().toISOString().slice(0,10) + ".json";
@@ -1013,6 +1212,8 @@ document.getElementById("import-file").addEventListener("change", (e) => {
       if(data && data.andringar && typeof data.andringar === "object"){
         ANDRINGAR = data.andringar;
         sparaAndringar();
+        if(data.favoriter && typeof data.favoriter === "object"){ FAVORITER = data.favoriter; sparaFavoriter(); }
+        if(data.status && typeof data.status === "object"){ STATUS = data.status; sparaStatus(); }
         rita();
         if(synkPa()) ghPush().catch(()=>{});
         stangInstallningar();
@@ -1257,11 +1458,10 @@ const skalLogg = document.getElementById("skal-logg");
 
 function openLogg(id){
   const c = CHANGELOGS[id];
-  if(!c) return;
   loggId = id;
   loggFlik = "upp";
   const info = cgAppInfo(id);
-  const data = c.data;
+  const data = c ? c.data : {};
 
   document.getElementById("logg-ikon").textContent = info.ikon;
   document.getElementById("logg-titel").textContent = info.namn;
@@ -1270,6 +1470,7 @@ function openLogg(id){
   const metaDelar = [];
   if(ver) metaDelar.push("Version " + ver);
   if(dt) metaDelar.push("Uppdaterad " + dt);
+  if(!c) metaDelar.push(synkPa() ? "Ingen changelog-fil i repot ännu" : "Synk av – ingen changelog hämtad");
   document.getElementById("logg-meta").textContent = metaDelar.join(" · ");
 
   // Senaste-höjdpunkter
@@ -1377,6 +1578,15 @@ async function laddaChangelogs(){
   CHANGELOGS = ny;
   rita();
 }
+
+// ----- Sökruta -----
+(function(){
+  const sok = document.getElementById("sok");
+  const rensa = document.getElementById("sok-rensa");
+  function uppd(){ sokText = sok.value; rensa.hidden = !sok.value; rita(); }
+  sok.addEventListener("input", uppd);
+  rensa.addEventListener("click", () => { sok.value = ""; sokText = ""; rensa.hidden = true; sok.focus(); rita(); });
+})();
 
 loadSynk();
 rita();
