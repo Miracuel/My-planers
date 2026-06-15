@@ -219,6 +219,33 @@ body.simple .spread-item-sub{display:none}
 /* Brytare sida vid sida */
 .toggle-row{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
 .toggle-row .toggle-line{margin-top:0;cursor:pointer}
+/* Kortförstoring */
+.tcard.zoomable{cursor:zoom-in}
+.zoom-img{display:block;max-width:100%;width:240px;margin:0 auto;border-radius:12px;border:1px solid var(--line)}
+.zoom-img.revd{transform:rotate(180deg)}
+#zoom-sheet .sheet-close{margin-top:14px}
+/* Journal-tillägg */
+.jc-note{font-size:11px;color:var(--ink);font-style:italic;margin-top:4px;opacity:.85}
+.jreflect{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.5}
+.jspread-static{cursor:default}
+.ai-box{position:relative}
+.jnote-x{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+/* Reflektionsfält */
+.reflect-block{margin-top:12px}
+.reflect-ta{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:13px;padding:8px;font-family:inherit;line-height:1.5}
+/* Läggningens kort som bilder överst */
+.sd-images{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.meta-chip.situation{border-color:var(--gold-dim);color:var(--gold)}
+.jspread{border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.jspread-title{font-size:13px;color:var(--ink);font-family:Georgia,serif;margin-bottom:6px}
+.sd-images figure{margin:0;text-align:center;width:74px}
+.sd-images figcaption{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.2}
+/* Korthämtare: hopfällbara grupper */
+.pick-group-head{display:flex;align-items:center;gap:6px;font-family:Georgia,serif;font-size:14px;color:var(--gold);padding:9px 4px;cursor:pointer;border-bottom:1px solid var(--line);user-select:none}
+.pick-group-head .chev{margin-left:auto;transition:transform .15s;font-size:12px;color:var(--muted)}
+.pick-group-head.open .chev{transform:rotate(90deg)}
+/* AI-leverantörsval */
+#ai-provider-row .btn.on{background:var(--gold);color:#1a1a1a;border-color:var(--gold)}
 /* AI-fritt läge */
 body.aifree .ai-only{display:none!important}
 /* Tarotdagbok-topp */
@@ -339,16 +366,17 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
 .quick-top>.btn{flex:1}
 .quick-top .btn-row{margin-top:0!important;flex:1}
 .section-title.collapsible:hover{filter:brightness(1.15)}
-.year-head:hover .yr,.jday-head:hover .jd-date{filter:brightness(1.15)}
+.year-head:hover .yr,.jday-head:hover .jd-date,.pick-group-head:hover{filter:brightness(1.15)}
 .btn:hover{filter:brightness(1.12)}
 .gotit:hover{filter:brightness(1.1)}
 .qd-btn:hover{border-color:var(--gold-dim)}
-.link-chip .link-x:hover,.jr-entry .jr-x:hover{color:var(--ink)}
+.link-chip .link-x:hover,.jr-entry .jr-x:hover,.jnote-x:hover{color:var(--ink)}
 .dc{transition:border-color .12s}
 .dc:hover{border-color:var(--gold-dim)}
 .lib-item:hover .lib-name{color:var(--gold)}
-.spread-item{transition:border-color .12s}
+.spread-item,.jspread{transition:border-color .12s}
 .spread-item:hover .spread-item-title{color:var(--gold)}
+.jspread:not(.jspread-static):hover{border-color:var(--gold-dim)}
 .mini-btn:hover,.hit-btn:hover,.nav-btn:hover{border-color:var(--gold-dim)}
 .fav-star:hover{color:var(--gold)}
 .lib-filter button:hover{color:var(--ink)}
@@ -359,6 +387,8 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
 .ach:hover .nm{color:var(--gold)}
 .link-add .link-type{max-width:96px}
 .coach-card{padding:14px 16px}
+.zoom-img{width:320px}
+.sd-images figure{width:88px}
 .sync-badge{top:14px;right:20px}
 .sync-badge:hover{color:var(--ink)}
 .foot button:hover{color:var(--ink)}
@@ -415,7 +445,7 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
     <div id="quickdraw-result"></div>
   </div>
   <div class="section-title">Dagens dragningar</div>
-  <div class="card-panel"><div id="today-list"></div><div id="today-local"></div><div id="today-ai"></div><div class="btn-row" style="margin-top:10px"><button class="btn" id="btn-local-today">☽ Tolkning</button><button class="btn ai-only" id="btn-ai-today">✨ AI-tolkning</button></div></div>
+  <div class="card-panel"><div id="today-list"></div><div id="today-local"></div><div id="today-ai"></div><div class="btn-row" style="margin-top:10px"><button class="btn" id="btn-local-today">☽ Tolkning</button><button class="btn ai-only" id="btn-ai-today">✨ AI-tolkning</button></div><div class="reflect-block"><div class="mt-lbl">Skriv i dagboken</div><textarea id="today-reflect" rows="3" class="reflect-ta" placeholder="Svara på frågan ovan, eller skriv fritt om din dag…"></textarea></div></div>
   <div class="foot">
     <button id="export-btn">Säkerhetskopiera</button>
     <button id="import-btn">Importera</button>
@@ -445,6 +475,8 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
 <div class="view" id="view-cal">
   <div class="section-title" style="margin-top:0">Månadens kort</div>
   <div class="card-panel" id="month-panel"></div>
+  <div class="section-title collapsible" id="monthdoc-toggle">Min månad — dokumentera &amp; tolka <span class="chev">▸</span></div>
+  <div class="card-panel" id="monthdoc-panel" style="display:none"></div>
   <div class="cal-nav">
     <button class="nav-btn" id="cal-prev">‹</button>
     <div class="cal-title" id="cal-title"></div>
@@ -518,6 +550,13 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
         <select id="sp-forwho"><option value="me">Mig själv</option><option value="other">Någon annan</option></select>
       </label>
       <input type="text" id="sp-forwho-txt" placeholder="Vem är den för?" style="display:none">
+      <label>När drogs läggningen
+        <input type="date" id="sp-date">
+      </label>
+      <label>Situation / tråd (för att koppla ihop läggningar)
+        <input type="text" id="sp-situation" placeholder="T.ex. Flytten, Relationen med X…">
+      </label>
+      <div class="toggle-line" style="justify-content:flex-start;margin-top:2px"><input type="checkbox" id="sp-manual"> <span>Manuell läggning (fysiska kort)</span></div>
       <div class="mt-lbl" style="margin-top:2px">Teman</div>
       <div class="mt-row" id="sp-tag-chips"></div>
       <input type="text" id="sp-tags" placeholder="Fler taggar (komma-separerade)…">
@@ -530,6 +569,7 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
     </div>
   </div>
   <div class="section-title">Sparade läggningar</div>
+  <p style="font-size:11px;color:var(--muted);line-height:1.5;margin:0 0 6px">Kom ihåg: korten vägleder din egen reflektion — de är inte ett facit. Lita på dig själv minst lika mycket som på leken.</p>
   <div class="card-panel">
     <input type="text" id="jrn-search" placeholder="Sök i frågor, anteckningar, taggar, kort…">
     <div class="jrn-filters">
@@ -637,6 +677,7 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
 <div class="sheet" id="day-sheet">
   <h3 id="day-title"></h3>
   <div id="day-list"></div>
+  <div id="day-spreads"></div>
   <div class="moodtag-bar" id="day-moodtag"></div>
   <div class="btn-row" style="margin-top:10px">
     <button class="btn" id="day-draw">✦ Dra kort</button>
@@ -645,6 +686,7 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
   <div id="day-local"></div>
   <div id="day-ai"></div>
   <div class="btn-row" style="margin-top:10px"><button class="btn" id="day-local-btn">☽ Tolkning</button><button class="btn ai-only" id="day-ai-btn">✨ AI-tolkning</button></div>
+  <div class="reflect-block"><div class="mt-lbl">Skriv i dagboken</div><textarea id="day-reflect" rows="3" class="reflect-ta" placeholder="Svara på frågan ovan, eller skriv fritt om dagen…"></textarea></div>
   <button class="sheet-close" id="day-close">Klar</button>
 </div>
 
@@ -652,6 +694,7 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
   <h3 id="sd-title"></h3>
   <div style="font-size:12px;color:var(--muted)" id="sd-q"></div>
   <div id="sd-meta"></div>
+  <div id="sd-images" class="sd-images"></div>
   <div id="sd-cards" style="margin-top:8px"></div>
   <div id="sd-local"></div>
   <div id="sd-ai"></div>
@@ -662,8 +705,19 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
     </label>
     <input type="text" id="sd-moodafter-txt" placeholder="Eget humör…" style="display:none">
   </div>
+  <div class="sp-meta" style="margin-top:10px">
+    <label>När drogs läggningen
+      <input type="date" id="sd-date">
+    </label>
+    <label>Situation / tråd
+      <input type="text" id="sd-situation" placeholder="T.ex. Flytten…">
+    </label>
+  </div>
   <div style="margin-top:10px">
+    <div class="mt-lbl">Din egen tolkning</div>
     <textarea id="sd-note" rows="3" placeholder="Tolkning och tankar…" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:13px;padding:8px;font-family:inherit"></textarea>
+    <div class="btn-row" style="margin-top:8px"><button class="btn ghost ai-only" id="sd-advice-btn">✨ AI-råd på min tolkning</button></div>
+    <div id="sd-advice"></div>
   </div>
   <div class="entry-actions" style="margin-top:8px">
     <span style="font-size:12px;color:var(--muted)">Stämde det?</span>
@@ -729,13 +783,23 @@ h1.brand{font-size:28px;max-width:680px;margin:0 auto 4px}
 
 <div class="sheet" id="ai-sheet">
   <h3>✨ AI-tolkning</h3>
-  <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">Tolkningarna görs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt på den här enheten och följer inte med i säkerhetskopior eller synk. Varje tolkning kostar några ören från ditt API-saldo.</p>
-  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Välj AI-leverantör</div>
+  <div class="btn-row" id="ai-provider-row" style="margin-bottom:10px">
+    <button class="btn ghost" id="ai-prov-claude" data-prov="claude" style="flex:1">Claude (Anthropic)</button>
+    <button class="btn ghost" id="ai-prov-openai" data-prov="openai" style="flex:1">ChatGPT (OpenAI)</button>
+  </div>
+  <p id="ai-help" style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px"></p>
+  <input type="password" id="ai-key" placeholder="sk-…" autocomplete="off">
   <div class="btn-row" style="margin-top:10px">
     <button class="btn" id="ai-key-save">Spara</button>
     <button class="btn ghost" id="ai-key-clear">Rensa nyckel</button>
   </div>
   <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<div class="sheet" id="zoom-sheet">
+  <div id="zoom-body"></div>
+  <button class="sheet-close" id="zoom-close">Stäng</button>
 </div>
 
 <script>
@@ -874,7 +938,7 @@ function quickReading(c,r){
 
 // ── State ─────────────────────────────────────────────
 const KEY='tarot_v1';
-let state={draws:{},spreads:[],rev:true,aiDay:{},months:{},favorites:[],cardNotes:{},simpleMode:false,reminders:{dailyDraw:false},achSeen:[],theme:'default',logMood:false,studied:{},schoolJournal:{},coachLog:[],customTags:[],statsOpen:{},cardLinks:{},journalReadings:{},customLinkTypes:[],usage:{},aiFree:false};
+let state={draws:{},spreads:[],rev:true,aiDay:{},months:{},favorites:[],cardNotes:{},simpleMode:false,reminders:{dailyDraw:false},achSeen:[],theme:'default',logMood:false,studied:{},schoolJournal:{},coachLog:[],customTags:[],statsOpen:{},cardLinks:{},journalReadings:{},customLinkTypes:[],usage:{},aiFree:false,aiProvider:'claude',journalNotes:{},monthReadings:{},dayReflection:{}};
 try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
 function rawSave(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 let pushTimer=null;
@@ -927,11 +991,11 @@ function nearestSabbat(d){
 function cardHtml(c,r,mini,revealCls){
   const card=CARDS[c];
   if(typeof IMGS!=='undefined'&&IMGS[c]){
-    return '<div class="tcard img'+(mini?' mini':'')+(revealCls?' reveal':'')+(r?' revd':'')+'">'+
+    return '<div class="tcard img zoomable'+(mini?' mini':'')+(revealCls?' reveal':'')+(r?' revd':'')+'" data-c="'+c+'" data-r="'+(r?1:0)+'">'+
       '<img src="data:image/jpeg;base64,'+IMGS[c]+'" alt="'+esc(card.n)+'">'+
       (r?'<div class="rev-badge">⟲</div>':'')+'</div>';
   }
-  return '<div class="tcard'+(mini?' mini':'')+(revealCls?' reveal':'')+'">'+
+  return '<div class="tcard'+(mini?' mini':'')+(revealCls?' reveal':'')+'" data-c="'+c+'" data-r="'+(r?1:0)+'">'+
     (card.num?'<div class="num">'+card.num+'</div>':'')+
     (r?'<div class="rev-badge">⟲</div>':'')+
     '<div class="nm">'+esc(card.n)+'</div>'+
@@ -945,6 +1009,7 @@ function drawRandom(){
 function addDraw(key,c,r,meta){
   if(!state.draws[key])state.draws[key]=[];
   const e={c,r,note:'',hit:null,t:Date.now()};
+  e.source=(meta&&meta.source)||'app';
   if(meta){if(meta.mood)e.mood=meta.mood;if(meta.tags&&meta.tags.length)e.tags=meta.tags.slice();}
   state.draws[key].push(e);
   save();
@@ -982,7 +1047,7 @@ function renderQuickDraw(){QUICKDRAW_HOSTS.forEach(h=>renderQuickDrawRow(h[0],h[
 function quickDraw(tagKey,resultId){
   bumpUsage('snabbdragning');
   const{c,r}=drawRandom();
-  addDraw(todayKey,c,r,{mood:state.logMood?drawLog.today.mood:null,tags:[tagKey]});
+  addDraw(todayKey,c,r,{mood:state.logMood?drawLog.today.mood:null,tags:[tagKey],source:'app'});
   const card=CARDS[c];
   const out=document.getElementById(resultId);
   if(out)out.innerHTML=
@@ -1006,16 +1071,30 @@ function openPicker(cb){
   renderPickerList('');
   openSheet('picker-sheet');
 }
+let pickerCollapsed={};
 function renderPickerList(q){
   const el=document.getElementById('picker-list');
-  q=q.toLowerCase();
-  let html='';let lastGroup='';
+  q=(q||'').toLowerCase();
+  const searching=!!q;
+  // gruppera korten per svit
+  const groups={};const order=[];
   CARDS.forEach((card,i)=>{
-    if(q&&!card.n.toLowerCase().includes(q))return;
-    if(card.a!==lastGroup){lastGroup=card.a;html+='<div class="lib-group">'+SUIT_NAME[card.a]+'</div>';}
-    html+='<div class="lib-item" data-i="'+i+'"><div class="lib-name">'+(IMGS[i]?'<img class="lib-thumb" loading="lazy" src="data:image/jpeg;base64,'+IMGS[i]+'">':'<i style="background:'+SUIT_COLOR[card.a]+'"></i>')+esc(card.n)+'</div></div>';
+    if(searching&&!card.n.toLowerCase().includes(q))return;
+    if(!groups[card.a]){groups[card.a]=[];order.push(card.a);}
+    groups[card.a].push(i);
   });
-  el.innerHTML=html||'<div class="empty-msg">Inget kort matchar</div>';
+  if(!order.length){el.innerHTML='<div class="empty-msg">Inget kort matchar</div>';return;}
+  let html='';
+  order.forEach(a=>{
+    const collapsed=!searching&&!!pickerCollapsed[a];
+    html+='<div class="pick-group">'+
+      '<div class="pick-group-head'+(collapsed?'':' open')+'" data-g="'+a+'">'+esc(SUIT_NAME[a])+' <span style="color:var(--muted);font-weight:400">('+groups[a].length+')</span><span class="chev">▸</span></div>'+
+      '<div class="pick-group-body" style="display:'+(collapsed?'none':'block')+'">'+
+      groups[a].map(i=>{const card=CARDS[i];return '<div class="lib-item" data-i="'+i+'"><div class="lib-name">'+(IMGS[i]?'<img class="lib-thumb" loading="lazy" src="data:image/jpeg;base64,'+IMGS[i]+'">':'<i style="background:'+SUIT_COLOR[card.a]+'"></i>')+esc(card.n)+'</div></div>';}).join('')+
+      '</div></div>';
+  });
+  el.innerHTML=html;
+  el.querySelectorAll('.pick-group-head').forEach(h=>{h.onclick=()=>{const g=h.dataset.g;pickerCollapsed[g]=!pickerCollapsed[g];renderPickerList(document.getElementById('picker-search').value);};});
   el.querySelectorAll('.lib-item').forEach(it=>{
     it.onclick=()=>{
       pickedCard=+it.dataset.i;
@@ -1031,6 +1110,21 @@ function finishPick(r){
   if(pickerCb)pickerCb(pickedCard,r);
   pickerCb=null;
 }
+function openCardZoom(c,r){
+  const card=CARDS[c];
+  let img='';
+  if(typeof IMGS!=='undefined'&&IMGS[c])img='<img class="zoom-img'+(r?' revd':'')+'" src="data:image/jpeg;base64,'+IMGS[c]+'" alt="'+esc(card.n)+'">';
+  else img='<div class="tcard" style="width:160px;height:250px;margin:0 auto"><div class="nm" style="font-size:16px">'+esc(card.n)+'</div></div>';
+  document.getElementById('zoom-body').innerHTML=img+
+    '<div class="entry-name" style="text-align:center;margin-top:10px">'+(card.num?card.num+' · ':'')+esc(card.n)+(r?' ⟲ omvänt':'')+'</div>'+
+    '<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px"><b>Rättvänt:</b> '+esc(card.m)+'<br><b>Omvänt:</b> '+esc(card.rm)+'</div>';
+  openSheet('zoom-sheet');
+}
+document.getElementById('zoom-close').onclick=closeSheets;
+document.addEventListener('click',function(e){
+  const t=e.target.closest('.tcard.zoomable');
+  if(t&&t.dataset.c!==undefined){e.stopPropagation();openCardZoom(+t.dataset.c,+t.dataset.r);}
+},true);
 document.getElementById('picker-search').oninput=e=>renderPickerList(e.target.value);
 document.getElementById('picker-cancel').onclick=closeSheets;
 document.getElementById('orient-up').onclick=()=>finishPick(0);
@@ -1047,7 +1141,7 @@ function renderDraws(elId,key){
     '<div class="entry-info"><div class="entry-name">'+esc(card.n)+(d.r?'<span class="rv">⟲ omvänt</span>':'')+'</div>'+
     '<div class="entry-meaning">'+esc(d.r?card.rm:card.m)+'</div>'+
     '<div class="ref-q">☽ '+esc(refQuestion(d.c))+'</div>'+
-    ((d.mood||(d.tags&&d.tags.length))?'<div class="draw-tags">'+(d.mood?'<span class="draw-tag">'+DRAW_MOOD_LABEL[d.mood]+'</span>':'')+((d.tags||[]).map(t=>'<span class="draw-tag">'+tagLabel(t)+'</span>').join(''))+'</div>':'')+
+    ('<div class="draw-tags"><span class="draw-tag src">'+(d.source==='manual'?'✋ Manuell':'✦ I appen')+'</span>'+(d.mood?'<span class="draw-tag">'+DRAW_MOOD_LABEL[d.mood]+'</span>':'')+((d.tags||[]).map(t=>'<span class="draw-tag">'+tagLabel(t)+'</span>').join(''))+'</div>')+
     '<textarea rows="2" placeholder="Skriv i din dagbok…" data-i="'+i+'" class="note-in">'+esc(d.note||'')+'</textarea>'+
     '<div class="entry-actions"><span style="font-size:11px;color:var(--muted)">Stämde?</span>'+
     '<button class="hit-btn'+(d.hit===1?' on-yes':'')+'" data-i="'+i+'" data-h="1">✓</button>'+
@@ -1077,18 +1171,21 @@ function renderToday(){
   renderQuickDraw();
   renderDraws('today-list',todayKey);
   renderDayAi('today-ai',todayKey);
+  const tr=document.getElementById('today-reflect');
+  tr.value=(state.dayReflection&&state.dayReflection[todayKey])||'';
 }
+document.getElementById('today-reflect').oninput=function(){if(!state.dayReflection)state.dayReflection={};const v=this.value;if(v.trim())state.dayReflection[todayKey]=v;else delete state.dayReflection[todayKey];save();};
 document.getElementById('chk-rev').onchange=e=>{state.rev=e.target.checked;save();};
 document.getElementById('chk-logmood').onchange=e=>{state.logMood=e.target.checked;save();renderMoodTagBar('today');renderMoodTagBar('day');};
 document.getElementById('btn-draw').onclick=()=>{
   const{c,r}=drawRandom();
   document.getElementById('draw-slot').innerHTML=cardHtml(c,r,false,true)+
     '<div class="meaning" style="margin-top:8px"><b>'+esc(CARDS[c].n)+(r?' (omvänt)':'')+'</b><br>'+esc(r?CARDS[c].rm:CARDS[c].m)+'<br><span style="color:var(--gold)">☽ '+esc(refQuestion(c))+'</span></div>';
-  addDraw(todayKey,c,r,drawLog.today);bumpUsage('dagskort');
+  addDraw(todayKey,c,r,Object.assign({source:'app'},drawLog.today));bumpUsage('dagskort');
   renderDraws('today-list',todayKey);renderCal();
 };
 document.getElementById('btn-log').onclick=()=>openPicker((c,r)=>{
-  addDraw(todayKey,c,r,drawLog.today);bumpUsage('dagskort');renderToday();renderCal();
+  addDraw(todayKey,c,r,Object.assign({source:'manual'},drawLog.today));bumpUsage('dagskort');renderToday();renderCal();
 });
 
 // ── Kalender ──────────────────────────────────────────
@@ -1105,19 +1202,30 @@ function renderCal(){
   for(let i=0;i<42;i++){
     if(i>=35&&cur.getMonth()!==calM)break;
     const k=toISO(cur);
-    const list=state.draws[k]||[];
+    const draws=state.draws[k]||[];
+    const sps=state.spreads.filter(s=>(s.date||'')===k);
+    const all=draws.concat(sps.reduce((a,s)=>a.concat(s.cards),[]));
     const isToday=k===todayKey;
     const other=cur.getMonth()!==calM;
-    const dots=list.slice(0,4).map(d=>'<i style="background:'+SUIT_COLOR[CARDS[d.c].a]+'"></i>').join('');
-    html+='<div class="dc'+(other?' other':'')+(isToday?' today':'')+(list.length?' has':'')+'" data-k="'+k+'">'+cur.getDate()+'<div class="dots">'+dots+'</div></div>';
+    const dots=all.slice(0,4).map(d=>'<i style="background:'+SUIT_COLOR[CARDS[d.c].a]+'"></i>').join('');
+    html+='<div class="dc'+(other?' other':'')+(isToday?' today':'')+(all.length?' has':'')+'" data-k="'+k+'">'+cur.getDate()+'<div class="dots">'+dots+'</div></div>';
     cur.setDate(cur.getDate()+1);
   }
   grid.innerHTML=html;
   grid.querySelectorAll('.dc').forEach(c=>{c.onclick=()=>openDay(c.dataset.k);});
   renderMonth();
+  renderMonthDoc();
+  applyMonthDocCollapse();
   renderMonthsOverview();
   renderMyYears();
 }
+function applyMonthDocCollapse(){
+  const open=!!state.monthDocOpen;
+  const t=document.getElementById('monthdoc-toggle');const p=document.getElementById('monthdoc-panel');
+  if(t)t.classList.toggle('open',open);
+  if(p)p.style.display=open?'block':'none';
+}
+document.getElementById('monthdoc-toggle').onclick=()=>{state.monthDocOpen=!state.monthDocOpen;save();applyMonthDocCollapse();};
 document.getElementById('cal-prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--;}renderCal();};
 document.getElementById('cal-next').onclick=()=>{calM++;if(calM>11){calM=0;calY++;}renderCal();};
 
@@ -1127,18 +1235,31 @@ function openDay(k){
   drawLog.day={mood:null,tags:[]};
   document.getElementById('day-title').textContent=fmtDate(k);
   renderDraws('day-list',k);
+  renderDaySpreads(k);
   renderMoodTagBar('day');
   renderDayAi('day-ai',k);
   document.getElementById('day-local').innerHTML='';
+  document.getElementById('day-reflect').value=(state.dayReflection&&state.dayReflection[k])||'';
   openSheet('day-sheet');
 }
+function renderDaySpreads(k){
+  const el=document.getElementById('day-spreads');if(!el)return;
+  const sps=state.spreads.filter(s=>(s.date||'')===k);
+  if(!sps.length){el.innerHTML='';return;}
+  el.innerHTML='<div class="mt-lbl" style="margin-top:10px">Läggningar denna dag</div>'+sps.map(s=>
+    '<div class="jspread" data-id="'+s.id+'"><div class="jspread-title">'+esc(spreadName(s))+(s.q?' · ”'+esc(s.q)+'”':'')+'</div>'+
+    '<div class="sd-images">'+s.cards.map(c=>'<figure>'+cardHtml(c.c,c.r,true)+'<figcaption>'+esc(c.pos)+'</figcaption></figure>').join('')+'</div></div>'
+  ).join('');
+  el.querySelectorAll('.jspread').forEach(it=>{it.onclick=()=>{document.getElementById('day-sheet').classList.remove('open');openSpreadDetail(+it.dataset.id);};});
+}
 document.getElementById('day-draw').onclick=()=>{
-  const{c,r}=drawRandom();addDraw(dayKey,c,r,drawLog.day);bumpUsage('dagskort');renderDraws('day-list',dayKey);renderCal();
+  const{c,r}=drawRandom();addDraw(dayKey,c,r,Object.assign({source:'app'},drawLog.day));bumpUsage('dagskort');renderDraws('day-list',dayKey);renderCal();
 };
 document.getElementById('day-log').onclick=()=>{
   document.getElementById('day-sheet').classList.remove('open');
-  openPicker((c,r)=>{addDraw(dayKey,c,r,drawLog.day);bumpUsage('dagskort');openDay(dayKey);renderCal();});
+  openPicker((c,r)=>{addDraw(dayKey,c,r,Object.assign({source:'manual'},drawLog.day));bumpUsage('dagskort');openDay(dayKey);renderCal();});
 };
+document.getElementById('day-reflect').oninput=function(){if(!dayKey)return;if(!state.dayReflection)state.dayReflection={};const v=this.value;if(v.trim())state.dayReflection[dayKey]=v;else delete state.dayReflection[dayKey];save();};
 document.getElementById('day-close').onclick=()=>{closeSheets();renderToday();};
 
 // ── Läggningar ────────────────────────────────────────
@@ -1244,6 +1365,9 @@ function resetSpreadMeta(){
   ['sp-purpose','sp-mood','sp-bywho','sp-forwho','sp-tags','sp-purpose-txt','sp-mood-txt','sp-bywho-txt','sp-forwho-txt'].forEach(id=>{const e=document.getElementById(id);if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';});
   document.getElementById('sp-bywho').value='me';document.getElementById('sp-forwho').value='me';
   ['sp-purpose-txt','sp-mood-txt','sp-bywho-txt','sp-forwho-txt'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('sp-date').value=todayKey;
+  document.getElementById('sp-situation').value='';
+  document.getElementById('sp-manual').checked=false;
   spTagSel=[];renderSpTagChips();
   collapseSpreadMeta();
 }
@@ -1277,6 +1401,9 @@ function gatherSpreadMeta(){
     moodBefore:mv||null, moodBeforeTxt:mv==='eget'?document.getElementById('sp-mood-txt').value.trim():'',
     byWho:bw==='other'?(document.getElementById('sp-bywho-txt').value.trim()||'Någon annan'):'me',
     forWho:fw==='other'?(document.getElementById('sp-forwho-txt').value.trim()||'Någon annan'):'me',
+    situation:document.getElementById('sp-situation').value.trim(),
+    source:document.getElementById('sp-manual').checked?'manual':'app',
+    drawnDate:document.getElementById('sp-date').value||todayKey,
     tags:tags
   };
 }
@@ -1291,13 +1418,13 @@ document.getElementById('spread-save').onclick=()=>{
   bumpUsage('laggning');
   const meta=gatherSpreadMeta();
   state.spreads.unshift(Object.assign({
-    id:Date.now(),date:todayKey,type:temp.type,
+    id:Date.now(),date:(meta.drawnDate||todayKey),type:temp.type,
     q:document.getElementById('spread-q').value.trim(),
     cards:temp.positions.map(p=>{const o={pos:p.pos,c:p.c,r:p.r};if(p.date)o.date=p.date;if(p.ym)o.ym=p.ym;return o;}),
     note:'',hit:null,moodAfter:null,moodAfterTxt:'',sabbat:temp.sabbat||null
   },meta));
   if(temp.type==='week'&&document.getElementById('chk-week-cal').checked){
-    temp.positions.forEach(p=>addDraw(p.date,p.c,p.r));
+    temp.positions.forEach(p=>addDraw(p.date,p.c,p.r,{source:meta.source||'app'}));
     renderCal();renderToday();
   }
   if(temp.type==='year'&&document.getElementById('chk-week-cal').checked){
@@ -1309,6 +1436,7 @@ document.getElementById('spread-save').onclick=()=>{
   document.getElementById('spread-q').value='';
   resetSpreadMeta();
   resetTemp();renderSpreadList();
+  checkSpreadOveruse();
 };
 function spreadMetaChips(s){
   const chips=[];
@@ -1316,8 +1444,16 @@ function spreadMetaChips(s){
   if(s.moodBefore)chips.push('<span class="meta-chip">'+(MOOD_ICON[s.moodBefore]||'')+' '+esc(moodText(s.moodBefore,s.moodBeforeTxt))+(s.moodAfter?' → '+(MOOD_ICON[s.moodAfter]||'')+' '+esc(moodText(s.moodAfter,s.moodAfterTxt)):'')+'</span>');
   if(s.byWho&&s.byWho!=='me')chips.push('<span class="meta-chip">la: '+esc(s.byWho)+'</span>');
   if(s.forWho&&s.forWho!=='me')chips.push('<span class="meta-chip">för: '+esc(s.forWho)+'</span>');
+  if(s.situation)chips.push('<span class="meta-chip situation">🧵 '+esc(s.situation)+'</span>');
+  chips.push('<span class="meta-chip">'+(s.source==='manual'?'✋ Manuell':'✦ I appen')+'</span>');
   (s.tags||[]).forEach(t=>chips.push('<span class="meta-chip">#'+esc(t)+'</span>'));
   return chips.length?'<div class="meta-chips">'+chips.join('')+'</div>':'';
+}
+function checkSpreadOveruse(){
+  const todays=state.spreads.filter(s=>(s.date||'')===todayKey).length;
+  if(todays===5||todays===9){
+    alert('Du har lagt '+todays+' läggningar idag 🌙\n\nTarot är ett verktyg för reflektion, inte ett facit — och fler kort ger sällan tydligare svar. Om du märker att du ställer samma fråga om och om igen, prova att pausa, andas och prata med någon du litar på. Du är alltid mer än korten.');
+  }
 }
 function spreadName(s){if(s.type==='custom')return s.cards.length+' kort';if(s.type==='sabbat'&&s.sabbat)return 'Sabbat: '+s.sabbat;return SPREAD_DEFS[s.type].name;}
 let jrnFilter={q:'',purpose:'',mood:'',type:''};
@@ -1326,7 +1462,7 @@ function spreadMatches(s,f){
   if(f.mood&&s.moodBefore!==f.mood&&s.moodAfter!==f.mood)return false;
   if(f.type&&s.type!==f.type)return false;
   if(f.q){
-    const hay=[s.q||'',s.note||'',(s.tags||[]).join(' '),s.cards.map(c=>CARDS[c.c].n).join(' '),purposeText(s),s.byWho||'',s.forWho||''].join(' ').toLowerCase();
+    const hay=[s.q||'',s.note||'',s.situation||'',(s.tags||[]).join(' '),s.cards.map(c=>CARDS[c.c].n).join(' '),purposeText(s),s.byWho||'',s.forWho||''].join(' ').toLowerCase();
     if(!hay.includes(f.q.toLowerCase()))return false;
   }
   return true;
@@ -1365,18 +1501,38 @@ function openSpreadDetail(id){
     return '<div class="spread-pos"><span class="pos-name">'+esc(c.pos)+'</span><div class="pos-fill" style="flex-direction:column;align-items:flex-start;gap:2px"><span class="pos-card-name">'+esc(card.n)+(c.r?' ⟲':'')+'</span><span style="font-size:11px;color:var(--muted)">'+esc(c.r?card.rm:card.m)+'</span></div></div>';
   }).join('');
   document.getElementById('sd-meta').innerHTML=spreadMetaChips(s);
+  document.getElementById('sd-images').innerHTML=s.cards.map(c=>'<figure>'+cardHtml(c.c,c.r,true)+'<figcaption>'+esc(c.pos)+'</figcaption></figure>').join('');
+  document.getElementById('sd-date').value=s.date||todayKey;
+  document.getElementById('sd-situation').value=s.situation||'';
+  document.getElementById('sd-advice').innerHTML=s.aiAdvice?'<div class="ai-box"><span class="ai-lbl">✨ AI-råd</span>'+esc(s.aiAdvice)+'</div>':'';
   const ma=document.getElementById('sd-moodafter');
   ma.value=s.moodAfter||'';
   document.getElementById('sd-moodafter-txt').style.display=s.moodAfter==='eget'?'block':'none';
   document.getElementById('sd-moodafter-txt').value=s.moodAfterTxt||'';
   document.getElementById('sd-note').value=s.note||'';
-  document.getElementById('sd-ai').innerHTML=s.ai?aiBox(s.ai):'';
+  document.getElementById('sd-ai').innerHTML=s.ai?aiBoxSavable(s.ai,s.date,spreadName(s)+' (AI-tolkning)'):'';
   document.getElementById('sd-local').innerHTML='';
   document.getElementById('sd-yes').className='hit-btn'+(s.hit===1?' on-yes':'');
   document.getElementById('sd-no').className='hit-btn'+(s.hit===0?' on-no':'');
   openSheet('sd-sheet');
 }
 document.getElementById('sd-note').oninput=e=>{const s=state.spreads.find(x=>x.id===sdId);if(s){s.note=e.target.value;save();}};
+document.getElementById('sd-date').onchange=function(){const s=state.spreads.find(x=>x.id===sdId);if(s){s.date=this.value||s.date;save();document.getElementById('sd-title').textContent=spreadName(s)+' · '+new Date(s.date).toLocaleDateString('sv-SE',{day:'numeric',month:'long'});renderCal();}};
+document.getElementById('sd-situation').oninput=function(){const s=state.spreads.find(x=>x.id===sdId);if(s){s.situation=this.value.trim();save();document.getElementById('sd-meta').innerHTML=spreadMetaChips(s);}};
+document.getElementById('sd-advice-btn').onclick=async function(){
+  const s=state.spreads.find(x=>x.id===sdId);if(!s)return;
+  const own=(document.getElementById('sd-note').value||'').trim();
+  if(!own){alert('Skriv din egen tolkning först, så ger AI råd utifrån den.');return;}
+  const btn=this;const orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  try{
+    const cardsTxt=s.cards.map(c=>c.pos+': '+CARDS[c.c].n+(c.r?' (omvänt)':'')).join('; ');
+    const prompt='Du är en varm, klok tarotcoach. En person har gjort läggningen \''+spreadName(s)+'\' med korten: '+cardsTxt+'. '+(s.q?'Frågan var: '+s.q+'. ':'')+'Här är personens EGNA tolkning: \''+own+'\'. Ge på svenska, högst 160 ord, varma och konkreta råd som bygger vidare på personens egen tolkning — bekräfta det som är klokt, fördjupa, och föreslå ett möjligt nästa steg. Inga rubriker eller punktlistor.';
+    const text=await aiCall(prompt);
+    s.aiAdvice=text;save();
+    document.getElementById('sd-advice').innerHTML='<div class="ai-box"><span class="ai-lbl">✨ AI-råd</span>'+esc(text)+'</div>'+aiSaveBtnHtml(text,s.date,spreadName(s)+' (AI-råd)');
+  }catch(err){if(err.message!=='NOKEY')alert('Kunde inte hämta råd: '+err.message);}
+  btn.textContent=orig;btn.disabled=false;
+};
 (function(){const ma=document.getElementById('sd-moodafter');MOODS.forEach(m=>{const o=document.createElement('option');o.value=m[0];o.textContent=m[1];ma.appendChild(o);});})();
 document.getElementById('sd-moodafter').onchange=function(){
   const s=state.spreads.find(x=>x.id===sdId);if(!s)return;
@@ -1427,9 +1583,10 @@ document.getElementById('yn-save').onclick=()=>{
     id:Date.now(),date:todayKey,type:'yesno',
     q:document.getElementById('yn-q').value.trim(),
     cards:[{pos:'Svaret',c:ynCur.c,r:ynCur.r}],
-    note:'Svar: '+YN_LABEL[v],hit:null
+    note:'Svar: '+YN_LABEL[v],hit:null,source:'app',situation:''
   });
   save();renderSpreadList();
+  checkSpreadOveruse();
   document.getElementById('yn-save').style.display='none';
   document.getElementById('yn-result').innerHTML='';
   document.getElementById('yn-q').value='';
@@ -1770,17 +1927,29 @@ document.getElementById('import-btn').onclick=()=>document.getElementById('impor
 document.getElementById('import-file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.draws){state=Object.assign({draws:{},spreads:[],rev:true,aiDay:{},months:{},favorites:[],cardNotes:{},simpleMode:false,reminders:{dailyDraw:false},achSeen:[],theme:'default',logMood:false,studied:{},schoolJournal:{},coachLog:[],customTags:[],statsOpen:{},cardLinks:{},journalReadings:{},customLinkTypes:[],usage:{},aiFree:false},d);save();renderAll();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.draws){state=Object.assign({draws:{},spreads:[],rev:true,aiDay:{},months:{},favorites:[],cardNotes:{},simpleMode:false,reminders:{dailyDraw:false},achSeen:[],theme:'default',logMood:false,studied:{},schoolJournal:{},coachLog:[],customTags:[],statsOpen:{},cardLinks:{},journalReadings:{},customLinkTypes:[],usage:{},aiFree:false,aiProvider:'claude',journalNotes:{},monthReadings:{},dayReflection:{}},d);save();renderAll();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
   r.readAsText(f);
 };
 
 // ── AI-tolkning ───────────────────────────────────────
 const AI_KEY='tarot_ai_key';
-function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+const AI_KEY_OPENAI='tarot_ai_key_openai';
+function aiProvider(){return state.aiProvider||'claude';}
+function getAiKey(){return localStorage.getItem(aiProvider()==='openai'?AI_KEY_OPENAI:AI_KEY)||'';}
 async function aiCall(prompt){
   const key=getAiKey();
-  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  if(!key){renderAiSheet();openSheet('ai-sheet');throw new Error('NOKEY');}
   bumpUsage('ai');
+  if(aiProvider()==='openai'){
+    const r=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'content-type':'application/json','authorization':'Bearer '+key},
+      body:JSON.stringify({model:'gpt-4o-mini',max_tokens:700,messages:[{role:'user',content:prompt}]})
+    });
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    const j=await r.json();
+    return ((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'').trim();
+  }
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
@@ -1790,9 +1959,35 @@ async function aiCall(prompt){
   const j=await r.json();
   return (j.content||[]).map(b=>b.text||'').join('').trim();
 }
+// ── Spara AI-tolkningar i dagboken (varifrån som helst) ──
+function saveAiToJournal(key,label,text){
+  if(!state.journalNotes)state.journalNotes={};
+  if(!state.journalNotes[key])state.journalNotes[key]=[];
+  state.journalNotes[key].push({label:label,text:text,kind:'ai',t:Date.now()});
+  save();
+}
+function aiSaveBtnHtml(text,dateKey,label){
+  const id='aisave_'+(++aiSaveSeq);
+  setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>{saveAiToJournal(dateKey,label,text);b.textContent='✓ Sparad i dagboken';b.disabled=true;};},0);
+  return '<div class="btn-row" style="margin-top:6px"><button class="btn ghost ai-only" id="'+id+'" style="font-size:12px">💾 Spara i dagboken</button></div>';
+}
+function journalNotes(key){return (state.journalNotes&&state.journalNotes[key])?state.journalNotes[key]:[];}
+function removeJournalNote(key,t){
+  if(!state.journalNotes||!state.journalNotes[key])return;
+  state.journalNotes[key]=state.journalNotes[key].filter(n=>n.t!==t);
+  if(!state.journalNotes[key].length)delete state.journalNotes[key];
+  save();
+}
+// AI-box med valfri "Spara i dagboken"-knapp
+let aiSaveSeq=0;
+function aiBoxSavable(text,dateKey,label){
+  const id='aisave_'+(++aiSaveSeq);
+  setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>{saveAiToJournal(dateKey,label,text);b.textContent='✓ Sparad i dagboken';b.disabled=true;};},0);
+  return aiBox(text)+'<div class="btn-row" style="margin-top:6px"><button class="btn ghost ai-only" id="'+id+'" style="font-size:12px">💾 Spara i dagboken</button></div>';
+}
 function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI-tolkning</span>'+esc(t)+'</div>';}
 function renderDayAi(elId,key){
-  document.getElementById(elId).innerHTML=state.aiDay&&state.aiDay[key]?aiBox(state.aiDay[key]):'';
+  document.getElementById(elId).innerHTML=state.aiDay&&state.aiDay[key]?aiBoxSavable(state.aiDay[key],key,'Dagstolkning'):'';
 }
 function dayPrompt(key){
   const list=state.draws[key]||[];
@@ -1827,7 +2022,7 @@ document.getElementById('sd-ai-btn').onclick=async e=>{
   }catch(err){if(err.message!=='NOKEY')alert('Kunde inte hämta tolkning: '+err.message);}
   btn.textContent=orig;btn.disabled=false;
 };
-document.getElementById('ai-set-btn').onclick=()=>{document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-set-btn').onclick=()=>{renderAiSheet();openSheet('ai-sheet');};
 
 // ── Inställningar: förenklat läge + påminnelser ──
 function applySimpleMode(){document.body.classList.toggle('simple',!!state.simpleMode);}
@@ -1939,8 +2134,20 @@ document.getElementById('pdf-btn').onclick=()=>{
   buildPrintReport();
   window.print();
 };
-document.getElementById('ai-key-save').onclick=()=>{const v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
-document.getElementById('ai-key-clear').onclick=()=>{localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+function aiKeyStore(){return aiProvider()==='openai'?AI_KEY_OPENAI:AI_KEY;}
+function renderAiSheet(){
+  const prov=aiProvider();
+  document.getElementById('ai-prov-claude').classList.toggle('on',prov==='claude');
+  document.getElementById('ai-prov-openai').classList.toggle('on',prov==='openai');
+  document.getElementById('ai-help').innerHTML=prov==='openai'
+    ?'Tolkningarna görs av ChatGPT (modell gpt-4o-mini) via din egen API-nyckel från OpenAI. Skapa en på <b style="color:var(--ink)">platform.openai.com</b> → API keys. Nyckeln sparas bara lokalt på den här enheten.'
+    :'Tolkningarna görs av Claude via din egen API-nyckel från Anthropic. Skapa en på <b style="color:var(--ink)">console.anthropic.com</b> → API keys. Nyckeln sparas bara lokalt på den här enheten.';
+  document.getElementById('ai-key').placeholder=prov==='openai'?'sk-…':'sk-ant-…';
+  document.getElementById('ai-key').value=getAiKey();
+}
+document.querySelectorAll('#ai-provider-row [data-prov]').forEach(b=>{b.onclick=()=>{state.aiProvider=b.dataset.prov;save();renderAiSheet();};});
+document.getElementById('ai-key-save').onclick=()=>{const v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(aiKeyStore(),v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=()=>{localStorage.removeItem(aiKeyStore());document.getElementById('ai-key').value='';};
 document.getElementById('ai-close').onclick=closeSheets;
 
 
@@ -2103,8 +2310,8 @@ function schoolInteractiveHtml(c){
     '<textarea class="school-ta" id="school-ai-q" rows="2" placeholder="T.ex. Hur skiljer sig det här kortet från Stjärnan?"></textarea>'+
     '<div class="btn-row" style="margin-top:8px"><button class="btn" id="school-ai-btn">✨ Fråga</button></div>'+
     '<div id="school-ai-out"></div></div>'+
-    '<div class="school-block"><span class="lbl">Egen anteckning</span>'+
-    '<textarea class="school-ta" id="school-note-in" rows="3" placeholder="Skriv din egen tolkning eller insikt om kortet…"></textarea>'+
+    '<div class="school-block"><span class="lbl">Min relation till kortet (sparas i biblioteket)</span>'+
+    '<textarea class="school-ta" id="school-note-in" rows="3" placeholder="Skriv din egen tolkning eller insikt om kortet…">'+esc(cardNote(c))+'</textarea>'+
     '<div class="btn-row" style="margin-top:8px"><button class="btn" id="school-note-save">Spara anteckning</button></div></div>'+
     '<div class="school-block"><span class="lbl">Din journal för kortet</span><div id="school-journal">'+schoolJournalHtml(c)+'</div></div>';
 }
@@ -2113,10 +2320,10 @@ function bindSchoolInteractive(c){
   if(git)git.onclick=()=>{toggleStudied(c);renderSchool();};
   const noteBtn=document.getElementById('school-note-save');
   if(noteBtn)noteBtn.onclick=()=>{
-    const ta=document.getElementById('school-note-in');const v=ta.value.trim();
-    if(!v){alert('Skriv något först.');return;}
-    addJournal(c,{t:Date.now(),date:todayKey,kind:'note',text:v});
-    ta.value='';document.getElementById('school-journal').innerHTML=schoolJournalHtml(c);bindJournalX(c);
+    const ta=document.getElementById('school-note-in');
+    setCardNote(c,ta.value.trim());
+    noteBtn.textContent='✓ Sparat i biblioteket';
+    setTimeout(()=>{if(document.getElementById('school-note-save'))renderSchool();},700);
   };
   const aiBtn=document.getElementById('school-ai-btn');
   if(aiBtn)aiBtn.onclick=async()=>{
@@ -2276,6 +2483,7 @@ function journalDays(){
   const set=new Set();
   Object.keys(state.draws).forEach(k=>{if(state.draws[k]&&state.draws[k].length)set.add(k);});
   state.spreads.forEach(s=>{if(s.date)set.add(s.date);});
+  [state.dayReflection,state.journalNotes,state.aiDay,state.journalReadings].forEach(o=>{if(o)Object.keys(o).forEach(k=>{const v=o[k];if(v&&(Array.isArray(v)?v.length:(v.text!==undefined?v.text:v)))set.add(k);});});
   return [...set].sort().reverse();
 }
 function renderJournal(){
@@ -2284,17 +2492,36 @@ function renderJournal(){
   const days=journalDays();
   if(!days.length){el.innerHTML='<div class="empty-msg">Inga dragningar ännu — dra ett kort eller spara en läggning, så fylls dagboken.</div>';return;}
   el.innerHTML=days.map(k=>{
-    const cards=dayAllCards(k);
+    const draws=state.draws[k]||[];
+    const sps=state.spreads.filter(s=>(s.date||'')===k);
+    const total=draws.length+sps.reduce((a,s)=>a+s.cards.length,0);
     const saved=state.journalReadings&&state.journalReadings[k];
-    return '<div class="jday" data-k="'+k+'"><div class="jday-head"><span class="jd-date">'+fmtDate(k)+'</span><span style="display:flex;align-items:center"><span class="jd-meta">'+cards.length+' kort'+(saved?' · ✒ tolkad':'')+'</span><span class="chev">▸</span></span></div>'+
-      '<div class="jday-body"><div style="font-size:12px;color:var(--muted);margin:4px 0 2px">Den här dagen drog du följande:</div>'+
-      cards.map(c=>{const card=CARDS[c.c];return '<div class="jcard">'+cardHtml(c.c,c.r,true)+'<div class="jc-info"><div class="jc-src">'+esc(c.src)+(c.mood?' · '+DRAW_MOOD_LABEL[c.mood]:'')+((c.tags&&c.tags.length)?' · '+c.tags.map(t=>tagLabel(t)).join(', '):'')+'</div><div class="jc-name">'+esc(card.n)+(c.r?' ⟲':'')+'</div><div class="jc-mean">'+esc(c.r?card.rm:card.m)+'</div></div></div>';}).join('')+
-      '<div id="jr-out-'+k+'">'+(saved?aiBox(saved.text):'')+'</div>'+
+    const refl=(state.dayReflection&&state.dayReflection[k])||'';
+    const notes=journalNotes(k);
+    let body='';
+    if(draws.length){
+      body+='<div class="mt-lbl" style="margin-top:6px">Dagskort</div>';
+      body+=draws.map(d=>{const card=CARDS[d.c];return '<div class="jcard">'+cardHtml(d.c,d.r,true)+'<div class="jc-info"><div class="jc-src">'+(d.source==='manual'?'✋ Manuell':'✦ I appen')+(d.mood?' · '+DRAW_MOOD_LABEL[d.mood]:'')+((d.tags&&d.tags.length)?' · '+d.tags.map(t=>tagLabel(t)).join(', '):'')+'</div><div class="jc-name">'+esc(card.n)+(d.r?' ⟲':'')+'</div><div class="jc-mean">'+esc(d.r?card.rm:card.m)+'</div>'+(d.note&&d.note.trim()?'<div class="jc-note">”'+esc(d.note.trim())+'”</div>':'')+'</div></div>';}).join('');
+    }
+    sps.forEach(s=>{
+      body+='<div class="jspread jspread-static"><div class="jspread-title">'+esc(spreadName(s))+(s.q?' · ”'+esc(s.q)+'”':'')+'</div>'+
+        '<div class="sd-images">'+s.cards.map(c=>'<figure>'+cardHtml(c.c,c.r,true)+'<figcaption>'+esc(c.pos)+'</figcaption></figure>').join('')+'</div>'+
+        (s.note&&s.note.trim()?'<div class="jc-note">”'+esc(s.note.trim())+'”</div>':'')+
+        '<button class="btn ghost jopen" data-id="'+s.id+'" style="font-size:12px;margin-top:8px">Öppna läggningen</button></div>';
+    });
+    if(refl)body+='<div class="jreflect"><span class="ai-lbl">✎ Din dagboksanteckning</span>'+esc(refl)+'</div>';
+    if(state.aiDay&&state.aiDay[k])body+='<div class="ai-box"><span class="ai-lbl">✨ Dagstolkning</span>'+esc(state.aiDay[k])+'</div>';
+    body+='<div id="jr-out-'+k+'">'+(saved?'<div class="ai-box"><span class="ai-lbl">✨ Tolkning av dagen</span>'+esc(saved.text)+'</div>':'')+'</div>';
+    notes.forEach(n=>{body+='<div class="ai-box"><span class="ai-lbl">✨ '+esc(n.label||'Sparad tolkning')+'</span>'+esc(n.text)+'<button class="jnote-x" data-k="'+k+'" data-t="'+n.t+'">×</button></div>';});
+    return '<div class="jday" data-k="'+k+'"><div class="jday-head"><span class="jd-date">'+fmtDate(k)+'</span><span style="display:flex;align-items:center"><span class="jd-meta">'+total+' kort'+(saved?' · ✒ tolkad':'')+'</span><span class="chev">▸</span></span></div>'+
+      '<div class="jday-body">'+body+
       '<div class="btn-row" style="margin-top:10px"><button class="btn ai-only" data-jai="'+k+'">✨ AI-tolka dagen</button>'+(saved?'<button class="btn ghost" data-jdel="'+k+'">Ta bort tolkning</button>':'')+'</div></div></div>';
   }).join('');
   el.querySelectorAll('.jday-head').forEach(h=>{h.onclick=()=>h.parentElement.classList.toggle('open');});
   el.querySelectorAll('[data-jai]').forEach(b=>{b.onclick=()=>journalAi(b.dataset.jai,b);});
   el.querySelectorAll('[data-jdel]').forEach(b=>{b.onclick=()=>{const k=b.dataset.jdel;if(state.journalReadings)delete state.journalReadings[k];save();renderJournal();const re=document.querySelector('.jday[data-k="'+k+'"]');if(re)re.classList.add('open');};});
+  el.querySelectorAll('.jnote-x').forEach(b=>{b.onclick=()=>{removeJournalNote(b.dataset.k,+b.dataset.t);renderJournal();const re=document.querySelector('.jday[data-k="'+b.dataset.k+'"]');if(re)re.classList.add('open');};});
+  el.querySelectorAll('.jopen').forEach(b=>{b.onclick=()=>openSpreadDetail(+b.dataset.id);});
 }
 function journalDayPrompt(key){
   const cards=dayAllCards(key);
@@ -2373,9 +2600,9 @@ async function runStatsAi(btn){
     if(m){
       document.getElementById('stats-theme').innerHTML=aiBox(m[1].trim());
       const rest=text.slice(0,m.index).trim();
-      document.getElementById('stats-reading').innerHTML=rest?aiBox(rest):'';
+      document.getElementById('stats-reading').innerHTML=rest?aiBoxSavable(rest,todayKey,'Statistik-tolkning'):'';
     }else{
-      document.getElementById('stats-reading').innerHTML=aiBox(text);
+      document.getElementById('stats-reading').innerHTML=aiBoxSavable(text,todayKey,'Statistik-tolkning');
     }
   }catch(e){if(e.message!=='NOKEY')alert('Kunde inte hämta tolkning: '+e.message);}
   btn.textContent=orig;btn.disabled=false;
@@ -2485,6 +2712,69 @@ function renderMonth(){
   };
   document.getElementById('month-repick').onclick=()=>openPicker((c,r)=>{state.months[ymNow()]={c,r};bumpUsage('manadskort');save();renderMonth();});
 }
+// ── Min månad: dokumentera & tolka ────────────────────
+function ymView(){return calY+'-'+String(calM+1).padStart(2,'0');}
+function monthData(){
+  const pre=ymView()+'-';
+  const draws=[];
+  Object.keys(state.draws).forEach(k=>{if(k.indexOf(pre)===0)(state.draws[k]||[]).forEach(d=>draws.push(Object.assign({date:k},d)));});
+  const sps=state.spreads.filter(s=>(s.date||'').indexOf(pre)===0);
+  const spCards=sps.reduce((a,s)=>a.concat(s.cards),[]);
+  return{draws:draws,spreads:sps,spCards:spCards,mc:(state.months&&state.months[ymView()])||null};
+}
+function monthDocHtml(){
+  const d=monthData();
+  const all=d.draws.concat(d.spCards);
+  if(!all.length&&!d.mc)return '<div class="empty-msg" style="text-align:left;padding:0">Inget registrerat för '+MN[calM].toLowerCase()+' '+calY+' än.</div>'+monthDocButtons();
+  const suitC={major:0,b:0,s:0,st:0,m:0};all.forEach(x=>suitC[CARDS[x.c].a]++);
+  const suitTop=Object.entries(suitC).sort((a,b)=>b[1]-a[1])[0];
+  const counts={};all.forEach(x=>counts[x.c]=(counts[x.c]||0)+1);
+  const cardTop=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  const revN=all.filter(x=>x.r).length;
+  const dayKeys=new Set(d.draws.map(x=>x.date));
+  let rows='';
+  rows+='<div class="stat-row"><span>Dagskort dragna</span><b>'+d.draws.length+'</b></div>';
+  rows+='<div class="stat-row"><span>Läggningar</span><b>'+d.spreads.length+'</b></div>';
+  rows+='<div class="stat-row"><span>Dagar med kort</span><b>'+dayKeys.size+'</b></div>';
+  rows+='<div class="stat-row"><span>Totalt antal kort</span><b>'+all.length+'</b></div>';
+  if(suitTop&&suitTop[1])rows+='<div class="stat-row"><span>Mest dragna svit</span><b>'+esc(SUIT_NAME[suitTop[0]])+'</b></div>';
+  if(cardTop&&cardTop[1]>1)rows+='<div class="stat-row"><span>Mest dragna kort</span><b>'+esc(CARDS[+cardTop[0]].n)+' ('+cardTop[1]+')</b></div>';
+  if(all.length)rows+='<div class="stat-row"><span>Andel omvända</span><b>'+Math.round(revN/all.length*100)+'%</b></div>';
+  if(d.mc)rows+='<div class="stat-row"><span>Månadens kort (tema)</span><b>'+esc(CARDS[d.mc.c].n)+(d.mc.r?' ⟲':'')+'</b></div>';
+  const saved=state.monthReadings&&state.monthReadings[ymView()];
+  return '<div class="mt-lbl">Dokumentation — '+MN[calM]+' '+calY+'</div>'+rows+
+    '<div id="monthread-out" style="margin-top:10px">'+(saved?aiBoxSavable(saved.text,ymView()+'-15','Månadstolkning '+MN[calM]):'')+'</div>'+
+    monthDocButtons();
+}
+function monthDocButtons(){
+  const saved=state.monthReadings&&state.monthReadings[ymView()];
+  return '<div class="btn-row" style="margin-top:10px"><button class="btn ai-only" id="month-tolka">✨ Tolka min månad</button>'+(saved?'<button class="btn ghost" id="month-tolka-del">Ta bort tolkning</button>':'')+'</div>';
+}
+function monthPrompt(){
+  const d=monthData();
+  const lines=[];
+  d.draws.forEach(x=>{const c=CARDS[x.c];lines.push('- '+x.date+' dagskort: '+c.n+(x.r?' (omvänt)':'')+(x.note&&x.note.trim()?' — anteckning: '+x.note.trim():''));});
+  d.spreads.forEach(s=>{lines.push('- '+s.date+' '+spreadName(s)+': '+s.cards.map(c=>c.pos+' '+CARDS[c.c].n+(c.r?' (omvänt)':'')).join(', ')+(s.note&&s.note.trim()?' — egen tolkning: '+s.note.trim():''));});
+  if(d.mc)lines.push('- Månadens kort (tema): '+CARDS[d.mc.c].n+(d.mc.r?' (omvänt)':''));
+  return 'Du är en varm, jordnära och insiktsfull tarottolkare. Nedan är allt en person registrerat under '+MN[calM]+' '+calY+'. Skriv på svenska en sammanhängande månadstolkning på högst 240 ord, utan rubriker eller punktlistor. Lyft röda trådar och mönster genom månaden, knyt an till månadens tema-kort om det finns, och avsluta med en mild reflektionsfråga inför nästa månad.\n\nRegistrerat:\n'+lines.join('\n');
+}
+function renderMonthDoc(){
+  const p=document.getElementById('monthdoc-panel');if(!p)return;
+  p.innerHTML=monthDocHtml();
+  const t=document.getElementById('month-tolka');
+  if(t)t.onclick=async()=>{
+    const d=monthData();
+    if(!d.draws.length&&!d.spreads.length&&!d.mc){alert('Inget registrerat den här månaden än.');return;}
+    const orig=t.textContent;t.textContent='✨ Tolkar…';t.disabled=true;
+    try{
+      const text=await aiCall(monthPrompt());
+      if(!state.monthReadings)state.monthReadings={};
+      state.monthReadings[ymView()]={t:Date.now(),text:text};save();renderMonthDoc();
+    }catch(e){if(e.message!=='NOKEY')alert('Kunde inte tolka månaden: '+e.message);t.textContent=orig;t.disabled=false;}
+  };
+  const del=document.getElementById('month-tolka-del');
+  if(del)del.onclick=()=>{if(state.monthReadings)delete state.monthReadings[ymView()];save();renderMonthDoc();};
+}
 
 // ── Lokala tolkningsknappar ───────────────────────────
 document.getElementById('btn-local-today').onclick=()=>{
@@ -2562,7 +2852,7 @@ async function ghPull(){
     if(remote&&remote.data&&remote.data.draws){
       const lu=localUpd();
       if(!lu||(remote.updated&&remote.updated>lu)){
-        state=Object.assign({draws:{},spreads:[],rev:true,aiDay:{},months:{},favorites:[],cardNotes:{},simpleMode:false,reminders:{dailyDraw:false},achSeen:[],theme:'default',logMood:false,studied:{},schoolJournal:{},coachLog:[],customTags:[],statsOpen:{},cardLinks:{},journalReadings:{},customLinkTypes:[],usage:{},aiFree:false},remote.data);
+        state=Object.assign({draws:{},spreads:[],rev:true,aiDay:{},months:{},favorites:[],cardNotes:{},simpleMode:false,reminders:{dailyDraw:false},achSeen:[],theme:'default',logMood:false,studied:{},schoolJournal:{},coachLog:[],customTags:[],statsOpen:{},cardLinks:{},journalReadings:{},customLinkTypes:[],usage:{},aiFree:false,aiProvider:'claude',journalNotes:{},monthReadings:{},dayReflection:{}},remote.data);
         rawSave();
         try{localStorage.setItem('tarot_updated',remote.updated||new Date().toISOString());}catch(e){}
         renderAll();
