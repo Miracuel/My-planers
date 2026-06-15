@@ -247,38 +247,35 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
 .dash-card:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
 /* Arbetsyta (overlay: app + meny) */
-.ws{position:fixed;inset:0;z-index:300;background:var(--paper);display:flex;flex-direction:row}
-.ws-app{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
-.ws-meny{width:280px;flex:0 0 280px;display:flex;flex-direction:column;background:var(--paper)}
-.ws-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--card)}
+/* Arbetsyta (vy: app + meny) */
+.ws{display:flex;flex-direction:row;border:1px solid var(--line);border-radius:16px;overflow:hidden;height:72vh;min-height:440px;background:var(--paper);margin-top:4px}
+.ws-app{flex:1;min-width:0;display:flex;flex-direction:column}
+.ws-meny{width:248px;flex:0 0 248px;display:flex;flex-direction:column;background:var(--paper);border-right:1px solid var(--line)}
+.ws-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--card)}
 .ws-titel{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ws-back{display:none;background:none;border:none;font:inherit;color:var(--ink);cursor:pointer;padding:4px 6px;border-radius:8px}
-.ws-close{background:none;border:none;font-size:22px;line-height:1;color:var(--ink-soft);cursor:pointer;padding:0 4px}
 .ws-frame{flex:1;position:relative;min-height:0}
 .ws-frame iframe{width:100%;height:100%;border:none;display:block;background:#fff}
 .ws-tom{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:15px;text-align:center;padding:20px}
-.ws-meny-topp{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 8px}
-.ws-meny-topp strong{font-family:Georgia,'Times New Roman',serif;font-size:18px}
-.ws-meny-topp .ws-close{display:none}
-.ws-sok{margin:0 14px 8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--card);color:var(--ink)}
-.ws-lista{flex:1;overflow:auto;padding:0 8px 14px}
+.ws-sok{margin:12px 12px 8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--card);color:var(--ink)}
+.ws-lista{flex:1;overflow:auto;padding:0 8px 12px}
 .ws-grupp{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);padding:12px 8px 4px}
 .ws-rad{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;font:inherit;color:var(--ink);padding:8px;border-radius:10px;cursor:pointer}
 @media(hover:hover){ .ws-rad:hover{background:var(--card)} }
 .ws-rad.aktiv{background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
-.ws-rad .wk-ikon{width:28px;height:28px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--ti);}
+.ws-rad .wk-ikon{width:30px;height:30px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--ti)}
+.ws-rad .wk-txt{min-width:0;display:flex;flex-direction:column;gap:1px}
 .ws-rad .wk-namn{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-rad .wk-desc{font-size:11px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ws-tomlista{color:var(--ink-soft);font-size:13px;padding:14px 8px}
 @media(max-width:760px){
-  .ws{flex-direction:column}
+  .ws{flex-direction:column;height:auto;min-height:0}
   .ws-app,.ws-meny{width:auto;flex:1 1 auto;border-right:none}
   .ws-meny{display:flex}
-  .ws-app{display:none}
+  .ws-app{display:none;height:72vh}
   .ws.app-open .ws-meny{display:none}
   .ws.app-open .ws-app{display:flex}
   .ws.app-open .ws-back{display:inline-block}
-  .ws-bar .ws-close{display:none}
-  .ws-meny-topp .ws-close{display:inline-block}
 }
 
 /* Sökrad */
@@ -397,11 +394,12 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
         <button id="btn-mobil" type="button">📱 Mobil</button>
         <button id="btn-desktop" type="button">🖥️ Desktop</button>
       </div>
-      <div class="mode">
+      <div class="mode" role="group" aria-label="Välj vy">
+        <button id="btn-alla" type="button">▤ Alla appar</button>
+        <button id="btn-favoriter" type="button">★ Mina favoriter</button>
         <button id="btn-arbetsyta" type="button">▣ Arbetsyta</button>
-      </div>
-      <div class="mode">
         <button id="btn-dash" type="button">▦ Översikt</button>
+        <button id="btn-flode" type="button">🕒 Senaste</button>
       </div>
       <div class="mode">
         <button id="btn-edit" type="button">✎ Redigera</button>
@@ -422,10 +420,28 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
 
   <div id="sektioner"></div>
 
+  <div class="ws" id="workspace" hidden>
+    <aside class="ws-meny" id="ws-meny">
+      <input id="ws-sok" type="search" class="ws-sok" placeholder="Sök app…" autocomplete="off" aria-label="Sök app i arbetsytan">
+      <div class="ws-lista" id="ws-lista"></div>
+    </aside>
+    <div class="ws-app">
+      <div class="ws-bar">
+        <button class="ws-back" id="ws-tillbaka" type="button">‹ Appar</button>
+        <span class="ws-titel" id="ws-titel">Välj en app</span>
+      </div>
+      <div class="ws-frame">
+        <iframe id="ws-iframe" title="Vald app"></iframe>
+        <div class="ws-tom" id="ws-tom">Välj en app i menyn.</div>
+      </div>
+    </div>
+  </div>
+
   <div class="foot">
     Centralen · alla appar samlade<br>
     Nya .html-filer i repot dyker upp av sig själva · ändringar sparas lokalt, och i ditt privata GitHub-repo om synk är på<br>
     <button id="open-settings" type="button">Inställningar</button>
+    <button id="open-omlogg" type="button">Nyheter &amp; funktioner</button>
   </div>
 
 </div>
@@ -448,7 +464,7 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
     </div>
     <div class="falt">
       <label for="in-desc">Beskrivning</label>
-      <input id="in-desc" type="text" maxlength="60" autocomplete="off">
+      <input id="in-desc" type="text" maxlength="160" autocomplete="off">
     </div>
     <div class="falt">
       <label>Sektion</label>
@@ -524,11 +540,11 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
       <ul id="logg-senaste-lista"></ul>
     </div>
     <div class="logg-flikar" role="group" aria-label="Visa">
-      <button id="flik-upp" type="button">Uppdateringar</button>
       <button id="flik-fun" type="button">Funktioner</button>
+      <button id="flik-upp" type="button">Uppdateringar</button>
     </div>
-    <div class="logg-panel" id="panel-upp"></div>
     <div class="logg-panel" id="panel-fun" hidden></div>
+    <div class="logg-panel" id="panel-upp"></div>
     <div class="sheet-knappar">
       <button class="kn" id="logg-stang" type="button">Stäng</button>
     </div>
@@ -536,28 +552,6 @@ body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
 </div>
 
 <!-- Arbetsyta: app till vänster, app-meny till höger -->
-<div class="ws" id="workspace" hidden>
-  <div class="ws-app">
-    <div class="ws-bar">
-      <button class="ws-back" id="ws-tillbaka" type="button">‹ Appar</button>
-      <span class="ws-titel" id="ws-titel">Arbetsyta</span>
-      <button class="ws-close" id="ws-stang" type="button" aria-label="Stäng arbetsyta">×</button>
-    </div>
-    <div class="ws-frame">
-      <iframe id="ws-iframe" title="Vald app"></iframe>
-      <div class="ws-tom" id="ws-tom">Välj en app i menyn.</div>
-    </div>
-  </div>
-  <aside class="ws-meny" id="ws-meny">
-    <div class="ws-meny-topp">
-      <strong>Appar</strong>
-      <button class="ws-close" id="ws-stang2" type="button" aria-label="Stäng arbetsyta">×</button>
-    </div>
-    <input id="ws-sok" type="search" class="ws-sok" placeholder="Sök app…" autocomplete="off" aria-label="Sök app i arbetsytan">
-    <div class="ws-lista" id="ws-lista"></div>
-  </aside>
-</div>
-
 <script>
 /* ============================================================
    GITHUB-LÄNK
@@ -793,28 +787,45 @@ function startLage(){
 let lage = startLage();
 let redigerar = false;
 let visarDash = false;
+let visarArbetsyta = false;
+let visarFlode = false;
+let visarFavoriter = false;
 
 const btnMobil = document.getElementById("btn-mobil");
 const btnDesktop = document.getElementById("btn-desktop");
 const btnEdit = document.getElementById("btn-edit");
 const btnDash = document.getElementById("btn-dash");
+const btnArbetsyta = document.getElementById("btn-arbetsyta");
+const btnFlode = document.getElementById("btn-flode");
+const btnAlla = document.getElementById("btn-alla");
+const btnFavoriter = document.getElementById("btn-favoriter");
 
 btnMobil.addEventListener("click", () => byt("mobil"));
 btnDesktop.addEventListener("click", () => byt("desktop"));
+
+// Bara en vy åt gången; redigera stänger alla vyer
+function rensaSok(){ const s = document.getElementById("sok"); if(s && s.value){ s.value = ""; sokText = ""; document.getElementById("sok-rensa").hidden = true; } }
+function visa(vy){
+  visarArbetsyta = vy === "arbetsyta";
+  visarDash = vy === "dash";
+  visarFlode = vy === "flode";
+  visarFavoriter = vy === "favoriter";
+  if(vy) redigerar = false;
+  if(vy) rensaSok();
+  if(visarDash) laddaDash();
+  rita();
+}
+
 btnEdit.addEventListener("click", () => {
   redigerar = !redigerar;
-  if(redigerar) visarDash = false;
+  if(redigerar){ visarDash = visarArbetsyta = visarFlode = visarFavoriter = false; }
   rita();
 });
-btnDash.addEventListener("click", () => {
-  visarDash = !visarDash;
-  if(visarDash){
-    redigerar = false;
-    if(sokText){ const s = document.getElementById("sok"); s.value = ""; sokText = ""; document.getElementById("sok-rensa").hidden = true; }
-    laddaDash();
-  }
-  rita();
-});
+btnAlla.addEventListener("click", () => visa("alla"));
+btnFavoriter.addEventListener("click", () => visa(visarFavoriter ? "alla" : "favoriter"));
+btnArbetsyta.addEventListener("click", () => visa(visarArbetsyta ? "alla" : "arbetsyta"));
+btnDash.addEventListener("click", () => visa(visarDash ? "alla" : "dash"));
+btnFlode.addEventListener("click", () => visa(visarFlode ? "alla" : "flode"));
 
 function byt(nytt){
   lage = nytt;
@@ -912,24 +923,25 @@ function rita(){
   btnDesktop.classList.toggle("on", lage === "desktop");
   btnEdit.classList.toggle("on", redigerar);
   btnDash.classList.toggle("on", visarDash);
+  btnArbetsyta.classList.toggle("on", visarArbetsyta);
+  btnFlode.classList.toggle("on", visarFlode);
+  btnFavoriter.classList.toggle("on", visarFavoriter);
+  btnAlla.classList.toggle("on", !redigerar && !visarDash && !visarArbetsyta && !visarFlode && !visarFavoriter && !sokText.trim());
   document.getElementById("edit-bar").hidden = !redigerar;
 
   const senast = localStorage.getItem("centralen-senast");
   const wrap = document.getElementById("sektioner");
   wrap.innerHTML = "";
 
-  // ----- Översiktsläge -----
-  if(visarDash && !sokText.trim()){
-    ritaDash(wrap);
-    return;
-  }
+  // ----- Arbetsyta (egen vy, iframe behålls) -----
+  document.getElementById("workspace").hidden = !visarArbetsyta;
+  document.getElementById("sok").parentElement.style.display = visarArbetsyta ? "none" : "";
+  if(visarArbetsyta){ byggWsLista(); return; }
 
-  const alla = APPS.map(medAndringar);
-  const finns = alla.filter(a => a.mobil || a.desktop);
-
-  // ----- Sökläge: platt filtrerad lista, inget flöde/favoriter -----
+  // ----- Sökläge: platt filtrerad lista -----
   const q = sokText.trim().toLowerCase();
   if(q){
+    const finns = APPS.map(medAndringar).filter(a => a.mobil || a.desktop);
     const traff = finns.filter(a =>
       (a.namn || "").toLowerCase().includes(q) ||
       (a.desc || "").toLowerCase().includes(q) ||
@@ -945,18 +957,35 @@ function rita(){
     return;
   }
 
-  // ----- Favoriter överst -----
+  // ----- Översikt (egen vy) -----
+  if(visarDash){ ritaDash(wrap); return; }
+
+  // ----- Senaste uppdateringar (egen vy) -----
+  if(visarFlode){ ritaFlodeVy(wrap); return; }
+
+  // ----- Mina favoriter (egen vy) -----
+  if(visarFavoriter){
+    const favs = APPS.map(medAndringar).filter(a => (a.mobil || a.desktop) && arFavorit(a.id));
+    wrap.appendChild(sekRubrik(favs.length ? ("⭐ Mina favoriter (" + favs.length + ")") : "⭐ Mina favoriter"));
+    if(favs.length) wrap.appendChild(byggGrid(favs, senast));
+    else {
+      const tom = document.createElement("div");
+      tom.className = "logg-tom";
+      tom.textContent = "Inga favoriter ännu — tryck på stjärnan på ett appkort för att lägga till.";
+      wrap.appendChild(tom);
+    }
+    return;
+  }
+
+  // ----- Originalvyn: favoriter + sektioner -----
+  const finns = APPS.map(medAndringar).filter(a => a.mobil || a.desktop);
   if(!redigerar){
     const favs = finns.filter(a => arFavorit(a.id));
     if(favs.length){
       wrap.appendChild(sekRubrik("⭐ Favoriter"));
       wrap.appendChild(byggGrid(favs, senast));
     }
-    // ----- Senaste uppdateringar (changelog-flöde) -----
-    ritaFlode(wrap);
   }
-
-  // ----- Vanliga sektioner -----
   const sektioner = [...new Set(finns.map(a => a.sektion))];
   sektioner.forEach(s => {
     const appar = finns.filter(a => a.sektion === s);
@@ -1279,6 +1308,7 @@ function oppnaInstallningar(){
 function stangInstallningar(){ skalSet.hidden = true; }
 
 document.getElementById("open-settings").addEventListener("click", oppnaInstallningar);
+document.getElementById("open-omlogg").addEventListener("click", () => openLogg("__centralen"));
 document.getElementById("sync-badge").addEventListener("click", () => { if(synkPa()) ghPull(); else oppnaInstallningar(); });
 document.getElementById("set-done").addEventListener("click", stangInstallningar);
 skalSet.addEventListener("click", (e) => { if(e.target === skalSet) stangInstallningar(); });
@@ -1412,7 +1442,7 @@ async function synkaMedRepo(){
 // ============================================================
 let CHANGELOGS = {};            // app-id  ->  { data, fil }
 let loggId = null;              // app vars panel är öppen
-let loggFlik = "upp";           // "upp" | "fun"
+let loggFlik = "fun";           // "fun" | "upp"
 let flodeOppet = false;         // visa hela flödet eller bara senaste
 const NY_DAGAR = 14;            // kort räknas som nyligen uppdaterat inom så här många dygn
 const STANDARD_FARG = {bg:"#FFFFFF", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#3A3633", iconbg:"#FAF7F2"};
@@ -1466,7 +1496,88 @@ function appIdForCg(fil, data){
 }
 
 // Visningsinfo (ikon/namn/färger) – från appen om den finns, annars ur changelogen
+// Centralens egen changelog & funktionslogg (inbäddad – fungerar utan synk)
+const CENTRALEN_LOGG = {
+  name: "Centralen",
+  icon: "🎛️",
+  version: "2.1",
+  updated: "2026-06-15",
+  latest: [
+    "Skräddarsydda Översikt-widgetar för Planering, Dagstavlan, Jobb, Månen och Astro",
+    "Arbetsyta: öppna valfri app inuti Centralen med menyn vid sidan",
+    "Egen nyhets- och funktionslogg (den här vyn)"
+  ],
+  changelog: [
+    { version: "2.1", date: "2026-06-15", changes: [
+      "Exakta widgetar: Planering (nästa mens), Dagstavlan (klara aktiviteter), Jobb (nästa deadline), Månen (dagens månfas), Astro (antal kartor)",
+      "Widgetar kan nu läsa eget filnamn (Jobb synkar t.ex. data.json)"
+    ]},
+    { version: "2.0", date: "2026-06-15", changes: [
+      "Arbetsyta — vald app till vänster, sökbar app-meny till höger (list → app på mobil)",
+      "Översikt visar nu ett kort för varje app, inte bara Batteriet och Tarot",
+      "Egen changelog och funktionslogg, nåbar längst ner vid Inställningar"
+    ]},
+    { version: "1.3", changes: [
+      "Översikt (dashboard) med live-data hämtad från apparnas synkade JSON",
+      "Batteriet visar dagens energinivå, Tarot dagens kort"
+    ]},
+    { version: "1.2", changes: [
+      "Info-knapp på varje kort som öppnar appens changelog och funktioner"
+    ]},
+    { version: "1.1", changes: [
+      "Sök bland appar, favoriter överst och statusmärken",
+      "Läser apparnas changelog-filer och visar Senaste uppdateringar"
+    ]},
+    { version: "1.0", changes: [
+      "Hub som samlar alla appar på kort, grupperade i sektioner",
+      "Mobil- och desktopläge, redigering av kort och GitHub-synk"
+    ]}
+  ],
+  functions: [
+    { area: "Start & navigation", items: [
+      "Alla appar på kort, grupperade i sektioner",
+      "Mobil- och desktopläge — väljer rätt fil per app",
+      "Öppnar appar i ny flik eller i Arbetsytan"
+    ]},
+    { area: "Arbetsyta", items: [
+      "Vald app till vänster, app-meny till höger",
+      "Sökbar meny grupperad efter sektion",
+      "List → app med tillbaka-knapp på mobil",
+      "Stäng med × eller Esc"
+    ]},
+    { area: "Översikt", items: [
+      "Ett live-kort per app som läser appens synkade data",
+      "Batteriet: dagens energinivå · Tarot: dagens kort",
+      "Generiskt kort visar synkstatus för övriga appar",
+      "Uppdatera-knapp och tidsstämpel"
+    ]},
+    { area: "Sök, favoriter & status", items: [
+      "Sök bland alla appar",
+      "Favoriter visas överst",
+      "Statusmärken (idé, bygger, klar m.m.)"
+    ]},
+    { area: "Anpassning", items: [
+      "Redigera kortens namn, ikon, beskrivning, sektion och färgtema",
+      "Återställ till standard",
+      "Kopiera ändringar som kod att baka in i index.html"
+    ]},
+    { area: "Synk (GitHub)", items: [
+      "Sparar centralen.json i ditt privata data-repo",
+      "Fine-grained token lagras bara lokalt på enheten",
+      "Auto-hämtning vid start och när fliken blir aktiv",
+      "Export och import av data som JSON"
+    ]},
+    { area: "Nyheter & funktioner", items: [
+      "Läser varje apps [appnamn]-changelog.json och visar Senaste uppdateringar",
+      "Info-knapp på varje kort öppnar appens logg",
+      "Den här loggen för Centralen själv"
+    ]}
+  ]
+};
+
+
 function cgAppInfo(id){
+  if(id === "__centralen") return {namn: CENTRALEN_LOGG.name, ikon: CENTRALEN_LOGG.icon, farger: STANDARD_FARG};
   const bas = APPS.find(a => a.id === id);
   if(bas){ const a = medAndringar(bas); return {namn:a.namn, ikon:a.ikon, farger:a.farger}; }
   const c = CHANGELOGS[id];
@@ -1563,13 +1674,26 @@ function ritaFlode(wrap){
   }
 }
 
+// Senaste uppdateringar som egen vy
+function ritaFlodeVy(wrap){
+  if(Object.keys(CHANGELOGS).length === 0){
+    wrap.appendChild(sekRubrik("Senaste uppdateringar"));
+    const tom = document.createElement("div");
+    tom.className = "logg-tom";
+    tom.textContent = synkPa() ? "Inga changelog-filer i repot ännu." : "Slå på GitHub-synk för att hämta apparnas uppdateringar.";
+    wrap.appendChild(tom);
+    return;
+  }
+  ritaFlode(wrap);
+}
+
 // ----- Changelog-panelen -----
 const skalLogg = document.getElementById("skal-logg");
 
 function openLogg(id){
-  const c = CHANGELOGS[id];
+  const c = (id === "__centralen") ? {data: CENTRALEN_LOGG} : CHANGELOGS[id];
   loggId = id;
-  loggFlik = "upp";
+  loggFlik = "fun";
   const info = cgAppInfo(id);
   const data = c ? c.data : {};
 
@@ -1594,7 +1718,7 @@ function openLogg(id){
 
   ritaLoggUppdateringar(data);
   ritaLoggFunktioner(data);
-  visaLoggFlik("upp");
+  visaLoggFlik("fun");
   skalLogg.hidden = false;
 }
 
@@ -1706,19 +1830,33 @@ function isoIdag(){
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
 
-// Varje widget läser en apps [app].json och plockar ut dagens värde.
-// Lägg till fler appar här när du vet vilket fält deras synkade json sparar.
-const DASH_WIDGETS = [
-  { id:"batteriet", fil:"batteriet.json", extract:function(d){
+// Månfas (approximation – speglar Månens fasnamn och ikoner)
+const PHASE_NAMES = ["Nymåne","Växande skära","Första kvarteret","Växande måne","Fullmåne","Avtagande måne","Sista kvarteret","Avtagande skära"];
+const PHASE_ICONS = ["🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘"];
+function moonfas(date){
+  const syn = 29.530588977;
+  const ref = Date.UTC(2000, 0, 6, 18, 14, 0);   // referens-nymåne
+  let age = ((date.getTime() - ref) / 86400000) % syn;
+  if(age < 0) age += syn;
+  const ang = (age / syn) * 360;
+  const idx = Math.floor(((ang + 22.5) % 360) / 45) % 8;
+  const illum = (1 - Math.cos(ang * Math.PI / 180)) / 2;
+  return { idx: idx, illum: illum };
+}
+
+// Specifika widgetar. Värde är ett objekt {fil?, extract}. Saknas fil gissas [filbas].json.
+// extract(data) får appens synkade state-objekt och returnerar {value, sub, liten} eller null.
+const SPEC = {
+  batteriet: { extract: function(d){
       if(!d || typeof d !== "object") return null;
       const days = d.days || {};
       const idag = days[isoIdag()];
       if(idag && typeof idag.val === "number") return {value: idag.val + "%", sub:"Energinivå idag"};
       const ks = Object.keys(days).filter(k => days[k] && typeof days[k].val === "number").sort();
-      if(ks.length){ const k = ks[ks.length-1]; return {value: days[k].val + "%", sub:"Senast: " + k, liten:false}; }
+      if(ks.length){ const k = ks[ks.length-1]; return {value: days[k].val + "%", sub:"Senast: " + k}; }
       return null;
   }},
-  { id:"tarot", fil:"tarot.json", extract:function(d){
+  tarot: { extract: function(d){
       if(!d || typeof d !== "object") return null;
       const draws = d.draws || {};
       function fromList(l){ const s = l[l.length-1]; return tarotNamn(s.c) + (s.r ? " (omvänt)" : ""); }
@@ -1729,8 +1867,104 @@ const DASH_WIDGETS = [
       const ks = Object.keys(draws).filter(k => Array.isArray(draws[k]) && draws[k].length).sort();
       if(ks.length){ const k = ks[ks.length-1]; return {value: fromList(draws[k]), sub:"Senast: " + k, liten:true}; }
       return null;
+  }},
+  planering: { extract: function(d){
+      if(!d || typeof d !== "object") return null;
+      const days = d.days || {};
+      const idag = isoIdag();
+      if(days[idag] && days[idag].mens) return {value: "Mens idag", sub:"", liten:true};
+      const dates = Object.keys(days).filter(k => days[k] && days[k].mens).sort();
+      const starts = []; let prev = null;
+      dates.forEach(k => { const dt = new Date(k); if(!prev || ((dt - prev) / 86400000) > 5) starts.push(dt); prev = dt; });
+      if(starts.length >= 2){
+        let sum = 0, n = 0;
+        for(let i = 1; i < starts.length; i++){ const diff = (starts[i] - starts[i-1]) / 86400000; if(diff >= 18 && diff <= 60){ sum += diff; n++; } }
+        if(n){
+          const cykel = Math.round(sum / n);
+          const today = new Date(idag);
+          let next = new Date(starts[starts.length-1]); next.setDate(next.getDate() + cykel);
+          while(next < today) next.setDate(next.getDate() + cykel);
+          const till = Math.round((next - today) / 86400000);
+          const ds = next.toLocaleDateString("sv-SE", {day:"numeric", month:"short"});
+          return {value: till <= 0 ? "Mens idag" : ("Om " + till + " d"), sub:"Nästa mens " + ds + " · cykel ~" + cykel + " d", liten:true};
+        }
+      }
+      return null;
+  }},
+  dagstavlan: { extract: function(d){
+      if(!d || typeof d !== "object") return null;
+      const days = d.days || {};
+      const list = days[isoIdag()];
+      if(!Array.isArray(list) || !list.length) return null;
+      const total = list.length, klara = list.filter(a => a && a.done).length;
+      const now = new Date(), nm = now.getHours() * 60 + now.getMinutes();
+      const tm = t => { const p = String(t || "").split(":"); return (+p[0] || 0) * 60 + (+p[1] || 0); };
+      const sorted = list.slice().filter(a => a && a.t).sort((a, b) => tm(a.t) - tm(b.t));
+      const nasta = sorted.find(a => !a.done && tm(a.t) >= nm) || sorted.find(a => !a.done);
+      const sub = klara >= total ? "Allt avklarat ✓" : (nasta ? ("Härnäst " + nasta.t + " " + (nasta.txt || "")).trim() : "");
+      return {value: klara + "/" + total + " klara", sub: sub, liten:true};
+  }},
+  jobb: { fil:"data.json", extract: function(d){
+      if(!d || typeof d !== "object") return null;
+      const idag = isoIdag();
+      const till = ds => Math.round((new Date(ds) - new Date(idag)) / 86400000);
+      const dls = (Array.isArray(d.deadlines) ? d.deadlines : []).filter(x => x && x.date);
+      const kommande = dls.filter(x => x.date >= idag).sort((a, b) => a.date.localeCompare(b.date));
+      if(kommande.length){ const n = kommande[0]; return {value: (n.name || "Deadline"), sub:"Deadline om " + till(n.date) + " d · " + n.date, liten:true}; }
+      const vacs = (Array.isArray(d.vacations) ? d.vacations : []).filter(x => x && x.to && x.to >= idag).sort((a, b) => (a.from || "").localeCompare(b.from || ""));
+      if(vacs.length){ const v = vacs[0]; return {value: (v.name || "Ledigt"), sub: (v.from <= idag ? "Pågår t.o.m. " + v.to : "Från " + v.from), liten:true}; }
+      return null;
+  }},
+  manen: { extract: function(){
+      const ph = moonfas(new Date());
+      return {value: PHASE_ICONS[ph.idx] + " " + PHASE_NAMES[ph.idx], sub: Math.round(ph.illum * 100) + "% upplyst", liten:true};
+  }},
+  astro: { extract: function(d){
+      if(!d || typeof d !== "object") return null;
+      const charts = Array.isArray(d.charts) ? d.charts : [];
+      if(!charts.length) return null;
+      const akt = charts.find(c => c && c.id === d.activeId);
+      return {value: charts.length + (charts.length === 1 ? " karta" : " kartor"), sub: (akt && akt.name) ? ("Aktiv: " + akt.name) : "", liten:true};
   }}
-];
+};
+
+function kortDatum(v){
+  try{
+    const d = (typeof v === "number") ? new Date(v) : new Date(String(v));
+    if(isNaN(d.getTime())) return String(v).slice(0,10);
+    return d.toLocaleDateString("sv-SE");
+  }catch(e){ return String(v).slice(0,10); }
+}
+
+// Generisk widget: visar antal poster (största listan/objektet) + senaste uppdatering.
+function genericExtract(d){
+  if(!d || typeof d !== "object") return null;
+  const ts = d.updated || d.updatedAt || d.senast || d.modified || d.ts || d.uppdaterad;
+  let antal = 0;
+  for(const k in d){
+    const v = d[k];
+    if(Array.isArray(v)){ if(v.length > antal) antal = v.length; }
+    else if(v && typeof v === "object"){ const n = Object.keys(v).length; if(n > antal) antal = n; }
+  }
+  if(antal > 0) return {value: antal + " poster", sub: ts ? ("Uppdaterad " + kortDatum(ts)) : "Synkad", liten:true};
+  if(ts) return {value: "Synkad", sub: "Uppdaterad " + kortDatum(ts), liten:true};
+  return {value: "Synkad", sub: "", liten:true};
+}
+
+// Ett kort per app. Filnamn = spec.fil eller [filbas].json (synk-konventionen).
+function dashWidgets(){
+  return APPS.map(medAndringar)
+    .filter(a => a.mobil || a.desktop)
+    .map(a => {
+      const spec = SPEC[a.id];
+      const bas = (a.mobil || a.desktop).replace(/\.html?$/i, "");
+      return {
+        id: a.id,
+        fil: (spec && spec.fil) ? spec.fil : bas + ".json",
+        extract: (spec && spec.extract) ? spec.extract : genericExtract
+      };
+    });
+}
 
 let dashData = {};   // id -> {status:'av'|'laddar'|'ok'|'tom', value, sub, liten}
 let dashTid = null;
@@ -1790,22 +2024,23 @@ function ritaDash(wrap){
 
   const grid = document.createElement("div");
   grid.className = "dash-grid";
-  DASH_WIDGETS.forEach(w => { const k = dashKort(w); if(k) grid.appendChild(k); });
+  dashWidgets().forEach(w => { const k = dashKort(w); if(k) grid.appendChild(k); });
   wrap.appendChild(grid);
 }
 
 async function laddaDash(){
+  const widgets = dashWidgets();
   if(!synkPa()){
-    DASH_WIDGETS.forEach(w => { dashData[w.id] = {status:"av"}; });
+    widgets.forEach(w => { dashData[w.id] = {status:"av"}; });
     if(visarDash) rita();
     return;
   }
-  DASH_WIDGETS.forEach(w => {
+  widgets.forEach(w => {
     if(!dashData[w.id] || dashData[w.id].status === "av") dashData[w.id] = {status:"laddar"};
   });
   if(visarDash) rita();
 
-  await Promise.all(DASH_WIDGETS.map(async w => {
+  await Promise.all(widgets.map(async w => {
     const data = await ghGetFil(w.fil);
     let r = null;
     try{ r = w.extract(data); }catch(e){ r = null; }
@@ -1839,7 +2074,9 @@ function byggWsLista(){
     b.type = "button";
     b.className = "ws-rad" + (a.id === wsAktiv ? " aktiv" : "");
     b.style.setProperty("--ti", a.farger.iconbg);
-    b.innerHTML = '<span class="wk-ikon">' + esc(a.ikon) + '</span><span class="wk-namn">' + esc(a.namn) + '</span>';
+    b.innerHTML = '<span class="wk-ikon">' + esc(a.ikon) + '</span>' +
+      '<span class="wk-txt"><span class="wk-namn">' + esc(a.namn) + '</span>' +
+      (a.desc ? '<span class="wk-desc">' + esc(a.desc) + '</span>' : '') + '</span>';
     b.addEventListener("click", () => valjWsApp(a.id));
     return b;
   }
@@ -1878,7 +2115,7 @@ function valjWsApp(id){
   const fil = a[lage] || a[annat];
   if(!fil) return;
   wsAktiv = id;
-  wsIframe.src = fil;
+  if(wsIframe.getAttribute("src") !== fil) wsIframe.src = fil;
   wsTitel.textContent = a.namn;
   wsTom.hidden = true;
   workspace.classList.add("app-open");
@@ -1886,29 +2123,16 @@ function valjWsApp(id){
   byggWsLista();
 }
 
-function oppnaArbetsyta(){
-  byggWsLista();
-  workspace.hidden = false;
-  document.body.style.overflow = "hidden";
-  if(!wsAktiv){ wsTom.hidden = false; workspace.classList.remove("app-open"); }
-  setTimeout(() => wsSokInput.focus(), 50);
-}
-
-function stangArbetsyta(){
-  workspace.hidden = true;
-  document.body.style.overflow = "";
-  wsIframe.src = "about:blank";
-  wsAktiv = null;
-  workspace.classList.remove("app-open");
-  wsTom.hidden = false;
-}
-
-document.getElementById("btn-arbetsyta").addEventListener("click", oppnaArbetsyta);
-document.getElementById("ws-stang").addEventListener("click", stangArbetsyta);
-document.getElementById("ws-stang2").addEventListener("click", stangArbetsyta);
 document.getElementById("ws-tillbaka").addEventListener("click", () => workspace.classList.remove("app-open"));
 wsSokInput.addEventListener("input", () => { wsSok = wsSokInput.value; byggWsLista(); });
-document.addEventListener("keydown", e => { if(e.key === "Escape" && !workspace.hidden) stangArbetsyta(); });
+document.addEventListener("keydown", e => {
+  if(e.key !== "Escape") return;
+  if(visarArbetsyta && workspace.classList.contains("app-open") && window.matchMedia("(max-width:760px)").matches){
+    workspace.classList.remove("app-open");   // på mobil: tillbaka till listan först
+  } else if(visarArbetsyta || visarDash || visarFlode || visarFavoriter){
+    visa("alla");                              // annars lämna vyn
+  }
+});
 
 // ----- Sökruta -----
 (function(){
