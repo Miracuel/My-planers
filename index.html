@@ -220,6 +220,32 @@ body.edit .tile{cursor:pointer}
 @media(hover:hover){ .tile .info-knapp:hover{color:var(--t-accent,var(--ink))} }
 .tile .info-knapp:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 
+/* Översikt / dashboard */
+.dash-info{font-size:13px;color:var(--ink-soft);margin:2px 0 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dash-uppdat{background:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;color:var(--ink);cursor:pointer}
+@media(hover:hover){ .dash-uppdat:hover{background:var(--paper)} }
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.desktop .dash-grid{grid-template-columns:repeat(3,1fr)}
+.dash-card{
+  display:flex;flex-direction:column;gap:6px;
+  background:var(--t-bg);border:1px solid var(--t-line);
+  border-radius:16px;padding:14px;text-decoration:none;color:var(--t-ink);
+  min-height:112px;position:relative;
+}
+.dash-card .topp{display:flex;align-items:center;gap:8px}
+.dash-card .dikon{
+  width:30px;height:30px;border-radius:9px;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  background:var(--t-iconbg);
+}
+.dash-card .dnamn{font-size:13px;font-weight:600;color:var(--t-ink)}
+.dash-card .dvarde{font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.15;color:var(--t-ink);margin-top:2px;word-break:break-word}
+.dash-card .dvarde.liten{font-size:18px}
+.dash-card .dsub{font-size:12px;color:var(--t-muted)}
+.dash-card.tom .dvarde,.dash-card.av .dvarde,.dash-card.laddar .dvarde{font-family:inherit;font-size:15px;color:var(--t-muted)}
+@media(hover:hover){ .dash-card:hover{filter:brightness(0.985)} }
+.dash-card:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
 /* Sökrad */
 .sok-rad{position:relative;margin-top:14px}
 .sok-rad .sok-ikon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.55;pointer-events:none}
@@ -335,6 +361,9 @@ body.edit .tile{cursor:pointer}
       <div class="mode" role="group" aria-label="Välj läge">
         <button id="btn-mobil" type="button">📱 Mobil</button>
         <button id="btn-desktop" type="button">🖥️ Desktop</button>
+      </div>
+      <div class="mode">
+        <button id="btn-dash" type="button">▦ Översikt</button>
       </div>
       <div class="mode">
         <button id="btn-edit" type="button">✎ Redigera</button>
@@ -702,15 +731,27 @@ function startLage(){
 }
 let lage = startLage();
 let redigerar = false;
+let visarDash = false;
 
 const btnMobil = document.getElementById("btn-mobil");
 const btnDesktop = document.getElementById("btn-desktop");
 const btnEdit = document.getElementById("btn-edit");
+const btnDash = document.getElementById("btn-dash");
 
 btnMobil.addEventListener("click", () => byt("mobil"));
 btnDesktop.addEventListener("click", () => byt("desktop"));
 btnEdit.addEventListener("click", () => {
   redigerar = !redigerar;
+  if(redigerar) visarDash = false;
+  rita();
+});
+btnDash.addEventListener("click", () => {
+  visarDash = !visarDash;
+  if(visarDash){
+    redigerar = false;
+    if(sokText){ const s = document.getElementById("sok"); s.value = ""; sokText = ""; document.getElementById("sok-rensa").hidden = true; }
+    laddaDash();
+  }
   rita();
 });
 
@@ -809,11 +850,18 @@ function rita(){
   btnMobil.classList.toggle("on", lage === "mobil");
   btnDesktop.classList.toggle("on", lage === "desktop");
   btnEdit.classList.toggle("on", redigerar);
+  btnDash.classList.toggle("on", visarDash);
   document.getElementById("edit-bar").hidden = !redigerar;
 
   const senast = localStorage.getItem("centralen-senast");
   const wrap = document.getElementById("sektioner");
   wrap.innerHTML = "";
+
+  // ----- Översiktsläge -----
+  if(visarDash && !sokText.trim()){
+    ritaDash(wrap);
+    return;
+  }
 
   const alla = APPS.map(medAndringar);
   const finns = alla.filter(a => a.mobil || a.desktop);
@@ -1186,6 +1234,7 @@ document.getElementById("gh-save").addEventListener("click", async () => {
     if(data){ setGhStatus("✓ Ansluten! Hämtar dina ändringar…","ok"); await ghPull(); }
     else{ setGhStatus("✓ Ansluten! Repot saknar centralen.json — laddar upp dina lokala ändringar…","ok"); await ghPush(); }
     laddaChangelogs();
+    if(visarDash) laddaDash();
     setTimeout(() => { document.getElementById("gh-status").hidden = true; }, 1500);
   }catch(e){
     setGhStatus("Fel: " + e.message + ". Kontrollera användarnamn, reponamn och att token har Contents-behörighet.","err");
@@ -1226,7 +1275,7 @@ document.getElementById("import-file").addEventListener("change", (e) => {
 });
 
 // Hämta senaste när fliken får fokus igen
-document.addEventListener("visibilitychange", () => { if(!document.hidden && synkPa()){ ghPull(); laddaChangelogs(); } });
+document.addEventListener("visibilitychange", () => { if(!document.hidden && synkPa()){ ghPull(); laddaChangelogs(); if(visarDash) laddaDash(); } });
 
 // ----- Automatisk synk: nya .html-filer i repot dyker upp av sig själva -----
 function snyggtNamn(fil){
@@ -1577,6 +1626,132 @@ async function laddaChangelogs(){
   });
   CHANGELOGS = ny;
   rita();
+}
+
+// ----- Översikt / dashboard -----
+// Tarot-kortnamn (speglar tarot.html: index 0–21 = stora arkanan, sedan minor i ordning b,s,st,m)
+const TAROT_MAJORS = ["Narren","Magikern","Översteprästinnan","Kejsarinnan","Kejsaren","Hierofanten","De älskande","Vagnen","Styrkan","Eremiten","Ödeshjulet","Rättvisan","Den hängde","Döden","Måttfullheten","Djävulen","Tornet","Stjärnan","Månen","Solen","Domen","Världen"];
+const TAROT_SUITS = ["Bägare","Svärd","Stavar","Mynt"];
+const TAROT_RANKS = ["Ess","Två","Tre","Fyra","Fem","Sex","Sju","Åtta","Nio","Tio","Knekt","Riddare","Drottning","Kung"];
+function tarotNamn(c){
+  if(typeof c !== "number" || c < 0) return "Okänt kort";
+  if(c < 22) return TAROT_MAJORS[c] || ("Kort " + c);
+  const i = c - 22, suit = Math.floor(i / 14), rank = i % 14;
+  if(suit > 3) return "Kort " + c;
+  return TAROT_RANKS[rank] + " i " + TAROT_SUITS[suit];
+}
+function isoIdag(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+// Varje widget läser en apps [app].json och plockar ut dagens värde.
+// Lägg till fler appar här när du vet vilket fält deras synkade json sparar.
+const DASH_WIDGETS = [
+  { id:"batteriet", fil:"batteriet.json", extract:function(d){
+      if(!d || typeof d !== "object") return null;
+      const days = d.days || {};
+      const idag = days[isoIdag()];
+      if(idag && typeof idag.val === "number") return {value: idag.val + "%", sub:"Energinivå idag"};
+      const ks = Object.keys(days).filter(k => days[k] && typeof days[k].val === "number").sort();
+      if(ks.length){ const k = ks[ks.length-1]; return {value: days[k].val + "%", sub:"Senast: " + k, liten:false}; }
+      return null;
+  }},
+  { id:"tarot", fil:"tarot.json", extract:function(d){
+      if(!d || typeof d !== "object") return null;
+      const draws = d.draws || {};
+      function fromList(l){ const s = l[l.length-1]; return tarotNamn(s.c) + (s.r ? " (omvänt)" : ""); }
+      const idag = draws[isoIdag()];
+      if(Array.isArray(idag) && idag.length){
+        return {value: fromList(idag), sub: idag.length > 1 ? (idag.length + " dragningar idag") : "Dagens kort", liten:true};
+      }
+      const ks = Object.keys(draws).filter(k => Array.isArray(draws[k]) && draws[k].length).sort();
+      if(ks.length){ const k = ks[ks.length-1]; return {value: fromList(draws[k]), sub:"Senast: " + k, liten:true}; }
+      return null;
+  }}
+];
+
+let dashData = {};   // id -> {status:'av'|'laddar'|'ok'|'tom', value, sub, liten}
+let dashTid = null;
+
+function dashKort(w){
+  const bas = APPS.find(x => x.id === w.id);
+  if(!bas) return null;
+  const a = medAndringar(bas);
+  const annat = lage === "mobil" ? "desktop" : "mobil";
+  const fil = a[lage] || a[annat];
+  const info = dashData[w.id] || {status:"laddar"};
+
+  const el = document.createElement(fil ? "a" : "div");
+  el.className = "dash-card " + info.status;
+  if(fil){ el.href = fil; }
+  const f = a.farger;
+  ["bg","line","ink","muted","iconbg","accent"].forEach(k =>
+    el.style.setProperty("--t-" + k, f[k]));
+
+  let varde, sub, liten = false;
+  if(info.status === "av"){ varde = "Synk av"; sub = "Slå på GitHub-synk för live-data"; }
+  else if(info.status === "laddar"){ varde = "Hämtar…"; sub = ""; }
+  else if(info.status === "tom"){ varde = "Ingen data idag"; sub = ""; }
+  else { varde = info.value; sub = info.sub || ""; liten = !!info.liten; }
+
+  el.innerHTML =
+    '<span class="topp"><span class="dikon">' + esc(a.ikon) + '</span>' +
+    '<span class="dnamn">' + esc(a.namn) + '</span></span>' +
+    '<span class="dvarde' + (liten ? " liten" : "") + '">' + esc(varde) + '</span>' +
+    (sub ? '<span class="dsub">' + esc(sub) + '</span>' : '');
+
+  if(fil){
+    el.addEventListener("click", () => {
+      try{ localStorage.setItem("centralen-senast", w.id); }catch(e){}
+    });
+  }
+  return el;
+}
+
+function ritaDash(wrap){
+  const info = document.createElement("div");
+  info.className = "dash-info";
+  let txt;
+  if(!synkPa()) txt = "Synk av – widgetarna visar live-data när GitHub-synk är på.";
+  else if(dashTid) txt = "Uppdaterad " + dashTid;
+  else txt = "Hämtar live-data…";
+  info.appendChild(document.createTextNode(txt));
+  if(synkPa()){
+    const btn = document.createElement("button");
+    btn.className = "dash-uppdat";
+    btn.type = "button";
+    btn.textContent = "↻ Uppdatera";
+    btn.addEventListener("click", laddaDash);
+    info.appendChild(btn);
+  }
+  wrap.appendChild(info);
+
+  const grid = document.createElement("div");
+  grid.className = "dash-grid";
+  DASH_WIDGETS.forEach(w => { const k = dashKort(w); if(k) grid.appendChild(k); });
+  wrap.appendChild(grid);
+}
+
+async function laddaDash(){
+  if(!synkPa()){
+    DASH_WIDGETS.forEach(w => { dashData[w.id] = {status:"av"}; });
+    if(visarDash) rita();
+    return;
+  }
+  DASH_WIDGETS.forEach(w => {
+    if(!dashData[w.id] || dashData[w.id].status === "av") dashData[w.id] = {status:"laddar"};
+  });
+  if(visarDash) rita();
+
+  await Promise.all(DASH_WIDGETS.map(async w => {
+    const data = await ghGetFil(w.fil);
+    let r = null;
+    try{ r = w.extract(data); }catch(e){ r = null; }
+    dashData[w.id] = r ? {status:"ok", value:r.value, sub:r.sub, liten:r.liten} : {status:"tom"};
+  }));
+  dashTid = new Date().toLocaleTimeString("sv-SE", {hour:"2-digit", minute:"2-digit"});
+  if(visarDash) rita();
 }
 
 // ----- Sökruta -----
