@@ -845,7 +845,7 @@ async function ghPull(){
       if(data.timers&&typeof data.timers==='object')state.timers=data.timers;if(data.testTimers&&typeof data.testTimers==='object')state.testTimers=data.testTimers;if(Array.isArray(data.appChangelog))state.appChangelog=data.appChangelog;if(Array.isArray(data.funcLog))state.funcLog=data.funcLog;if(data.timer&&data.timer.id){if(!state.timers||typeof state.timers!=='object')state.timers={};state.timers[data.timer.id]=data.timer.start;}
       if(Array.isArray(data.families))state.families=data.families;
       if(Array.isArray(data.cats))state.cats=data.cats;
-      if(data.nextAppId)state.nextAppId=data.nextAppId;
+      if(data.nextAppId)state.nextAppId=data.nextAppId;if(Array.isArray(data.inboxSeen))state.inboxSeen=data.inboxSeen;
       state.seeded=true;
       fixCounter();saveData();renderAll();
     }
@@ -856,7 +856,7 @@ async function ghPull(){
 async function ghPush(){
   if(!syncOn())return;
   setBadge('load','Sparar…');
-  const content=b64enc(JSON.stringify({ais:state.ais,apps:state.apps,ideas:state.ideas,nextIdeaNo:state.nextIdeaNo,sort:state.sort,reset:state.reset,timers:state.timers,testTimers:state.testTimers,appChangelog:state.appChangelog,funcLog:state.funcLog,families:state.families,cats:state.cats,nextAppId:state.nextAppId,updated:new Date().toISOString()}));
+  const content=b64enc(JSON.stringify({ais:state.ais,apps:state.apps,ideas:state.ideas,nextIdeaNo:state.nextIdeaNo,sort:state.sort,reset:state.reset,timers:state.timers,testTimers:state.testTimers,appChangelog:state.appChangelog,funcLog:state.funcLog,families:state.families,cats:state.cats,nextAppId:state.nextAppId,inboxSeen:state.inboxSeen,updated:new Date().toISOString()}));
   const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Uppdatering via Appkollen',content,...(sync.sha?{sha:sync.sha}:{})})});
   let r=await doPut();
   if(r.status===409||r.status===422){
@@ -869,6 +869,42 @@ async function ghPush(){
   setBadge('ok','Synkad');
 }
 
+
+// ── Inkorg från Centralen (buggrapporter/förbättringar via App-ID) ──
+function ghInboxUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/appkollen-inbox.json';}
+async function ghGetInbox(){
+  var r=await fetch(ghInboxUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();
+  return JSON.parse(b64dec(j.content));
+}
+async function ingestInbox(){
+  if(!syncOn())return;
+  if(!Array.isArray(state.inboxSeen))state.inboxSeen=[];
+  var inbox;
+  try{inbox=await ghGetInbox();}catch(e){return;}
+  if(!inbox||!Array.isArray(inbox.items)||!inbox.items.length)return;
+  var seen={};state.inboxSeen.forEach(function(id){seen[id]=1;});
+  var added=0;
+  inbox.items.forEach(function(it){
+    if(!it||!it.id||!it.txt)return;
+    if(seen[it.id])return;
+    var a=null;
+    if(it.appNo!=null)a=state.apps.find(function(x){return x.appNo===it.appNo;});
+    if(!a&&it.file)a=state.apps.find(function(x){return (x.file||'').toLowerCase()===String(it.file).toLowerCase();});
+    state.inboxSeen.push(it.id);seen[it.id]=1;
+    if(!a)return;
+    if(!a.items)a.items=[];
+    if(a.items.some(function(p){return p.id===it.id;})){added++;return;}
+    var typ=(it.typ==='ide'||it.typ==='forb'||it.typ==='bugg')?it.typ:'bugg';
+    a.items.unshift({id:it.id,txt:String(it.txt),typ:typ,st:'back',d:(it.d||todayISO()),mod:''});
+    var lbl=(TYP[typ]?TYP[typ].label.toLowerCase():'punkt');
+    pushHistory(a,'item','Ny '+lbl+': '+String(it.txt)+' (Centralen)');
+    added++;
+  });
+  if(added){saveData();if(syncOn())ghPush().catch(function(){});renderAll();}
+}
 function touchApp(){if(curId){const a=appById(curId);if(a)a.upd=Date.now();}}
 function persist(){
   touchApp();saveData();
@@ -1614,7 +1650,7 @@ document.getElementById('gh-save').onclick=async()=>{
     setTimeout(()=>{document.getElementById('gh-status').style.display='none';setOv.classList.remove('open');},1200);
   }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera användarnamn, reponamn och att token har Contents-behörighet.','err');}
 };
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull().then(ingestInbox);});
 
 // ── Export / import ────────────────────────────────────
 function exportData(){
@@ -1666,7 +1702,8 @@ startResetTick();
 document.getElementById('dash-toggle').onclick=()=>{dashOpen=!dashOpen;renderDashboard();};
 var _db=document.getElementById('dash-body');if(_db)_db.onclick=function(e){var rc=e.target.closest('[data-recid]');if(rc){openApp(rc.getAttribute('data-recid'));return;}var el=e.target.closest('[data-filter]');if(el)applyDashFilter(el.getAttribute('data-filter'));};
 applyView('cards');
-if(syncOn())ghPull();
+if(!Array.isArray(state.inboxSeen))state.inboxSeen=[];
+if(syncOn())ghPull().then(ingestInbox);
 </script>
 </body>
 </html>

@@ -288,6 +288,14 @@ body.desktop .dash-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
 .ws-filter button{font:inherit;font-size:12px;line-height:1;padding:6px 9px;border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);border-radius:999px;cursor:pointer;white-space:nowrap}
 @media(hover:hover){ .ws-filter button:hover{border-color:var(--ink-soft)} }
 .ws-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ws-rapport{font:inherit;font-size:12px;line-height:1;padding:6px 10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
+@media(hover:hover){ .ws-rapport:hover{border-color:var(--ink-soft)} }
+.rap-lbl{display:block;font-size:12px;color:var(--ink-soft);margin:12px 0 4px}
+.rap-in{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+textarea.rap-in{resize:vertical;min-height:64px}
+.rap-status{margin-top:12px;padding:9px 11px;border-radius:10px;font-size:13px;background:var(--paper);color:var(--ink)}
+.rap-status.fel{background:#FBF1F1;color:#A04545}
+.rap-status[hidden]{display:none}
 .ws-titel{display:none;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ws-back{display:none;background:none;border:none;font:inherit;color:var(--ink);cursor:pointer;padding:4px 6px;border-radius:8px}
 .ws-valj{display:block;flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 30px 8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);max-width:100%;
@@ -471,6 +479,7 @@ body.desktop .dash-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
         <button class="ws-back" id="ws-tillbaka" type="button">‹ Appar</button>
         <select class="ws-valj" id="ws-valj" aria-label="Välj app"></select>
         <span class="ws-titel" id="ws-titel">Välj en app</span>
+        <button class="ws-rapport" id="ws-rapport" type="button" title="Rapportera bugg eller förbättring till Appkollen">🐞 Rapportera</button>
         <div class="ws-filter" id="ws-filter" role="group" aria-label="Filtrera appar">
           <button type="button" data-f="alla" class="on">Alla</button>
           <button type="button" data-f="ai" title="Appar med AI-funktion">⚡</button>
@@ -575,6 +584,34 @@ body.desktop .dash-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
 </div>
 
 <!-- Changelog / nyheter per app -->
+<div class="skal" id="skal-rapport" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rap-titel">
+    <div class="logg-kopf">
+      <span class="ikon">🐞</span>
+      <div>
+        <h2 id="rap-titel">Rapportera till Appkollen</h2>
+        <div class="logg-meta" id="rap-meta"></div>
+      </div>
+    </div>
+    <div id="rap-form">
+      <label class="rap-lbl" for="rap-app">App (App-ID i Appkollen)</label>
+      <select class="rap-in" id="rap-app"></select>
+      <label class="rap-lbl" for="rap-typ">Typ</label>
+      <select class="rap-in" id="rap-typ">
+        <option value="bugg">Bugg</option>
+        <option value="forb">Förbättring</option>
+        <option value="ide">Idé</option>
+      </select>
+      <label class="rap-lbl" for="rap-txt">Vad gäller det?</label>
+      <textarea class="rap-in" id="rap-txt" rows="3" placeholder="Beskriv buggen eller förbättringen…"></textarea>
+    </div>
+    <div class="rap-status" id="rap-status" hidden></div>
+    <div class="sheet-knappar">
+      <button class="kn" id="rap-avbryt" type="button">Avbryt</button>
+      <button class="kn primar" id="rap-skicka" type="button">Skicka</button>
+    </div>
+  </div>
+</div>
 <div class="skal" id="skal-logg" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="logg-titel">
     <div class="logg-kopf">
@@ -1582,14 +1619,19 @@ function appIdForCg(fil, data){
 const CENTRALEN_LOGG = {
   name: "Centralen",
   icon: "🎛️",
-  version: "2.6",
+  version: "2.7",
   updated: "2026-06-15",
   latest: [
-    "Filter i arbetsytan: visa appar med AI-funktion",
-    "Filter i arbetsytan: synkade eller lokala appar på enheten",
-    "Egen app-ikon vid bokmärke och hemskärm"
+    "Rapportera bugg, förbättring eller idé direkt till Appkollen",
+    "Filter i arbetsytan: appar med AI-funktion",
+    "Filter i arbetsytan: synkade eller lokala appar på enheten"
   ],
   changelog: [
+    { version: "2.7", date: "2026-06-15", changes: [
+      "Rapportera-knapp i arbetsytan: skicka bugg, förbättring eller idé direkt till Appkollen",
+      "Rapporten kopplas till appens App-ID (auto-matchas på filnamn, kopplingen sparas)",
+      "Skrivs till en inkorgsfil i repot och hamnar i appens backlogg i Appkollen vid nästa synk"
+    ]},
     { version: "2.6", date: "2026-06-15", changes: [
       "AI-filter i arbetsytan – visar endast appar med AI-funktion (läser appfilerna)",
       "Synk-filter i arbetsytan – visar synkade eller endast lokala appar på den här enheten",
@@ -1898,6 +1940,30 @@ async function ghGetFil(path){
     const j = await r.json();
     return JSON.parse(b64dec(j.content));
   }catch(e){ return null; }
+}
+
+// Som ghGetFil men returnerar även filens SHA (för skrivning)
+async function ghGetFilRaw(path){
+  try{
+    const r = await fetch("https://api.github.com/repos/" + synk.owner + "/" + synk.repo + "/contents/" + path, {headers:ghAuthHeaders(), cache:"no-store"});
+    if(r.status === 404) return {data:null, sha:null};
+    if(!r.ok) return null;
+    const j = await r.json();
+    return {data: JSON.parse(b64dec(j.content)), sha: j.sha};
+  }catch(e){ return null; }
+}
+
+async function ghPutFil(path, obj, message, sha){
+  const url = "https://api.github.com/repos/" + synk.owner + "/" + synk.repo + "/contents/" + path;
+  const content = b64enc(JSON.stringify(obj, null, 2));
+  const kropp = () => JSON.stringify(Object.assign({message:message, content:content}, sha ? {sha:sha} : {}));
+  let r = await fetch(url, {method:"PUT", headers:Object.assign({"Content-Type":"application/json"}, ghAuthHeaders()), body:kropp()});
+  if(r.status === 409 || r.status === 422){
+    const fresh = await ghGetFilRaw(path);
+    sha = (fresh && fresh.sha) ? fresh.sha : sha;
+    r = await fetch(url, {method:"PUT", headers:Object.assign({"Content-Type":"application/json"}, ghAuthHeaders()), body:kropp()});
+  }
+  return r.ok;
 }
 
 async function laddaChangelogs(){
@@ -2347,6 +2413,93 @@ document.getElementById("ws-filter").addEventListener("click", e => {
   if(wsFilter === "ai" && !aiLaddat) laddaAi();
   byggWsLista();
 });
+
+// ===== Rapportera bugg/förbättring till Appkollen =====
+let appkollenData = null;      // cache av appkollen.json
+let rapMap = {};               // centralen-app-id -> Appkollen App-ID (appNo)
+try{ rapMap = JSON.parse(localStorage.getItem("centralen-appkollen-map") || "{}"); }catch(e){ rapMap = {}; }
+
+function rapIdag(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function rapUid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function appIdStr(n){ return "APP-" + String(n).padStart(3,"0"); }
+function rapStatus(msg, fel){ const s = document.getElementById("rap-status"); s.hidden = false; s.textContent = msg; s.className = "rap-status" + (fel ? " fel" : ""); }
+function stangRapport(){ document.getElementById("skal-rapport").hidden = true; }
+
+// Filnamnet (mobilvariant) för en öppen Centralen-app
+function rapOppenFil(){
+  if(!wsAktiv) return "";
+  const a = medAndringar(APPS.find(x => x.id === wsAktiv) || {});
+  return ((a.mobil || a.desktop) || "").toLowerCase().replace(/^.*\//, "");
+}
+
+async function oppnaRapport(){
+  const skal = document.getElementById("skal-rapport");
+  const meta = document.getElementById("rap-meta");
+  const sel = document.getElementById("rap-app");
+  const skicka = document.getElementById("rap-skicka");
+  document.getElementById("rap-status").hidden = true;
+  document.getElementById("rap-txt").value = "";
+  document.getElementById("rap-typ").value = "bugg";
+  skal.hidden = false;
+
+  if(!synkPa()){
+    meta.textContent = "Slå på GitHub-synk i inställningarna – rapporten skickas till samma repo som Appkollen.";
+    sel.innerHTML = '<option value="">—</option>';
+    skicka.disabled = true;
+    return;
+  }
+  skicka.disabled = true;
+  meta.textContent = "Hämtar appar från Appkollen…";
+  if(!appkollenData) appkollenData = await ghGetFil("appkollen.json");
+  if(!appkollenData || !Array.isArray(appkollenData.apps)){
+    meta.textContent = "Hittade ingen appkollen.json i repot.";
+    sel.innerHTML = '<option value="">—</option>';
+    return;
+  }
+  const appar = appkollenData.apps.filter(a => a.appNo != null).slice().sort((x,y) => x.appNo - y.appNo);
+  const oppenFil = rapOppenFil();
+  let vald = (wsAktiv && rapMap[wsAktiv] != null) ? rapMap[wsAktiv] : null;
+  if(vald == null && oppenFil){
+    const m = appar.find(a => (a.file || "").toLowerCase() === oppenFil);
+    if(m) vald = m.appNo;
+  }
+  sel.innerHTML = appar.map(a => '<option value="' + a.appNo + '"' + (a.appNo === vald ? ' selected' : '') + '>' + esc(appIdStr(a.appNo)) + ' · ' + esc(a.name || a.file || "") + '</option>').join("");
+  skicka.disabled = false;
+  meta.textContent = "Posten hamnar i appens backlogg i Appkollen.";
+}
+
+async function skickaRapport(){
+  const appNoVal = document.getElementById("rap-app").value;
+  const typ = document.getElementById("rap-typ").value;
+  const txt = document.getElementById("rap-txt").value.trim();
+  if(!appNoVal){ rapStatus("Välj en app.", true); return; }
+  if(!txt){ rapStatus("Skriv vad det gäller.", true); return; }
+  if(!synkPa()){ rapStatus("GitHub-synk krävs.", true); return; }
+  const appNo = parseInt(appNoVal, 10);
+  const ak = ((appkollenData && appkollenData.apps) || []).find(a => a.appNo === appNo) || {};
+  const item = { id: rapUid(), appNo: appNo, file: ak.file || "", name: ak.name || "", typ: typ, txt: txt, d: rapIdag(), ts: new Date().toISOString(), kalla: "Centralen" };
+  document.getElementById("rap-skicka").disabled = true;
+  rapStatus("Skickar…", false);
+  try{
+    const fresh = await ghGetFilRaw("appkollen-inbox.json");
+    const inbox = (fresh && fresh.data && Array.isArray(fresh.data.items)) ? fresh.data : { items: [] };
+    inbox.items.push(item);
+    const ok = await ghPutFil("appkollen-inbox.json", inbox, "Rapport via Centralen", fresh ? fresh.sha : null);
+    if(!ok){ rapStatus("Kunde inte skicka. Försök igen.", true); document.getElementById("rap-skicka").disabled = false; return; }
+    if(wsAktiv){ rapMap[wsAktiv] = appNo; try{ localStorage.setItem("centralen-appkollen-map", JSON.stringify(rapMap)); }catch(e){} }
+    rapStatus("Skickat till " + appIdStr(appNo) + " ✓", false);
+    setTimeout(stangRapport, 1000);
+  }catch(e){
+    rapStatus("Fel: " + e.message, true);
+    document.getElementById("rap-skicka").disabled = false;
+  }
+}
+
+document.getElementById("ws-rapport").addEventListener("click", oppnaRapport);
+document.getElementById("rap-avbryt").addEventListener("click", stangRapport);
+document.getElementById("rap-skicka").addEventListener("click", skickaRapport);
+document.getElementById("skal-rapport").addEventListener("click", e => { if(e.target.id === "skal-rapport") stangRapport(); });
+
 wsSokInput.addEventListener("input", () => { wsSok = wsSokInput.value; byggWsLista(); });
 document.addEventListener("keydown", e => {
   if(e.key !== "Escape") return;
