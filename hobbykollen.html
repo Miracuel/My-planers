@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="HobbyKollen">
+<meta name="theme-color" content="#F4F0E9">
+<link rel="manifest" href='data:application/manifest+json,{"name":"HobbyKollen","short_name":"Hobby","display":"standalone","background_color":"%23F4F0E9","theme_color":"%23F4F0E9","start_url":"."}'>
+<title>HobbyKollen</title>
+<style>
+:root{
+  --bg:#F4F0E9;--panel:#FBF8F2;--panel2:#EDE7DC;--line:#DED6C8;
+  --ink:#3A3530;--muted:#857B6D;
+  --accent:#B0613F;--accent-soft:#EFDACC;--accent-ink:#7A3E25;
+  --green:#6E8B5B;--gold:#B98A3C;--red:#C08A7E;
+  --navbg:rgba(244,240,233,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.sync-badge{display:block;text-align:center;font-size:10px;color:var(--muted);margin-bottom:12px;min-height:13px}
+.sync-badge.ok{color:var(--green)}
+.sync-badge.err{color:#A2685B}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.section-title .mini{font-size:11px;font-weight:400}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.wide{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Big action */
+.hero-btn{width:100%;border:none;background:var(--accent);color:#fff;border-radius:18px;padding:18px;font-size:17px;font-family:Georgia,serif;cursor:pointer;letter-spacing:.02em;box-shadow:0 4px 14px rgba(176,97,63,.22)}
+.hero-btn:active{filter:brightness(.95)}
+.quick-row{display:flex;gap:8px;margin-top:10px}
+.quick-row .btn{flex:1;padding:10px 6px;font-size:13px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip small{color:var(--muted);margin-left:2px}
+.chip.sel small{color:rgba(255,255,255,.8)}
+
+/* Hobby cards */
+.hcard{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:16px;padding:13px 14px;margin-bottom:10px;cursor:pointer}
+.hcard:active{background:var(--panel2)}
+.hcard.inactive{opacity:.55}
+.hcard-top{display:flex;align-items:center;gap:8px}
+.hcard-emoji{font-size:18px}
+.hcard-name{font-family:Georgia,serif;font-size:16px;flex:1}
+.hcard-cat{font-size:11px;color:var(--muted)}
+.hcard-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{font-size:11px;padding:3px 8px;border-radius:9px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.tag.accent{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent-soft)}
+
+/* Lists */
+.row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.row:first-child{border-top:none}
+.row .grow{flex:1;min-width:0}
+.row .grow .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.row .amt{font-weight:600;white-space:nowrap}
+.row .x{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;line-height:1}
+.row .x:active{color:#A2685B}
+.row.done .grow{text-decoration:line-through;color:var(--muted)}
+
+/* Steps */
+.steps{margin-top:8px}
+.step{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:var(--ink)}
+.step input[type=checkbox]{width:auto;accent-color:var(--accent)}
+.step.done span{text-decoration:line-through;color:var(--muted)}
+.step .x{margin-left:auto;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer}
+.inline-add{display:flex;gap:6px;margin-top:8px}
+.inline-add input{font-size:13px}
+.inline-add button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px;flex-shrink:0}
+
+/* Project block */
+.proj{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:var(--panel)}
+.proj-head{display:flex;align-items:center;gap:8px}
+.proj-name{font-weight:600;font-size:14px;flex:1}
+.proj-deadline{font-size:11px;padding:2px 8px;border-radius:8px;background:var(--panel2);color:var(--muted)}
+.proj-deadline.soon{background:#F4E1DB;color:#A2685B}
+.proj-deadline.nopress{background:var(--accent-soft);color:var(--accent-ink)}
+.progress{height:5px;border-radius:3px;background:var(--panel2);overflow:hidden;margin:8px 0}
+.progress>i{display:block;height:100%;background:var(--accent);transition:width .4s}
+
+/* Budget */
+.bud-bar{height:14px;border-radius:8px;background:var(--panel2);overflow:hidden;margin:8px 0}
+.bud-bar>i{display:block;height:100%;background:var(--accent)}
+.bud-bar>i.over{background:#C08A7E}
+.kr{font-variant-numeric:tabular-nums}
+
+/* Stats */
+.stat-big{font-family:Georgia,serif;font-size:15px}
+.stat-num{font-family:Georgia,serif;font-size:30px;color:var(--accent)}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0}
+.bar-row .lbl{width:60px;color:var(--muted);flex-shrink:0}
+.bar-row .track{flex:1;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.bar-row .track>i{display:block;height:100%;background:var(--accent)}
+.bar-row .v{width:24px;text-align:right;color:var(--muted)}
+
+/* Dots / rating */
+.dotpick{display:flex;gap:8px;margin:4px 0 4px}
+.dotpick button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;color:var(--muted)}
+.dotpick button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.joy{letter-spacing:2px;color:var(--accent)}
+
+/* AI */
+.ai-box{background:var(--accent-soft);border:1px solid var(--accent-soft);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.65;color:var(--accent-ink);margin-top:10px;white-space:pre-wrap}
+.ai-lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;opacity:.8}
+
+/* Rotator result */
+.rot-result{text-align:center;padding:18px 6px}
+.rot-emoji{font-size:46px}
+.rot-name{font-family:Georgia,serif;font-size:24px;margin:8px 0 4px}
+
+/* Nav + sheets */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(58,53,48,.38);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:18px;margin-bottom:6px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px;font-family:inherit}
+.sheet-close.sec{background:none;border:1px solid var(--line);color:var(--muted);margin-top:8px}
+
+.topbtn{position:fixed;top:calc(10px + env(safe-area-inset-top));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+#theme-btn{right:max(12px,calc(50vw - 228px))}
+#settings-btn{left:max(12px,calc(50vw - 228px))}
+.foot{display:flex;gap:14px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#221F1B;--panel:#2B2823;--panel2:#34302A;--line:#433E37;
+  --ink:#E7E1D7;--muted:#9C9485;
+  --accent:#C97F5C;--accent-soft:#3F312A;--accent-ink:#E7C3AE;
+  --green:#8FA383;--gold:#C2AC6B;--red:#C08A7E;--navbg:rgba(34,31,27,.95);
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="topbtn" id="settings-btn" aria-label="Inställningar">⚙</button>
+<button class="topbtn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🎨 HobbyKollen</h1>
+<div class="sync-badge" id="sync-badge"></div>
+
+<!-- HEM -->
+<div class="view active" id="view-home">
+  <button class="hero-btn" id="rot-open">✨ Vad vill jag göra idag?</button>
+  <div class="quick-row">
+    <button class="btn" id="log-open">Logga hobby-stund</button>
+    <button class="btn" id="ai-open-home">Fråga AI</button>
+  </div>
+
+  <div class="section-title">Mina aktiva hobbys</div>
+  <div class="chips" id="home-active"></div>
+
+  <div class="section-title">Pågående projekt</div>
+  <div class="card-panel"><div id="home-projects"></div></div>
+
+  <div class="section-title">Nästa hobby-stund</div>
+  <div class="card-panel"><div id="home-next"></div></div>
+
+  <div class="section-title">Saker jag vill testa
+    <button class="btn ghost" id="want-add-btn">+ Lägg till</button>
+  </div>
+  <div class="card-panel"><div id="home-want"></div></div>
+
+  <div class="privacy">Allt sparas i din enhet (och synkas till ditt privata GitHub om du vill).<br>HobbyKollen ska göra det roligt — ingen press, inga måsten. 🎨</div>
+</div>
+
+<!-- HOBBYS -->
+<div class="view" id="view-hobbies">
+  <div class="section-title" style="margin-top:0">Hobbykort
+    <button class="btn ghost" id="hobby-add-btn">+ Ny hobby</button>
+  </div>
+  <div id="hobby-list"></div>
+</div>
+
+<!-- INVENTERING -->
+<div class="view" id="view-inv">
+  <div class="section-title" style="margin-top:0">Inventering
+    <button class="btn ghost" id="inv-add-btn">+ Lägg till</button>
+  </div>
+  <div class="soft" style="margin-bottom:8px">Material, verktyg, böcker, kurser och påbörjade saker — så du minns vad du redan äger.</div>
+  <div id="inv-list"></div>
+</div>
+
+<!-- BUDGET -->
+<div class="view" id="view-budget">
+  <div class="section-title" style="margin-top:0">Månadens hobbybudget</div>
+  <div class="card-panel">
+    <label>Budget per månad (kr)</label>
+    <input type="number" id="budget-input" placeholder="t.ex. 500" inputmode="numeric">
+    <div class="bud-bar"><i id="bud-fill"></i></div>
+    <div class="soft" id="bud-summary"></div>
+  </div>
+  <div class="section-title">Kostnad per hobby <span class="mini soft">/månad</span></div>
+  <div class="card-panel"><div id="bud-perhobby"></div></div>
+  <div class="section-title">Önskelista
+    <button class="btn ghost" id="wish-add-btn">+ Önska</button>
+  </div>
+  <div class="card-panel"><div id="wish-list"></div></div>
+</div>
+
+<!-- STATISTIK -->
+<div class="view" id="view-stats">
+  <div class="section-title" style="margin-top:0">Statistik</div>
+  <div class="card-panel" style="margin-bottom:10px">
+    <div class="soft">Mest använda hobby</div>
+    <div class="stat-big" id="st-most"></div>
+  </div>
+  <div class="card-panel" style="margin-bottom:10px">
+    <div class="soft">Mest glädje per krona</div>
+    <div class="stat-big" id="st-value"></div>
+  </div>
+  <div class="section-title">Hobbys jag saknar <span class="mini soft">inte gjort på 30+ dagar</span></div>
+  <div class="card-panel"><div id="st-missing"></div></div>
+  <div class="section-title">Projekt jag faktiskt avslutat</div>
+  <div class="card-panel"><div id="st-done"></div></div>
+  <div class="section-title">När jag är extra kreativ</div>
+  <div class="card-panel"><div id="st-when"></div></div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="home"><span>🏠</span>Hem</button>
+  <button data-v="hobbies"><span>📇</span>Hobbys</button>
+  <button data-v="inv"><span>📦</span>Förråd</button>
+  <button data-v="budget"><span>💰</span>Budget</button>
+  <button data-v="stats"><span>📊</span>Statistik</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="hobby-sheet">
+  <h3 id="hobby-sheet-title">Ny hobby</h3>
+  <label>Namn</label>
+  <input type="text" id="h-name" placeholder="t.ex. Virkning">
+  <label>Kategori</label>
+  <div class="chips" id="h-cat"></div>
+  <label>Energinivå som krävs</label>
+  <div class="chips" id="h-energy"></div>
+  <label>Humör / känsla</label>
+  <div class="chips" id="h-mood"></div>
+  <label>Tid som behövs</label>
+  <div class="chips" id="h-time"></div>
+  <label>Ungefärlig kostnad / månad (kr)</label>
+  <input type="number" id="h-cost" placeholder="0" inputmode="numeric">
+  <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+    <input type="checkbox" id="h-active" style="width:auto" checked> Aktiv hobby (visa på startsidan)
+  </label>
+  <button class="sheet-close" id="h-save">Spara hobby</button>
+  <button class="sheet-close sec" id="h-delete" style="display:none">Ta bort hobby</button>
+</div>
+
+<div class="sheet" id="detail-sheet">
+  <h3 id="d-title"></h3>
+  <div class="soft" id="d-meta"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="d-log">Logga stund</button>
+    <button class="btn" id="d-edit">Ändra kort</button>
+  </div>
+  <div class="section-title">Projekt & idéer
+    <button class="btn ghost" id="d-proj-add">+ Projekt</button>
+  </div>
+  <div id="d-projects"></div>
+  <div class="section-title">Senaste stunder</div>
+  <div id="d-sessions"></div>
+  <button class="sheet-close sec" id="d-close">Stäng</button>
+</div>
+
+<div class="sheet" id="project-sheet">
+  <h3 id="p-title">Nytt projekt</h3>
+  <label>Vad vill du göra?</label>
+  <input type="text" id="p-name" placeholder="t.ex. Virka en filt">
+  <label>Inspiration / länk / tanke</label>
+  <textarea id="p-insp" rows="2" placeholder="Frivilligt"></textarea>
+  <label>Deadline</label>
+  <input type="date" id="p-deadline">
+  <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+    <input type="checkbox" id="p-nopress" style="width:auto"> Ingen press — ingen deadline
+  </label>
+  <label>Materiallista</label>
+  <div id="p-materials"></div>
+  <div class="inline-add"><input type="text" id="p-mat-in" placeholder="Lägg till material…"><button id="p-mat-add">+</button></div>
+  <label>Delsteg</label>
+  <div class="steps" id="p-steps"></div>
+  <div class="inline-add"><input type="text" id="p-step-in" placeholder="Lägg till delsteg…"><button id="p-step-add">+</button></div>
+  <button class="sheet-close" id="p-save">Spara projekt</button>
+  <button class="sheet-close sec" id="p-delete" style="display:none">Ta bort projekt</button>
+</div>
+
+<div class="sheet" id="log-sheet">
+  <h3>Logga hobby-stund</h3>
+  <div class="soft">Bra jobbat att du tog dig tid. ✨</div>
+  <label>Vilken hobby?</label>
+  <select id="log-hobby"></select>
+  <label>Hur mycket glädje gav det?</label>
+  <div class="dotpick" id="log-joy"></div>
+  <label>Datum</label>
+  <input type="date" id="log-date">
+  <button class="sheet-close" id="log-save">Spara stund</button>
+</div>
+
+<div class="sheet" id="rot-sheet">
+  <h3>Hobbyrotatorn</h3>
+  <div class="soft">Berätta hur du har det — så slumpar jag fram något som passar.</div>
+  <label>Hur mycket tid har du?</label>
+  <div class="chips" id="rot-time"></div>
+  <label>Hur är energin?</label>
+  <div class="chips" id="rot-energy"></div>
+  <label>Vilket humör?</label>
+  <div class="chips" id="rot-mood"></div>
+  <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+    <input type="checkbox" id="rot-mat" style="width:auto"> Bara hobbys jag har material/verktyg till
+  </label>
+  <button class="btn fill wide" id="rot-spin" style="margin-top:14px">🎲 Slumpa fram en hobby</button>
+  <div id="rot-out"></div>
+  <button class="sheet-close sec" id="rot-close">Stäng</button>
+</div>
+
+<div class="sheet" id="inv-sheet">
+  <h3>Lägg till i förrådet</h3>
+  <label>Namn</label>
+  <input type="text" id="inv-name" placeholder="t.ex. Virknålar set">
+  <label>Typ</label>
+  <div class="chips" id="inv-type"></div>
+  <label>Hör till hobby</label>
+  <select id="inv-hobby"></select>
+  <button class="sheet-close" id="inv-save">Spara</button>
+</div>
+
+<div class="sheet" id="wish-sheet">
+  <h3>Lägg till önskelista</h3>
+  <label>Vad önskar du dig?</label>
+  <input type="text" id="wish-name" placeholder="t.ex. Akvarellfärger">
+  <div class="ai-box" id="wish-warn" style="display:none"></div>
+  <label>Ungefärlig kostnad (kr)</label>
+  <input type="number" id="wish-cost" placeholder="0" inputmode="numeric">
+  <label>Hör till hobby</label>
+  <select id="wish-hobby"></select>
+  <button class="sheet-close" id="wish-save">Spara önskan</button>
+</div>
+
+<div class="sheet" id="want-sheet">
+  <h3>Något jag vill testa</h3>
+  <label>Vad är det?</label>
+  <input type="text" id="want-name" placeholder="t.ex. Lära mig kalligrafi">
+  <button class="sheet-close" id="want-save">Spara</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>✨ Fråga AI</h3>
+  <div class="soft">Hjälp baserat på dina hobbys, energi och material. Välj en snabbfråga eller skriv egen.</div>
+  <div class="chips" id="ai-quick" style="margin-top:10px"></div>
+  <label>Din fråga</label>
+  <textarea id="ai-q" rows="2" placeholder="t.ex. Jag har låg energi, vad kan jag göra?"></textarea>
+  <button class="btn fill wide" id="ai-run" style="margin-top:10px">Fråga</button>
+  <div id="ai-out"></div>
+  <button class="sheet-close sec" id="ai-close">Stäng</button>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <h3>Inställningar</h3>
+  <label>GitHub-synk</label>
+  <div class="soft">Synkar mellan dina enheter via ett privat repo. Samma mönster som dina andra appar.</div>
+  <input type="text" id="gh-owner" placeholder="GitHub-användarnamn" style="margin-top:8px">
+  <input type="text" id="gh-repo" placeholder="Repo-namn" style="margin-top:8px">
+  <input type="password" id="gh-token" placeholder="Fine-grained token (Contents)" style="margin-top:8px">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="gh-save">Anslut & synka</button>
+    <button class="btn" id="gh-pull">Hämta nu</button>
+  </div>
+  <div class="soft" id="gh-status" style="margin-top:8px"></div>
+
+  <label>AI-nyckel (Anthropic)</label>
+  <div class="soft">Sparas bara lokalt i din enhet. Används för AI-hjälpen.</div>
+  <input type="password" id="ai-key" placeholder="sk-ant-..." style="margin-top:8px">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="ai-key-save">Spara nyckel</button>
+    <button class="btn" id="ai-key-clear">Rensa</button>
+  </div>
+
+  <label>Säkerhetskopiering</label>
+  <div class="btn-row" style="margin-top:6px">
+    <button class="btn" id="export-btn">Exportera</button>
+    <button class="btn" id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <button class="sheet-close sec" id="settings-close">Stäng</button>
+</div>
+
+<script>
+// ── Konstanter ────────────────────────────────────────
+var CATS=[['kreativt','🎨','#B0613F'],['sport','🏃','#6E8B5B'],['spel','🎲','#4F7CA6'],['magi','🔮','#8B6BA6'],['skrivande','✍️','#B98A3C'],['hantverk','🧵','#A65D6E'],['musik','🎵','#5E8A86'],['annat','•','#857B6D']];
+var ENERGY=['låg','mellan','hög'];
+var MOODS=['mysigt','socialt','fokuserat','äventyrligt'];
+var TIMES=[['<30 min',30],['30–60 min',60],['1–2 h',120],['en hel dag',999]];
+var INVTYPES=['material','verktyg','bok','kurs','påbörjat'];
+var JOY=['😐','🙂','😊','😄','🤩'];
+
+function catInfo(name){for(var i=0;i<CATS.length;i++){if(CATS[i][0]===name)return CATS[i];}return CATS[CATS.length-1];}
+function energyVal(e){var i=ENERGY.indexOf(e);return i<0?2:i+1;}
+
+// ── State ─────────────────────────────────────────────
+var KEY='hobbykollen_v1';
+var state={hobbies:[],inventory:[],wishlist:[],want:[],sessions:[],budget:0,theme:'auto'};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(stripState()));}catch(e){}}
+function stripState(){return {hobbies:state.hobbies,inventory:state.inventory,wishlist:state.wishlist,want:state.want,sessions:state.sessions,budget:state.budget,theme:state.theme};}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+function fmtDate(iso){if(!iso)return '';var d=new Date(iso+'T00:00:00');return d.toLocaleDateString('sv-SE',{month:'short',day:'numeric'});}
+function daysUntil(iso){var d=new Date(iso+'T00:00:00');var t=new Date(todayKey()+'T00:00:00');return Math.round((d-t)/86400000);}
+function hobbyById(id){for(var i=0;i<state.hobbies.length;i++){if(state.hobbies[i].id===id)return state.hobbies[i];}return null;}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var a=document.querySelectorAll('.sheet');for(var i=0;i<a.length;i++)a[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Chip-grupper (multi/single select helpers) ───────
+function chipGroup(elId,items,getColor,selected,onPick){
+  var el=document.getElementById(elId);el.innerHTML='';
+  for(var i=0;i<items.length;i++){
+    (function(val,color){
+      var b=document.createElement('div');
+      b.className='chip'+(selected===val?' sel':'');
+      var html='';if(color){html+='<span class="dot" style="background:'+color+'"></span>';}
+      html+=esc(val);b.innerHTML=html;
+      b.onclick=function(){onPick(val);var sib=el.querySelectorAll('.chip');for(var k=0;k<sib.length;k++)sib[k].classList.remove('sel');b.classList.add('sel');};
+      el.appendChild(b);
+    })(items[i],getColor?getColor(items[i]):'');
+  }
+}
+
+// ── HEM ───────────────────────────────────────────────
+function renderHome(){
+  // aktiva hobbys
+  var ae=document.getElementById('home-active');ae.innerHTML='';
+  var act=state.hobbies.filter(function(h){return h.active;});
+  if(!act.length)ae.innerHTML='<div class="empty-msg">Inga aktiva hobbys än. Lägg till några under Hobbys.</div>';
+  else act.forEach(function(h){
+    var ci=catInfo(h.cat);var b=document.createElement('div');b.className='chip';
+    b.innerHTML='<span class="dot" style="background:'+ci[2]+'"></span>'+ci[1]+' '+esc(h.name);
+    b.onclick=function(){openDetail(h.id);};ae.appendChild(b);
+  });
+  // pågående projekt
+  var pe=document.getElementById('home-projects');var open=[];
+  state.hobbies.forEach(function(h){(h.projects||[]).forEach(function(p){if(!p.done)open.push({h:h,p:p});});});
+  if(!open.length)pe.innerHTML='<div class="empty-msg">Inga pågående projekt.</div>';
+  else{pe.innerHTML='';open.forEach(function(o){
+    var steps=o.p.steps||[];var dn=steps.filter(function(s){return s.done;}).length;
+    var r=document.createElement('div');r.className='row';
+    r.innerHTML='<div class="grow">'+esc(o.p.name)+'<div class="sub">'+esc(o.h.name)+(steps.length?' · '+dn+'/'+steps.length+' steg':'')+'</div></div>';
+    r.onclick=function(){openDetail(o.h.id);};pe.appendChild(r);
+  });}
+  // nästa hobby-stund (närmaste deadline)
+  var ne=document.getElementById('home-next');var dls=[];
+  state.hobbies.forEach(function(h){(h.projects||[]).forEach(function(p){if(!p.done&&!p.nopress&&p.deadline)dls.push({h:h,p:p,d:p.deadline});});});
+  dls.sort(function(a,b){return a.d<b.d?-1:1;});
+  if(!dls.length)ne.innerHTML='<div class="empty-msg">Ingen planerad deadline. Tryck "Vad vill jag göra idag?" för ett förslag.</div>';
+  else{var nx=dls[0];var du=daysUntil(nx.d);
+    ne.innerHTML='<div class="row"><div class="grow">'+esc(nx.p.name)+'<div class="sub">'+esc(nx.h.name)+'</div></div><span class="proj-deadline'+(du<=7?' soon':'')+'">'+fmtDate(nx.d)+(du>=0?' · '+du+' d':'')+'</span></div>';}
+  // vill testa
+  var we=document.getElementById('home-want');
+  if(!state.want.length)we.innerHTML='<div class="empty-msg">Inget i listan än.</div>';
+  else{we.innerHTML='';state.want.forEach(function(w){
+    var r=document.createElement('div');r.className='row';
+    r.innerHTML='<div class="grow">'+esc(w.name)+'</div><button class="x" title="Ta bort">&times;</button>';
+    r.querySelector('.x').onclick=function(){state.want=state.want.filter(function(x){return x.id!==w.id;});persist();renderAll();};
+    we.appendChild(r);
+  });}
+}
+
+// ── HOBBYS ────────────────────────────────────────────
+function renderHobbies(){
+  var el=document.getElementById('hobby-list');
+  if(!state.hobbies.length){el.innerHTML='<div class="empty-msg">Inga hobbys än. Tryck "+ Ny hobby" för att börja.</div>';return;}
+  el.innerHTML='';
+  state.hobbies.forEach(function(h){
+    var ci=catInfo(h.cat);
+    var c=document.createElement('div');c.className='hcard'+(h.active?'':' inactive');c.style.borderLeftColor=ci[2];
+    var meta='';
+    if(h.energy)meta+='<span class="tag">⚡ '+esc(h.energy)+'</span>';
+    if(h.mood)meta+='<span class="tag">'+esc(h.mood)+'</span>';
+    if(h.time)meta+='<span class="tag">⏱ '+esc(h.time)+'</span>';
+    if(h.cost)meta+='<span class="tag accent">'+h.cost+' kr/mån</span>';
+    c.innerHTML='<div class="hcard-top"><span class="hcard-emoji">'+ci[1]+'</span><span class="hcard-name">'+esc(h.name)+'</span><span class="hcard-cat">'+esc(h.cat||'')+'</span></div><div class="hcard-meta">'+meta+'</div>';
+    c.onclick=function(){openDetail(h.id);};
+    el.appendChild(c);
+  });
+}
+
+// ── Hobby-formulär ────────────────────────────────────
+var hobbyDraft=null;
+function openHobbyForm(h){
+  hobbyDraft=h?JSON.parse(JSON.stringify(h)):{id:null,name:'',cat:'kreativt',energy:'mellan',mood:'mysigt',time:'30–60 min',cost:0,active:true,projects:[]};
+  document.getElementById('hobby-sheet-title').textContent=h?'Ändra hobby':'Ny hobby';
+  document.getElementById('h-name').value=hobbyDraft.name;
+  document.getElementById('h-cost').value=hobbyDraft.cost||'';
+  document.getElementById('h-active').checked=hobbyDraft.active!==false;
+  chipGroup('h-cat',CATS.map(function(c){return c[0];}),function(v){return catInfo(v)[2];},hobbyDraft.cat,function(v){hobbyDraft.cat=v;});
+  chipGroup('h-energy',ENERGY,null,hobbyDraft.energy,function(v){hobbyDraft.energy=v;});
+  chipGroup('h-mood',MOODS,null,hobbyDraft.mood,function(v){hobbyDraft.mood=v;});
+  chipGroup('h-time',TIMES.map(function(t){return t[0];}),null,hobbyDraft.time,function(v){hobbyDraft.time=v;});
+  document.getElementById('h-delete').style.display=h?'block':'none';
+  openSheet('hobby-sheet');
+}
+document.getElementById('hobby-add-btn').onclick=function(){openHobbyForm(null);};
+document.getElementById('h-save').onclick=function(){
+  var name=document.getElementById('h-name').value.trim();if(!name){alert('Ge hobbyn ett namn.');return;}
+  hobbyDraft.name=name;hobbyDraft.cost=parseInt(document.getElementById('h-cost').value)||0;hobbyDraft.active=document.getElementById('h-active').checked;
+  if(hobbyDraft.id){var ex=hobbyById(hobbyDraft.id);Object.assign(ex,hobbyDraft);}
+  else{hobbyDraft.id=uid();hobbyDraft.projects=[];state.hobbies.push(hobbyDraft);}
+  persist();closeSheets();renderAll();
+};
+document.getElementById('h-delete').onclick=function(){
+  if(!hobbyDraft.id)return;
+  if(!confirm('Ta bort "'+hobbyDraft.name+'" och alla dess projekt?'))return;
+  state.hobbies=state.hobbies.filter(function(x){return x.id!==hobbyDraft.id;});
+  state.sessions=state.sessions.filter(function(x){return x.hobbyId!==hobbyDraft.id;});
+  persist();closeSheets();renderAll();
+};
+
+// ── Hobby-detalj ──────────────────────────────────────
+var detailId=null;
+function openDetail(id){
+  detailId=id;var h=hobbyById(id);if(!h)return;
+  var ci=catInfo(h.cat);
+  document.getElementById('d-title').textContent=ci[1]+' '+h.name;
+  var m=[];if(h.cat)m.push(h.cat);if(h.energy)m.push('energi: '+h.energy);if(h.mood)m.push(h.mood);if(h.time)m.push(h.time);if(h.cost)m.push(h.cost+' kr/mån');
+  document.getElementById('d-meta').textContent=m.join(' · ');
+  renderProjects(h);renderSessions(h);
+  openSheet('detail-sheet');
+}
+function renderProjects(h){
+  var el=document.getElementById('d-projects');var ps=h.projects||[];
+  if(!ps.length){el.innerHTML='<div class="empty-msg">Inga projekt än.</div>';return;}
+  el.innerHTML='';
+  ps.forEach(function(p){
+    var steps=p.steps||[];var dn=steps.filter(function(s){return s.done;}).length;
+    var pct=steps.length?Math.round(dn/steps.length*100):(p.done?100:0);
+    var dl='';
+    if(p.nopress)dl='<span class="proj-deadline nopress">ingen press</span>';
+    else if(p.deadline){var du=daysUntil(p.deadline);dl='<span class="proj-deadline'+(du<=7?' soon':'')+'">'+fmtDate(p.deadline)+'</span>';}
+    var box=document.createElement('div');box.className='proj';
+    var html='<div class="proj-head"><span class="proj-name'+(p.done?' done':'')+'">'+esc(p.name)+'</span>'+dl+'</div>';
+    if(steps.length)html+='<div class="progress"><i style="width:'+pct+'%"></i></div>';
+    if(p.materials&&p.materials.length)html+='<div class="soft">📦 '+p.materials.map(esc).join(', ')+'</div>';
+    if(p.insp)html+='<div class="soft" style="font-style:italic;margin-top:4px">'+esc(p.insp)+'</div>';
+    box.innerHTML=html;
+    if(steps.length){var sd=document.createElement('div');sd.className='steps';
+      steps.forEach(function(st,si){var r=document.createElement('div');r.className='step'+(st.done?' done':'');
+        r.innerHTML='<input type="checkbox" '+(st.done?'checked':'')+'><span>'+esc(st.t)+'</span>';
+        r.querySelector('input').onchange=function(){st.done=this.checked;persist();renderProjects(h);renderHome();};
+        sd.appendChild(r);});
+      box.appendChild(sd);}
+    var br=document.createElement('div');br.className='btn-row';br.style.marginTop='10px';
+    br.innerHTML='<button class="btn ghost">'+(p.done?'↺ Öppna igen':'✓ Avsluta')+'</button><button class="btn ghost">Ändra</button>';
+    br.children[0].onclick=function(){p.done=!p.done;persist();renderProjects(h);renderHome();renderStats();};
+    br.children[1].onclick=function(){openProjectForm(h,p);};
+    box.appendChild(br);
+    el.appendChild(box);
+  });
+}
+function renderSessions(h){
+  var el=document.getElementById('d-sessions');
+  var ss=state.sessions.filter(function(x){return x.hobbyId===h.id;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,6);
+  if(!ss.length){el.innerHTML='<div class="empty-msg">Inga loggade stunder än.</div>';return;}
+  el.innerHTML='';
+  ss.forEach(function(x){var r=document.createElement('div');r.className='row';
+    r.innerHTML='<div class="grow">'+fmtDate(x.date)+'</div><span class="joy">'+(JOY[(x.joy||1)-1]||'')+'</span>';
+    el.appendChild(r);});
+}
+document.getElementById('d-close').onclick=closeSheets;
+document.getElementById('d-edit').onclick=function(){var h=hobbyById(detailId);closeSheets();openHobbyForm(h);};
+document.getElementById('d-log').onclick=function(){openLog(detailId);};
+document.getElementById('d-proj-add').onclick=function(){openProjectForm(hobbyById(detailId),null);};
+
+// ── Projekt-formulär ──────────────────────────────────
+var projDraft=null,projHobby=null;
+function openProjectForm(h,p){
+  projHobby=h;projDraft=p?JSON.parse(JSON.stringify(p)):{id:null,name:'',insp:'',deadline:'',nopress:false,materials:[],steps:[],done:false};
+  document.getElementById('p-title').textContent=p?'Ändra projekt':'Nytt projekt';
+  document.getElementById('p-name').value=projDraft.name;
+  document.getElementById('p-insp').value=projDraft.insp||'';
+  document.getElementById('p-deadline').value=projDraft.deadline||'';
+  document.getElementById('p-nopress').checked=!!projDraft.nopress;
+  document.getElementById('p-delete').style.display=p?'block':'none';
+  renderProjDraft();
+  closeSheets();openSheet('project-sheet');
+}
+function renderProjDraft(){
+  var me=document.getElementById('p-materials');me.innerHTML='';
+  (projDraft.materials||[]).forEach(function(m,i){var r=document.createElement('div');r.className='step';
+    r.innerHTML='<span>'+esc(m)+'</span><button class="x">&times;</button>';
+    r.querySelector('.x').onclick=function(){projDraft.materials.splice(i,1);renderProjDraft();};me.appendChild(r);});
+  var se=document.getElementById('p-steps');se.innerHTML='';
+  (projDraft.steps||[]).forEach(function(st,i){var r=document.createElement('div');r.className='step'+(st.done?' done':'');
+    r.innerHTML='<input type="checkbox" '+(st.done?'checked':'')+'><span>'+esc(st.t)+'</span><button class="x">&times;</button>';
+    r.querySelector('input').onchange=function(){st.done=this.checked;};
+    r.querySelector('.x').onclick=function(){projDraft.steps.splice(i,1);renderProjDraft();};se.appendChild(r);});
+}
+document.getElementById('p-mat-add').onclick=function(){var v=document.getElementById('p-mat-in').value.trim();if(!v)return;projDraft.materials.push(v);document.getElementById('p-mat-in').value='';renderProjDraft();};
+document.getElementById('p-step-add').onclick=function(){var v=document.getElementById('p-step-in').value.trim();if(!v)return;projDraft.steps.push({t:v,done:false});document.getElementById('p-step-in').value='';renderProjDraft();};
+document.getElementById('p-save').onclick=function(){
+  var name=document.getElementById('p-name').value.trim();if(!name){alert('Ge projektet ett namn.');return;}
+  projDraft.name=name;projDraft.insp=document.getElementById('p-insp').value.trim();
+  projDraft.nopress=document.getElementById('p-nopress').checked;
+  projDraft.deadline=projDraft.nopress?'':document.getElementById('p-deadline').value;
+  if(!projHobby.projects)projHobby.projects=[];
+  if(projDraft.id){for(var i=0;i<projHobby.projects.length;i++){if(projHobby.projects[i].id===projDraft.id){projHobby.projects[i]=projDraft;break;}}}
+  else{projDraft.id=uid();projHobby.projects.push(projDraft);}
+  persist();closeSheets();openDetail(projHobby.id);renderAll();
+};
+document.getElementById('p-delete').onclick=function(){
+  if(!projDraft.id)return;if(!confirm('Ta bort projektet?'))return;
+  projHobby.projects=projHobby.projects.filter(function(x){return x.id!==projDraft.id;});
+  persist();closeSheets();openDetail(projHobby.id);renderAll();
+};
+
+// ── Logga stund ───────────────────────────────────────
+var logJoy=3;
+function fillHobbySelect(elId){var sel=document.getElementById(elId);sel.innerHTML='';
+  state.hobbies.forEach(function(h){var o=document.createElement('option');o.value=h.id;o.textContent=h.name;sel.appendChild(o);});}
+function openLog(preId){
+  if(!state.hobbies.length){alert('Lägg till en hobby först.');return;}
+  fillHobbySelect('log-hobby');if(preId)document.getElementById('log-hobby').value=preId;
+  logJoy=3;document.getElementById('log-date').value=todayKey();
+  chipGroupJoy();closeSheets();openSheet('log-sheet');
+}
+function chipGroupJoy(){var el=document.getElementById('log-joy');el.innerHTML='';
+  for(var i=1;i<=5;i++){(function(v){var b=document.createElement('button');b.textContent=JOY[v-1];b.className=v===logJoy?'sel':'';
+    b.onclick=function(){logJoy=v;var a=el.querySelectorAll('button');for(var k=0;k<a.length;k++)a[k].className='';b.className='sel';};el.appendChild(b);})(i);}}
+document.getElementById('log-open').onclick=function(){openLog(null);};
+document.getElementById('log-save').onclick=function(){
+  var hid=document.getElementById('log-hobby').value;var date=document.getElementById('log-date').value||todayKey();
+  state.sessions.push({id:uid(),hobbyId:hid,date:date,joy:logJoy});
+  persist();closeSheets();renderAll();
+};
+
+// ── Hobbyrotatorn ─────────────────────────────────────
+var rotF={time:null,energy:null,mood:null};
+function openRotator(){
+  rotF={time:null,energy:null,mood:null};document.getElementById('rot-mat').checked=false;document.getElementById('rot-out').innerHTML='';
+  chipGroup('rot-time',['spelar ingen roll'].concat(TIMES.map(function(t){return t[0];})),null,'spelar ingen roll',function(v){rotF.time=v==='spelar ingen roll'?null:v;});
+  chipGroup('rot-energy',['spelar ingen roll'].concat(ENERGY),null,'spelar ingen roll',function(v){rotF.energy=v==='spelar ingen roll'?null:v;});
+  chipGroup('rot-mood',['spelar ingen roll'].concat(MOODS),null,'spelar ingen roll',function(v){rotF.mood=v==='spelar ingen roll'?null:v;});
+  rotF.time=null;rotF.energy=null;rotF.mood=null;
+  closeSheets();openSheet('rot-sheet');
+}
+function timeMax(label){for(var i=0;i<TIMES.length;i++){if(TIMES[i][0]===label)return TIMES[i][1];}return 999;}
+function hobbyHasMaterial(hid){return state.inventory.some(function(it){return it.hobbyId===hid;});}
+document.getElementById('rot-spin').onclick=function(){
+  var pool=state.hobbies.filter(function(h){return h.active;});
+  if(rotF.time){var max=timeMax(rotF.time);pool=pool.filter(function(h){return timeMax(h.time)<=max;});}
+  if(rotF.energy){var ev=energyVal(rotF.energy);pool=pool.filter(function(h){return energyVal(h.energy)<=ev;});}
+  if(rotF.mood)pool=pool.filter(function(h){return h.mood===rotF.mood;});
+  if(document.getElementById('rot-mat').checked)pool=pool.filter(function(h){return hobbyHasMaterial(h.id);});
+  var out=document.getElementById('rot-out');
+  if(!pool.length){out.innerHTML='<div class="empty-msg">Inget passade just nu — prova att lätta på något filter, eller markera fler hobbys som aktiva.</div>';return;}
+  var pick=pool[Math.floor(Math.random()*pool.length)];var ci=catInfo(pick.cat);
+  out.innerHTML='<div class="rot-result"><div class="rot-emoji">'+ci[1]+'</div><div class="rot-name">'+esc(pick.name)+'</div><div class="soft">'+esc(pick.mood||'')+(pick.time?' · '+esc(pick.time):'')+'</div></div>';
+  var br=document.createElement('div');br.className='btn-row';
+  br.innerHTML='<button class="btn fill">Logga den här</button><button class="btn">Slumpa igen</button>';
+  br.children[0].onclick=function(){openLog(pick.id);};
+  br.children[1].onclick=function(){document.getElementById('rot-spin').click();};
+  out.appendChild(br);
+};
+document.getElementById('rot-open').onclick=openRotator;
+document.getElementById('rot-close').onclick=closeSheets;
+
+// ── Inventering ───────────────────────────────────────
+function renderInv(){
+  var el=document.getElementById('inv-list');
+  if(!state.inventory.length){el.innerHTML='<div class="empty-msg">Förrådet är tomt. Lägg till det du redan äger.</div>';return;}
+  el.innerHTML='';
+  INVTYPES.forEach(function(t){
+    var items=state.inventory.filter(function(it){return it.type===t;});
+    if(!items.length)return;
+    var st=document.createElement('div');st.className='section-title';st.style.marginTop='8px';st.textContent=t.charAt(0).toUpperCase()+t.slice(1);el.appendChild(st);
+    var card=document.createElement('div');card.className='card-panel';
+    items.forEach(function(it){var h=hobbyById(it.hobbyId);var r=document.createElement('div');r.className='row';
+      r.innerHTML='<div class="grow">'+esc(it.name)+(h?'<div class="sub">'+esc(h.name)+'</div>':'')+'</div><button class="x">&times;</button>';
+      r.querySelector('.x').onclick=function(){state.inventory=state.inventory.filter(function(x){return x.id!==it.id;});persist();renderInv();};
+      card.appendChild(r);});
+    el.appendChild(card);
+  });
+}
+var invType='material';
+document.getElementById('inv-add-btn').onclick=function(){
+  if(!state.hobbies.length){alert('Lägg till en hobby först.');return;}
+  document.getElementById('inv-name').value='';invType='material';
+  chipGroup('inv-type',INVTYPES,null,'material',function(v){invType=v;});
+  fillHobbySelect('inv-hobby');
+  closeSheets();openSheet('inv-sheet');
+};
+document.getElementById('inv-save').onclick=function(){
+  var name=document.getElementById('inv-name').value.trim();if(!name){alert('Ange namn.');return;}
+  state.inventory.push({id:uid(),name:name,type:invType,hobbyId:document.getElementById('inv-hobby').value});
+  persist();closeSheets();renderInv();
+};
+
+// ── Budget ────────────────────────────────────────────
+function renderBudget(){
+  document.getElementById('budget-input').value=state.budget||'';
+  var spent=state.hobbies.reduce(function(a,h){return a+(h.cost||0);},0);
+  var pct=state.budget>0?Math.min(100,Math.round(spent/state.budget*100)):0;
+  var fill=document.getElementById('bud-fill');fill.style.width=(state.budget>0?pct:0)+'%';
+  fill.parentElement.querySelector('i').className=spent>state.budget&&state.budget>0?'over':'';
+  var sum=document.getElementById('bud-summary');
+  if(state.budget>0)sum.innerHTML='<span class="kr">'+spent+' kr</span> av <span class="kr">'+state.budget+' kr</span>'+(spent>state.budget?' — <b style="color:#A2685B">'+(spent-state.budget)+' kr över</b>':' · '+(state.budget-spent)+' kr kvar');
+  else sum.textContent='Sätt en månadsbudget för att se hur mycket dina hobbys kostar.';
+  // per hobby
+  var pe=document.getElementById('bud-perhobby');
+  var withCost=state.hobbies.filter(function(h){return h.cost>0;}).sort(function(a,b){return b.cost-a.cost;});
+  if(!withCost.length)pe.innerHTML='<div class="empty-msg">Inga kostnader angivna.</div>';
+  else{pe.innerHTML='';withCost.forEach(function(h){var ci=catInfo(h.cat);var r=document.createElement('div');r.className='row';
+    r.innerHTML='<span class="dot" style="width:9px;height:9px;border-radius:50%;background:'+ci[2]+'"></span><div class="grow">'+esc(h.name)+'</div><span class="amt kr">'+h.cost+' kr</span>';pe.appendChild(r);});}
+  // wishlist
+  var we=document.getElementById('wish-list');
+  if(!state.wishlist.length)we.innerHTML='<div class="empty-msg">Önskelistan är tom.</div>';
+  else{we.innerHTML='';state.wishlist.forEach(function(w){var h=hobbyById(w.hobbyId);var r=document.createElement('div');r.className='row';
+    r.innerHTML='<div class="grow">'+esc(w.name)+(h?'<div class="sub">'+esc(h.name)+'</div>':'')+'</div>'+(w.cost?'<span class="amt kr">'+w.cost+' kr</span>':'')+'<button class="x">&times;</button>';
+    r.querySelector('.x').onclick=function(){state.wishlist=state.wishlist.filter(function(x){return x.id!==w.id;});persist();renderBudget();};we.appendChild(r);});}
+}
+document.getElementById('budget-input').onchange=function(){state.budget=parseInt(this.value)||0;persist();renderBudget();};
+document.getElementById('wish-add-btn').onclick=function(){
+  document.getElementById('wish-name').value='';document.getElementById('wish-cost').value='';document.getElementById('wish-warn').style.display='none';
+  fillHobbySelect('wish-hobby');closeSheets();openSheet('wish-sheet');
+};
+document.getElementById('wish-name').oninput=function(){
+  var v=this.value.trim().toLowerCase();var warn=document.getElementById('wish-warn');
+  if(v.length<3){warn.style.display='none';return;}
+  var hit=state.inventory.find(function(it){var n=it.name.toLowerCase();return n.indexOf(v)>=0||v.indexOf(n)>=0;});
+  if(hit){warn.style.display='block';warn.innerHTML='<span class="ai-lbl">⚠ Köp inte — du har redan liknande</span>"'+esc(hit.name)+'" finns redan i ditt förråd.';}
+  else warn.style.display='none';
+};
+document.getElementById('wish-save').onclick=function(){
+  var name=document.getElementById('wish-name').value.trim();if(!name){alert('Ange vad du önskar.');return;}
+  state.wishlist.push({id:uid(),name:name,cost:parseInt(document.getElementById('wish-cost').value)||0,hobbyId:document.getElementById('wish-hobby').value});
+  persist();closeSheets();renderBudget();
+};
+
+// ── Vill testa ────────────────────────────────────────
+document.getElementById('want-add-btn').onclick=function(){document.getElementById('want-name').value='';closeSheets();openSheet('want-sheet');};
+document.getElementById('want-save').onclick=function(){var v=document.getElementById('want-name').value.trim();if(!v)return;state.want.push({id:uid(),name:v});persist();closeSheets();renderHome();};
+
+// ── Statistik ─────────────────────────────────────────
+function renderStats(){
+  var counts={},joySum={};
+  state.sessions.forEach(function(x){counts[x.hobbyId]=(counts[x.hobbyId]||0)+1;joySum[x.hobbyId]=(joySum[x.hobbyId]||0)+(x.joy||0);});
+  // mest använda
+  var most=null,mc=0;Object.keys(counts).forEach(function(id){if(counts[id]>mc){mc=counts[id];most=id;}});
+  var mh=most?hobbyById(most):null;
+  document.getElementById('st-most').innerHTML=mh?esc(mh.name)+' <span class="soft">· '+mc+' stunder</span>':'<span class="empty-msg">Logga stunder för att se detta.</span>';
+  // glädje per krona
+  var best=null,bv=-1;
+  state.hobbies.forEach(function(h){if(h.cost>0&&joySum[h.id]){var v=joySum[h.id]/h.cost;if(v>bv){bv=v;best=h;}}});
+  document.getElementById('st-value').innerHTML=best?esc(best.name)+' <span class="soft">· '+(Math.round(bv*100)/100)+' glädjepoäng/kr</span>':'<span class="empty-msg">Lägg till kostnad och logga glädje.</span>';
+  // saknar (30+ dagar)
+  var me=document.getElementById('st-missing');var last={};
+  state.sessions.forEach(function(x){if(!last[x.hobbyId]||x.date>last[x.hobbyId])last[x.hobbyId]=x.date;});
+  var miss=state.hobbies.filter(function(h){if(!h.active)return false;var l=last[h.id];return !l||daysUntil(l)<=-30;});
+  if(!miss.length)me.innerHTML='<div class="empty-msg">Inget saknat — fint balanserat. 🌿</div>';
+  else{me.innerHTML='';miss.forEach(function(h){var ci=catInfo(h.cat);var r=document.createElement('div');r.className='row';
+    var l=last[h.id];r.innerHTML='<span class="dot" style="width:9px;height:9px;border-radius:50%;background:'+ci[2]+'"></span><div class="grow">'+esc(h.name)+'</div><span class="soft">'+(l?fmtDate(l):'aldrig')+'</span>';
+    r.style.cursor='pointer';r.onclick=function(){openLog(h.id);};me.appendChild(r);});}
+  // avslutade projekt
+  var de=document.getElementById('st-done');var done=[];
+  state.hobbies.forEach(function(h){(h.projects||[]).forEach(function(p){if(p.done)done.push({h:h,p:p});});});
+  if(!done.length)de.innerHTML='<div class="empty-msg">Inga avslutade projekt än — men det kommer. 💪</div>';
+  else{de.innerHTML='<div class="stat-num">'+done.length+'</div>';done.forEach(function(o){var r=document.createElement('div');r.className='row done';
+    r.innerHTML='<div class="grow">'+esc(o.p.name)+'<div class="sub">'+esc(o.h.name)+'</div></div>✓';de.appendChild(r);});}
+  // kreativa perioder (per veckodag)
+  var we=document.getElementById('st-when');var WD=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];var wd=[0,0,0,0,0,0,0];var maxv=0;
+  state.sessions.forEach(function(x){var d=new Date(x.date+'T00:00:00');var i=(d.getDay()+6)%7;wd[i]++;if(wd[i]>maxv)maxv=wd[i];});
+  if(!maxv)we.innerHTML='<div class="empty-msg">Logga stunder för att se dina mönster.</div>';
+  else{we.innerHTML='';for(var i=0;i<7;i++){var pct=Math.round(wd[i]/maxv*100);var row=document.createElement('div');row.className='bar-row';
+    row.innerHTML='<span class="lbl">'+WD[i]+'</span><span class="track"><i style="width:'+pct+'%"></i></span><span class="v">'+wd[i]+'</span>';we.appendChild(row);}}
+}
+
+// ── AI-hjälp ──────────────────────────────────────────
+var AI_KEY='hobbykollen_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+var AI_QUICK=['Jag har låg energi, vad kan jag göra?','Ge mig ett litet projekt','Vilken hobby passar mitt humör idag?','Hjälp mig avsluta ett gammalt projekt'];
+function buildContext(){
+  var lines=[];
+  state.hobbies.filter(function(h){return h.active;}).forEach(function(h){
+    lines.push('- '+h.name+' (kategori: '+h.cat+', energi: '+(h.energy||'?')+', humör: '+(h.mood||'?')+', tid: '+(h.time||'?')+')');
+  });
+  var openP=[];state.hobbies.forEach(function(h){(h.projects||[]).forEach(function(p){if(!p.done)openP.push(p.name+' ('+h.name+')');});});
+  var inv=state.inventory.map(function(it){return it.name;}).slice(0,30);
+  var ctx='Mina aktiva hobbys:\n'+(lines.join('\n')||'(inga)')+'\n\nPågående projekt:\n'+(openP.join('\n')||'(inga)')+'\n\nMaterial/verktyg jag har hemma:\n'+(inv.join(', ')||'(inget angivet)');
+  return ctx;
+}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){closeSheets();openSheet('settings-sheet');document.getElementById('gh-status').textContent='Lägg in en AI-nyckel längre ner för att använda AI-hjälpen.';throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function openAi(){
+  document.getElementById('ai-q').value='';document.getElementById('ai-out').innerHTML='';
+  var qe=document.getElementById('ai-quick');qe.innerHTML='';
+  AI_QUICK.forEach(function(q){var b=document.createElement('div');b.className='chip';b.textContent=q;
+    b.onclick=function(){document.getElementById('ai-q').value=q;};qe.appendChild(b);});
+  closeSheets();openSheet('ai-sheet');
+}
+document.getElementById('ai-open-home').onclick=openAi;
+document.getElementById('ai-close').onclick=closeSheets;
+document.getElementById('ai-run').onclick=async function(){
+  var q=document.getElementById('ai-q').value.trim();if(!q){alert('Skriv en fråga.');return;}
+  var btn=this;var orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  var out=document.getElementById('ai-out');out.innerHTML='';
+  var prompt='Du är en varm, peppande och konkret hobby-kompis. Svara på svenska, kort och uppmuntrande (max 130 ord), utan rubriker. Ge gärna ett tydligt förslag. Utgå från personens hobbys, projekt och material nedan.\n\n'+buildContext()+'\n\nFråga: '+q;
+  try{var text=await aiCall(prompt);out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ AI-hjälp</span>'+esc(text)+'</div>';}
+  catch(e){if(e.message!=='NOKEY')alert('Kunde inte hämta svar: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+};
+
+// ── GitHub-synk (samma mönster som jobb.html) ─────────
+var SYNC_KEY='hobbykollen_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/hobbykollen.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(stt,msg){var b=document.getElementById('sync-badge');b.textContent=msg||'';b.className='sync-badge'+(stt==='ok'?' ok':stt==='err'?' err':'');}
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+function mergeIn(data){
+  if(data&&typeof data==='object'){
+    ['hobbies','inventory','wishlist','want','sessions'].forEach(function(k){if(Array.isArray(data[k]))state[k]=data[k];});
+    if(typeof data.budget==='number')state.budget=data.budget;
+    save();
+  }
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');var data=await ghGet();if(data){mergeIn(data);renderAll();}setBadge('ok','Synkad ✓');}
+  catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var payload=Object.assign(stripState(),{updated:new Date().toISOString()});
+  var content=b64enc(JSON.stringify(payload));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via HobbyKollen',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad ✓');
+}
+
+// ── Inställningar ─────────────────────────────────────
+function openSettings(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('ai-key').value=getAiKey();
+  document.getElementById('gh-status').textContent=syncOn()?'Ansluten.':'Inte ansluten ännu.';
+  closeSheets();openSheet('settings-sheet');
+}
+document.getElementById('settings-btn').onclick=openSettings;
+document.getElementById('settings-close').onclick=closeSheets;
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){document.getElementById('gh-status').textContent='Fyll i alla tre fälten.';return;}
+  saveSync();document.getElementById('gh-status').textContent='Testar anslutning…';
+  try{var data=await ghGet();
+    if(data){mergeIn(data);renderAll();document.getElementById('gh-status').textContent='✓ Ansluten! Hämtade din data.';}
+    else{await ghPush();document.getElementById('gh-status').textContent='✓ Ansluten! Laddade upp din lokala data.';}
+  }catch(e){document.getElementById('gh-status').textContent='Fel: '+e.message+'. Kontrollera namn, repo och token (Contents-behörighet).';}
+};
+document.getElementById('gh-pull').onclick=function(){ghPull();};
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v){localStorage.setItem(AI_KEY,v);document.getElementById('gh-status').textContent='AI-nyckel sparad.';}};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(stripState(),null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='hobbykollen-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&Array.isArray(d.hobbies)){state=Object.assign({hobbies:[],inventory:[],wishlist:[],want:[],sessions:[],budget:0,theme:state.theme},d);persist();renderAll();closeSheets();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var t=state.theme;
+  if(t==='auto')t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=(state.theme==='dark')?'light':(state.theme==='light'?'auto':'dark');
+  save();applyTheme();
+};
+
+// ── Navigation ────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var i=0;i<navBtns.length;i++){(function(b){b.onclick=function(){
+  for(var k=0;k<navBtns.length;k++)navBtns[k].classList.remove('active');
+  b.classList.add('active');
+  var vs=document.querySelectorAll('.view');for(var k=0;k<vs.length;k++)vs[k].classList.remove('active');
+  document.getElementById('view-'+b.dataset.v).classList.add('active');
+  renderAll();
+};})(navBtns[i]);}
+
+function renderAll(){renderHome();renderHobbies();renderInv();renderBudget();renderStats();}
+
+// ── Init ──────────────────────────────────────────────
+loadSync();applyTheme();renderAll();
+if(syncOn()){setBadge('load','Hämtar…');ghPull();}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>

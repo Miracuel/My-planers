@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Min ledare">
+<meta name="theme-color" content="#EEF1F5">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Jag och min ledare","short_name":"Min ledare","display":"standalone","background_color":"%23EEF1F5","theme_color":"%23EEF1F5","start_url":"."}'>
+<title>Jag och min ledare</title>
+<style>
+:root{
+  --bg:#EEF1F5;--panel:#F8F9FB;--panel2:#E6EAF1;--line:#D5DCE6;
+  --ink:#2E333B;--muted:#76808E;
+  --blue:#4F7CB5;--blue-soft:#DCE6F2;--blue-deep:#3A5F90;
+  --green:#6F9A77;--green-soft:#DDE9DE;
+  --yellow:#C2A85A;--yellow-soft:#F3ECD2;
+  --red:#C0827A;--red-soft:#F0DFDB;
+  --navbg:rgba(238,241,245,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.03em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.02em}
+.section-title:first-child{margin-top:4px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px}
+.card-panel.tight{padding:12px 14px}
+.btn{border:1px solid var(--blue);background:var(--panel);color:var(--blue);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:var(--blue-soft)}
+.btn.fill{background:var(--blue);color:#fff}
+.btn.fill:active{background:var(--blue-deep)}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.sm{font-size:12px;padding:7px 11px;border-radius:11px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.btn.wide{width:100%}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--blue)}
+textarea{resize:vertical;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.intro{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+
+/* Arbetsbelastning */
+.load-pick{display:flex;gap:8px;margin:4px 0 2px}
+.load-pick button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:13px;padding:12px 4px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);text-align:center;transition:all .2s}
+.load-pick button span{display:block;width:14px;height:14px;border-radius:50%;margin:0 auto 6px}
+.load-pick button[data-l=green] span{background:var(--green)}
+.load-pick button[data-l=yellow] span{background:var(--yellow)}
+.load-pick button[data-l=red] span{background:var(--red)}
+.load-pick button.sel[data-l=green]{border-color:var(--green);background:var(--green-soft);color:#3F5A44}
+.load-pick button.sel[data-l=yellow]{border-color:var(--yellow);background:var(--yellow-soft);color:#6E5E2A}
+.load-pick button.sel[data-l=red]{border-color:var(--red);background:var(--red-soft);color:#6E423B}
+.load-msg{font-size:13px;line-height:1.6;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--panel2)}
+.load-msg b{font-family:Georgia,serif;font-weight:400}
+
+/* Hem snabbrutor */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.quick{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:13px 10px;cursor:pointer;font-family:inherit;text-align:left;color:var(--ink);font-size:13px;font-weight:500;transition:background .2s}
+.quick:active{background:var(--blue-soft)}
+.quick span{display:block;font-size:18px;margin-bottom:5px}
+.quick.full{grid-column:1 / -1}
+
+/* Mini-kort på hem */
+.mini{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.mini:first-child{border-top:none}
+.mini .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px;background:var(--blue)}
+.mini .body{flex:1;line-height:1.4}
+.mini .meta{font-size:11px;color:var(--muted);margin-top:2px}
+.mini-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--blue-soft);color:var(--blue-deep);white-space:nowrap}
+
+/* Listposter */
+.row{padding:11px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:none}
+.row-head{display:flex;align-items:center;gap:8px}
+.row-title{flex:1;font-size:14px;font-weight:500;line-height:1.35}
+.row-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.row-del,.row-edit{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:2px 4px}
+.pill{font-size:10px;padding:2px 8px;border-radius:9px;white-space:nowrap;font-weight:600}
+.pill.green{background:var(--green-soft);color:#3F5A44}
+.pill.yellow{background:var(--yellow-soft);color:#6E5E2A}
+.pill.red{background:var(--red-soft);color:#6E423B}
+.pill.blue{background:var(--blue-soft);color:var(--blue-deep)}
+.pill.grey{background:var(--panel2);color:var(--muted)}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:12px;padding:8px 4px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
+.tabs button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* Feedback typ */
+.fb-pos{border-left:3px solid var(--green);padding-left:10px}
+.fb-con{border-left:3px solid var(--yellow);padding-left:10px}
+
+/* Ledarprofil */
+.leader-card .lc-grid{margin-top:6px}
+.lc-line{display:flex;gap:8px;padding:5px 0;font-size:13px;border-top:1px solid var(--line)}
+.lc-line:first-child{border-top:none}
+.lc-line .k{color:var(--muted);min-width:104px;font-size:12px}
+.lc-line .v{flex:1;line-height:1.45}
+
+/* AI */
+.ai-box{background:var(--blue-soft);border:1px solid #BFD2E8;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.65;color:#27384F;margin-top:10px;white-space:pre-wrap}
+.ai-lbl{display:block;font-size:11px;font-weight:600;color:var(--blue-deep);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.ai-box .copy{margin-top:10px;font-size:11px;background:#fff;border:1px solid #BFD2E8;border-radius:9px;padding:5px 10px;color:var(--blue-deep);cursor:pointer}
+.chiprow{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 2px}
+.chiprow button{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chiprow button.sel{background:var(--blue);border-color:var(--blue);color:#fff}
+.phrase{padding:10px 12px;border:1px solid var(--line);border-radius:12px;font-size:13px;line-height:1.5;margin-bottom:8px;background:var(--panel2);cursor:pointer;position:relative}
+.phrase:active{background:var(--blue-soft)}
+.phrase small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+
+/* Nav + sheets (suite-mönster) */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--blue);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+.sheet-bg{position:fixed;inset:0;background:rgba(46,51,59,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:12px;border-radius:13px;border:none;background:var(--blue);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.row2{display:flex;gap:8px}
+.row2>*{flex:1}
+.hint{font-size:11px;color:var(--muted);margin-top:-2px;margin-bottom:8px;font-family:monospace;background:var(--panel2);padding:5px 8px;border-radius:7px;line-height:1.5}
+
+/* Topp-rad (synk + tema) */
+.toprow{display:flex;align-items:center;gap:6px;justify-content:center;margin:-6px 0 12px}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--green-soft);color:#3F5A44;font-weight:600}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:var(--red-soft);color:#6E423B}
+.icon-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.gh-status{display:none;margin-bottom:10px;font-size:12px;padding:8px 12px;border-radius:9px;line-height:1.5}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#202329;--panel:#282C33;--panel2:#31363F;--line:#3F4550;
+  --ink:#E2E6EC;--muted:#969FAC;
+  --blue:#7AA0CE;--blue-soft:#2E3B4D;--blue-deep:#9DBCE0;
+  --green:#7FA487;--green-soft:#2C3A30;
+  --yellow:#C2A85A;--yellow-soft:#3C3622;
+  --red:#C18A82;--red-soft:#3C2A27;
+  --navbg:rgba(32,35,41,.95);
+}
+html[data-theme=dark] .ai-box{background:#2E3B4D;border-color:#3C4D63;color:#D3E0F0}
+html[data-theme=dark] .ai-box .copy{background:#1f2630;border-color:#3C4D63;color:#9DBCE0}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:14px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🧭 Jag och min ledare</h1>
+<div class="toprow">
+  <span id="sync-badge" class="sp-badge offline">Lokal</span>
+  <button class="icon-btn" id="sync-btn" title="Hämta senaste">⟳</button>
+  <button class="icon-btn" id="sync-settings" title="Synk">⚙</button>
+  <button class="icon-btn" id="backup-btn" title="Säkerhetskopiera">⇩</button>
+</div>
+
+<!-- HEM -->
+<div class="view active" id="view-hem">
+  <div class="card-panel tight">
+    <div class="section-title" style="margin:0 0 8px">Arbetsbelastning</div>
+    <div class="load-pick" id="load-pick">
+      <button data-l="green"><span></span>Grön</button>
+      <button data-l="yellow"><span></span>Gul</button>
+      <button data-l="red"><span></span>Röd</button>
+    </div>
+    <div class="load-msg" id="load-msg"></div>
+    <button class="btn ghost wide" id="load-notes-btn" style="margin-top:10px">Anteckningar om belastning</button>
+  </div>
+
+  <div class="card-panel tight">
+    <div class="section-title" style="margin:0 0 6px">Nästa 1:1</div>
+    <div id="hem-next"></div>
+  </div>
+
+  <div class="card-panel tight">
+    <div class="section-title" style="margin:0 0 6px">Mål i fokus</div>
+    <div id="hem-goals"></div>
+  </div>
+
+  <div class="card-panel tight">
+    <div class="section-title" style="margin:0 0 6px">Senaste feedback</div>
+    <div id="hem-feedback"></div>
+  </div>
+
+  <div class="section-title">Snabbt</div>
+  <div class="quick-grid">
+    <button class="quick" id="q-prep"><span>🗓</span>Förbered samtal</button>
+    <button class="quick" id="q-write"><span>✍️</span>Skriv till min chef</button>
+    <button class="quick full" id="q-log"><span>⭐</span>Logga något viktigt (bevisbank)</button>
+  </div>
+</div>
+
+<!-- SAMTAL -->
+<div class="view" id="view-samtal">
+  <div class="tabs" id="samtal-tabs">
+    <button class="active" data-t="oneone">1:1</button>
+    <button data-t="dev">Utveckling</button>
+    <button data-t="coach">Coach</button>
+  </div>
+
+  <div id="samtal-oneone">
+    <div class="intro">Förbered, för anteckningar under, och följ upp efter varje möte med din chef.</div>
+    <button class="btn fill wide" id="add-oneone">+ Nytt 1:1-samtal</button>
+    <div id="oneone-list" style="margin-top:12px"></div>
+  </div>
+
+  <div id="samtal-dev" style="display:none">
+    <div class="intro">Samla tankar inför och efter utvecklingssamtalet — styrkor, mål och riktning.</div>
+    <button class="btn fill wide" id="add-dev">+ Nytt utvecklingssamtal</button>
+    <div id="dev-list" style="margin-top:12px"></div>
+  </div>
+
+  <div id="samtal-coach" style="display:none">
+    <div class="card-panel">
+      <div class="section-title" style="margin:0 0 6px">Samtalscoach</div>
+      <div class="soft" style="margin-bottom:8px">Hur känns det inför samtalet? Välj — så föreslås lugna, professionella formuleringar.</div>
+      <div class="chiprow" id="coach-feel">
+        <button data-f="nervös">Jag är nervös</button>
+        <button data-f="frustrerad">Jag är frustrerad</button>
+        <button data-f="tydlig">Jag vill vara tydlig</button>
+        <button data-f="säga nej">Jag behöver säga nej</button>
+        <button data-f="be om stöd">Jag vill be om stöd</button>
+        <button data-f="ta upp lön">Jag vill ta upp lön</button>
+      </div>
+      <label>Vad handlar det om? (frivilligt)</label>
+      <textarea id="coach-ctx" rows="2" placeholder="T.ex. jag hinner inte med allt just nu."></textarea>
+      <button class="btn fill wide" id="coach-run" style="margin-top:10px">✨ Föreslå formuleringar</button>
+      <div id="coach-out"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MÅL -->
+<div class="view" id="view-mal">
+  <div class="tabs" id="mal-tabs">
+    <button class="active" data-t="goals">Mål</button>
+    <button data-t="feedback">Feedback</button>
+    <button data-t="evidence">Bevisbank</button>
+  </div>
+
+  <div id="mal-goals">
+    <div class="intro">Följ upp mål och förväntningar — koppla gärna till utvecklingssamtal och lönekriterier.</div>
+    <button class="btn fill wide" id="add-goal">+ Nytt mål</button>
+    <div id="goal-list" style="margin-top:12px"></div>
+  </div>
+
+  <div id="mal-feedback" style="display:none">
+    <div class="intro">Spara feedback över tid — bra underlag inför utvecklingssamtal och lön.</div>
+    <button class="btn fill wide" id="add-feedback">+ Logga feedback</button>
+    <div id="feedback-list" style="margin-top:12px"></div>
+  </div>
+
+  <div id="mal-evidence" style="display:none">
+    <div class="intro">Samla resultat, projekt, extra ansvar och beröm — din egen bevisbank.</div>
+    <button class="btn fill wide" id="add-evidence">+ Lägg till underlag</button>
+    <div id="evidence-list" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- SKRIV -->
+<div class="view" id="view-skriv">
+  <div class="tabs" id="skriv-tabs">
+    <button class="active" data-t="hard">Svåra samtal</button>
+    <button data-t="bound">Gränser</button>
+    <button data-t="prio">Prioritera</button>
+    <button data-t="salary">Lön</button>
+  </div>
+
+  <div id="skriv-hard">
+    <div class="card-panel">
+      <div class="section-title" style="margin:0 0 6px">Formulera ett svårt meddelande</div>
+      <div class="soft" style="margin-bottom:6px">Beskriv läget i egna ord — AI hjälper dig säga det sakligt och professionellt.</div>
+      <label>Situation</label>
+      <div class="chiprow" id="hard-sit">
+        <button data-s="för hög arbetsbelastning">För mycket att göra</button>
+        <button data-s="otydliga förväntningar">Otydliga förväntningar</button>
+        <button data-s="ett missförstånd">Missförstånd</button>
+        <button data-s="en konflikt">Konflikt</button>
+        <button data-s="behov av anpassningar">Behov av anpassning</button>
+        <button data-s="kritik jag vill framföra">Framföra kritik</button>
+      </div>
+      <label>Vad vill du säga?</label>
+      <textarea id="hard-ctx" rows="3" placeholder="Skriv fritt, även känslor — t.ex. jag känner mig överväldigad och vill inte verka gnällig."></textarea>
+      <label>Tonläge</label>
+      <select id="hard-tone">
+        <option value="lugnt och sakligt">Lugnt och sakligt</option>
+        <option value="varmt men tydligt">Varmt men tydligt</option>
+        <option value="kort och rakt på sak">Kort och rakt på sak</option>
+        <option value="ödmjukt men bestämt">Ödmjukt men bestämt</option>
+      </select>
+      <button class="btn fill wide" id="hard-run" style="margin-top:10px">✨ Skriv meddelande</button>
+      <div id="hard-out"></div>
+    </div>
+    <div class="card-panel tight" id="drafts-panel">
+      <div class="section-title" style="margin:0 0 6px">Sparade utkast</div>
+      <div id="drafts-list"></div>
+    </div>
+  </div>
+
+  <div id="skriv-bound" style="display:none">
+    <div class="card-panel">
+      <div class="section-title" style="margin:0 0 6px">Gränssättning</div>
+      <div class="soft" style="margin-bottom:8px">Färdiga formuleringar — tryck för att kopiera. Anpassa fritt.</div>
+      <div id="bound-phrases"></div>
+    </div>
+  </div>
+
+  <div id="skriv-prio" style="display:none">
+    <div class="card-panel">
+      <div class="section-title" style="margin:0 0 6px">Prioriteringshjälp</div>
+      <div class="soft" style="margin-bottom:8px">När allt känns viktigt — lista det du har på bordet, så skapas ett meddelande som ber chefen prioritera.</div>
+      <div id="prio-items"></div>
+      <div class="row2" style="margin-top:6px"><input type="text" id="prio-in" placeholder="T.ex. Rapport till fredag"><button class="btn sm" id="prio-add" style="flex:0 0 auto">+</button></div>
+      <button class="btn fill wide" id="prio-run" style="margin-top:10px">✨ Skapa meddelande</button>
+      <div id="prio-out"></div>
+    </div>
+  </div>
+
+  <div id="skriv-salary" style="display:none">
+    <div class="card-panel">
+      <div class="section-title" style="margin:0 0 6px">Löneförhandling</div>
+      <div class="soft" style="margin-bottom:6px">Förbered dina argument. Sparas automatiskt.</div>
+      <label>Prestationer & resultat</label>
+      <textarea id="sal-results" rows="2" placeholder="Vad har du levererat? Gärna med siffror."></textarea>
+      <label>Ansvar & extra uppgifter</label>
+      <textarea id="sal-resp" rows="2" placeholder="Vad gör du utöver din roll?"></textarea>
+      <label>Marknadsargument</label>
+      <textarea id="sal-market" rows="2" placeholder="Vad ligger liknande roller på?"></textarea>
+      <div class="row2">
+        <div><label>Önskad nivå</label><input type="text" id="sal-want" placeholder="t.ex. 46 000"></div>
+        <div><label>Minsta acceptabla</label><input type="text" id="sal-min" placeholder="t.ex. 43 000"></div>
+      </div>
+      <button class="btn fill wide" id="sal-run" style="margin-top:12px">✨ Bygg argumentbank</button>
+      <div id="sal-out"></div>
+      <button class="btn ghost wide" id="sal-practice" style="margin-top:10px">🎭 Öva dialog med AI</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEDARE -->
+<div class="view" id="view-ledare">
+  <div class="intro">Ett kort för varje chef eller ledare — så du minns vad som brukar fungera.</div>
+  <button class="btn fill wide" id="add-leader">+ Ny ledarprofil</button>
+  <div id="leader-list" style="margin-top:12px"></div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="hem"><span>🏠</span>Hem</button>
+  <button data-v="samtal"><span>🗓</span>Samtal</button>
+  <button data-v="mal"><span>🎯</span>Mål</button>
+  <button data-v="skriv"><span>✍️</span>Skriv</button>
+  <button data-v="ledare"><span>👤</span>Ledare</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="load-sheet">
+  <h3>Anteckningar om belastning</h3>
+  <label>Vad tar mest energi?</label>
+  <textarea id="lo-energy" rows="2"></textarea>
+  <label>Vad är bråttom?</label>
+  <textarea id="lo-urgent" rows="2"></textarea>
+  <label>Vad kan vänta?</label>
+  <textarea id="lo-wait" rows="2"></textarea>
+  <label>Vad behöver prioriteras bort?</label>
+  <textarea id="lo-drop" rows="2"></textarea>
+  <label>Vad behöver chefens beslut?</label>
+  <textarea id="lo-decision" rows="2"></textarea>
+  <button class="sheet-close" id="lo-save">Spara</button>
+</div>
+
+<div class="sheet" id="oneone-sheet">
+  <h3 id="oo-title">Nytt 1:1-samtal</h3>
+  <div class="row2">
+    <div><label>Datum</label><input type="date" id="oo-date"></div>
+    <div><label>Ledare</label><select id="oo-leader"></select></div>
+  </div>
+  <div class="section-title" style="font-size:13px;margin:14px 0 2px">Förberedelse</div>
+  <label>Vad vill jag ta upp?</label>
+  <textarea id="oo-topics" rows="2"></textarea>
+  <label>Vad behöver jag beslut om?</label>
+  <textarea id="oo-decisions" rows="2"></textarea>
+  <label>Vad känns oklart?</label>
+  <textarea id="oo-unclear" rows="2"></textarea>
+  <label>Status på mina uppgifter</label>
+  <textarea id="oo-status" rows="2"></textarea>
+  <label>Frågor till chefen</label>
+  <textarea id="oo-questions" rows="2"></textarea>
+  <label>Vill ha feedback på</label>
+  <textarea id="oo-fbwant" rows="2"></textarea>
+  <button class="btn ghost wide" id="oo-agenda" style="margin-top:8px">✨ Skapa agenda</button>
+  <div id="oo-agenda-out"></div>
+  <div class="section-title" style="font-size:13px;margin:16px 0 2px">Efter mötet</div>
+  <label>Vad bestämdes? Vem gör vad?</label>
+  <textarea id="oo-after" rows="2"></textarea>
+  <label>Att följa upp</label>
+  <textarea id="oo-follow" rows="2"></textarea>
+  <label>Hur kändes samtalet? (frivilligt)</label>
+  <textarea id="oo-feel" rows="2"></textarea>
+  <button class="btn ghost wide" id="oo-summary" style="margin-top:8px">✨ Sammanfatta mötet</button>
+  <div id="oo-summary-out"></div>
+  <button class="sheet-close" id="oo-save">Spara</button>
+</div>
+
+<div class="sheet" id="dev-sheet">
+  <h3 id="dv-title">Nytt utvecklingssamtal</h3>
+  <label>Datum</label><input type="date" id="dv-date">
+  <label>Mina styrkor</label><textarea id="dv-strengths" rows="2"></textarea>
+  <label>Mina utmaningar</label><textarea id="dv-challenges" rows="2"></textarea>
+  <label>Mål</label><textarea id="dv-goals" rows="2"></textarea>
+  <label>Kompetenser jag vill utveckla</label><textarea id="dv-skills" rows="2"></textarea>
+  <label>Önskade arbetsuppgifter</label><textarea id="dv-tasks" rows="2"></textarea>
+  <label>Behov av stöd</label><textarea id="dv-support" rows="2"></textarea>
+  <label>Långsiktig riktning</label><textarea id="dv-dir" rows="2"></textarea>
+  <button class="btn ghost wide" id="dv-prep" style="margin-top:8px">✨ Hjälp mig formulera</button>
+  <div id="dv-prep-out"></div>
+  <label>Sammanfattning efter samtalet</label><textarea id="dv-summary" rows="3"></textarea>
+  <button class="sheet-close" id="dv-save">Spara</button>
+</div>
+
+<div class="sheet" id="goal-sheet">
+  <h3 id="g-title">Nytt mål</h3>
+  <label>Mål</label><input type="text" id="g-text" placeholder="Vad ska uppnås?">
+  <div class="row2">
+    <div><label>Deadline</label><input type="date" id="g-deadline"></div>
+    <div><label>Status</label><select id="g-status">
+      <option value="ny">Ny</option><option value="pågår">Pågår</option>
+      <option value="vänta">Inväntar</option><option value="klar">Klar</option>
+    </select></div>
+  </div>
+  <label>Hinder</label><textarea id="g-blockers" rows="2"></textarea>
+  <label>Nästa steg</label><textarea id="g-next" rows="2"></textarea>
+  <label>Koppling</label>
+  <div class="row2">
+    <label style="margin:0;display:flex;align-items:center;gap:6px;text-transform:none"><input type="checkbox" id="g-dev" style="width:auto"> Utvecklingssamtal</label>
+    <label style="margin:0;display:flex;align-items:center;gap:6px;text-transform:none"><input type="checkbox" id="g-sal" style="width:auto"> Lönekriterier</label>
+  </div>
+  <button class="sheet-close" id="g-save">Spara</button>
+</div>
+
+<div class="sheet" id="feedback-sheet">
+  <h3>Logga feedback</h3>
+  <div class="row2">
+    <div><label>Typ</label><select id="fb-type"><option value="pos">Positiv</option><option value="con">Konstruktiv</option></select></div>
+    <div><label>Kanal</label><select id="fb-channel"><option value="muntlig">Muntlig</option><option value="skriftlig">Skriftlig</option></select></div>
+  </div>
+  <label>Datum</label><input type="date" id="fb-date">
+  <label>Vad sades?</label><textarea id="fb-text" rows="3"></textarea>
+  <label>Min reflektion / vad jag vill göra</label><textarea id="fb-reflect" rows="2"></textarea>
+  <button class="sheet-close" id="fb-save">Spara</button>
+</div>
+
+<div class="sheet" id="evidence-sheet">
+  <h3>Lägg till underlag</h3>
+  <label>Typ</label>
+  <select id="ev-kind">
+    <option>Resultat</option><option>Projekt</option><option>Extra ansvar</option>
+    <option>Beröm</option><option>Löst problem</option><option>Förbättring</option><option>Siffror & exempel</option>
+  </select>
+  <label>Datum</label><input type="date" id="ev-date">
+  <label>Beskrivning</label><textarea id="ev-text" rows="3"></textarea>
+  <button class="sheet-close" id="ev-save">Spara</button>
+</div>
+
+<div class="sheet" id="leader-sheet">
+  <h3 id="le-title">Ny ledarprofil</h3>
+  <label>Namn</label><input type="text" id="le-name">
+  <label>Roll</label><input type="text" id="le-role" placeholder="t.ex. teamledare">
+  <label>Kommunikationsstil</label><textarea id="le-style" rows="2" placeholder="t.ex. gillar korta sammanfattningar"></textarea>
+  <label>Föredragen kontaktväg</label><input type="text" id="le-contact" placeholder="t.ex. Teams, mejl, möte">
+  <label>Mötesstil</label><textarea id="le-meeting" rows="2"></textarea>
+  <label>Vad brukar fungera bra</label><textarea id="le-works" rows="2"></textarea>
+  <label>Att tänka på</label><textarea id="le-watch" rows="2"></textarea>
+  <label>Aktuella överenskommelser</label><textarea id="le-agree" rows="2"></textarea>
+  <button class="sheet-close" id="le-save">Spara</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>✨ AI-nyckel</h3>
+  <p class="soft" style="margin-bottom:10px">AI-funktionerna använder din egen Anthropic-nyckel. Den sparas bara lokalt på den här enheten — aldrig i koden eller i synken.</p>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="hint">Skapas på console.anthropic.com → API Keys.</div>
+  <div class="btn-row" style="margin-top:6px">
+    <button class="btn fill" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙ Synk via GitHub</h3>
+  <p class="soft" style="margin-bottom:10px">Appen läser och sparar <code>data.json</code> i ett <strong>privat</strong> GitHub-repo, så att samma data finns på alla dina enheter. Token sparas bara lokalt — aldrig i koden.</p>
+  <label>GitHub-användarnamn (ägare av repot)</label>
+  <input type="text" id="gh-owner" placeholder="ditt-användarnamn">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="ledare-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Ge åtkomst till ENDAST data-repot, Contents: Read and write.</div>
+  <div class="gh-status" id="gh-status"></div>
+  <div class="btn-row">
+    <button class="btn fill" id="gh-save">Spara & synka</button>
+    <button class="btn ghost" id="gh-close">Stäng</button>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='ledare_v1';
+var DATA_FIELDS=['leaders','workload','oneones','devtalks','goals','feedback','evidence','salary','drafts'];
+var state={
+  leaders:[],
+  workload:{level:'',energy:'',urgent:'',wait:'',drop:'',decision:'',updated:''},
+  oneones:[],
+  devtalks:[],
+  goals:[],
+  feedback:[],
+  evidence:[],
+  salary:{results:'',resp:'',market:'',want:'',min:''},
+  drafts:[],
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function nl2br(s){return esc(s).replace(/\n/g,'<br>');}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayKey(){return toISO(new Date());}
+function fmtDate(iso){if(!iso)return '';var p=iso.split('-');if(p.length<3)return iso;var d=new Date(+p[0],+p[1]-1,+p[2]);return d.toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'});}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Nav + undertabbar ─────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var i=0;i<navBtns.length;i++){
+  navBtns[i].onclick=function(){
+    var b=this;
+    var nb=document.querySelectorAll('.nav button');for(var k=0;k<nb.length;k++)nb[k].classList.remove('active');
+    b.classList.add('active');
+    var vs=document.querySelectorAll('.view');for(var k=0;k<vs.length;k++)vs[k].classList.remove('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    window.scrollTo(0,0);
+  };
+}
+function setupTabs(tabsId,prefix,onShow){
+  var t=document.getElementById(tabsId).querySelectorAll('button');
+  for(var j=0;j<t.length;j++){
+    t[j].onclick=function(){
+      var btn=this;
+      var all=document.getElementById(tabsId).querySelectorAll('button');
+      for(var k=0;k<all.length;k++){all[k].classList.remove('active');all[k]&&hidePanel(prefix,all[k].dataset.t);}
+      btn.classList.add('active');
+      document.getElementById(prefix+'-'+btn.dataset.t).style.display='';
+      if(onShow)onShow(btn.dataset.t);
+    };
+  }
+}
+function hidePanel(prefix,t){var el=document.getElementById(prefix+'-'+t);if(el)el.style.display='none';}
+setupTabs('samtal-tabs','samtal');
+setupTabs('mal-tabs','mal');
+setupTabs('skriv-tabs','skriv');
+
+// ── GitHub-synk (kanoniskt mönster från jobb.html) ────
+var SYNC_KEY='ledare_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function setBadge(stateStr,msg){
+  var b=document.getElementById('sync-badge');
+  b.textContent=msg;
+  b.className='sp-badge'+(stateStr==='ok'?'':stateStr==='err'?' err':' offline');
+}
+function dataPayload(){var o={};for(var i=0;i<DATA_FIELDS.length;i++)o[DATA_FIELDS[i]]=state[DATA_FIELDS[i]];o.updated=new Date().toISOString();return o;}
+function applyData(d){for(var i=0;i<DATA_FIELDS.length;i++){if(d[DATA_FIELDS[i]]!==undefined)state[DATA_FIELDS[i]]=d[DATA_FIELDS[i]];}}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(d){
+    if(d){applyData(d);save();renderAll();}
+    setBadge('ok','Synkad');
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify(dataPayload()));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(e){setBadge('err','Synkfel');});
+}
+function persist(){save();if(syncOn())ghPush();}
+
+function setGhStatus(msg,type){
+  var el=document.getElementById('gh-status');
+  el.style.display='block';
+  el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'var(--red-soft)':'var(--blue-soft)';
+  el.style.color=type==='ok'?'#3F5A44':type==='err'?'#6E423B':'var(--blue-deep)';
+  el.textContent=msg;
+}
+document.getElementById('sync-settings').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-close').onclick=closeSheets;
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();
+  setGhStatus('Testar anslutning…','info');
+  ghGet().then(function(d){
+    if(d){setGhStatus('✓ Ansluten! Hämtar din data…','ok');return ghPull();}
+    setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');return ghPush();
+  }).then(function(){setTimeout(closeSheets,1100);})
+  .catch(function(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn och att token har Contents-behörighet.','err');});
+};
+document.getElementById('sync-btn').onclick=function(){ghPull();};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Säkerhetskopiering ────────────────────────────────
+document.getElementById('backup-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(dataPayload(),null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='min-ledare-backup-'+todayKey()+'.json';a.click();
+};
+
+// ── AI (egen nyckel, mönster från tarot.html) ─────────
+var AI_KEY='ledare_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');return Promise.reject(new Error('NOKEY'));}
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){
+    if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+    return r.json();
+  }).then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function aiBox(t){
+  return '<div class="ai-box"><span class="ai-lbl">✨ AI-förslag</span>'+nl2br(t)+
+    '<button class="copy" onclick="copyText(this)">Kopiera</button></div>';
+}
+function copyText(btn){
+  var box=btn.parentNode;var tmp=box.cloneNode(true);
+  var c=tmp.querySelector('.copy');if(c)c.remove();var l=tmp.querySelector('.ai-lbl');if(l)l.remove();
+  var txt=tmp.innerText||tmp.textContent;
+  if(navigator.clipboard){navigator.clipboard.writeText(txt.trim());}
+  btn.textContent='Kopierat ✓';setTimeout(function(){btn.textContent='Kopiera';},1500);
+}
+function runAi(btn,outId,prompt,save){
+  var orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  aiCall(prompt).then(function(t){
+    document.getElementById(outId).innerHTML=aiBox(t);
+    if(save)save(t);
+  }).catch(function(e){if(e.message!=='NOKEY')alert('Kunde inte hämta förslag: '+e.message);})
+  .then(function(){btn.textContent=orig;btn.disabled=false;});
+}
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+
+var TONE='Du skriver på svenska, lugnt, sakligt och professionellt. Ingen överdriven artighet, inga floskler. ';
+
+// ── Arbetsbelastning ──────────────────────────────────
+var LOAD_MSG={
+  green:['Grön — lagom nivå','Du har marginal. Bra läge att planera framåt eller ta något extra om du vill.'],
+  yellow:['Gul — börjar bli mycket','Prioritera det viktigaste. Lyft gärna till chefen vad som kan vänta.'],
+  red:['Röd — för mycket','Dags att be om hjälp att prioritera. Allt behöver inte ligga på dig samtidigt.'],
+  '':['Hur är belastningen?','Välj grön, gul eller röd så minns appen läget.']
+};
+function renderLoad(){
+  var lv=state.workload.level||'';
+  var btns=document.getElementById('load-pick').querySelectorAll('button');
+  for(var i=0;i<btns.length;i++)btns[i].classList.toggle('sel',btns[i].dataset.l===lv);
+  var m=LOAD_MSG[lv]||LOAD_MSG[''];
+  document.getElementById('load-msg').innerHTML='<b>'+esc(m[0])+'</b><br>'+esc(m[1]);
+}
+var lpBtns=document.getElementById('load-pick').querySelectorAll('button');
+for(var i=0;i<lpBtns.length;i++){
+  lpBtns[i].onclick=function(){state.workload.level=this.dataset.l;state.workload.updated=todayKey();persist();renderLoad();};
+}
+document.getElementById('load-notes-btn').onclick=function(){
+  document.getElementById('lo-energy').value=state.workload.energy||'';
+  document.getElementById('lo-urgent').value=state.workload.urgent||'';
+  document.getElementById('lo-wait').value=state.workload.wait||'';
+  document.getElementById('lo-drop').value=state.workload.drop||'';
+  document.getElementById('lo-decision').value=state.workload.decision||'';
+  openSheet('load-sheet');
+};
+document.getElementById('lo-save').onclick=function(){
+  state.workload.energy=document.getElementById('lo-energy').value;
+  state.workload.urgent=document.getElementById('lo-urgent').value;
+  state.workload.wait=document.getElementById('lo-wait').value;
+  state.workload.drop=document.getElementById('lo-drop').value;
+  state.workload.decision=document.getElementById('lo-decision').value;
+  persist();closeSheets();
+};
+
+// ── Hem ───────────────────────────────────────────────
+function leaderName(id){for(var i=0;i<state.leaders.length;i++)if(state.leaders[i].id===id)return state.leaders[i].name;return '';}
+function renderHem(){
+  renderLoad();
+  // nästa 1:1
+  var tk=todayKey();
+  var upcoming=state.oneones.filter(function(o){return o.date&&o.date>=tk;}).sort(function(a,b){return a.date<b.date?-1:1;});
+  var nx=document.getElementById('hem-next');
+  if(upcoming.length){
+    var o=upcoming[0];var ln=leaderName(o.leaderId);
+    nx.innerHTML='<div class="mini"><div class="dot"></div><div class="body">'+fmtDate(o.date)+(ln?' · '+esc(ln):'')+'<div class="meta">'+esc((o.topics||'').slice(0,80)||'Inga punkter än — tryck Förbered samtal')+'</div></div></div>';
+  }else nx.innerHTML='<div class="empty-msg">Inget planerat. Tryck "Förbered samtal".</div>';
+  // mål
+  var og=state.goals.filter(function(g){return g.status!=='klar';}).slice(0,3);
+  var gh=document.getElementById('hem-goals');
+  if(og.length){
+    gh.innerHTML=og.map(function(g){return '<div class="mini"><div class="dot"></div><div class="body">'+esc(g.text)+(g.deadline?'<div class="meta">Deadline '+fmtDate(g.deadline)+'</div>':'')+'</div><span class="mini-tag">'+esc(statusLbl(g.status))+'</span></div>';}).join('');
+  }else gh.innerHTML='<div class="empty-msg">Inga aktiva mål.</div>';
+  // feedback
+  var lf=state.feedback.slice().sort(function(a,b){return (b.date||'')<(a.date||'')?-1:1;}).slice(0,2);
+  var fh=document.getElementById('hem-feedback');
+  if(lf.length){
+    fh.innerHTML=lf.map(function(f){return '<div class="mini"><div class="dot" style="background:var(--'+(f.type==='pos'?'green':'yellow')+')"></div><div class="body">'+esc((f.text||'').slice(0,90))+'<div class="meta">'+esc(f.date?fmtDate(f.date):'')+'</div></div></div>';}).join('');
+  }else fh.innerHTML='<div class="empty-msg">Ingen feedback loggad än.</div>';
+}
+document.getElementById('q-prep').onclick=function(){gotoView('samtal');openOneone();};
+document.getElementById('q-write').onclick=function(){gotoView('skriv');};
+document.getElementById('q-log').onclick=function(){gotoView('mal');document.querySelector('#mal-tabs button[data-t=evidence]').click();openEvidence();};
+function gotoView(v){
+  var nb=document.querySelectorAll('.nav button');for(var k=0;k<nb.length;k++){nb[k].classList.toggle('active',nb[k].dataset.v===v);}
+  var vs=document.querySelectorAll('.view');for(var k=0;k<vs.length;k++)vs[k].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');window.scrollTo(0,0);
+}
+
+// ── 1:1-samtal ────────────────────────────────────────
+var ooEditId=null;
+function fillLeaderSelect(sel,val){
+  sel.innerHTML='<option value="">(ingen vald)</option>'+state.leaders.map(function(l){return '<option value="'+l.id+'">'+esc(l.name)+'</option>';}).join('');
+  sel.value=val||'';
+}
+function openOneone(id){
+  ooEditId=id||null;
+  var o=id?find(state.oneones,id):{date:todayKey(),leaderId:'',topics:'',decisions:'',unclear:'',status:'',questions:'',fbwant:'',after:'',follow:'',feel:''};
+  document.getElementById('oo-title').textContent=id?'1:1-samtal':'Nytt 1:1-samtal';
+  document.getElementById('oo-date').value=o.date||'';
+  fillLeaderSelect(document.getElementById('oo-leader'),o.leaderId);
+  document.getElementById('oo-topics').value=o.topics||'';
+  document.getElementById('oo-decisions').value=o.decisions||'';
+  document.getElementById('oo-unclear').value=o.unclear||'';
+  document.getElementById('oo-status').value=o.status||'';
+  document.getElementById('oo-questions').value=o.questions||'';
+  document.getElementById('oo-fbwant').value=o.fbwant||'';
+  document.getElementById('oo-after').value=o.after||'';
+  document.getElementById('oo-follow').value=o.follow||'';
+  document.getElementById('oo-feel').value=o.feel||'';
+  document.getElementById('oo-agenda-out').innerHTML='';
+  document.getElementById('oo-summary-out').innerHTML='';
+  openSheet('oneone-sheet');
+}
+function ooFromForm(){
+  return {date:document.getElementById('oo-date').value,leaderId:document.getElementById('oo-leader').value,
+    topics:document.getElementById('oo-topics').value,decisions:document.getElementById('oo-decisions').value,
+    unclear:document.getElementById('oo-unclear').value,status:document.getElementById('oo-status').value,
+    questions:document.getElementById('oo-questions').value,fbwant:document.getElementById('oo-fbwant').value,
+    after:document.getElementById('oo-after').value,follow:document.getElementById('oo-follow').value,
+    feel:document.getElementById('oo-feel').value};
+}
+document.getElementById('add-oneone').onclick=function(){openOneone();};
+document.getElementById('oo-save').onclick=function(){
+  var data=ooFromForm();
+  if(ooEditId){var o=find(state.oneones,ooEditId);Object.assign(o,data);}
+  else{data.id=uid();state.oneones.push(data);}
+  persist();renderOneone();renderHem();closeSheets();
+};
+document.getElementById('oo-agenda').onclick=function(e){
+  var d=ooFromForm();
+  var p=TONE+'Skapa en tydlig, kortfattad agenda (punktlista) inför ett 1:1 med min chef, utifrån mina anteckningar nedan. Gruppera logiskt och markera vad som kräver beslut. Avsluta med en rad om vad jag vill ha ut av mötet.\n\n'+
+    'Vill ta upp: '+d.topics+'\nBehöver beslut om: '+d.decisions+'\nOklart: '+d.unclear+'\nStatus uppgifter: '+d.status+'\nFrågor: '+d.questions+'\nVill ha feedback på: '+d.fbwant;
+  runAi(e.target,'oo-agenda-out',p);
+};
+document.getElementById('oo-summary').onclick=function(e){
+  var d=ooFromForm();
+  var p=TONE+'Skapa en kort sammanfattning och en uppföljningslista (att göra med ansvarig) utifrån mina mötesanteckningar nedan.\n\nVad bestämdes: '+d.after+'\nAtt följa upp: '+d.follow;
+  runAi(e.target,'oo-summary-out',p);
+};
+function statusLbl(s){return {ny:'Ny',pågår:'Pågår',vänta:'Inväntar',klar:'Klar'}[s]||s;}
+function renderOneone(){
+  var tk=todayKey();
+  var list=state.oneones.slice().sort(function(a,b){return (a.date||'')<(b.date||'')?1:-1;});
+  var el=document.getElementById('oneone-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga samtal än.</div>';return;}
+  el.innerHTML='<div class="card-panel tight">'+list.map(function(o){
+    var ln=leaderName(o.leaderId);var future=o.date>=tk;
+    return '<div class="row"><div class="row-head">'+
+      '<div class="row-title">'+fmtDate(o.date)+(ln?' · '+esc(ln):'')+'</div>'+
+      '<span class="pill '+(future?'blue':'grey')+'">'+(future?'Kommande':'Genomfört')+'</span>'+
+      '<button class="row-edit" data-id="'+o.id+'">✎</button>'+
+      '<button class="row-del" data-id="'+o.id+'">✕</button></div>'+
+      (o.topics?'<div class="row-sub">'+esc(o.topics.slice(0,120))+'</div>':'')+'</div>';
+  }).join('')+'</div>';
+  bindRows(el,state.oneones,function(id){openOneone(id);},function(){renderOneone();renderHem();});
+}
+
+// ── Utvecklingssamtal ─────────────────────────────────
+var dvEditId=null;
+function openDev(id){
+  dvEditId=id||null;
+  var d=id?find(state.devtalks,id):{date:todayKey(),strengths:'',challenges:'',goals:'',skills:'',tasks:'',support:'',dir:'',summary:''};
+  document.getElementById('dv-title').textContent=id?'Utvecklingssamtal':'Nytt utvecklingssamtal';
+  ['date','strengths','challenges','goals','skills','tasks','support','dir','summary'].forEach(function(f){document.getElementById('dv-'+f).value=d[f]||'';});
+  document.getElementById('dv-prep-out').innerHTML='';
+  openSheet('dev-sheet');
+}
+function dvFromForm(){var o={};['date','strengths','challenges','goals','skills','tasks','support','dir','summary'].forEach(function(f){o[f]=document.getElementById('dv-'+f).value;});return o;}
+document.getElementById('add-dev').onclick=function(){openDev();};
+document.getElementById('dv-save').onclick=function(){
+  var data=dvFromForm();
+  if(dvEditId){Object.assign(find(state.devtalks,dvEditId),data);}else{data.id=uid();state.devtalks.push(data);}
+  persist();renderDev();closeSheets();
+};
+document.getElementById('dv-prep').onclick=function(e){
+  var d=dvFromForm();
+  var p=TONE+'Hjälp mig formulera mig inför ett utvecklingssamtal. Sammanfatta nedanstående till tydliga, professionella talepunkter jag kan ta upp — gärna grupperat under styrkor, utveckling och riktning. Håll det konkret.\n\n'+
+    'Styrkor: '+d.strengths+'\nUtmaningar: '+d.challenges+'\nMål: '+d.goals+'\nKompetenser att utveckla: '+d.skills+'\nÖnskade uppgifter: '+d.tasks+'\nBehov av stöd: '+d.support+'\nLångsiktig riktning: '+d.dir;
+  runAi(e.target,'dv-prep-out',p);
+};
+function renderDev(){
+  var list=state.devtalks.slice().sort(function(a,b){return (a.date||'')<(b.date||'')?1:-1;});
+  var el=document.getElementById('dev-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga utvecklingssamtal än.</div>';return;}
+  el.innerHTML='<div class="card-panel tight">'+list.map(function(d){
+    return '<div class="row"><div class="row-head"><div class="row-title">'+fmtDate(d.date)+'</div>'+
+      '<button class="row-edit" data-id="'+d.id+'">✎</button><button class="row-del" data-id="'+d.id+'">✕</button></div>'+
+      (d.goals?'<div class="row-sub">Mål: '+esc(d.goals.slice(0,110))+'</div>':'')+'</div>';
+  }).join('')+'</div>';
+  bindRows(el,state.devtalks,function(id){openDev(id);},renderDev);
+}
+
+// ── Samtalscoach ──────────────────────────────────────
+var coachFeel='';
+var cf=document.getElementById('coach-feel').querySelectorAll('button');
+for(var i=0;i<cf.length;i++){cf[i].onclick=function(){var all=document.getElementById('coach-feel').querySelectorAll('button');for(var k=0;k<all.length;k++)all[k].classList.remove('sel');this.classList.add('sel');coachFeel=this.dataset.f;};}
+document.getElementById('coach-run').onclick=function(e){
+  if(!coachFeel){alert('Välj hur det känns först.');return;}
+  var ctx=document.getElementById('coach-ctx').value;
+  var p=TONE+'Jag ska prata med min chef och känner så här: "'+coachFeel+'". '+(ctx?'Det handlar om: '+ctx+'. ':'')+
+    'Ge mig 3 lugna, professionella sätt att uttrycka mig — som korta repliker jag kan säga. Lägg till en kort rad om hur jag håller mig saklig.';
+  runAi(e.target,'coach-out',p);
+};
+
+// ── Mål ───────────────────────────────────────────────
+var gEditId=null;
+function openGoal(id){
+  gEditId=id||null;
+  var g=id?find(state.goals,id):{text:'',deadline:'',status:'ny',blockers:'',next:'',dev:false,sal:false};
+  document.getElementById('g-title').textContent=id?'Redigera mål':'Nytt mål';
+  document.getElementById('g-text').value=g.text||'';
+  document.getElementById('g-deadline').value=g.deadline||'';
+  document.getElementById('g-status').value=g.status||'ny';
+  document.getElementById('g-blockers').value=g.blockers||'';
+  document.getElementById('g-next').value=g.next||'';
+  document.getElementById('g-dev').checked=!!g.dev;
+  document.getElementById('g-sal').checked=!!g.sal;
+  openSheet('goal-sheet');
+}
+document.getElementById('add-goal').onclick=function(){openGoal();};
+document.getElementById('g-save').onclick=function(){
+  var data={text:document.getElementById('g-text').value,deadline:document.getElementById('g-deadline').value,
+    status:document.getElementById('g-status').value,blockers:document.getElementById('g-blockers').value,
+    next:document.getElementById('g-next').value,dev:document.getElementById('g-dev').checked,sal:document.getElementById('g-sal').checked};
+  if(!data.text.trim()){alert('Skriv ett mål.');return;}
+  if(gEditId){Object.assign(find(state.goals,gEditId),data);}else{data.id=uid();state.goals.push(data);}
+  persist();renderGoals();renderHem();closeSheets();
+};
+function renderGoals(){
+  var el=document.getElementById('goal-list');
+  if(!state.goals.length){el.innerHTML='<div class="empty-msg">Inga mål än.</div>';return;}
+  var order={ny:0,'pågår':1,'vänta':2,klar:3};
+  var list=state.goals.slice().sort(function(a,b){return (order[a.status]||0)-(order[b.status]||0);});
+  el.innerHTML='<div class="card-panel tight">'+list.map(function(g){
+    var pc=g.status==='klar'?'green':g.status==='vänta'?'yellow':'blue';
+    var tags='';if(g.dev)tags+=' <span class="pill grey">Utveckling</span>';if(g.sal)tags+=' <span class="pill grey">Lön</span>';
+    return '<div class="row"><div class="row-head"><div class="row-title">'+esc(g.text)+'</div>'+
+      '<span class="pill '+pc+'">'+esc(statusLbl(g.status))+'</span>'+
+      '<button class="row-edit" data-id="'+g.id+'">✎</button><button class="row-del" data-id="'+g.id+'">✕</button></div>'+
+      '<div class="row-sub">'+(g.deadline?'Deadline '+fmtDate(g.deadline):'')+(g.next?(g.deadline?' · ':'')+'Nästa: '+esc(g.next.slice(0,60)):'')+tags+'</div></div>';
+  }).join('')+'</div>';
+  bindRows(el,state.goals,function(id){openGoal(id);},function(){renderGoals();renderHem();});
+}
+
+// ── Feedback ──────────────────────────────────────────
+document.getElementById('add-feedback').onclick=function(){
+  document.getElementById('fb-type').value='pos';document.getElementById('fb-channel').value='muntlig';
+  document.getElementById('fb-date').value=todayKey();document.getElementById('fb-text').value='';document.getElementById('fb-reflect').value='';
+  openSheet('feedback-sheet');
+};
+document.getElementById('fb-save').onclick=function(){
+  var t=document.getElementById('fb-text').value;if(!t.trim()){alert('Skriv vad som sades.');return;}
+  state.feedback.push({id:uid(),type:document.getElementById('fb-type').value,channel:document.getElementById('fb-channel').value,
+    date:document.getElementById('fb-date').value,text:t,reflect:document.getElementById('fb-reflect').value});
+  persist();renderFeedback();renderHem();closeSheets();
+};
+function renderFeedback(){
+  var el=document.getElementById('feedback-list');
+  if(!state.feedback.length){el.innerHTML='<div class="empty-msg">Ingen feedback än.</div>';return;}
+  var list=state.feedback.slice().sort(function(a,b){return (a.date||'')<(b.date||'')?1:-1;});
+  el.innerHTML='<div class="card-panel tight">'+list.map(function(f){
+    return '<div class="row '+(f.type==='pos'?'fb-pos':'fb-con')+'"><div class="row-head"><div class="row-title">'+esc(f.text.slice(0,140))+'</div>'+
+      '<button class="row-del" data-id="'+f.id+'">✕</button></div>'+
+      '<div class="row-sub">'+esc(fmtDate(f.date))+' · '+esc(f.channel)+(f.reflect?' · '+esc(f.reflect.slice(0,60)):'')+'</div></div>';
+  }).join('')+'</div>';
+  bindRows(el,state.feedback,null,function(){renderFeedback();renderHem();});
+}
+
+// ── Bevisbank ─────────────────────────────────────────
+function openEvidence(){
+  document.getElementById('ev-kind').value='Resultat';document.getElementById('ev-date').value=todayKey();document.getElementById('ev-text').value='';
+  openSheet('evidence-sheet');
+}
+document.getElementById('add-evidence').onclick=openEvidence;
+document.getElementById('ev-save').onclick=function(){
+  var t=document.getElementById('ev-text').value;if(!t.trim()){alert('Skriv en beskrivning.');return;}
+  state.evidence.push({id:uid(),kind:document.getElementById('ev-kind').value,date:document.getElementById('ev-date').value,text:t});
+  persist();renderEvidence();closeSheets();
+};
+function renderEvidence(){
+  var el=document.getElementById('evidence-list');
+  if(!state.evidence.length){el.innerHTML='<div class="empty-msg">Inget underlag än.</div>';return;}
+  var list=state.evidence.slice().sort(function(a,b){return (a.date||'')<(b.date||'')?1:-1;});
+  el.innerHTML='<div class="card-panel tight">'+list.map(function(ev){
+    return '<div class="row"><div class="row-head"><div class="row-title">'+esc(ev.text)+'</div>'+
+      '<button class="row-del" data-id="'+ev.id+'">✕</button></div>'+
+      '<div class="row-sub"><span class="pill blue">'+esc(ev.kind)+'</span> '+esc(fmtDate(ev.date))+'</div></div>';
+  }).join('')+'</div>';
+  bindRows(el,state.evidence,null,renderEvidence);
+}
+
+// ── Skriv: svåra samtal ───────────────────────────────
+var hardSit='';
+var hs=document.getElementById('hard-sit').querySelectorAll('button');
+for(var i=0;i<hs.length;i++){hs[i].onclick=function(){var all=document.getElementById('hard-sit').querySelectorAll('button');for(var k=0;k<all.length;k++)all[k].classList.remove('sel');this.classList.add('sel');hardSit=this.dataset.s;};}
+document.getElementById('hard-run').onclick=function(e){
+  var ctx=document.getElementById('hard-ctx').value;
+  if(!ctx.trim()&&!hardSit){alert('Välj situation eller skriv vad du vill säga.');return;}
+  var tone=document.getElementById('hard-tone').value;
+  var p=TONE+'Hjälp mig skriva ett meddelande till min chef. Situation: '+(hardSit||'(ospecificerad)')+'. Tonläge: '+tone+'. '+
+    'Skriv om mina ord nedan till ett sakligt, professionellt meddelande som inte låter negativt eller gnälligt, utan tydligt och konstruktivt. Ge bara själva meddelandet.\n\nMina ord: '+ctx;
+  runAi(e.target,'hard-out',p,function(t){
+    state.drafts.unshift({id:uid(),date:todayKey(),sit:hardSit||tone,text:t});
+    state.drafts=state.drafts.slice(0,15);persist();renderDrafts();
+  });
+};
+function renderDrafts(){
+  var el=document.getElementById('drafts-list');
+  if(!state.drafts.length){el.innerHTML='<div class="empty-msg">Inga sparade utkast.</div>';return;}
+  el.innerHTML=state.drafts.map(function(d){
+    return '<div class="row"><div class="row-head"><div class="row-title" style="font-weight:400;font-size:13px">'+esc(d.text.slice(0,90))+(d.text.length>90?'…':'')+'</div>'+
+      '<button class="row-del" data-id="'+d.id+'">✕</button></div>'+
+      '<div class="row-sub">'+esc(fmtDate(d.date))+(d.sit?' · '+esc(d.sit):'')+'</div></div>';
+  }).join('');
+  bindRows(el,state.drafts,null,renderDrafts);
+}
+
+// ── Skriv: gränssättning ──────────────────────────────
+var BOUND=[
+  ['Jag kan ta det här, men då behöver något annat flyttas.','Tydligt om kapacitet utan att säga nej rakt av.'],
+  ['Jag behöver en tydligare prioritering mellan de här uppgifterna.','Lägger ansvaret för prioritering där det hör hemma.'],
+  ['Jag återkommer med en realistisk tidsplan istället för att lova för mycket.','Köper tid och skyddar kvaliteten.'],
+  ['Jag behöver fokustid utan avbrott för att bli klar med det här.','Ber om förutsättningar, inte ursäktar dig.'],
+  ['Just nu hinner jag inte ta på mig mer utan att något blir lidande.','Saklig gräns kring arbetsbelastning.'],
+  ['Kan vi titta på vad som kan vänta så jag kan göra det viktigaste väl?','Inbjuder till dialog istället för konflikt.']
+];
+function renderBound(){
+  document.getElementById('bound-phrases').innerHTML=BOUND.map(function(b){
+    return '<div class="phrase" onclick="copyPhrase(this)">'+esc(b[0])+'<small>'+esc(b[1])+'</small></div>';
+  }).join('');
+}
+function copyPhrase(el){
+  var txt=el.childNodes[0].textContent;
+  if(navigator.clipboard)navigator.clipboard.writeText(txt);
+  var s=el.querySelector('small');var orig=s.textContent;s.textContent='Kopierat ✓';setTimeout(function(){s.textContent=orig;},1400);
+}
+
+// ── Skriv: prioritering ───────────────────────────────
+var prioItems=[];
+document.getElementById('prio-add').onclick=function(){
+  var v=document.getElementById('prio-in').value.trim();if(!v)return;
+  prioItems.push(v);document.getElementById('prio-in').value='';renderPrio();
+};
+document.getElementById('prio-in').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('prio-add').click();});
+function renderPrio(){
+  var el=document.getElementById('prio-items');
+  if(!prioItems.length){el.innerHTML='<div class="empty-msg">Lägg till det du har på bordet.</div>';return;}
+  el.innerHTML='<div class="card-panel tight" style="margin:0 0 8px">'+prioItems.map(function(t,idx){
+    return '<div class="row"><div class="row-head"><div class="row-title" style="font-weight:400;font-size:13px">'+esc(t)+'</div><button class="row-del" data-i="'+idx+'">✕</button></div></div>';
+  }).join('')+'</div>';
+  var dels=el.querySelectorAll('.row-del');
+  for(var i=0;i<dels.length;i++){dels[i].onclick=function(){prioItems.splice(+this.dataset.i,1);renderPrio();};}
+}
+document.getElementById('prio-run').onclick=function(e){
+  if(!prioItems.length){alert('Lägg till minst en uppgift.');return;}
+  var p=TONE+'Skriv ett kort, vänligt och tydligt meddelande till min chef där jag listar det jag har på bordet och ber om hjälp att prioritera ordningen. Uppgifter:\n- '+prioItems.join('\n- ');
+  runAi(e.target,'prio-out',p);
+};
+
+// ── Skriv: lön ────────────────────────────────────────
+function loadSalary(){
+  document.getElementById('sal-results').value=state.salary.results||'';
+  document.getElementById('sal-resp').value=state.salary.resp||'';
+  document.getElementById('sal-market').value=state.salary.market||'';
+  document.getElementById('sal-want').value=state.salary.want||'';
+  document.getElementById('sal-min').value=state.salary.min||'';
+}
+function salFromForm(){
+  state.salary.results=document.getElementById('sal-results').value;
+  state.salary.resp=document.getElementById('sal-resp').value;
+  state.salary.market=document.getElementById('sal-market').value;
+  state.salary.want=document.getElementById('sal-want').value;
+  state.salary.min=document.getElementById('sal-min').value;
+}
+['sal-results','sal-resp','sal-market','sal-want','sal-min'].forEach(function(id){
+  document.getElementById(id).addEventListener('change',function(){salFromForm();persist();});
+});
+function salPrompt(){
+  return 'Prestationer & resultat: '+state.salary.results+'\nAnsvar & extra: '+state.salary.resp+'\nMarknad: '+state.salary.market+'\nÖnskad nivå: '+state.salary.want+'\nMinsta acceptabla: '+state.salary.min;
+}
+document.getElementById('sal-run').onclick=function(e){
+  salFromForm();persist();
+  var p=TONE+'Hjälp mig bygga en argumentbank inför ett lönesamtal. Utifrån underlaget nedan, formulera 4–6 starka, sakliga argument för min löneökning, samt en kort öppningsmening jag kan börja samtalet med. Punktlista.\n\n'+salPrompt();
+  runAi(e.target,'sal-out',p);
+};
+document.getElementById('sal-practice').onclick=function(e){
+  salFromForm();persist();
+  var p=TONE+'Vi ska öva ett lönesamtal. Spela min chef i en kort, realistisk dialog (4–5 repliker totalt). Var vänlig men ställ ett par utmanande motfrågor, så jag får öva att svara. Mitt underlag:\n\n'+salPrompt()+'\n\nBörja dialogen nu, och skriv [Chef]: respektive [Du]: framför replikerna.';
+  runAi(e.target,'sal-out',p);
+};
+
+// ── Ledarprofil ───────────────────────────────────────
+var leEditId=null;
+function openLeader(id){
+  leEditId=id||null;
+  var l=id?find(state.leaders,id):{name:'',role:'',style:'',contact:'',meeting:'',works:'',watch:'',agree:''};
+  document.getElementById('le-title').textContent=id?'Redigera ledarprofil':'Ny ledarprofil';
+  ['name','role','style','contact','meeting','works','watch','agree'].forEach(function(f){document.getElementById('le-'+f).value=l[f]||'';});
+  openSheet('leader-sheet');
+}
+document.getElementById('add-leader').onclick=function(){openLeader();};
+document.getElementById('le-save').onclick=function(){
+  var data={};['name','role','style','contact','meeting','works','watch','agree'].forEach(function(f){data[f]=document.getElementById('le-'+f).value;});
+  if(!data.name.trim()){alert('Ange ett namn.');return;}
+  if(leEditId){Object.assign(find(state.leaders,leEditId),data);}else{data.id=uid();state.leaders.push(data);}
+  persist();renderLeaders();renderHem();closeSheets();
+};
+function renderLeaders(){
+  var el=document.getElementById('leader-list');
+  if(!state.leaders.length){el.innerHTML='<div class="empty-msg">Ingen ledarprofil än.</div>';return;}
+  el.innerHTML=state.leaders.map(function(l){
+    function line(k,v){return v&&v.trim()?'<div class="lc-line"><div class="k">'+k+'</div><div class="v">'+nl2br(v)+'</div></div>':'';}
+    return '<div class="card-panel leader-card"><div class="row-head"><div class="row-title" style="font-family:Georgia,serif">'+esc(l.name)+(l.role?' <span class="soft">· '+esc(l.role)+'</span>':'')+'</div>'+
+      '<button class="row-edit" data-id="'+l.id+'">✎</button><button class="row-del" data-id="'+l.id+'">✕</button></div>'+
+      '<div class="lc-grid">'+line('Kommunikation',l.style)+line('Kontaktväg',l.contact)+line('Mötesstil',l.meeting)+line('Funkar bra',l.works)+line('Tänk på',l.watch)+line('Överenskommelser',l.agree)+'</div></div>';
+  }).join('');
+  bindRows(el,state.leaders,function(id){openLeader(id);},function(){renderLeaders();renderHem();});
+}
+
+// ── Hjälpare för listor ───────────────────────────────
+function find(arr,id){for(var i=0;i<arr.length;i++)if(arr[i].id===id)return arr[i];return null;}
+function bindRows(container,arr,onEdit,onDone){
+  var dels=container.querySelectorAll('.row-del[data-id]');
+  for(var i=0;i<dels.length;i++){dels[i].onclick=function(){
+    var id=this.dataset.id;var idx=-1;for(var k=0;k<arr.length;k++)if(arr[k].id===id)idx=k;
+    if(idx>=0&&confirm('Ta bort?')){arr.splice(idx,1);persist();if(onDone)onDone();}
+  };}
+  if(onEdit){var eds=container.querySelectorAll('.row-edit[data-id]');for(var i=0;i<eds.length;i++){eds[i].onclick=function(){onEdit(this.dataset.id);};}}
+}
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#202329':'#EEF1F5';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();
+};
+
+// ── Init ──────────────────────────────────────────────
+function renderAll(){renderHem();renderOneone();renderDev();renderGoals();renderFeedback();renderEvidence();renderLeaders();renderDrafts();}
+renderBound();renderPrio();loadSalary();
+renderAll();
+applyTheme();setInterval(applyTheme,60000);
+loadSync();
+if(syncOn()){setBadge('ok','Synkad');ghPull();}
+</script>
+</body>
+</html>

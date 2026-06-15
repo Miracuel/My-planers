@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Förhandling">
+<meta name="theme-color" content="#EBEEF3">
+<link rel="manifest" href='data:application/manifest+json,{"name":"F%C3%B6rhandlingsKompassen","short_name":"F%C3%B6rhandling","display":"standalone","background_color":"%23EBEEF3","theme_color":"%23EBEEF3","start_url":"."}'>
+<title>FörhandlingsKompassen</title>
+<style>
+:root{
+  --bg:#EBEEF3;--panel:#FFFFFF;--panel2:#F1F4F8;--line:#D7DEE7;
+  --ink:#1E2A38;--muted:#6A7686;
+  --blue:#1C3F66;--blue-soft:#DBE6F2;--blue-ink:#16324F;
+  --green:#2E7D52;--green-soft:#E0F0E6;
+  --yellow:#9C7510;--yellow-soft:#FAEFD2;
+  --red:#BD3B2C;--red-soft:#F6E0DC;
+  --navbg:rgba(235,238,243,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:20px;color:var(--blue-ink);letter-spacing:.02em;text-align:center;margin:4px 0 2px}
+.brand-sub{text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:18px 0 8px;letter-spacing:.01em}
+.section-title:first-child{margin-top:2px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.card-panel.flat{padding:0;overflow:hidden}
+.btn{border:1px solid var(--blue);background:var(--panel);color:var(--blue);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:var(--blue-soft)}
+.btn.fill{background:var(--blue);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.wide{width:100%}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--blue)}
+textarea{resize:vertical;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.row-add{display:flex;gap:8px;margin-top:10px}
+.row-add input,.row-add select{flex:1}
+.row-add button{border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:10px;padding:0 16px;cursor:pointer;font-size:18px;flex-shrink:0}
+
+/* Översikt */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat .n{font-family:Georgia,serif;font-size:26px;color:var(--blue-ink);line-height:1}
+.stat .l{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+.risk-bar{display:flex;gap:8px;margin-top:2px}
+.risk-pill{flex:1;border-radius:12px;padding:10px;text-align:center}
+.risk-pill .n{font-family:Georgia,serif;font-size:22px;line-height:1}
+.risk-pill .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+.rp-green{background:var(--green-soft);color:var(--green)}
+.rp-yellow{background:var(--yellow-soft);color:var(--yellow)}
+.rp-red{background:var(--red-soft);color:var(--red)}
+
+/* Listrader */
+.li{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.li:first-child{border-top:none}
+.li-main{flex:1;min-width:0}
+.li-t{font-size:14px;font-weight:500}
+.li-s{font-size:11px;color:var(--muted);margin-top:2px}
+.li-del{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;flex-shrink:0}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot.g{background:var(--green)}.dot.y{background:var(--yellow)}.dot.r{background:var(--red)}
+.chev{color:var(--muted);font-size:15px;flex-shrink:0}
+
+/* Badges */
+.badge{font-size:10px;padding:3px 9px;border-radius:9px;font-weight:600;letter-spacing:.03em;white-space:nowrap}
+.b-green{background:var(--green-soft);color:var(--green)}
+.b-yellow{background:var(--yellow-soft);color:var(--yellow)}
+.b-red{background:var(--red-soft);color:var(--red)}
+.b-blue{background:var(--blue-soft);color:var(--blue-ink)}
+.b-grey{background:var(--panel2);color:var(--muted)}
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:7px;background:var(--panel2);color:var(--muted);margin-right:4px}
+.tag.ska{background:var(--blue-soft);color:var(--blue-ink)}
+.tag.bor{background:var(--panel2);color:var(--muted)}
+
+/* Case-detalj */
+.detail-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px}
+.detail-head .t{font-family:Georgia,serif;font-size:18px;flex:1}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.kv:first-child{border-top:none}
+.kv .k{color:var(--muted)}
+.kv .v{text-align:right;font-weight:500}
+.note-box{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:13px;line-height:1.55;white-space:pre-wrap}
+.callout{border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.55;display:flex;gap:9px;align-items:flex-start}
+.callout .ic{flex-shrink:0;font-size:15px}
+.co-green{background:var(--green-soft);color:var(--green)}
+.co-yellow{background:var(--yellow-soft);color:var(--yellow)}
+.co-red{background:var(--red-soft);color:var(--red)}
+.co-blue{background:var(--blue-soft);color:var(--blue-ink)}
+
+/* LOU-check */
+.lou-item{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.lou-item:first-child{border-top:none}
+.lou-box{width:24px;height:24px;border-radius:7px;border:2px solid var(--blue);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.lou-box.on{background:var(--blue)}
+.lou-txt{flex:1}
+.lou-txt .h{font-size:13px;font-weight:600}
+.lou-txt .d{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5}
+
+/* Entries / logg */
+.entry{padding:10px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:none}
+.entry-meta{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.entry-meta .k{font-weight:600}
+.entry-txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
+.entry-del{margin-left:auto;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer}
+.k-notering{color:var(--blue-ink)}.k-svar{color:var(--green)}.k-erbjudande{color:var(--green)}.k-beslut{color:var(--yellow)}.k-risk{color:var(--red)}
+
+/* AI */
+.ai-box{background:var(--blue-soft);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.6;white-space:pre-wrap;color:var(--blue-ink);margin-top:10px;position:relative}
+.ai-lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:5px;font-weight:600}
+.disclaimer{font-size:10px;color:var(--muted);line-height:1.55;margin-top:8px;font-style:italic}
+
+/* Select-rad */
+.pick-row{display:flex;gap:8px;margin-bottom:12px}
+.pick-row select{flex:1}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--blue);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(20,30,45,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.12)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:6px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--blue);color:#fff;font-size:14px;cursor:pointer;margin-top:14px;font-family:inherit}
+.sheet-status{font-size:12px;padding:9px 12px;border-radius:10px;margin-top:10px;display:none}
+.guide-step{padding:12px 0;border-top:1px solid var(--line)}
+.guide-step:first-child{border-top:none}
+.guide-step .gh{font-size:14px;font-weight:600;color:var(--blue-ink);margin-bottom:4px}
+.guide-step .gd{font-size:13px;color:var(--ink);line-height:1.6}
+
+.foot{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:18px;line-height:1.6}
+.sync-line{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.sp-badge{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--panel2);color:var(--muted);font-weight:600}
+.sp-badge.on{background:var(--green-soft);color:var(--green)}
+.sp-badge.err{background:var(--red-soft);color:var(--red)}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#161B22;--panel:#1D242E;--panel2:#232C37;--line:#333E4B;
+  --ink:#E4E9F0;--muted:#93A0AE;
+  --blue:#5C88BB;--blue-soft:#26394E;--blue-ink:#9DC1E7;
+  --green:#5FB487;--green-soft:#1E3A2C;
+  --yellow:#D6B048;--yellow-soft:#3A3115;
+  --red:#D77A6E;--red-soft:#3C2622;--navbg:rgba(22,27,34,.95);
+}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🧭 FörhandlingsKompassen</h1>
+<div class="brand-sub">Offentlig upphandling · LOU</div>
+
+<!-- ÖVERSIKT -->
+<div class="view active" id="view-oversikt">
+  <div class="section-title">Översikt</div>
+  <div class="stat-grid" id="ov-stats"></div>
+  <div class="section-title">Risknivå</div>
+  <div class="risk-bar" id="ov-risk"></div>
+  <div class="section-title">Kommande förhandlingar</div>
+  <div class="card-panel" id="ov-sessions"></div>
+  <div class="section-title">Saknade dokument &amp; brister</div>
+  <div class="card-panel" id="ov-missing"></div>
+  <div class="section-title">AI-varningar</div>
+  <div class="card-panel" id="ov-warnings"></div>
+</div>
+
+<!-- CASE -->
+<div class="view" id="view-case">
+  <div id="case-list-wrap">
+    <div class="section-title">Upphandlingar</div>
+    <button class="btn fill wide" id="case-new" style="margin-bottom:10px">+ Ny upphandling</button>
+    <div class="card-panel" id="case-list"></div>
+  </div>
+  <div id="case-detail-wrap" style="display:none"></div>
+</div>
+
+<!-- FÖRHANDLING -->
+<div class="view" id="view-forhandling">
+  <div class="section-title">Förhandlingsläge</div>
+  <div class="pick-row">
+    <select id="f-case"></select>
+    <select id="f-sup"></select>
+  </div>
+  <div id="f-room"></div>
+</div>
+
+<!-- COMPLIANCE -->
+<div class="view" id="view-compliance">
+  <div class="section-title">Compliance</div>
+  <div class="pick-row"><select id="c-case"></select></div>
+  <div id="c-body"></div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-mer">
+  <div class="section-title">Inställningar</div>
+  <div class="card-panel">
+    <label>Ditt namn (visas i spårbar logg)</label>
+    <div class="row-add"><input type="text" id="me-name" placeholder="T.ex. förnamn efternamn"><button id="me-name-save">✓</button></div>
+  </div>
+  <div class="section-title">Verktyg</div>
+  <div class="card-panel">
+    <button class="btn wide" id="me-guide" style="margin-bottom:8px">📋 Förhandlingsguide (referens)</button>
+    <button class="btn wide" id="me-lou" style="margin-bottom:8px">⚖️ LOU-principer (referens)</button>
+    <div class="btn-row">
+      <button class="btn ghost" id="export-btn">💾 Säkerhetskopiera</button>
+      <button class="btn ghost" id="import-btn">Importera</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="section-title">Synk &amp; AI</div>
+  <div class="card-panel">
+    <div class="sync-line" style="margin-bottom:10px"><span>Status:</span><span class="sp-badge" id="me-badge">Lokal</span><button class="btn ghost" id="me-sync-now" style="margin-left:auto">⟳ Synka nu</button></div>
+    <button class="btn wide" id="me-sync" style="margin-bottom:8px">⚙️ Synkinställningar (GitHub)</button>
+    <button class="btn wide" id="me-ai">✨ AI-nyckel (Anthropic)</button>
+  </div>
+  <div class="foot" id="me-foot"></div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" data-v="oversikt"><span>📊</span>Översikt</button>
+  <button data-v="case"><span>🗂️</span>Case</button>
+  <button data-v="forhandling"><span>🤝</span>Förhandling</button>
+  <button data-v="compliance"><span>⚖️</span>Compliance</button>
+  <button data-v="mer"><span>⋯</span>Mer</button>
+</div>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="grunddata-sheet">
+  <h3 id="gd-title">Ny upphandling</h3>
+  <label>Benämning</label>
+  <input type="text" id="g-name" placeholder="T.ex. Ramavtal kontorsmöbler">
+  <label>Diarienummer</label>
+  <input type="text" id="g-diar" placeholder="T.ex. 2026/123">
+  <label>Uppskattat värde</label>
+  <input type="text" id="g-value" placeholder="T.ex. 4 200 000 kr">
+  <label>Sista anbudsdag / deadline</label>
+  <input type="date" id="g-deadline">
+  <label>Förfarande</label>
+  <select id="g-proc"></select>
+  <label>Status</label>
+  <select id="g-status"></select>
+  <label>Utvärderingsmodell</label>
+  <select id="g-eval"></select>
+  <button class="sheet-close" id="g-save">Spara</button>
+</div>
+
+<div class="sheet" id="mandate-sheet">
+  <h3>Mandat &amp; beslut</h3>
+  <div class="soft">Tydliggör vem som får förhandla och vad som är låst — grunden för spårbarhet och likabehandling.</div>
+  <label>Vem får förhandla</label>
+  <input type="text" id="m-holder" placeholder="Namn / roll">
+  <label>Budgetgräns / mandat</label>
+  <input type="text" id="m-budget" placeholder="T.ex. får sänka pris ned till takpris X">
+  <label>Låsta villkor (får inte ändras)</label>
+  <textarea id="m-locked" rows="3" placeholder="T.ex. minimikrav, tilldelningskriterier, kravspecens skall-krav"></textarea>
+  <label>Villkor som kan diskuteras</label>
+  <textarea id="m-negotiable" rows="3" placeholder="T.ex. leveranstid, optioner, servicenivå"></textarea>
+  <button class="sheet-close" id="m-save">Spara</button>
+</div>
+
+<div class="sheet" id="req-sheet">
+  <h3>Krav</h3>
+  <label>Typ</label>
+  <select id="r-kind"><option value="ska">Skall-krav (obligatoriskt)</option><option value="bor">Bör-krav (mervärde)</option></select>
+  <label>Formulering</label>
+  <textarea id="r-text" rows="3" placeholder="Beskriv kravet"></textarea>
+  <button class="btn wide" id="r-ai" style="margin-top:10px">✨ Riskbedöm detta krav</button>
+  <div id="r-ai-out"></div>
+  <button class="sheet-close" id="r-save">Spara krav</button>
+</div>
+
+<div class="sheet" id="sup-sheet">
+  <h3>Leverantör</h3>
+  <label>Namn</label>
+  <input type="text" id="s-name" placeholder="Leverantörens namn">
+  <button class="sheet-close" id="s-save">Lägg till</button>
+</div>
+
+<div class="sheet" id="entry-sheet">
+  <h3>Notering</h3>
+  <label>Typ</label>
+  <select id="en-kind">
+    <option value="notering">Notering</option>
+    <option value="svar">Leverantörssvar</option>
+    <option value="erbjudande">Erbjudande</option>
+    <option value="beslut">Beslut</option>
+    <option value="risk">Risk</option>
+  </select>
+  <label>Text</label>
+  <textarea id="en-text" rows="3" placeholder="Vad sades / beslutades"></textarea>
+  <button class="sheet-close" id="en-save">Spara i logg</button>
+</div>
+
+<div class="sheet" id="session-sheet">
+  <h3>Planera förhandlingstillfälle</h3>
+  <label>Datum</label>
+  <input type="date" id="se-date">
+  <label>Tid</label>
+  <input type="time" id="se-time">
+  <label>Närvarande</label>
+  <input type="text" id="se-present" placeholder="T.ex. upphandlare, sakkunnig, leverantör">
+  <button class="sheet-close" id="se-save">Spara tillfälle</button>
+</div>
+
+<div class="sheet" id="protocol-sheet">
+  <h3>Protokoll</h3>
+  <div class="soft">Generera ett neutralt utkast från loggen, eller skriv själv. Granska alltid innan det fastställs.</div>
+  <button class="btn wide" id="pr-gen" style="margin-top:10px">✨ Sammanfatta loggen neutralt</button>
+  <label>Protokolltext</label>
+  <textarea id="pr-text" rows="9" placeholder="Protokolltext"></textarea>
+  <div class="disclaimer">AI-genererat utkast är ett stöd, inte ett fastställt protokoll. Du ansvarar för innehåll och beslut.</div>
+  <button class="sheet-close" id="pr-save">Spara protokoll</button>
+</div>
+
+<div class="sheet" id="guide-sheet">
+  <h3>Förhandlingsguide</h3>
+  <div id="guide-body"></div>
+  <button class="sheet-close" id="guide-close">Stäng</button>
+</div>
+
+<div class="sheet" id="lou-sheet">
+  <h3>Grundprinciper i LOU</h3>
+  <div id="lou-ref-body"></div>
+  <div class="disclaimer">Sammanfattning av de grundläggande principerna (4 kap. 1 § LOU, 2016:1145). Verifiera alltid mot aktuell lagtext och Upphandlingsmyndighetens vägledning.</div>
+  <button class="sheet-close" id="lou-close">Stäng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>⚙️ Synk via GitHub</h3>
+  <div class="soft">Appen läser och sparar <code>forhandlingskompassen.json</code> i ett <strong>privat</strong> GitHub-repo så att teamet ser samma data. Token sparas bara lokalt på enheten — aldrig i koden.</div>
+  <label>GitHub-användarnamn (ägare av data-repot)</label>
+  <input type="text" id="gh-owner" placeholder="anvandarnamn">
+  <label>Namn på data-repot (privat)</label>
+  <input type="text" id="gh-repo" placeholder="forhandling-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:6px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Ge åtkomst till endast data-repot, med Contents: Read and write.</div>
+  <div class="sheet-status" id="gh-status"></div>
+  <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+</div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>✨ AI-nyckel</h3>
+  <div class="soft">Klistra in din Anthropic API-nyckel. Den sparas bara lokalt på den här enheten och används för AI-stödet (frågeförslag, riskbedömning, protokollutkast, likabehandlingsgranskning).</div>
+  <label>Anthropic API-nyckel</label>
+  <input type="password" id="ai-key" placeholder="sk-ant-…">
+  <div class="sheet-status" id="ai-status"></div>
+  <button class="sheet-close" id="ai-save">Spara</button>
+</div>
+
+<script>
+// ── Konstanter ────────────────────────────────────────
+var PROC=[
+  {k:'oppet',n:'Öppet förfarande',neg:false,note:'Förhandling är som regel inte tillåten. Endast förtydligande/komplettering av anbud får ske – inte ändring av anbudet i sak.'},
+  {k:'selektivt',n:'Selektivt förfarande',neg:false,note:'Förhandling är som regel inte tillåten. Endast förtydligande/komplettering får ske.'},
+  {k:'forhandlat-annons',n:'Förhandlat förfarande med annonsering',neg:true,note:'Förhandling är tillåten, men minimikrav och tilldelningskriterier får inte förhandlas bort.'},
+  {k:'forhandlat-utan',n:'Förhandlat förfarande utan annonsering',neg:true,note:'Förhandling tillåten – men förfarandet kräver att ett undantag i LOU är uppfyllt. Dokumentera grunden noga.'},
+  {k:'dialog',n:'Konkurrenspräglad dialog',neg:true,note:'Dialog tillåten i dialogfasen. Efter dialogen lämnas slutliga anbud som inte får förhandlas i strid med likabehandling.'},
+  {k:'innovation',n:'Innovationspartnerskap',neg:true,note:'Förhandling tillåten inom ramen för förfarandet.'},
+  {k:'direkt',n:'Direktupphandling',neg:true,note:'Förhandling tillåten. Värdet måste rymmas inom direktupphandlingsgränsen och grunden ska dokumenteras.'}
+];
+function procOf(k){for(var i=0;i<PROC.length;i++)if(PROC[i].k===k)return PROC[i];return null;}
+var STATUS=[['forberedelse','Förberedelse'],['annonserad','Annonserad'],['anbud','Anbud inkomna'],['utvardering','Utvärdering'],['forhandling','Förhandling'],['tilldelad','Tilldelad'],['avtal','Avtal tecknat'],['avslutad','Avslutad']];
+function statusName(k){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===k)return STATUS[i][1];return k;}
+var EVAL=[['','— ej vald —'],['pris','Lägsta pris'],['pk','Bästa förhållande pris/kvalitet'],['kostnad','Lägsta kostnad (livscykel)']];
+function evalName(k){for(var i=0;i<EVAL.length;i++)if(EVAL[i][0]===k)return EVAL[i][1];return k;}
+var LOU_ITEMS=[
+  ['likabehandling','Likabehandling','Alla leverantörer behandlas lika och får samma information vid samma tillfälle.'],
+  ['ickediskriminering','Icke-diskriminering','Inga krav eller villkor som direkt eller indirekt missgynnar leverantörer, t.ex. utifrån ursprung.'],
+  ['openhet','Öppenhet (transparens)','Förfarandet är förutsebart och förutsättningarna tydligt redovisade.'],
+  ['proportionalitet','Proportionalitet','Krav och villkor står i rimlig proportion till det som upphandlas.'],
+  ['sekretess','Sekretess','Uppgifter i anbud hanteras med absolut anbudssekretess under upphandlingen.'],
+  ['dokumentation','Dokumentationsplikt','Skäl, beslut och väsentliga händelser dokumenteras och är spårbara.']
+];
+var SEKRETESS=[
+  'Anbud och anbudsansökningar omfattas av absolut sekretess fram till tilldelningsbeslut.',
+  'Röj aldrig en leverantörs uppgifter, priser eller lösningar för en annan leverantör.',
+  'Dela förhandlingsunderlag i lika omfattning till alla deltagande leverantörer.',
+  'Var försiktig med affärshemligheter även efter att handlingar blivit offentliga – sekretess kan kvarstå.'
+];
+var GUIDE=[
+  ['1 · Får vi förhandla?','Det avgörs av valt förfarande. Öppet och selektivt förfarande tillåter normalt ingen förhandling – bara förtydligande. Förhandlat förfarande, konkurrenspräglad dialog, innovationspartnerskap och direktupphandling tillåter förhandling inom givna ramar.'],
+  ['2 · Vilket förfarande gäller?','Säkerställ att förfarandet är korrekt valt och att grunden för t.ex. förhandlat förfarande utan annonsering är dokumenterad. Förfarandet styr hela ramen för vad som får göras.'],
+  ['3 · Vad får justeras?','Sådant som annonserats som förhandlingsbart, t.ex. leveransvillkor, optioner, servicenivåer och pris – så länge likabehandling och konkurrens upprätthålls och alla får samma möjlighet.'],
+  ['4 · Vad måste dokumenteras?','Allt av betydelse: deltagare, datum/tid, vad som sades, erbjudanden, beslut och skäl. Dokumentationen är grunden för spårbarhet och för att kunna visa att likabehandling följts.'],
+  ['5 · Vad får inte ändras?','Minimikrav, obligatoriska skall-krav och tilldelningskriterier får inte förhandlas bort. Inget får ändras på ett sätt som snedvrider konkurrensen eller gynnar en enskild leverantör.']
+];
+
+// ── State ─────────────────────────────────────────────
+var KEY='forhandlingskompassen_v1';
+var state={cases:[],me:'',theme:'auto'};
+try{var s0=localStorage.getItem(KEY);if(s0)state=Object.assign(state,JSON.parse(s0));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({cases:state.cases,me:state.me,theme:state.theme}));}catch(e){}if(syncOn())ghPush().catch(function(){});}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify({cases:state.cases,me:state.me,theme:state.theme}));}catch(e){}}
+
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var nowStamp=function(){var d=new Date();return toISO(d)+' '+d.toTimeString().slice(0,5);};
+function fmtDate(s){if(!s)return '—';try{return new Date(s+'T00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'});}catch(e){return s;}}
+
+// ── Aktiv markering (ej persisterad) ──────────────────
+var activeCaseId=state.cases.length?state.cases[0].id:null;
+var detailOpen=false;
+var fSupId=null;
+function getCase(id){for(var i=0;i<state.cases.length;i++)if(state.cases[i].id===id)return state.cases[i];return null;}
+function getSup(c,id){if(!c)return null;for(var i=0;i<c.suppliers.length;i++)if(c.suppliers[i].id===id)return c.suppliers[i];return null;}
+
+function logEvent(c,what){if(!c.log)c.log=[];c.log.unshift({id:uid(),t:nowStamp(),who:state.me||'Användare',what:what});if(c.log.length>200)c.log=c.log.slice(0,200);}
+function addWarning(c,text){if(!c.warnings)c.warnings=[];c.warnings.unshift({id:uid(),t:nowStamp(),text:text});}
+
+// ── Risknivå / compliance ─────────────────────────────
+function louCount(c){var n=0;for(var i=0;i<LOU_ITEMS.length;i++)if(c.lou&&c.lou[LOU_ITEMS[i][0]])n++;return n;}
+function riskLevel(c){
+  var done=louCount(c),total=LOU_ITEMS.length;
+  var warns=(c.warnings&&c.warnings.length)||0;
+  if(warns>0&&done<total)return 'red';
+  if(done>=total&&warns===0)return 'green';
+  if(done>=total-1)return 'yellow';
+  return 'red';
+}
+function riskWord(l){return l==='green'?'Grön':l==='yellow'?'Gul':'Röd';}
+
+// ── Synk (GitHub Contents API) ────────────────────────
+var SYNC_KEY='fk_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/forhandlingskompassen.json';};
+var ghHeaders=function(){return{'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(stt,msg){var b=document.getElementById('me-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(stt==='ok'?' on':stt==='err'?' err':'');}
+async function ghGet(){var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null;}if(!r.ok)throw new Error('HTTP '+r.status);var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));}
+async function ghPull(){if(!syncOn())return;try{setBadge('load','Hämtar…');var data=await ghGet();if(data&&Array.isArray(data.cases)){state.cases=data.cases;if(typeof data.me==='string'&&!state.me)state.me=data.me;saveLocal();if(!getCase(activeCaseId))activeCaseId=state.cases.length?state.cases[0].id:null;renderAll();}setBadge('ok','Synkad');}catch(e){setBadge('err','Synkfel');}}
+async function ghPush(){if(!syncOn())return;setBadge('load','Sparar…');var content=b64enc(JSON.stringify({cases:state.cases,me:state.me,updated:new Date().toISOString()}));var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};var r=await doPut();if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');}
+
+// ── AI (Anthropic) ────────────────────────────────────
+var AI_KEY='fk_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">✨ AI-stöd</span>'+esc(t)+'<div class="disclaimer">Utkast och uppslag — ersätter inte juridisk bedömning. Du ansvarar för besluten.</div></div>';}
+async function runAi(btn,prompt,outEl){
+  var orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  try{var t=await aiCall(prompt);if(outEl)outEl.innerHTML=aiBox(t);return t;}
+  catch(e){if(e.message!=='NOKEY'){if(outEl)outEl.innerHTML='<div class="callout co-red"><span class="ic">⚠</span><div>Kunde inte hämta AI-svar: '+esc(e.message)+'</div></div>';}return null;}
+  finally{btn.textContent=orig;btn.disabled=false;}
+}
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Fyll selects ──────────────────────────────────────
+function fillSelect(el,arr,valKey,nameKey){var h='';for(var i=0;i<arr.length;i++){h+='<option value="'+arr[i][valKey]+'">'+esc(arr[i][nameKey])+'</option>';}el.innerHTML=h;}
+(function(){
+  var gp=document.getElementById('g-proc');gp.innerHTML=PROC.map(function(p){return '<option value="'+p.k+'">'+esc(p.n)+'</option>';}).join('');
+  var gs=document.getElementById('g-status');gs.innerHTML=STATUS.map(function(p){return '<option value="'+p[0]+'">'+esc(p[1])+'</option>';}).join('');
+  var ge=document.getElementById('g-eval');ge.innerHTML=EVAL.map(function(p){return '<option value="'+p[0]+'">'+esc(p[1])+'</option>';}).join('');
+})();
+
+// ════════════════ RENDER: ÖVERSIKT ════════════════
+function renderOversikt(){
+  var cs=state.cases;
+  var active=cs.filter(function(c){return c.status!=='avslutad';}).length;
+  var sups=0,reqs=0;cs.forEach(function(c){sups+=c.suppliers.length;reqs+=c.requirements.length;});
+  document.getElementById('ov-stats').innerHTML=
+    '<div class="stat"><div class="n">'+active+'</div><div class="l">Aktiva upphandlingar</div></div>'+
+    '<div class="stat"><div class="n">'+cs.length+'</div><div class="l">Totalt antal case</div></div>'+
+    '<div class="stat"><div class="n">'+sups+'</div><div class="l">Leverantörer</div></div>'+
+    '<div class="stat"><div class="n">'+reqs+'</div><div class="l">Krav</div></div>';
+  var g=0,y=0,r=0;cs.forEach(function(c){var l=riskLevel(c);if(l==='green')g++;else if(l==='yellow')y++;else r++;});
+  document.getElementById('ov-risk').innerHTML=
+    '<div class="risk-pill rp-green"><div class="n">'+g+'</div><div class="l">Grön</div></div>'+
+    '<div class="risk-pill rp-yellow"><div class="n">'+y+'</div><div class="l">Gul</div></div>'+
+    '<div class="risk-pill rp-red"><div class="n">'+r+'</div><div class="l">Röd</div></div>';
+  // Kommande förhandlingar
+  var sessions=[];var today=toISO(new Date());
+  cs.forEach(function(c){c.suppliers.forEach(function(sp){(sp.sessions||[]).forEach(function(se){if(se.date>=today)sessions.push({c:c,sp:sp,se:se});});});});
+  sessions.sort(function(a,b){return (a.se.date+a.se.time)<(b.se.date+b.se.time)?-1:1;});
+  var os=document.getElementById('ov-sessions');
+  if(!sessions.length)os.innerHTML='<div class="empty-msg">Inga planerade förhandlingstillfällen.</div>';
+  else os.innerHTML=sessions.slice(0,6).map(function(x){
+    return '<div class="li"><div class="li-main"><div class="li-t">'+esc(x.sp.name)+'</div><div class="li-s">'+esc(x.c.name)+' · '+fmtDate(x.se.date)+(x.se.time?' kl '+esc(x.se.time):'')+'</div></div><span class="badge b-blue">Planerad</span></div>';
+  }).join('');
+  // Saknade dokument / brister
+  var miss=[];
+  cs.forEach(function(c){
+    if(c.status==='avslutad')return;
+    var done=louCount(c);
+    if(done<LOU_ITEMS.length)miss.push({c:c,txt:'LOU-check ofullständig ('+done+'/'+LOU_ITEMS.length+')',lvl:done<LOU_ITEMS.length-1?'r':'y'});
+    var p=procOf(c.procedure);
+    if(c.status==='forhandling'&&p&&!p.neg)miss.push({c:c,txt:'Status "Förhandling" men förfarandet tillåter normalt ingen förhandling',lvl:'r'});
+    c.suppliers.forEach(function(sp){
+      var hasBeslut=(sp.entries||[]).some(function(e){return e.kind==='beslut';});
+      if(hasBeslut&&!(sp.protocols&&sp.protocols.length))miss.push({c:c,txt:sp.name+': beslut finns men inget protokoll',lvl:'y'});
+    });
+    if(c.procedure==='forhandlat-utan'&&!(c.mandate&&c.mandate.locked))miss.push({c:c,txt:'Förhandlat utan annonsering – grunden bör dokumenteras',lvl:'y'});
+  });
+  var om=document.getElementById('ov-missing');
+  if(!miss.length)om.innerHTML='<div class="empty-msg">Inga brister upptäckta.</div>';
+  else om.innerHTML=miss.slice(0,10).map(function(m){
+    return '<div class="li"><span class="dot '+m.lvl+'"></span><div class="li-main"><div class="li-t" style="font-weight:400;font-size:13px">'+esc(m.txt)+'</div><div class="li-s">'+esc(m.c.name)+'</div></div></div>';
+  }).join('');
+  // AI-varningar
+  var warns=[];cs.forEach(function(c){(c.warnings||[]).forEach(function(w){warns.push({c:c,w:w});});});
+  warns.sort(function(a,b){return a.w.t<b.w.t?1:-1;});
+  var ow=document.getElementById('ov-warnings');
+  if(!warns.length)ow.innerHTML='<div class="empty-msg">Inga registrerade varningar.</div>';
+  else ow.innerHTML=warns.slice(0,8).map(function(x){
+    return '<div class="entry"><div class="entry-meta"><span class="k k-risk">⚠ Varning</span><span>'+esc(x.c.name)+'</span><button class="entry-del" data-c="'+x.c.id+'" data-w="'+x.w.id+'">×</button></div><div class="entry-txt">'+esc(x.w.text)+'</div></div>';
+  }).join('');
+  ow.querySelectorAll('.entry-del').forEach(function(b){b.onclick=function(){var c=getCase(b.dataset.c);if(c){c.warnings=c.warnings.filter(function(w){return w.id!==b.dataset.w;});save();renderOversikt();}};});
+}
+
+// ════════════════ RENDER: CASE-LISTA ════════════════
+function renderCaseList(){
+  var el=document.getElementById('case-list');
+  if(!state.cases.length){el.innerHTML='<div class="empty-msg">Inga upphandlingar ännu. Skapa din första med knappen ovan.</div>';return;}
+  el.innerHTML=state.cases.map(function(c){
+    var lvl=riskLevel(c);
+    return '<div class="li" data-id="'+c.id+'"><span class="dot '+(lvl==='green'?'g':lvl==='yellow'?'y':'r')+'"></span>'+
+      '<div class="li-main"><div class="li-t">'+esc(c.name)+'</div><div class="li-s">'+(c.diarienr?esc(c.diarienr)+' · ':'')+statusName(c.status)+' · '+c.suppliers.length+' lev.</div></div>'+
+      '<span class="chev">›</span></div>';
+  }).join('');
+  el.querySelectorAll('.li').forEach(function(li){li.onclick=function(){activeCaseId=li.dataset.id;detailOpen=true;renderCase();};});
+}
+
+// ════════════════ RENDER: CASE-DETALJ ════════════════
+function renderCase(){
+  document.getElementById('case-list-wrap').style.display=detailOpen?'none':'block';
+  var dw=document.getElementById('case-detail-wrap');
+  dw.style.display=detailOpen?'block':'none';
+  if(!detailOpen){renderCaseList();return;}
+  var c=getCase(activeCaseId);
+  if(!c){detailOpen=false;renderCase();return;}
+  var p=procOf(c.procedure);
+  var lvl=riskLevel(c);
+  var negCallout=p?(p.neg?
+    '<div class="callout co-green"><span class="ic">✓</span><div><strong>Förhandling tillåten.</strong> '+esc(p.note)+'</div></div>':
+    '<div class="callout co-red"><span class="ic">⚠</span><div><strong>Förhandling normalt ej tillåten.</strong> '+esc(p.note)+'</div></div>'):'';
+  var reqs=c.requirements.length?c.requirements.map(function(r){
+    return '<div class="entry"><div class="entry-meta"><span class="tag '+(r.kind==='ska'?'ska':'bor')+'">'+(r.kind==='ska'?'Skall':'Bör')+'</span><button class="entry-del" data-rid="'+r.id+'">×</button></div><div class="entry-txt">'+esc(r.text)+'</div>'+(r.aiRisk?aiBox(r.aiRisk):'')+'</div>';
+  }).join(''):'<div class="empty-msg">Inga krav ännu.</div>';
+  var sups=c.suppliers.length?c.suppliers.map(function(sp){
+    return '<div class="li"><div class="li-main"><div class="li-t">'+esc(sp.name)+'</div><div class="li-s">'+(sp.entries?sp.entries.length:0)+' loggrader · '+(sp.sessions?sp.sessions.length:0)+' tillfällen</div></div><button class="li-del" data-sid="'+sp.id+'">×</button></div>';
+  }).join(''):'<div class="empty-msg">Inga leverantörer ännu.</div>';
+  var md=c.mandate||{};
+  var log=c.log&&c.log.length?c.log.slice(0,15).map(function(e){
+    return '<div class="entry"><div class="entry-meta"><span class="k">'+esc(e.who)+'</span><span>'+esc(e.t)+'</span></div><div class="entry-txt">'+esc(e.what)+'</div></div>';
+  }).join(''):'<div class="empty-msg">Inga loggade händelser ännu.</div>';
+
+  dw.innerHTML=
+    '<button class="btn ghost" id="cd-back" style="margin-bottom:12px">‹ Alla upphandlingar</button>'+
+    '<div class="card-panel"><div class="detail-head"><div class="t">'+esc(c.name)+'</div><span class="badge '+(lvl==='green'?'b-green':lvl==='yellow'?'b-yellow':'b-red')+'">'+riskWord(lvl)+'</span></div>'+
+      '<div class="kv"><span class="k">Diarienr</span><span class="v">'+esc(c.diarienr||'—')+'</span></div>'+
+      '<div class="kv"><span class="k">Värde</span><span class="v">'+esc(c.value||'—')+'</span></div>'+
+      '<div class="kv"><span class="k">Sista anbudsdag</span><span class="v">'+fmtDate(c.deadline)+'</span></div>'+
+      '<div class="kv"><span class="k">Status</span><span class="v">'+statusName(c.status)+'</span></div>'+
+      '<div class="kv"><span class="k">Förfarande</span><span class="v">'+(p?esc(p.n):'—')+'</span></div>'+
+      '<div class="kv"><span class="k">Utvärdering</span><span class="v">'+evalName(c.evalModel)+'</span></div>'+
+      '<div class="btn-row" style="margin-top:12px"><button class="btn ghost" id="cd-edit">Redigera grunddata</button><button class="btn ghost" id="cd-guide">📋 Guide</button></div></div>'+
+    negCallout+
+    '<div class="section-title">Mandat &amp; beslut</div><div class="card-panel">'+
+      '<div class="kv"><span class="k">Får förhandla</span><span class="v">'+esc(md.holder||'—')+'</span></div>'+
+      '<div class="kv"><span class="k">Budgetgräns</span><span class="v">'+esc(md.budget||'—')+'</span></div>'+
+      (md.locked?'<label>Låsta villkor</label><div class="note-box">'+esc(md.locked)+'</div>':'')+
+      (md.negotiable?'<label>Kan diskuteras</label><div class="note-box">'+esc(md.negotiable)+'</div>':'')+
+      '<button class="btn ghost wide" id="cd-mandate" style="margin-top:12px">Redigera mandat</button></div>'+
+    '<div class="section-title">Krav</div><div class="card-panel">'+reqs+'<button class="btn wide" id="cd-addreq" style="margin-top:10px">+ Lägg till krav</button></div>'+
+    '<div class="section-title">Leverantörer</div><div class="card-panel">'+sups+'<button class="btn wide" id="cd-addsup" style="margin-top:10px">+ Lägg till leverantör</button></div>'+
+    '<div class="section-title">Spårbar logg</div><div class="card-panel">'+log+'</div>'+
+    '<button class="btn danger wide" id="cd-del" style="margin:6px 0 4px">Radera upphandlingen</button>';
+
+  document.getElementById('cd-back').onclick=function(){detailOpen=false;renderCase();};
+  document.getElementById('cd-edit').onclick=function(){openGrunddata(c);};
+  document.getElementById('cd-guide').onclick=function(){openGuideForCase(c);};
+  document.getElementById('cd-mandate').onclick=function(){openMandate(c);};
+  document.getElementById('cd-addreq').onclick=function(){openReq(c);};
+  document.getElementById('cd-addsup').onclick=function(){openSup(c);};
+  document.getElementById('cd-del').onclick=function(){
+    if(confirm('Radera "'+c.name+'" och all dess data?')){state.cases=state.cases.filter(function(x){return x.id!==c.id;});activeCaseId=state.cases.length?state.cases[0].id:null;detailOpen=false;save();renderAll();}
+  };
+  dw.querySelectorAll('.entry-del[data-rid]').forEach(function(b){b.onclick=function(){c.requirements=c.requirements.filter(function(r){return r.id!==b.dataset.rid;});logEvent(c,'Tog bort ett krav');save();renderCase();};});
+  dw.querySelectorAll('.li-del[data-sid]').forEach(function(b){b.onclick=function(){if(confirm('Ta bort leverantören och dess förhandlingsdata?')){var sp=getSup(c,b.dataset.sid);c.suppliers=c.suppliers.filter(function(x){return x.id!==b.dataset.sid;});logEvent(c,'Tog bort leverantör'+(sp?' '+sp.name:''));save();renderCase();}};});
+}
+
+// ── Grunddata-sheet ───────────────────────────────────
+var editingCaseId=null;
+function openGrunddata(c){
+  editingCaseId=c?c.id:null;
+  document.getElementById('gd-title').textContent=c?'Redigera grunddata':'Ny upphandling';
+  document.getElementById('g-name').value=c?c.name:'';
+  document.getElementById('g-diar').value=c?(c.diarienr||''):'';
+  document.getElementById('g-value').value=c?(c.value||''):'';
+  document.getElementById('g-deadline').value=c?(c.deadline||''):'';
+  document.getElementById('g-proc').value=c?(c.procedure||'oppet'):'oppet';
+  document.getElementById('g-status').value=c?(c.status||'forberedelse'):'forberedelse';
+  document.getElementById('g-eval').value=c?(c.evalModel||''):'';
+  openSheet('grunddata-sheet');
+}
+document.getElementById('g-save').onclick=function(){
+  var name=document.getElementById('g-name').value.trim();
+  if(!name){alert('Ange en benämning.');return;}
+  var data={name:name,diarienr:document.getElementById('g-diar').value.trim(),value:document.getElementById('g-value').value.trim(),deadline:document.getElementById('g-deadline').value,procedure:document.getElementById('g-proc').value,status:document.getElementById('g-status').value,evalModel:document.getElementById('g-eval').value};
+  if(editingCaseId){var c=getCase(editingCaseId);Object.assign(c,data);logEvent(c,'Uppdaterade grunddata');}
+  else{var nc=Object.assign({id:uid(),requirements:[],suppliers:[],mandate:{holder:'',budget:'',locked:'',negotiable:''},lou:{},warnings:[],log:[],created:nowStamp()},data);state.cases.unshift(nc);activeCaseId=nc.id;detailOpen=true;logEvent(nc,'Skapade upphandlingen');}
+  save();closeSheets();renderAll();
+};
+
+// ── Mandat-sheet ──────────────────────────────────────
+var mandateCaseId=null;
+function openMandate(c){mandateCaseId=c.id;var m=c.mandate||{};document.getElementById('m-holder').value=m.holder||'';document.getElementById('m-budget').value=m.budget||'';document.getElementById('m-locked').value=m.locked||'';document.getElementById('m-negotiable').value=m.negotiable||'';openSheet('mandate-sheet');}
+document.getElementById('m-save').onclick=function(){var c=getCase(mandateCaseId);if(!c)return;c.mandate={holder:document.getElementById('m-holder').value.trim(),budget:document.getElementById('m-budget').value.trim(),locked:document.getElementById('m-locked').value.trim(),negotiable:document.getElementById('m-negotiable').value.trim()};logEvent(c,'Uppdaterade mandat & beslut');save();closeSheets();renderCase();};
+
+// ── Krav-sheet ────────────────────────────────────────
+var reqCaseId=null,reqAiText='';
+function openReq(c){reqCaseId=c.id;reqAiText='';document.getElementById('r-kind').value='ska';document.getElementById('r-text').value='';document.getElementById('r-ai-out').innerHTML='';openSheet('req-sheet');}
+document.getElementById('r-ai').onclick=function(){
+  var txt=document.getElementById('r-text').value.trim();if(!txt){alert('Skriv kravet först.');return;}
+  var c=getCase(reqCaseId);var p=procOf(c.procedure);
+  var prompt='Du är ett sakligt upphandlingsstöd inom svensk offentlig upphandling (LOU). Riskbedöm följande krav ur perspektiven proportionalitet, likabehandling, icke-diskriminering och konkurrens. Skriv neutralt på svenska, högst 130 ord, utan rubriker. Lyft eventuella risker för att kravet är onödigt begränsande eller kan gynna en enskild leverantör, samt förslag på mer proportionerlig formulering. Avsluta inte med juridiska tvärsäkra slutsatser.\n\nFörfarande: '+(p?p.n:'okänt')+'\nUtvärderingsmodell: '+evalName(c.evalModel)+'\nKravtyp: '+(document.getElementById('r-kind').value==='ska'?'skall-krav':'bör-krav')+'\nKrav: '+txt;
+  runAi(this,prompt,document.getElementById('r-ai-out')).then(function(t){if(t)reqAiText=t;});
+};
+document.getElementById('r-save').onclick=function(){
+  var c=getCase(reqCaseId);if(!c)return;
+  var txt=document.getElementById('r-text').value.trim();if(!txt){alert('Skriv kravet.');return;}
+  var r={id:uid(),kind:document.getElementById('r-kind').value,text:txt,aiRisk:reqAiText};
+  c.requirements.push(r);logEvent(c,'La till '+(r.kind==='ska'?'skall-krav':'bör-krav'));
+  if(reqAiText)addWarning(c,'Riskbedömt krav: '+txt.slice(0,60)+(txt.length>60?'…':''));
+  save();closeSheets();renderCase();
+};
+
+// ── Leverantör-sheet ──────────────────────────────────
+var supCaseId=null;
+function openSup(c){supCaseId=c.id;document.getElementById('s-name').value='';openSheet('sup-sheet');}
+document.getElementById('s-save').onclick=function(){var c=getCase(supCaseId);if(!c)return;var name=document.getElementById('s-name').value.trim();if(!name){alert('Ange namn.');return;}var sp={id:uid(),name:name,agenda:[],questions:[],entries:[],sessions:[],protocols:[],nextStep:''};c.suppliers.push(sp);logEvent(c,'La till leverantör '+name);save();closeSheets();renderCase();};
+
+// ── Guide-sheet ───────────────────────────────────────
+function openGuideForCase(c){
+  var p=c?procOf(c.procedure):null;
+  var head='';
+  if(c){head=p?(p.neg?
+    '<div class="callout co-green"><span class="ic">✓</span><div>För <strong>'+esc(c.name)+'</strong> ('+esc(p.n)+') är förhandling tillåten. '+esc(p.note)+'</div></div>':
+    '<div class="callout co-red"><span class="ic">⚠</span><div>För <strong>'+esc(c.name)+'</strong> ('+esc(p.n)+') är förhandling normalt inte tillåten. '+esc(p.note)+'</div></div>'):'';}
+  var steps=GUIDE.map(function(g){return '<div class="guide-step"><div class="gh">'+esc(g[0])+'</div><div class="gd">'+esc(g[1])+'</div></div>';}).join('');
+  document.getElementById('guide-body').innerHTML=head+steps+'<div class="disclaimer">Generell vägledning om förhandling i offentlig upphandling — inte juridisk rådgivning. Verifiera mot LOU och Upphandlingsmyndighetens vägledning.</div>';
+  openSheet('guide-sheet');
+}
+document.getElementById('guide-close').onclick=closeSheets;
+document.getElementById('me-guide').onclick=function(){openGuideForCase(null);};
+
+// ── LOU-referens-sheet ────────────────────────────────
+document.getElementById('lou-ref-body').innerHTML=LOU_ITEMS.map(function(it){return '<div class="guide-step"><div class="gh">'+esc(it[1])+'</div><div class="gd">'+esc(it[2])+'</div></div>';}).join('');
+document.getElementById('me-lou').onclick=function(){openSheet('lou-sheet');};
+document.getElementById('lou-close').onclick=closeSheets;
+
+// ════════════════ RENDER: FÖRHANDLING ════════════════
+function fillCaseSelect(el,selId){
+  if(!state.cases.length){el.innerHTML='<option value="">Inga upphandlingar</option>';return;}
+  el.innerHTML=state.cases.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('');
+  if(selId&&getCase(selId))el.value=selId;
+}
+function renderForhandling(){
+  fillCaseSelect(document.getElementById('f-case'),activeCaseId);
+  var c=getCase(document.getElementById('f-case').value);
+  var supSel=document.getElementById('f-sup');
+  if(!c){supSel.innerHTML='<option value="">—</option>';document.getElementById('f-room').innerHTML='<div class="empty-msg">Skapa en upphandling och leverantör först.</div>';return;}
+  activeCaseId=c.id;
+  if(!c.suppliers.length){supSel.innerHTML='<option value="">Inga leverantörer</option>';document.getElementById('f-room').innerHTML='<div class="empty-msg">Lägg till en leverantör i case-vyn först.</div>';return;}
+  supSel.innerHTML=c.suppliers.map(function(sp){return '<option value="'+sp.id+'">'+esc(sp.name)+'</option>';}).join('');
+  if(!getSup(c,fSupId))fSupId=c.suppliers[0].id;
+  supSel.value=fSupId;
+  var sp=getSup(c,fSupId);
+  renderRoom(c,sp);
+}
+function renderRoom(c,sp){
+  var p=procOf(c.procedure);
+  var procWarn=(p&&!p.neg)?'<div class="callout co-red" style="margin-bottom:10px"><span class="ic">⚠</span><div>Vald procedur ('+esc(p.n)+') tillåter normalt ingen förhandling. Dokumentera noga om något ändå sker.</div></div>':'';
+  var agenda=sp.agenda.length?sp.agenda.map(function(a){return '<div class="li"><span class="dot '+(a.done?'g':'y')+'" style="cursor:pointer" data-ag="'+a.id+'"></span><div class="li-main"><div class="li-t" style="font-weight:400;font-size:13px'+(a.done?';text-decoration:line-through;color:var(--muted)':'')+'">'+esc(a.text)+'</div></div><button class="li-del" data-agdel="'+a.id+'">×</button></div>';}).join(''):'<div class="empty-msg">Tom agenda.</div>';
+  var qs=sp.questions.length?sp.questions.map(function(q){return '<div class="entry"><div class="entry-txt">'+esc(q.text)+'<button class="entry-del" data-qdel="'+q.id+'" style="float:right">×</button></div></div>';}).join(''):'<div class="empty-msg">Inga frågor ännu.</div>';
+  var ent=sp.entries.length?sp.entries.map(function(e){var lbl={notering:'Notering',svar:'Lev.svar',erbjudande:'Erbjudande',beslut:'Beslut',risk:'Risk'}[e.kind]||e.kind;return '<div class="entry"><div class="entry-meta"><span class="k k-'+e.kind+'">'+lbl+'</span><span>'+esc(e.t)+' · '+esc(e.who)+'</span><button class="entry-del" data-endel="'+e.id+'">×</button></div><div class="entry-txt">'+esc(e.text)+'</div></div>';}).join(''):'<div class="empty-msg">Inget loggat ännu.</div>';
+  var today=toISO(new Date());
+  var ses=sp.sessions.length?sp.sessions.slice().sort(function(a,b){return (a.date+a.time)<(b.date+b.time)?-1:1;}).map(function(se){var up=se.date>=today;return '<div class="li"><span class="dot '+(up?'g':'r')+'"></span><div class="li-main"><div class="li-t" style="font-size:13px">'+fmtDate(se.date)+(se.time?' kl '+esc(se.time):'')+'</div><div class="li-s">'+esc(se.present||'—')+'</div></div><button class="li-del" data-sedel="'+se.id+'">×</button></div>';}).join(''):'<div class="empty-msg">Inga planerade tillfällen.</div>';
+  var prot=sp.protocols.length?sp.protocols.map(function(pr){return '<div class="entry"><div class="entry-meta"><span class="k">Protokoll</span><span>'+esc(pr.t)+'</span><button class="entry-del" data-prdel="'+pr.id+'">×</button></div><div class="note-box" style="margin-top:4px">'+esc(pr.text)+'</div></div>';}).join(''):'<div class="empty-msg">Inget protokoll ännu.</div>';
+
+  document.getElementById('f-room').innerHTML=
+    procWarn+
+    '<div class="section-title">Planerade tillfällen</div><div class="card-panel">'+ses+'<button class="btn wide" id="r-addses" style="margin-top:10px">+ Planera tillfälle</button></div>'+
+    '<div class="section-title">Agenda</div><div class="card-panel">'+agenda+'<div class="row-add"><input type="text" id="r-agtxt" placeholder="Agendapunkt"><button id="r-agadd">+</button></div></div>'+
+    '<div class="section-title">Frågebank</div><div class="card-panel">'+qs+'<div class="row-add"><input type="text" id="r-qtxt" placeholder="Förhandlingsfråga"><button id="r-qadd">+</button></div><button class="btn wide" id="r-qai" style="margin-top:10px">✨ Föreslå sakliga frågor</button><div id="r-qai-out"></div></div>'+
+    '<div class="section-title">Noteringar, svar &amp; beslut</div><div class="card-panel">'+ent+'<button class="btn wide" id="r-enadd" style="margin-top:10px">+ Lägg till i logg</button></div>'+
+    '<div class="section-title">Nästa steg</div><div class="card-panel"><textarea id="r-next" rows="2" placeholder="Vad händer härnäst?">'+esc(sp.nextStep||'')+'</textarea><button class="btn ghost wide" id="r-nextsave" style="margin-top:8px">Spara nästa steg</button></div>'+
+    '<div class="section-title">Protokoll</div><div class="card-panel">'+prot+'<button class="btn fill wide" id="r-prot" style="margin-top:10px">📝 Protokollgenerator</button></div>';
+
+  // handlers
+  document.getElementById('r-addses').onclick=function(){sesTarget={c:c.id,sp:sp.id};document.getElementById('se-date').value='';document.getElementById('se-time').value='';document.getElementById('se-present').value='';openSheet('session-sheet');};
+  document.getElementById('r-agadd').onclick=function(){var v=document.getElementById('r-agtxt').value.trim();if(!v)return;sp.agenda.push({id:uid(),text:v,done:false});logEvent(c,'La till agendapunkt ('+sp.name+')');save();renderRoom(c,sp);};
+  document.getElementById('r-qadd').onclick=function(){var v=document.getElementById('r-qtxt').value.trim();if(!v)return;sp.questions.push({id:uid(),text:v});save();renderRoom(c,sp);};
+  document.getElementById('r-enadd').onclick=function(){enTarget={c:c.id,sp:sp.id};document.getElementById('en-kind').value='notering';document.getElementById('en-text').value='';openSheet('entry-sheet');};
+  document.getElementById('r-nextsave').onclick=function(){sp.nextStep=document.getElementById('r-next').value.trim();save();};
+  document.getElementById('r-prot').onclick=function(){protTarget={c:c.id,sp:sp.id};document.getElementById('pr-text').value='';openSheet('protocol-sheet');};
+  document.getElementById('r-qai').onclick=function(){
+    var reqLines=c.requirements.map(function(r){return '- '+(r.kind==='ska'?'[skall] ':'[bör] ')+r.text;}).join('\n')||'(inga registrerade krav)';
+    var prompt='Du är ett sakligt upphandlingsstöd inom svensk offentlig upphandling (LOU). Föreslå 5–7 sakliga, neutrala och likabehandlande förhandlingsfrågor till en leverantör. Frågorna ska vara objektiva, inte gynna eller missgynna någon leverantör, och hålla sig inom det som får förhandlas. Skriv på svenska som en punktlista, en fråga per rad, utan inledning.\n\nUpphandling: '+c.name+'\nFörfarande: '+(p?p.n:'okänt')+'\nLeverantör: '+sp.name+'\nKrav:\n'+reqLines;
+    runAi(this,prompt,document.getElementById('r-qai-out'));
+  };
+  document.querySelectorAll('[data-ag]').forEach(function(d){d.onclick=function(){var a=sp.agenda.filter(function(x){return x.id===d.dataset.ag;})[0];if(a){a.done=!a.done;save();renderRoom(c,sp);}};});
+  document.querySelectorAll('[data-agdel]').forEach(function(b){b.onclick=function(){sp.agenda=sp.agenda.filter(function(x){return x.id!==b.dataset.agdel;});save();renderRoom(c,sp);};});
+  document.querySelectorAll('[data-qdel]').forEach(function(b){b.onclick=function(){sp.questions=sp.questions.filter(function(x){return x.id!==b.dataset.qdel;});save();renderRoom(c,sp);};});
+  document.querySelectorAll('[data-endel]').forEach(function(b){b.onclick=function(){sp.entries=sp.entries.filter(function(x){return x.id!==b.dataset.endel;});save();renderRoom(c,sp);};});
+  document.querySelectorAll('[data-sedel]').forEach(function(b){b.onclick=function(){sp.sessions=sp.sessions.filter(function(x){return x.id!==b.dataset.sedel;});save();renderRoom(c,sp);};});
+  document.querySelectorAll('[data-prdel]').forEach(function(b){b.onclick=function(){sp.protocols=sp.protocols.filter(function(x){return x.id!==b.dataset.prdel;});save();renderRoom(c,sp);};});
+}
+document.getElementById('f-case').onchange=function(){activeCaseId=this.value;fSupId=null;renderForhandling();};
+document.getElementById('f-sup').onchange=function(){fSupId=this.value;renderForhandling();};
+
+// session/entry/protocol targets
+var sesTarget=null,enTarget=null,protTarget=null;
+document.getElementById('se-save').onclick=function(){if(!sesTarget)return;var c=getCase(sesTarget.c),sp=getSup(c,sesTarget.sp);if(!sp)return;var d=document.getElementById('se-date').value;if(!d){alert('Välj datum.');return;}sp.sessions.push({id:uid(),date:d,time:document.getElementById('se-time').value,present:document.getElementById('se-present').value.trim()});logEvent(c,'Planerade förhandlingstillfälle '+fmtDate(d)+' ('+sp.name+')');save();closeSheets();renderForhandling();renderOversikt();};
+document.getElementById('en-save').onclick=function(){if(!enTarget)return;var c=getCase(enTarget.c),sp=getSup(c,enTarget.sp);if(!sp)return;var txt=document.getElementById('en-text').value.trim();if(!txt){alert('Skriv text.');return;}var kind=document.getElementById('en-kind').value;sp.entries.unshift({id:uid(),kind:kind,text:txt,who:state.me||'Användare',t:nowStamp()});var lbl={notering:'notering',svar:'leverantörssvar',erbjudande:'erbjudande',beslut:'beslut',risk:'risk'}[kind];logEvent(c,'Loggade '+lbl+' ('+sp.name+')');if(kind==='risk')addWarning(c,sp.name+': '+txt.slice(0,70)+(txt.length>70?'…':''));save();closeSheets();renderForhandling();};
+document.getElementById('pr-gen').onclick=function(){
+  if(!protTarget)return;var c=getCase(protTarget.c),sp=getSup(c,protTarget.sp);if(!sp)return;
+  var lines=sp.entries.slice().reverse().map(function(e){var lbl={notering:'Notering',svar:'Leverantörssvar',erbjudande:'Erbjudande',beslut:'Beslut',risk:'Risk'}[e.kind]||e.kind;return '['+e.t+'] '+lbl+' ('+e.who+'): '+e.text;}).join('\n')||'(inga loggrader)';
+  var p=procOf(c.procedure);
+  var prompt='Du är ett sakligt upphandlingsstöd. Sammanfatta följande förhandlingslogg till ett neutralt, objektivt protokollutkast på svenska. Använd kort rubrikstruktur: Närvarande/parter, Behandlade punkter, Leverantörens svar och erbjudanden, Beslut, Nästa steg. Var saklig och värderingsfri, gynna ingen part. Lägg inte till uppgifter som inte finns i loggen.\n\nUpphandling: '+c.name+' (diarienr '+(c.diarienr||'—')+')\nFörfarande: '+(p?p.n:'okänt')+'\nLeverantör: '+sp.name+'\nLogg:\n'+lines;
+  runAi(this,prompt,null).then(function(t){if(t)document.getElementById('pr-text').value=t;});
+};
+document.getElementById('pr-save').onclick=function(){if(!protTarget)return;var c=getCase(protTarget.c),sp=getSup(c,protTarget.sp);if(!sp)return;var txt=document.getElementById('pr-text').value.trim();if(!txt){alert('Protokollet är tomt.');return;}sp.protocols.unshift({id:uid(),t:nowStamp(),text:txt});logEvent(c,'Sparade protokoll ('+sp.name+')');save();closeSheets();renderForhandling();renderOversikt();};
+
+// ════════════════ RENDER: COMPLIANCE ════════════════
+function renderCompliance(){
+  fillCaseSelect(document.getElementById('c-case'),activeCaseId);
+  var c=getCase(document.getElementById('c-case').value);
+  var body=document.getElementById('c-body');
+  if(!c){body.innerHTML='<div class="empty-msg">Skapa en upphandling först.</div>';return;}
+  activeCaseId=c.id;
+  var lvl=riskLevel(c);
+  var statusCo=lvl==='green'?'<div class="callout co-green"><span class="ic">●</span><div><strong>Grön status.</strong> LOU-checklistan är komplett och inga aktiva varningar.</div></div>':lvl==='yellow'?'<div class="callout co-yellow"><span class="ic">●</span><div><strong>Gul status.</strong> Något i checklistan saknas eller bör ses över.</div></div>':'<div class="callout co-red"><span class="ic">●</span><div><strong>Röd status.</strong> Väsentliga punkter saknas eller varningar finns.</div></div>';
+  var lou=LOU_ITEMS.map(function(it){var on=c.lou&&c.lou[it[0]];return '<div class="lou-item" data-lou="'+it[0]+'"><div class="lou-box'+(on?' on':'')+'">'+(on?'✓':'')+'</div><div class="lou-txt"><div class="h">'+esc(it[1])+'</div><div class="d">'+esc(it[2])+'</div></div></div>';}).join('');
+  var risks=(c.warnings&&c.warnings.length)?c.warnings.map(function(w){return '<div class="entry"><div class="entry-meta"><span class="k k-risk">⚠</span><span>'+esc(w.t)+'</span><button class="entry-del" data-wdel="'+w.id+'">×</button></div><div class="entry-txt">'+esc(w.text)+'</div></div>';}).join(''):'<div class="empty-msg">Inga registrerade LOU-risker.</div>';
+  var sekr=SEKRETESS.map(function(s){return '<div class="li"><span class="ic" style="flex-shrink:0">🔒</span><div class="li-main"><div class="li-t" style="font-weight:400;font-size:13px">'+esc(s)+'</div></div></div>';}).join('');
+
+  body.innerHTML=
+    '<div class="card-panel">'+statusCo+'<div class="soft" style="margin-top:8px">'+esc(c.name)+' · '+statusName(c.status)+'</div></div>'+
+    '<div class="section-title">LOU-check</div><div class="card-panel">'+lou+'</div>'+
+    '<div class="section-title">LOU-risker</div><div class="card-panel">'+risks+'<div class="row-add"><input type="text" id="c-risk-txt" placeholder="Notera en risk"><button id="c-risk-add">+</button></div></div>'+
+    '<div class="section-title">Likabehandlingskontroll</div><div class="card-panel"><div class="soft">Klistra in en formulering (krav, fråga, villkor) och låt AI granska om den kan gynna en leverantör eller snedvrida konkurrensen.</div><textarea id="c-fair" rows="3" placeholder="Text att granska" style="margin-top:8px"></textarea><button class="btn wide" id="c-fair-btn" style="margin-top:10px">✨ Kontrollera formuleringen</button><div id="c-fair-out"></div></div>'+
+    '<div class="section-title">Sekretesspåminnelser</div><div class="card-panel">'+sekr+'</div>'+
+    '<div class="foot">Detta är ett planerings- och dokumentationsstöd, inte juridisk rådgivning. Stäm av mot LOU (2016:1145) och Upphandlingsmyndighetens vägledning.</div>';
+
+  body.querySelectorAll('.lou-item').forEach(function(it){it.onclick=function(){var k=it.dataset.lou;if(!c.lou)c.lou={};c.lou[k]=!c.lou[k];logEvent(c,'Markerade LOU-punkt: '+k+' = '+(c.lou[k]?'ja':'nej'));save();renderCompliance();renderOversikt();};});
+  body.querySelectorAll('.entry-del[data-wdel]').forEach(function(b){b.onclick=function(){c.warnings=c.warnings.filter(function(w){return w.id!==b.dataset.wdel;});save();renderCompliance();renderOversikt();};});
+  document.getElementById('c-risk-add').onclick=function(){var v=document.getElementById('c-risk-txt').value.trim();if(!v)return;addWarning(c,v);logEvent(c,'La till LOU-risk');save();renderCompliance();renderOversikt();};
+  document.getElementById('c-fair-btn').onclick=function(){
+    var txt=document.getElementById('c-fair').value.trim();if(!txt){alert('Skriv text att granska.');return;}
+    var prompt='Du är ett sakligt upphandlingsstöd inom svensk offentlig upphandling (LOU). Granska följande formulering och bedöm om den riskerar att gynna eller missgynna en enskild leverantör, vara onödigt begränsande eller snedvrida konkurrensen, sett till principerna likabehandling, icke-diskriminering, öppenhet och proportionalitet. Svara neutralt på svenska, högst 140 ord, peka konkret på eventuella risker och föreslå en mer konkurrensneutral formulering. Var inte tvärsäker i juridiska slutsatser.\n\nFormulering: '+txt;
+    runAi(this,prompt,document.getElementById('c-fair-out'));
+  };
+}
+document.getElementById('c-case').onchange=function(){activeCaseId=this.value;renderCompliance();};
+
+// ════════════════ MER ════════════════
+document.getElementById('me-name').value=state.me||'';
+document.getElementById('me-name-save').onclick=function(){state.me=document.getElementById('me-name').value.trim();save();};
+document.getElementById('me-foot').innerHTML='FörhandlingsKompassen är ett planerings- och dokumentationsstöd för förhandling i offentlig upphandling. Det utgör inte juridisk rådgivning. Verifiera alltid mot LOU (2016:1145) och Upphandlingsmyndighetens vägledning.';
+
+// Synk
+document.getElementById('me-sync').onclick=function(){document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;document.getElementById('gh-status').style.display='none';openSheet('sync-sheet');};
+function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'var(--red-soft)':'var(--blue-soft)';el.style.color=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--blue-ink)';el.textContent=msg;}
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();sync.repo=document.getElementById('gh-repo').value.trim();sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGhStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGhStatus('Testar anslutning…','info');
+  try{var data=await ghGet();if(data){setGhStatus('✓ Ansluten! Hämtar teamets data…','ok');await ghPull();}else{setGhStatus('✓ Ansluten! Repot är tomt — laddar upp din data…','ok');await ghPush();}setBadge('ok','Synkad');setTimeout(closeSheets,1100);}
+  catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('me-sync-now').onclick=function(){ghPull();};
+
+// AI-nyckel
+document.getElementById('me-ai').onclick=function(){document.getElementById('ai-key').value=getAiKey();document.getElementById('ai-status').style.display='none';openSheet('ai-sheet');};
+document.getElementById('ai-save').onclick=function(){var k=document.getElementById('ai-key').value.trim();if(k)localStorage.setItem(AI_KEY,k);else localStorage.removeItem(AI_KEY);var el=document.getElementById('ai-status');el.style.display='block';el.style.background='var(--green-soft)';el.style.color='var(--green)';el.textContent=k?'✓ Nyckel sparad lokalt.':'Nyckel borttagen.';setTimeout(closeSheets,900);};
+
+// Export / import
+document.getElementById('export-btn').onclick=function(){var blob=new Blob([JSON.stringify({cases:state.cases,me:state.me},null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='forhandlingskompassen-backup-'+toISO(new Date())+'.json';a.click();};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(d&&Array.isArray(d.cases)){state.cases=d.cases;if(typeof d.me==='string')state.me=d.me;activeCaseId=state.cases.length?state.cases[0].id:null;save();renderAll();alert('Importerat.');}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};r.readAsText(f);};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#161B22':'#EBEEF3';
+  var b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='oversikt')renderOversikt();
+    if(b.dataset.v==='case')renderCase();
+    if(b.dataset.v==='forhandling')renderForhandling();
+    if(b.dataset.v==='compliance')renderCompliance();
+  };
+});
+
+// Sheet close (för sheets utan egen close-knapp hanteras av bg)
+document.querySelectorAll('.sheet-close').forEach(function(b){if(!b.onclick)b.onclick=closeSheets;});
+document.getElementById('case-new').onclick=function(){openGrunddata(null);};
+
+// ── Init ──────────────────────────────────────────────
+function renderAll(){renderOversikt();renderCaseList();if(detailOpen)renderCase();renderForhandling();renderCompliance();}
+loadSync();
+applyTheme();
+setInterval(applyTheme,60000);
+renderOversikt();
+renderCaseList();
+fillCaseSelect(document.getElementById('f-case'),activeCaseId);
+fillCaseSelect(document.getElementById('c-case'),activeCaseId);
+setBadge(syncOn()?'ok':'','');document.getElementById('me-badge').textContent=syncOn()?'Synkad':'Lokal';
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
