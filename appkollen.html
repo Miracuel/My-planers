@@ -46,6 +46,10 @@ html[data-theme="dimma"]{--paper:#EEF1F4;--ink:#333B42;--ink-soft:#7B858D;--line
 .conn-x:hover{color:var(--bugg)}
 .conn-in-h{font-size:12px;color:var(--ink-soft);margin-top:12px;font-weight:600}
 .conn-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:9px;background:#EDE9F5;border:1px solid #DAD0EE;color:#5B4B9E}
+/* Klar för idag (avsluta dagen) */
+.done-day-btn{display:block;width:100%;margin:0 0 12px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:Georgia,serif;font-size:15px;cursor:pointer}
+.done-day-btn:hover{border-color:var(--ink-soft)}
+.done-day-sum{margin:0 0 12px;padding:11px 13px;border-radius:11px;background:var(--pagar-soft);border:1px solid var(--pagar);color:var(--pagar-text);font-size:13px;line-height:1.5}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--paper);color:var(--ink);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .app{max-width:480px;margin:0 auto;padding:14px 14px 40px}
@@ -535,6 +539,8 @@ label.chk-item:last-child{border-bottom:none}
   <button class="view-btn" data-v="hist">Aktivitet</button>
 </div>
 <div id="today-head" style="display:none"></div>
+<button id="done-day" class="done-day-btn" style="display:none">🌙 Klar för idag</button>
+<div id="done-day-sum" class="done-day-sum" style="display:none"></div>
 
 <div class="stale-note" id="stale-note"></div>
 
@@ -944,6 +950,7 @@ function applyView(v){
   if(addApp)addApp.style.display=(isCal||isToday||isHist)?'none':'';
   if(idea)idea.style.display=(v==='cards')?'':'none';
   var _pr=document.getElementById('prompts');if(_pr)_pr.style.display=(v==='cards')?'':'none';
+  var _dd=document.getElementById('done-day');if(_dd)_dd.style.display=isToday?'':'none';var _dds=document.getElementById('done-day-sum');if(_dds&&!isToday)_dds.style.display='none';
   if(th){if(isToday){var n=state.apps.filter(function(a){return a.commit===todayISO()&&!a.hidden;}).length;var nd=state.apps.filter(function(a){return a.commit===todayISO()&&a.commitDone===todayISO()&&!a.hidden;}).length;th.style.display='';th.textContent='Gör idag — '+n+(n===1?' app':' appar')+' planerade · '+nd+' klar'+(nd===1?'':'a');}else th.style.display='none';}
   document.querySelectorAll('#views .view-btn').forEach(function(b){b.classList.toggle('active',b.dataset.v===v);});
   if(isCal)renderCalendar();else if(isHist)renderHistoryView();else renderCards();
@@ -1056,7 +1063,13 @@ function renderDashboard(){
   var updItems=apps.map(function(a){return{a:a,n:(a.uploads?a.uploads.length:0)};}).filter(function(x){return x.n>0;}).sort(function(x,y){return y.n-x.n;}).slice(0,8);
   var maxU=updItems.length?updItems[0].n:0;
   var updHtml='<div class="chart-box"><div class="chart-h">Mest uppdaterade</div>'+(updItems.length?updItems.map(function(it){var w=maxU?Math.round(it.n/maxU*100):0;return'<button class="roi-row" data-recid="'+it.a.id+'"><span class="roi-name">'+esc(it.a.name)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+w+'%;background:var(--ide)"></span></span><span class="roi-val">'+it.n+'</span></button>';}).join(''):'<div class="dash-empty">Inga uppladdningar än.</div>')+'</div>';
-  body.innerHTML=recHtml+kpiHtml+chartsHtml+topHtml+roiHtml+updHtml+healthHtml;
+  var timeItems=apps.map(function(a){return{a:a,n:appElapsed(a)+appTestElapsed(a)};}).filter(function(x){return x.n>0;}).sort(function(x,y){return y.n-x.n;}).slice(0,8);
+  var maxT=timeItems.length?timeItems[0].n:0;
+  var timeHtml='<div class="chart-box"><div class="chart-h">Mest arbetad tid</div>'+(timeItems.length?timeItems.map(function(it){var w=maxT?Math.round(it.n/maxT*100):0;return'<button class="roi-row" data-recid="'+it.a.id+'"><span class="roi-name">'+esc(it.a.name)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+w+'%;background:var(--pagar)"></span></span><span class="roi-val">'+fmtDur(it.n)+'</span></button>';}).join(''):'<div class="dash-empty">Ingen tid loggad än.</div>')+'</div>';
+  var histItems=apps.map(function(a){return{a:a,n:(a.history?a.history.length:0)};}).filter(function(x){return x.n>0;}).sort(function(x,y){return y.n-x.n;}).slice(0,8);
+  var maxH=histItems.length?histItems[0].n:0;
+  var histHtml='<div class="chart-box"><div class="chart-h">Flest historikhändelser</div>'+(histItems.length?histItems.map(function(it){var w=maxH?Math.round(it.n/maxH*100):0;return'<button class="roi-row" data-recid="'+it.a.id+'"><span class="roi-name">'+esc(it.a.name)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+w+'%;background:var(--warn)"></span></span><span class="roi-val">'+it.n+'</span></button>';}).join(''):'<div class="dash-empty">Ingen historik än.</div>')+'</div>';
+  body.innerHTML=recHtml+kpiHtml+chartsHtml+topHtml+roiHtml+updHtml+timeHtml+histHtml+healthHtml;
 }
 function betygTotal(a){var L=(a.betyg||[]);var vals=[];L.forEach(function(b){var m=String(b.score||'').match(/-?\d+(\.\d+)?/);if(m)vals.push(parseFloat(m[0]));});if(!vals.length)return null;var s=0;vals.forEach(function(v){s+=v;});return Math.round(s/vals.length*10)/10;}
 function fmtDateTime(ts){var d=new Date(ts);return d.toLocaleString('sv-SE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
@@ -1725,6 +1738,7 @@ renderAll();
 startResetTick();
 document.getElementById('dash-toggle').onclick=()=>{dashOpen=!dashOpen;renderDashboard();};
 document.getElementById('theme-row').onclick=function(e){var b=e.target.closest('.theme-btn');if(b)applyTheme(b.dataset.theme);};
+document.getElementById('done-day').onclick=function(){var run=runningTimers().length;stopAllTimers();stopAllTestTimers();var dt=state.apps.filter(function(a){return a.commitDone===todayISO();}).length;var pt=state.apps.filter(function(a){return a.commit===todayISO()&&!a.hidden;}).length;var sum=document.getElementById('done-day-sum');if(sum){sum.innerHTML='Klar för idag! \ud83c\udf19<br>'+(run>0?('Stoppade '+run+' tidur. '):'Inga tidur var igång. ')+dt+' av '+pt+' planerade appar klarmarkerade idag.';sum.style.display='';}};
 var _db=document.getElementById('dash-body');if(_db)_db.onclick=function(e){var rc=e.target.closest('[data-recid]');if(rc){openApp(rc.getAttribute('data-recid'));return;}var el=e.target.closest('[data-filter]');if(el)applyDashFilter(el.getAttribute('data-filter'));};
 applyView('cards');
 if(syncOn())ghPull();
