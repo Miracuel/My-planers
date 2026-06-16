@@ -85,6 +85,18 @@ textarea{resize:vertical;line-height:1.5}
 .app-score .sc.ok{background:var(--green-soft);color:var(--green)}
 .app-score .sc.bad{background:var(--red-soft);color:var(--red)}
 .app-score .sc.imp{background:var(--improve-soft);color:var(--improve)}
+.statpick{flex-shrink:0;width:27px;height:27px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;margin-right:10px}
+.statpick.pass{background:var(--green-soft);color:var(--green);border-color:transparent}
+.statpick.fail{background:var(--red-soft);color:var(--red);border-color:transparent}
+.statpick.improve{background:var(--improve-soft);color:var(--improve);border-color:transparent}
+.statpick.blocked{background:var(--amber-soft);color:var(--amber);border-color:transparent}
+.statpick.progress{background:var(--blue-soft);color:var(--blue);border-color:transparent}
+.statpick.skip{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.statopts{display:flex;flex-direction:column;gap:8px}
+.statopt{width:100%;text-align:left;border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:12px;padding:13px 14px;font-size:15px;cursor:pointer;font-family:inherit}
+.statopt.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.fb-summary{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 14px;margin-bottom:12px}
+.fb-summary .lnk{color:var(--accent);cursor:pointer;font-size:12px}
 .app-body{padding:0 14px 6px;display:none}
 .app-card.open .app-body{display:block}
 .pill.ny{background:var(--accent);color:#fff}
@@ -246,7 +258,7 @@ html[data-theme=dark]{
 <div class="nav">
   <button class="active" data-v="todo"><span class="ico">🔔</span>Testa<span class="dot" id="todo-dot" style="display:none">0</span></button>
   <button data-v="proto"><span class="ico">📋</span>Protokoll</button>
-  <button data-v="apps"><span class="ico">🗂</span>Appar</button>
+  <button data-v="apps"><span class="ico">💬</span>Feedback</button>
   <button data-v="cal"><span class="ico">📅</span>Kalender</button>
   <button data-v="bugs"><span class="ico">🐞</span>Buggar<span class="dot" id="bug-dot" style="display:none">0</span></button>
   <button data-v="testers"><span class="ico">👤</span>Testare</button>
@@ -289,9 +301,9 @@ html[data-theme=dark]{
   <button class="btn fill" id="add-func" style="width:100%;margin-top:12px">+ Lägg till funktion manuellt</button>
 </div>
 
-<!-- SYNKADE APPAR -->
+<!-- FEEDBACK / FUNKTIONSTESTNING -->
 <div class="view" id="view-apps">
-  <div class="soft" style="margin-bottom:8px">Varje app och dess funktioner/tester med status. Appar märkta <span class="tag">synkad</span> kommer från changelogs i repot.</div>
+  <div class="soft" style="margin-bottom:8px">All funktionstestning och feedback per app. Bocka av varje funktion en och en med statusikonen, eller tryck på namnet för full testvy.</div>
   <div id="apps-list"></div>
 </div>
 
@@ -409,6 +421,14 @@ html[data-theme=dark]{
   <label>Anthropic API-nyckel</label>
   <input type="password" id="ai-key" placeholder="sk-ant-…">
   <button class="sheet-close" id="ai-save">Spara nyckel</button>
+</div>
+
+<!-- Snabb status (feedback-vyn) -->
+<div class="sheet" id="stat-sheet">
+  <h3 id="stat-name">Funktion</h3>
+  <div class="soft" id="stat-app" style="margin-top:-6px;margin-bottom:12px"></div>
+  <div id="stat-opts" class="statopts"></div>
+  <button class="sheet-close" id="stat-close">Klar</button>
 </div>
 
 <!-- Bugg-sheet -->
@@ -838,14 +858,25 @@ function renderProto(){
   bindRows(el);
 }
 
-// ── Synkade appar ─────────────────────────────────────
+// ── Feedback / funktionstestning (per app) ────────────
 const appsExpanded=new Set();
+function statGlyph(st){return ({pending:'○',progress:'◐',pass:'✓',fail:'✗',improve:'△',blocked:'⤫',skip:'⊘'})[st]||'○';}
+function fbRow(f){
+  const st=statusOf(f);
+  const meta=[];if(f.version)meta.push('v'+esc(f.version));const pl=f.plat||{};if(pl.mobil)meta.push('📱');if(pl.desktop)meta.push('🖥');
+  return '<div class="frow"><button class="statpick '+st+'" data-pick="'+esc(f.id)+'" title="'+esc(ST[st])+'">'+statGlyph(st)+'</button><div class="fmain" data-open="'+esc(f.id)+'"><div class="fname">'+esc(f.namn||'(utan namn)')+'</div>'+(meta.length?'<div class="fmeta">'+meta.join(' ')+'</div>':'')+'</div><span class="chev">›</span></div>';
+}
 function renderApps(){
   const byApp={};state.funcs.forEach(f=>{const a=f.app||'Allmänt';(byApp[a]=byApp[a]||[]).push(f);});
   const apps=Object.keys(byApp).sort();
   const el=$('apps-list');
-  if(!apps.length){el.innerHTML='<div class="empty-msg">Inga appar ännu. Hämta changelogs (Att testa → ⟳) eller lägg till funktioner.</div>';return;}
-  el.innerHTML=apps.map(a=>{
+  if(!apps.length){el.innerHTML='<div class="empty-msg">Inga funktioner ännu. Hämta changelogs (Testa → ⟳) eller lägg till funktioner.</div>';return;}
+  // global sammanfattning
+  const tc={pending:0,progress:0,pass:0,fail:0,improve:0,blocked:0,skip:0};state.funcs.forEach(f=>tc[statusOf(f)]++);
+  const openIssues=(state.bugs||[]).filter(OPEN_BUG).length;
+  const score='<div class="app-score"><span class="sc ok">✓ '+tc.pass+' funkar</span>'+(tc.fail?'<span class="sc bad">✗ '+tc.fail+' funkar inte</span>':'')+(tc.improve?'<span class="sc imp">△ '+tc.improve+' kan förbättras</span>':'')+((tc.pending+tc.progress)?'<span class="sc" style="background:var(--panel2);color:var(--muted)">○ '+(tc.pending+tc.progress)+' väntande</span>':'')+'</div>';
+  let html='<div class="fb-summary"><div class="section-title" style="margin:0 0 6px">Totalt</div>'+score+'<div class="lnk" id="fb-toissues">'+openIssues+' öppna i buggregistret →</div></div>';
+  html+=apps.map(a=>{
     const arr=byApp[a].slice().sort((x,y)=>(x.namn||'').localeCompare(y.namn||''));
     const c={pending:0,progress:0,pass:0,fail:0,improve:0,blocked:0,skip:0};arr.forEach(f=>c[statusOf(f)]++);
     const tot=arr.length;
@@ -853,15 +884,37 @@ function renderApps(){
     const synced=arr.some(f=>f.source==='changelog');
     const s=(n,col)=>n>0?'<i style="width:'+(n/tot*100)+'%;background:'+col+'"></i>':'';
     const bar='<div class="bar-bg" style="margin:6px 0 4px">'+s(c.pass,'var(--green)')+s(c.fail,'var(--red)')+s(c.improve,'var(--improve)')+s(c.blocked,'var(--amber)')+s(c.progress,'var(--blue)')+s(c.skip,'var(--line)')+s(c.pending,'var(--panel2)')+'</div>';
-    const score='<div class="app-score"><span class="sc ok">✓ '+(c.pass)+' funkar</span>'+(c.fail?'<span class="sc bad">✗ '+c.fail+' funkar inte</span>':'')+(c.improve?'<span class="sc imp">△ '+c.improve+' kan förbättras</span>':'')+'</div>';
-    const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att testa · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
+    const sc='<div class="app-score"><span class="sc ok">✓ '+c.pass+' funkar</span>'+(c.fail?'<span class="sc bad">✗ '+c.fail+' funkar inte</span>':'')+(c.improve?'<span class="sc imp">△ '+c.improve+' kan förbättras</span>':'')+'</div>';
+    const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att bocka av · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
     const open=appsExpanded.has(a);
-    const rows=arr.map(funcRow).join('');
-    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'"><div class="app-head"><div style="flex:1;min-width:0"><div class="an">'+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div>'+bar+score+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span></div><div class="app-body">'+rows+'</div></div>';
+    const rows=arr.map(fbRow).join('');
+    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'"><div class="app-head"><div style="flex:1;min-width:0"><div class="an">'+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div>'+bar+sc+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span></div><div class="app-body">'+rows+'</div></div>';
   }).join('');
+  el.innerHTML=html;
+  const toI=$('fb-toissues');if(toI)toI.onclick=()=>goView('bugs');
   el.querySelectorAll('.app-head').forEach(h=>{h.onclick=()=>{const card=h.closest('.app-card');const a=card.dataset.app;if(appsExpanded.has(a))appsExpanded.delete(a);else appsExpanded.add(a);card.classList.toggle('open');};});
-  el.querySelectorAll('.app-body .frow').forEach(r=>{r.onclick=()=>openFunc(r.dataset.id);});
+  el.querySelectorAll('.statpick').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();openStatusSheet(b.dataset.pick);};});
+  el.querySelectorAll('.fmain[data-open]').forEach(r=>{r.onclick=()=>openFunc(r.dataset.open);});
 }
+function setFuncVerdict(f,v){
+  if(!v){f.verdict=null;f.verdictBy='';f.verdictTs='';}
+  else{f.verdict=v;f.verdictBy=getMe()||'okänd';f.verdictTs=nowISO();
+    if(v==='fail')logIssueFromFunc(f,'bugg');
+    else if(v==='improve')logIssueFromFunc(f,'forbattring');}
+  persist();
+}
+let statId=null;
+function openStatusSheet(id){
+  statId=id;const f=state.funcs.find(x=>x.id===id);if(!f)return;
+  $('stat-name').textContent=f.namn||'Funktion';
+  $('stat-app').textContent=(f.app||'')+(f.version?(' · v'+f.version):'');
+  const cur=statusOf(f);
+  const opts=[['ok','✓ Funkar','pass'],['','○ Väntande (ej testad)','pending'],['improve','△ Kan förbättras','improve'],['fail','✗ Funkar inte','fail'],['skip','⊘ Behöver ej testas','skip']];
+  $('stat-opts').innerHTML=opts.map(o=>'<button class="statopt'+(cur===o[2]?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>').join('');
+  $('stat-opts').querySelectorAll('[data-v]').forEach(b=>{b.onclick=()=>{const ff=state.funcs.find(x=>x.id===statId);if(!ff)return;setFuncVerdict(ff,b.dataset.v);closeSheets();renderApps();};});
+  openSheet('stat-sheet');
+}
+$('stat-close').onclick=()=>closeSheets();
 
 // ── Kalender ──────────────────────────────────────────
 const MONTHS=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
@@ -1385,8 +1438,14 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='2.1';
+const APP_VERSION='2.2';
 const CHANGELOG=[
+  {version:'2.2',date:'2026-06-16',title:'Feedback-vy med snabb avbockning',items:[
+    'Fliken "Appar" är nu "Feedback" — en samlad vy över all funktionstestning och feedback per app.',
+    'Varje funktion har en liten statusikon (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte) som du bockar av en och en direkt i listan.',
+    'Tryck på statusikonen för snabbval, eller på namnet för full testvy. Funkar inte/Kan förbättras loggar fortfarande bugg/förbättring och skickar till Appcentralen.',
+    'Överst en total sammanfattning med score och antal öppna poster i buggregistret.'
+  ]},
   {version:'2.1',date:'2026-06-16',title:'Modulfeedback & funktionsscore',items:[
     'Tre omdömen per modul/funktion: "Funkar", "Funkar inte" och "Kan förbättras" — med kommentar.',
     '"Funkar inte" loggar en bugg och "Kan förbättras" loggar en förbättring — båda hamnar i buggdelen och skickas automatiskt till Appcentralen (köas om du är offline).',
@@ -1456,7 +1515,7 @@ const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
   {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Buggregister',items:['Separat register för både buggar och förbättringar (typ-filter 🐞/💡), med status Ny/Bekräftad/Påbörjad/Fixad/Omtest krävs/Stängd, kopplat till app, funktion och version, med prioritet och rapportör.','Modulomdömena "Funkar inte" och "Kan förbättras" loggar automatiskt här och skickar till Appcentralen. Poster syns i översikten och kan skickas/återsändas till Appcentralen.']},
-  {area:'Synkade appar',items:['Egen vy där varje app visas med sina funktioner/tester och status, hopfällbar per app med statusöversikt och antal öppna buggar. Appar från changelogs märks "synkad".']},
+  {area:'Feedback / funktionstestning',items:['Samlad vy per app över all funktionstestning och feedback. Varje funktion har en statusikon (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte) som bockas av en och en direkt i listan — snabbval via ikonen eller full testvy via namnet.','Funktionsscore per app och totalt: hur många som funkar, inte funkar och kan förbättras, plus antal öppna poster i buggregistret. Appar från changelogs märks "synkad".']},
   {area:'Kalender',items:['Kalendervy som visar när varje funktion lades till (antal per dag). Tryck på ett datum för att se och testa bara de funktionerna, plus buggar rapporterade samma dag.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},
   {area:'Översikt',items:['Status totalt, per app och insats per testare, testtäckning samt logg över senaste resultat.']},
