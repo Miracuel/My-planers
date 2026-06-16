@@ -564,6 +564,25 @@ label.chk-item:last-child{border-bottom:none}
 .tt-app-tot{font-size:12px;color:#5B4FA0;font-weight:600;margin-left:auto}
 .tt-commit{width:100%;margin-top:6px;padding:11px;border:1px solid #7A6CC4;background:#EEEAF8;color:#5B4FA0;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit}
 .card-nick{font-size:12px;color:var(--ink-soft);font-style:italic;font-weight:400;margin-left:3px}
+.clog-repo{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+.clog-repo-h{font-family:Georgia,serif;font-size:15px;margin-bottom:4px}
+.clog-repo-sub{font-size:11px;color:var(--ink-soft);margin-bottom:10px}
+.clog-repo-cfg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.clog-repo-cfg input{flex:1;min-width:120px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;background:var(--paper);font-family:inherit;color:var(--ink)}
+.clog-repo-btn{padding:8px 14px;border:1px solid #7A6CC4;background:#EEEAF8;color:#5B4FA0;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.clog-repo-status{font-size:12px;color:var(--ink-soft);margin-bottom:8px}
+.clog-repo-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--paper)}
+.clog-repo-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.clog-repo-file{font-weight:600;font-size:13px}
+.clog-repo-app{font-size:11px;color:#3E6B41;background:#E4EDE4;border-radius:10px;padding:1px 8px}
+.clog-repo-desc{font-size:12px;color:var(--ink-soft);margin:4px 0}
+.clog-flags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.clog-flag{font-size:10px;border-radius:8px;padding:2px 7px}
+.clog-flag.ok{background:#E4EDE4;color:#3E6B41}
+.clog-flag.no{background:#F5E3E3;color:#A04545}
+.clog-repo-assign{margin-top:8px}
+.clog-repo-assign select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;background:#fff;font-family:inherit;color:var(--ink)}
+.clog-type{font-size:9px;background:#EEEAF8;color:#5B4FA0;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle;font-weight:600}
 </style>
 </head>
 <body>
@@ -606,7 +625,6 @@ label.chk-item:last-child{border-bottom:none}
 <div id="today-head" style="display:none"></div>
 <button id="done-day" class="done-day-btn" style="display:none">🌙 Klar för idag</button>
 <div id="done-day-sum" class="done-day-sum" style="display:none"></div>
-<div id="today-time" style="display:none"></div>
 
 <div class="stale-note" id="stale-note"></div>
 
@@ -627,6 +645,7 @@ label.chk-item:last-child{border-bottom:none}
 
 <div class="filt-bar" id="filt-bar" style="display:none"></div>
 <div id="cards"></div>
+<div id="today-time" style="display:none"></div>
 
 <div class="prompts" id="prompts">
   <button class="acc-head prompts-head" id="prompts-toggle"><span>Standardprompter</span><span class="acc-chev" id="prompts-chev">▾</span></button>
@@ -960,8 +979,8 @@ function aiStatus(app,ai){const s=app.sync&&app.sync[ai];if(!s)return'off';if(ap
 // ── GitHub-synk (samma mönster som jobbplaneringen) ────
 const SYNC_KEY='appkollensync_v1';
 let sync={owner:'',repo:'',token:'',sha:null};
-function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
-function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';sync.clogRepo=d.clogRepo||'';sync.clogPath=d.clogPath||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token,clogRepo:sync.clogRepo||'',clogPath:sync.clogPath||''}));}catch(e){}}
 const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
 const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/appkollen.json';
 const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
@@ -1059,13 +1078,54 @@ function renderTodayTime(){
 function ttSplitEven(){var poolMin=(+(document.getElementById('tt-gen-h').value||0))*60+(+(document.getElementById('tt-gen-m').value||0));var rows=document.querySelectorAll('#today-time .tt-alloc');var n=rows.length;if(!n)return;var share=Math.round(poolMin/n);Array.prototype.forEach.call(rows,function(inp){var clk=+inp.dataset.clock||0;var v=Math.max(0,share-clk);inp.value=v?v:'';var row=inp.closest('.tt-app');var base=+inp.dataset.base||0;var tot=row&&row.querySelector('.tt-app-tot');if(tot)tot.textContent='= '+fmtDur((base+v)*60000);});}
 function ttCommit(){var rows=document.querySelectorAll('#today-time .tt-alloc');var d=todayISO();var total=0,napps=0;Array.prototype.forEach.call(rows,function(inp){var min=+inp.value||0;if(min<=0)return;var a=appById(inp.dataset.id);if(!a)return;var ms=min*60000;a.timeMs=(a.timeMs||0)+ms;if(!a.dayGeneral)a.dayGeneral={};a.dayGeneral[d]=(a.dayGeneral[d]||0)+ms;pushHistory(a,'time','Allmän tid: '+fmtDur(ms));total+=ms;napps++;});if(!total){alert('Fyll i minuter på minst en app först.');return;}document.getElementById('tt-gen-h').value='';document.getElementById('tt-gen-m').value='';persist();renderTodayTime();renderCards();alert(fmtDur(total)+' fördelat på '+napps+' app'+(napps===1?'':'ar')+'.');}
 
+var repoClogs=[];
+function clogRepoCfg(){var rp=(sync.clogRepo||'').trim();var owner=sync.owner,repo=sync.repo;if(rp.indexOf('/')>=0){var parts=rp.split('/');owner=(parts[0]||'').trim();repo=parts.slice(1).join('/').trim();}return {owner:owner,repo:repo,path:(sync.clogPath||'').trim(),token:sync.token||''};}
+async function fetchRepoClogs(cfg){
+  var base='https://api.github.com/repos/'+cfg.owner+'/'+cfg.repo+'/contents'+(cfg.path?('/'+cfg.path.replace(/^\/+|\/+$/g,'')):'');
+  var headers={'Accept':'application/vnd.github+json'};if(cfg.token)headers.Authorization='Bearer '+cfg.token;
+  var r=await fetch(base,{headers:headers,cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status+(r.status===404?' (repo/sökväg hittades ej)':(r.status===401?' (token saknar behörighet)':'')));
+  var list=await r.json();
+  if(!Array.isArray(list))throw new Error('Sökvägen är inte en mapp.');
+  var files=list.filter(function(f){if(f.type!=='file')return false;var nm=f.name.toLowerCase();return nm.slice(-5)==='.json'&&(nm.indexOf('changelog')>=0||nm.indexOf('manifest')>=0);});
+  var out=[];
+  for(var i=0;i<files.length;i++){
+    try{var fr=await fetch(files[i].url,{headers:headers,cache:'no-store'});if(!fr.ok)continue;var fj=await fr.json();var data=JSON.parse(b64dec(fj.content||''));if(Array.isArray(data)){data.forEach(function(m,k){if(m&&typeof m==='object')out.push({file:files[i].name+' ['+(m.name||m.id||(k+1))+']',data:m});});}else if(data&&typeof data==='object'&&(Array.isArray(data.changelog)||Array.isArray(data.features)||Array.isArray(data.functions))){out.push({file:files[i].name,data:data});}}catch(e){}
+  }
+  return out;
+}
+function doFetchRepoClogs(){
+  var ri=document.getElementById('clog-repo-input'),rp=document.getElementById('clog-repo-path'),st=document.getElementById('clog-repo-status');
+  if(ri)sync.clogRepo=ri.value.trim();if(rp)sync.clogPath=rp.value.trim();saveSync();
+  var cfg=clogRepoCfg();
+  if(!cfg.owner||!cfg.repo){if(st)st.textContent='Ange ägare/repo (eller konfigurera synk först i Inställningar).';return;}
+  if(st)st.textContent='Hämtar…';
+  fetchRepoClogs(cfg).then(function(list){repoClogs=list||[];if(st)st.textContent=repoClogs.length?(repoClogs.length+' changelogg-fil'+(repoClogs.length===1?'':'er')+' hämtade.'):'Hittade inga *changelog*.json-filer i repot/sökvägen.';renderRepoClogList();}).catch(function(err){if(st)st.textContent='Fel: '+((err&&err.message)||err);});
+}
+function assignClog(file,appId){state.apps.forEach(function(a){if(a.clogFile===file)a.clogFile='';});if(appId){var a=appById(appId);if(a)a.clogFile=file;}persist();renderRepoClogList();}
+function renderRepoClogList(){
+  var box=document.getElementById('clog-repo-list');if(!box)return;
+  if(!repoClogs.length){box.innerHTML='';return;}
+  function opts(sel){var o='<option value="">— koppla till app-ID —</option>';state.apps.filter(function(a){return !a.archived;}).slice().sort(function(x,y){return (x.name||'').localeCompare(y.name||'');}).forEach(function(a){o+='<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+esc(a.name)+(a.mid?' ('+esc(a.mid)+')':'')+'</option>';});return o;}
+  function flag(ok,lbl){return '<span class="clog-flag '+(ok?'ok':'no')+'">'+(ok?'✓':'✗')+' '+lbl+'</span>';}
+  box.innerHTML=repoClogs.map(function(rc){
+    var d=rc.data||{};var entries=Array.isArray(d.changelog)?d.changelog:[];
+    var assignedApp=state.apps.find(function(a){return a.clogFile===rc.file;});
+    var nFunc=Array.isArray(d.functions)?d.functions.reduce(function(s,f){return s+((f.items&&f.items.length)||0);},0):0;if(!nFunc&&Array.isArray(d.features))nFunc=d.features.length;var isMan=!!(d.features||d.flags||d.business);
+    var hasAud=!!(d.targetAudience||d.audience||d.malgrupp);
+    var meta=flag(entries.length>0,'changelogg')+flag(nFunc>0,'funktioner')+flag(hasAud,'målgrupp')+flag(!!d.description,'beskrivning');
+    var latest=entries.slice(0,3).map(function(e){return '<div class="clog-entry"><span class="clog-date">'+esc(e.version?('v'+e.version):(e.date||''))+'</span><span class="clog-txt">'+esc(e.title||((e.items&&e.items[0])||''))+'</span></div>';}).join('');
+    return '<div class="clog-repo-item"><div class="clog-repo-top"><span class="clog-repo-file">'+esc(rc.file)+'<span class="clog-type">'+(isMan?'Manifest':'Changelogg')+'</span>'+(d.version?' <span class="clog-ver">v'+esc(d.version)+'</span>':'')+'</span>'+(assignedApp?'<span class="clog-repo-app">\u2192 '+esc(assignedApp.name)+'</span>':'')+'</div>'+(d.description?'<div class="clog-repo-desc">'+esc(d.description)+'</div>':'')+'<div class="clog-flags">'+meta+'</div>'+latest+'<div class="clog-repo-assign"><select class="clog-assign" data-file="'+esc(rc.file)+'">'+opts(assignedApp?assignedApp.id:'')+'</select></div></div>';
+  }).join('');
+}
+
 function renderClogView(){
   var wrap=document.getElementById('clog-wrap');if(!wrap)return;
   var apps=state.apps.filter(function(a){return !a.archived;});
   var withCl=apps.filter(function(a){return (a.changelog||[]).length>0;});
   var without=apps.filter(function(a){return (a.changelog||[]).length===0;});
   var totalEntries=apps.reduce(function(s,a){return s+(a.changelog||[]).length;},0);
-  var html='<div class="clog-view-h">Changeloggar</div>';
+  var html='<div class="clog-view-h">Changeloggar</div>';var _rv=(sync.clogRepo||'').trim()||((sync.owner&&sync.repo)?(sync.owner+'/'+sync.repo):'');html+='<div class="clog-repo"><div class="clog-repo-h">📦 Repo-changeloggar</div><div class="clog-repo-sub">Hämtar changelogg- och manifest-filer (*changelog*.json / *manifest*.json) från ditt repo — samma som Centralen läser — och kopplar varje fil till ett app-ID. Flaggorna visar om filen har changelogg, funktioner, målgrupp och beskrivning.</div><div class="clog-repo-cfg"><input type="text" id="clog-repo-input" placeholder="ägare/repo" value="'+esc(_rv)+'"><input type="text" id="clog-repo-path" placeholder="undermapp (valfritt)" value="'+esc(sync.clogPath||'')+'"><button id="clog-repo-fetch" class="clog-repo-btn">Hämta</button></div><div class="clog-repo-status" id="clog-repo-status"></div><div id="clog-repo-list"></div></div>';
   html+='<div class="clog-stat">'+withCl.length+' av '+apps.length+' appar har changelogg · '+totalEntries+' poster totalt'+(without.length?(' · '+without.length+' saknar'):'')+'</div>';
   if(without.length){
     without.sort(function(x,y){return (x.name||'').localeCompare(y.name||'');});
@@ -1080,7 +1140,7 @@ function renderClogView(){
     return '<div class="clog-app" data-id="'+a.id+'"><div class="clog-app-h">'+(a.emoji?esc(a.emoji)+' ':'')+esc(a.name)+(a.mver?'<span class="clog-ver">v'+esc(a.mver)+'</span>':'')+'<span class="clog-count">'+entries.length+' post'+(entries.length===1?'':'er')+'</span></div>'+rows+'</div>';
   }).join('');
   wrap.innerHTML=html;
-  wrap.onclick=function(e){var el=e.target.closest('[data-id]');if(el)openApp(el.getAttribute('data-id'));};
+  wrap.onclick=function(e){if(e.target.closest('#clog-repo-fetch')){doFetchRepoClogs();return;}var el=e.target.closest('[data-id]');if(el)openApp(el.getAttribute('data-id'));};wrap.onchange=function(e){var sel=e.target.closest('.clog-assign');if(sel)assignClog(sel.getAttribute('data-file'),sel.value);};renderRepoClogList();
 }
 
 function applyView(v){
@@ -1259,7 +1319,7 @@ function renderHistoryView(){
 var STATUSVAL={klar:10,test:7,pagar:5,back:3,none:1};
 function lastActivity(a){var t=a.upd||0;var lu=lastUpload(a);if(lu)t=Math.max(t,Date.parse(lu));if(a.history&&a.history.length){var h=Date.parse(a.history[a.history.length-1].ts);if(h>t)t=h;}return t;}
 function portfolioValue(a){var ps=prioScore(a);var bt=betygTotal(a);var hrs=(a.timeMs||0)/3600000;var pv=(ps!=null?ps:0)+(bt!=null?bt:0)+Math.min(10,hrs)+(STATUSVAL[effStatus(a)]||0);return Math.round(pv*10)/10;}
-function recScore(a){if(a.archived||a.hidden||effStatus(a)==='klar')return -1;var prioW=(a.prio?(6-a.prio):0)*2;var ps=prioScore(a);var scoreW=(ps!=null?ps:5);var stW=({pagar:4,back:3,test:2,none:1})[effStatus(a)]||0;var la=lastActivity(a);var days=la?((Date.now()-la)/86400000):999;var recW=la?(days<=7?2:(days<=30?1:0.5)):0;return prioW+scoreW+stW+recW;}
+function recScore(a){if(a.archived||a.hidden||a.awaitingFeedback||effStatus(a)==='klar')return -1;var prioW=(a.prio?(6-a.prio):0)*2;var ps=prioScore(a);var scoreW=(ps!=null?ps:5);var stW=({pagar:4,back:3,test:2,none:1})[effStatus(a)]||0;var la=lastActivity(a);var days=la?((Date.now()-la)/86400000):999;var recW=la?(days<=7?2:(days<=30?1:0.5)):0;return prioW+scoreW+stW+recW;}
 function recommendApp(){var best=null,bs=-1;state.apps.forEach(function(a){var s=recScore(a);if(s>bs){bs=s;best=a;}});return best;}
 var MOGNAD=['Idé','Prototyp','Alpha','Beta','Testad','Publicerad','Underhållsfas','Arkiverad'];
 var MOGNADCOL={'Idé':'#B8B0A4','Prototyp':'#C98A3D','Alpha':'#D9A441','Beta':'#5B7BA6','Testad':'#5E8C61','Publicerad':'#3E6B41','Underhållsfas':'#6E8B6E','Arkiverad':'#8A847C'};
@@ -1365,7 +1425,7 @@ function normalizeApps(){(state.apps||[]).forEach(function(a){
   if(typeof a.unique!=='string')a.unique='';
   if(!Array.isArray(a.categories))a.categories=[];
   if(typeof a.syncType!=='string')a.syncType='';
-  if(!a.flags||typeof a.flags!=='object')a.flags={};if(!a.dayClock||typeof a.dayClock!=='object')a.dayClock={};if(!a.dayGeneral||typeof a.dayGeneral!=='object')a.dayGeneral={};if(typeof a.nick!=='string')a.nick='';
+  if(!a.flags||typeof a.flags!=='object')a.flags={};if(!a.dayClock||typeof a.dayClock!=='object')a.dayClock={};if(!a.dayGeneral||typeof a.dayGeneral!=='object')a.dayGeneral={};if(typeof a.nick!=='string')a.nick='';if(typeof a.clogFile!=='string')a.clogFile='';
   if(typeof a.mid!=='string'||!a.mid){var f=(a.file||a.name||'').toLowerCase();a.mid=f.split('.html').join('').split('.htm').join('').split(' ').join('-');}
   (a.modules||[]).forEach(function(m){(m.funcs||[]).forEach(function(fn){if(typeof fn.st!=='string')fn.st='klar';});});
 });}

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Feedbackkollen">
+<meta name="theme-color" content="#EEF0F2">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232E7D86'/%3E%3Cpath d='M26 30h48a8 8 0 0 1 8 8v22a8 8 0 0 1-8 8H46l-14 12v-12h-6a8 8 0 0 1-8-8V38a8 8 0 0 1 8-8z' fill='%23F2F5F4'/%3E%3Ccircle cx='40' cy='49' r='4' fill='%232E7D86'/%3E%3Ccircle cx='54' cy='49' r='4' fill='%232E7D86'/%3E%3Ccircle cx='68' cy='49' r='4' fill='%232E7D86'/%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Feedbackkollen","short_name":"Feedbackkollen","display":"standalone","background_color":"%23EEF0F2","theme_color":"%23EEF0F2","start_url":"."}'>
+<title>Feedbackkollen</title>
+<style>
+:root{
+  --bg:#EEF0F2;--panel:#F7F8FA;--panel2:#E6EAEE;--line:#D4DAE0;
+  --ink:#293038;--muted:#79828C;--teal:#2E7D86;--teal-soft:#D3E5E7;
+  --ny:#4A7BC0;--pagar:#C79A3A;--klar:#4E9A6B;--avvaktar:#8A8A8A;--slopad:#B06A5E;
+  --hog:#C0584E;--mellan:#C79A3A;--lag:#7E8C97;
+  --navbg:rgba(238,240,242,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px;letter-spacing:.04em}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.card-panel + .card-panel{margin-top:12px}
+.btn{border:1px solid var(--teal);background:var(--panel);color:var(--teal);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--teal-soft)}
+.btn.fill{background:var(--teal);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.danger{border-color:var(--slopad);color:var(--slopad)}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 5px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+textarea{min-height:74px;resize:vertical;line-height:1.5}
+.empty-msg{font-size:12px;color:var(--muted);padding:14px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--ink)}
+
+/* Segmented pickers */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1;min-width:64px;border:1.5px solid var(--line);background:var(--panel2);border-radius:11px;padding:9px 6px;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit}
+.seg button.sel{background:var(--teal);border-color:var(--teal);color:#fff}
+
+/* App chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.chip{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:7px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--teal);border-color:var(--teal);color:#fff}
+.chip-del{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:7px 11px;font-size:13px;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.chip-del button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;line-height:1}
+
+/* Filter bar */
+.filterbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.filterbar .fchip{border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:6px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+.filterbar .fchip.sel{background:var(--teal-soft);border-color:var(--teal);color:var(--teal);font-weight:600}
+
+/* Item card */
+.item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden}
+.item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ny)}
+.item.t-pagar::before{background:var(--pagar)}
+.item.t-klar::before{background:var(--klar)}
+.item.t-avvaktar::before{background:var(--avvaktar)}
+.item.t-slopad::before{background:var(--slopad)}
+.item.t-klar,.item.t-slopad{opacity:.72}
+.item-head{display:flex;align-items:flex-start;gap:9px}
+.item-ic{font-size:17px;line-height:1.3;flex-shrink:0}
+.item-title{flex:1;font-size:14px;font-weight:600;line-height:1.35}
+.item.t-klar .item-title,.item.t-slopad .item-title{font-weight:500;text-decoration:line-through;text-decoration-color:var(--muted)}
+.item-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0 26px}
+.pill{font-size:10.5px;border-radius:8px;padding:3px 7px;letter-spacing:.02em}
+.pill.app{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.pill.st{color:#fff}
+.pill.st-ny{background:var(--ny)}.pill.st-pagar{background:var(--pagar)}
+.pill.st-klar{background:var(--klar)}.pill.st-avvaktar{background:var(--avvaktar)}
+.pill.st-slopad{background:var(--slopad)}
+.pdot{font-size:10.5px;color:var(--muted)}
+.pdot b.hog{color:var(--hog)}.pdot b.mellan{color:var(--mellan)}.pdot b.lag{color:var(--lag)}
+.item-desc{font-size:12.5px;color:var(--muted);line-height:1.5;margin:7px 0 0 26px}
+
+/* Stat tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.tile .n{font-family:Georgia,serif;font-size:28px;line-height:1.1}
+.tile .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.bar-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.bar-row:first-child{border-top:none}
+.bar-row .lab{width:108px;flex-shrink:0;color:var(--ink)}
+.bar-track{flex:1;height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;background:var(--teal);border-radius:5px}
+.bar-row .v{width:24px;text-align:right;color:var(--muted);font-size:12px}
+
+/* AI box */
+.ai-box{border:1px solid var(--teal);background:var(--teal-soft);border-radius:13px;padding:12px 13px;font-size:13px;line-height:1.6;color:var(--ink);margin-top:12px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--teal);font-size:12px;display:block;margin-bottom:5px}
+html[data-theme=dark] .ai-box{background:#16302F}
+
+/* History */
+.hist{margin-top:6px}
+.hist-row{display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:12px}
+.hist-row:first-child{border-top:none}
+.hist-row time{color:var(--muted);font-size:11px;flex-shrink:0;width:96px}
+.hist-row span{color:var(--ink)}
+
+/* Changelog */
+.cl-entry{padding:10px 0;border-top:1px solid var(--line)}
+.cl-entry:first-child{border-top:none}
+.cl-head{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
+.cl-ver{font-family:Georgia,serif;font-size:15px;color:var(--teal)}
+.cl-date{font-size:11px;color:var(--muted)}
+.cl-list{list-style:none;margin:0;padding:0}
+.cl-list li{font-size:13px;line-height:1.5;color:var(--ink);padding-left:16px;position:relative;margin:3px 0}
+.cl-list li::before{content:'•';position:absolute;left:2px;color:var(--teal)}
+.fn-area{padding:8px 0;border-top:1px solid var(--line)}
+.fn-area:first-child{border-top:none}
+.fn-area b{font-size:13px;display:block;margin-bottom:3px}
+
+/* Sync badge */
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;border-radius:10px;padding:5px 10px;border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
+.sync-badge.ok{background:var(--teal-soft);border-color:var(--teal);color:var(--teal)}
+.sync-badge.err{background:#F3E0DD;border-color:var(--slopad);color:var(--slopad)}
+html[data-theme=dark] .sync-badge.err{background:#3A2926}
+.hint{font-size:11px;color:var(--muted);line-height:1.55;margin-top:6px}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--teal);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(41,48,56,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:4px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--teal);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:14px;line-height:1.6}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1A1E22;--panel:#23282D;--panel2:#2B3137;--line:#3A4148;
+  --ink:#E4E8EC;--muted:#8C95A0;--teal:#5BA3AD;--teal-soft:#22424A;
+  --ny:#5E8FD0;--pagar:#D2AC55;--klar:#62A982;--avvaktar:#9AA0A8;--slopad:#C07F73;
+  --hog:#D27A70;--mellan:#D2AC55;--lag:#929BA6;--navbg:rgba(26,30,34,.95);
+}
+
+/* Desktop */
+@media (min-width:760px){
+  .app{max-width:840px;padding:calc(20px + env(safe-area-inset-top)) 22px 40px}
+  h1.brand{font-size:25px}
+  .nav{max-width:520px;border:1px solid var(--line);border-radius:18px;bottom:18px;left:50%;right:auto;transform:translateX(-50%);box-shadow:0 6px 24px rgba(0,0,0,.1);overflow:hidden}
+  .theme-btn{right:max(22px,calc(50vw - 408px))}
+  #view-tavla .item-list{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  #view-tavla .item{margin-bottom:12px}
+  .tiles{grid-template-columns:repeat(4,1fr)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  .sheet{max-width:560px;border-radius:20px;bottom:auto;top:50%;left:50%;right:auto;transform:translate(-50%,-50%) scale(.96);opacity:0;pointer-events:none;transition:transform .2s ease,opacity .2s ease}
+  .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">💬 Feedbackkollen</h1>
+<div class="brand-sub">Feedback, buggar &amp; idéer för Appkollen-sviten</div>
+
+<!-- LOGGA -->
+<div class="view active" id="view-logga">
+  <div class="card-panel">
+    <label>Vilken app gäller det?</label>
+    <div class="chips" id="logga-apps"></div>
+    <input type="text" id="logga-app-other" placeholder="…eller skriv en annan app" style="margin-top:8px">
+
+    <label>Typ</label>
+    <div class="seg" id="logga-type">
+      <button data-v="bugg" class="sel">🐛 Bugg</button>
+      <button data-v="ide">💡 Idé</button>
+      <button data-v="forbattring">🔧 Förbättring</button>
+      <button data-v="berom">💚 Beröm</button>
+    </div>
+
+    <label>Rubrik</label>
+    <input type="text" id="logga-title" placeholder="Kort sammanfattning">
+
+    <label>Beskrivning</label>
+    <textarea id="logga-desc" placeholder="Vad hände? Steg att återskapa, eller hur idén skulle funka."></textarea>
+
+    <label>Prioritet</label>
+    <div class="seg" id="logga-prio">
+      <button data-v="lag">Låg</button>
+      <button data-v="mellan" class="sel">Mellan</button>
+      <button data-v="hog">Hög</button>
+    </div>
+
+    <div style="margin-top:14px">
+      <button class="btn fill" id="logga-save" style="width:100%">Lägg till i tavlan</button>
+    </div>
+  </div>
+  <p class="privacy">Allt sparas lokalt i din enhet. Synka aktiveras under <b>Mer</b>.</p>
+</div>
+
+<!-- TAVLA -->
+<div class="view" id="view-tavla">
+  <div class="filterbar" id="filter-status"></div>
+  <div class="filterbar" id="filter-type"></div>
+  <select id="filter-app" style="margin-bottom:12px"></select>
+  <div class="item-list" id="tavla-list"></div>
+</div>
+
+<!-- ÖVERSIKT -->
+<div class="view" id="view-oversikt">
+  <div class="tiles" id="oversikt-tiles"></div>
+  <div class="two-col" style="margin-top:14px">
+    <div>
+      <div class="section-title">Efter status</div>
+      <div class="card-panel" id="oversikt-status"></div>
+    </div>
+    <div>
+      <div class="section-title">Öppet per app</div>
+      <div class="card-panel" id="oversikt-apps"></div>
+    </div>
+  </div>
+  <div class="section-title">AI-prioritering</div>
+  <div class="card-panel">
+    <p class="soft">Låt Claude läsa dina öppna poster och föreslå vad du borde ta tag i härnäst.</p>
+    <button class="btn fill" id="ai-plan-btn" style="width:100%;margin-top:10px">✨ Sammanfatta &amp; prioritera</button>
+    <div id="ai-plan-out"></div>
+  </div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-mer">
+  <div class="section-title">Synk via GitHub</div>
+  <div class="card-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+      <span class="sync-badge" id="sync-badge">Lokal</span>
+      <button class="btn ghost" id="sync-now">↻ Synka nu</button>
+    </div>
+    <p class="soft" style="margin-top:6px">Läser och sparar <span class="code">feedbackkollen.json</span> i ett <b>privat</b> repo, så att samma feedback finns på alla dina enheter. Token sparas bara lokalt — aldrig i koden eller i säkerhetskopior.</p>
+    <label>GitHub-användarnamn</label>
+    <input type="text" id="gh-owner" placeholder="miracuel">
+    <label>Privat data-repo</label>
+    <input type="text" id="gh-repo" placeholder="appkollen-data">
+    <label>Fine-grained token</label>
+    <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+    <div class="hint">github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Endast data-repot, Contents: Read and write.</div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn fill" id="gh-save">Spara &amp; synka</button>
+      <button class="btn ghost" id="gh-clear">Koppla bort</button>
+    </div>
+  </div>
+
+  <div class="section-title">AI-nyckel</div>
+  <div class="card-panel">
+    <p class="soft">AI-funktionerna körs av Claude via din egen API-nyckel från Anthropic (console.anthropic.com → API keys). Nyckeln sparas bara lokalt och följer aldrig med i synk eller säkerhetskopior.</p>
+    <label>Anthropic API-nyckel</label>
+    <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn fill" id="ai-key-save">Spara</button>
+      <button class="btn ghost" id="ai-key-clear">Rensa</button>
+    </div>
+  </div>
+
+  <div class="section-title">Appar i sviten</div>
+  <div class="card-panel">
+    <p class="soft">Dessa visas som snabbval när du loggar.</p>
+    <div class="chips" id="mer-apps" style="margin-top:10px"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input type="text" id="mer-app-new" placeholder="Lägg till app">
+      <button class="btn" id="mer-app-add" style="flex-shrink:0">+</button>
+    </div>
+  </div>
+
+  <div class="section-title">Data</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn" id="export-btn">💾 Säkerhetskopiera</button>
+      <button class="btn" id="import-btn">Importera</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+    <p class="privacy">Feedbackkollen är ett verktyg för dig själv — inte en ersättning för riktig användartestning. Eftersom poster kan nämna jobbappar: håll synk-repot privat.</p>
+  </div>
+
+  <div class="section-title">Changelogg <span id="mer-version" style="font-size:11px;color:var(--muted);font-weight:400"></span></div>
+  <div class="card-panel" id="mer-changelog"></div>
+
+  <div class="section-title">Funktionslogg</div>
+  <div class="card-panel" id="mer-functions"></div>
+  <p class="privacy">Changeloggen och funktionsloggen är inbäddade och läses även av Centralen. Maskinläsbar version: <span class="code">feedbackkollen-changelog.json</span>.</p>
+</div>
+
+</div><!-- /app -->
+
+<!-- Edit sheet -->
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="edit-sheet">
+  <h3 id="edit-h">Redigera</h3>
+  <label>App</label>
+  <input type="text" id="edit-app">
+  <label>Typ</label>
+  <div class="seg" id="edit-type">
+    <button data-v="bugg">🐛 Bugg</button>
+    <button data-v="ide">💡 Idé</button>
+    <button data-v="forbattring">🔧 Förbättring</button>
+    <button data-v="berom">💚 Beröm</button>
+  </div>
+  <label>Rubrik</label>
+  <input type="text" id="edit-title">
+  <label>Beskrivning</label>
+  <textarea id="edit-desc"></textarea>
+  <label>Prioritet</label>
+  <div class="seg" id="edit-prio">
+    <button data-v="lag">Låg</button>
+    <button data-v="mellan">Mellan</button>
+    <button data-v="hog">Hög</button>
+  </div>
+  <label>Status</label>
+  <div class="seg" id="edit-status">
+    <button data-v="ny">Ny</button>
+    <button data-v="pagar">Pågår</button>
+    <button data-v="avvaktar">Avvaktar</button>
+    <button data-v="klar">Klar</button>
+    <button data-v="slopad">Slopad</button>
+  </div>
+
+  <button class="btn ghost" id="edit-ai" style="width:100%;margin-top:14px">✨ Förtydliga med AI</button>
+  <div id="edit-ai-out"></div>
+
+  <div class="section-title" style="margin-top:14px">Historik</div>
+  <div class="hist" id="edit-hist"></div>
+
+  <div class="btn-row" style="margin-top:16px">
+    <button class="btn danger" id="edit-delete">Radera</button>
+    <button class="btn fill" id="edit-save" style="flex:2">Spara ändringar</button>
+  </div>
+  <button class="sheet-close" id="edit-close">Stäng</button>
+</div>
+
+<nav class="nav">
+  <button class="active" data-v="logga"><span>✏️</span>Logga</button>
+  <button data-v="tavla"><span>📋</span>Tavlan</button>
+  <button data-v="oversikt"><span>📊</span>Översikt</button>
+  <button data-v="mer"><span>⚙️</span>Mer</button>
+</nav>
+
+<script>
+// ── State ──────────────────────────────────────────────
+var KEY='feedbackkollen_v1';
+var SEED_APPS=['Batteriet','Älsklingen','Kitteln','Grannskapet','HobbyKollen','Jobbplanering','Min planering','Dagstavlan','Tarot','Månen','Stjärnkartan','Jag och min ledare','FörhandlingsKompassen','LajvKompassen','LajvMästaren','Centralen'];
+var state={items:[],apps:SEED_APPS.slice(),theme:'auto',aiPlan:''};
+try{var _s=localStorage.getItem(KEY);if(_s){var _d=JSON.parse(_s);state.items=Array.isArray(_d.items)?_d.items:[];state.apps=Array.isArray(_d.apps)&&_d.apps.length?_d.apps:SEED_APPS.slice();state.theme=_d.theme||'auto';state.aiPlan=_d.aiPlan||'';}}catch(e){}
+
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify({items:state.items,apps:state.apps,theme:state.theme,aiPlan:state.aiPlan}));}catch(e){}}
+function save(){saveLocal();schedulePush();}
+
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var uid=function(){return 'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+var nowISO=function(){return new Date().toISOString();};
+var fmtDate=function(iso){try{var d=new Date(iso);return d.toLocaleDateString('sv-SE')+' '+d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}};
+
+var TYPES={bugg:{n:'Bugg',i:'🐛'},ide:{n:'Idé',i:'💡'},forbattring:{n:'Förbättring',i:'🔧'},berom:{n:'Beröm',i:'💚'}};
+var STAT={ny:{n:'Ny'},pagar:{n:'Pågår'},avvaktar:{n:'Avvaktar'},klar:{n:'Klar'},slopad:{n:'Slopad'}};
+var PRIO={lag:{n:'Låg'},mellan:{n:'Mellan'},hog:{n:'Hög'}};
+var STAT_ORDER={ny:0,pagar:1,avvaktar:2,klar:3,slopad:4};
+var PRIO_ORDER={hog:0,mellan:1,lag:2};
+var OPEN_STAT={ny:1,pagar:1,avvaktar:1};
+
+// ── Changelog & funktionslogg (inbäddad – läses även av Centralen) ──
+var FEEDBACKKOLLEN_LOGG={
+  appId:'feedbackkollen',
+  name:'Feedbackkollen',
+  icon:'💬',
+  accent:'#2E7D86',
+  mobil:'feedbackkollen.html',
+  desktop:'feedbackkollen-desktop.html',
+  tagline:'Feedback, buggar & idéer för hela sviten',
+  description:'Samlar feedback, buggar, idéer och förbättringar för alla appar i Appkollen-sviten. Logga, prioritera, följ status och låt AI sammanfatta vad du bör ta tag i härnäst.',
+  version:'1.0.0',
+  updated:'2026-06-16',
+  latest:[
+    'Logga buggar, idéer, förbättringar och beröm per app',
+    'Tavla med filter på status, typ och app',
+    'Översikt med statistik och AI-prioritering',
+    'Synk via GitHub och separat desktop-version'
+  ],
+  changelog:[
+    {version:'1.0.0',date:'2026-06-16',changes:[
+      'Första versionen av Feedbackkollen (tidigare arbetsnamn Återkopplingen)',
+      'Logga-vy: app-snabbval, typ (bugg/idé/förbättring/beröm), rubrik, beskrivning och prioritet',
+      'Tavla: filtrerbar lista med statusfärger, redigering i bottenark och statushistorik',
+      'Översikt: räknare samt stapeldiagram per status och per app',
+      'AI: Sammanfatta & prioritera öppna poster, samt Förtydliga en post (Claude via egen nyckel)',
+      'Synk via GitHub (feedbackkollen.json) med union-merge per post så inget skrivs över',
+      'Changelogg & funktionslogg inbäddad och läsbar av Centralen',
+      'Separat desktop-version med sidomeny som delar data med mobilen'
+    ]}
+  ],
+  functions:[
+    {area:'Logga',items:[
+      'Snabbval för apparna i sviten plus fritext för andra',
+      'Typ: bugg, idé, förbättring eller beröm',
+      'Rubrik, beskrivning och prioritet (låg/mellan/hög)'
+    ]},
+    {area:'Tavla',items:[
+      'Filter på status (öppna/alla/ny/pågår/avvaktar/klar/slopad)',
+      'Filter på typ och på app',
+      'Färgkodad statusremsa; klar och slopad tonas ner',
+      'Redigera i bottenark, byt status — ändringar loggas i historik'
+    ]},
+    {area:'Översikt',items:[
+      'Räknare: öppna, öppna buggar, klara och totalt',
+      'Stapeldiagram per status och öppet per app',
+      'AI sammanfattar och prioriterar öppna poster'
+    ]},
+    {area:'AI',items:[
+      'Egen Anthropic-nyckel som sparas bara lokalt',
+      'Förtydliga en luddig post till tydlig bugg eller idé',
+      'Modell claude-sonnet-4-6, direkt från webbläsaren'
+    ]},
+    {area:'Synk & data',items:[
+      'GitHub Contents API, egen feedbackkollen.json i privat repo',
+      'Union-merge per post-id, nyaste vinner — inget tappas mellan enheter',
+      'Auto-hämtning vid start och när fliken blir aktiv, debounced sparning',
+      'Säkerhetskopiering och import som JSON',
+      'AI-nyckel och tema följer aldrig med i synk'
+    ]}
+  ]
+};
+
+// ── Sync ───────────────────────────────────────────────
+var SYNC_KEY='feedbackkollen_sync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+(function(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}})();
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/feedbackkollen.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(String(s).replace(/\s/g,''))));};
+
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sync-badge'+(st==='ok'?' ok':st==='err'?' err':'');}
+
+async function ghGet(){
+  var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json();sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+function mergeRemote(data){
+  if(!data)return;
+  if(Array.isArray(data.apps)){var set={};state.apps.concat(data.apps).forEach(function(a){if(a&&!set[a]){set[a]=1;}});state.apps=Object.keys(set);}
+  if(Array.isArray(data.items)){
+    var map={};
+    state.items.forEach(function(it){map[it.id]=it;});
+    data.items.forEach(function(r){var cur=map[r.id];if(!cur||String(r.updated||'')>=String(cur.updated||''))map[r.id]=r;});
+    state.items=Object.keys(map).map(function(k){return map[k];});
+  }
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');var data=await ghGet();mergeRemote(data);saveLocal();renderAll();setBadge('ok','Synkad');}
+  catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({items:state.items,apps:state.apps,updated:nowISO()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Feedbackkollen',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  var r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+var pushTimer=null;
+function schedulePush(){if(!syncOn())return;clearTimeout(pushTimer);setBadge('load','Sparar…');pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}
+
+// ── AI ─────────────────────────────────────────────────
+var AI_KEY='feedbackkollen_ai_key';
+function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
+async function aiCall(prompt){
+  var key=getAiKey();
+  if(!key){go('mer');alert('Lägg in din Anthropic API-nyckel under Mer först.');throw new Error('NOKEY');}
+  var r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  var j=await r.json();
+  return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();
+}
+
+// ── Helpers ────────────────────────────────────────────
+function segVal(id){var b=document.querySelector('#'+id+' button.sel');return b?b.dataset.v:'';}
+function segSet(id,v){document.querySelectorAll('#'+id+' button').forEach(function(b){b.classList.toggle('sel',b.dataset.v===v);});}
+function wireSeg(id){document.querySelectorAll('#'+id+' button').forEach(function(b){b.onclick=function(){segSet(id,b.dataset.v);};});}
+
+// ── Logga ──────────────────────────────────────────────
+var loggaApp='';
+function renderLoggaApps(){
+  var el=document.getElementById('logga-apps');
+  el.innerHTML=state.apps.map(function(a){return '<button class="chip'+(a===loggaApp?' sel':'')+'" data-a="'+esc(a)+'">'+esc(a)+'</button>';}).join('');
+  el.querySelectorAll('.chip').forEach(function(c){c.onclick=function(){loggaApp=(loggaApp===c.dataset.a?'':c.dataset.a);if(loggaApp)document.getElementById('logga-app-other').value='';renderLoggaApps();};});
+}
+document.getElementById('logga-app-other').oninput=function(){if(this.value.trim()){loggaApp='';renderLoggaApps();}};
+wireSeg('logga-type');wireSeg('logga-prio');
+document.getElementById('logga-save').onclick=function(){
+  var app=document.getElementById('logga-app-other').value.trim()||loggaApp;
+  var title=document.getElementById('logga-title').value.trim();
+  var desc=document.getElementById('logga-desc').value.trim();
+  if(!app){alert('Välj eller skriv vilken app det gäller.');return;}
+  if(!title){alert('Skriv en rubrik.');return;}
+  var t=nowISO();
+  var it={id:uid(),app:app,type:segVal('logga-type')||'bugg',title:title,desc:desc,prio:segVal('logga-prio')||'mellan',status:'ny',created:t,updated:t,log:[{t:t,txt:'Skapad'}]};
+  state.items.push(it);save();
+  document.getElementById('logga-title').value='';
+  document.getElementById('logga-desc').value='';
+  document.getElementById('logga-app-other').value='';
+  loggaApp='';segSet('logga-type','bugg');segSet('logga-prio','mellan');renderLoggaApps();
+  renderTavla();renderOversikt();
+  go('tavla');
+};
+
+// ── Tavla ──────────────────────────────────────────────
+var fStatus='oppna',fType='alla';
+function renderFilters(){
+  var fs=[['oppna','Öppna'],['alla','Alla'],['ny','Ny'],['pagar','Pågår'],['avvaktar','Avvaktar'],['klar','Klar'],['slopad','Slopad']];
+  document.getElementById('filter-status').innerHTML=fs.map(function(f){return '<button class="fchip'+(fStatus===f[0]?' sel':'')+'" data-v="'+f[0]+'">'+f[1]+'</button>';}).join('');
+  document.querySelectorAll('#filter-status .fchip').forEach(function(b){b.onclick=function(){fStatus=b.dataset.v;renderFilters();renderTavla();};});
+  var ft=[['alla','Alla typer'],['bugg','🐛'],['ide','💡'],['forbattring','🔧'],['berom','💚']];
+  document.getElementById('filter-type').innerHTML=ft.map(function(f){return '<button class="fchip'+(fType===f[0]?' sel':'')+'" data-v="'+f[0]+'">'+f[1]+'</button>';}).join('');
+  document.querySelectorAll('#filter-type .fchip').forEach(function(b){b.onclick=function(){fType=b.dataset.v;renderFilters();renderTavla();};});
+  var sel=document.getElementById('filter-app');var cur=sel.value;
+  var appsInUse={};state.items.forEach(function(i){appsInUse[i.app]=1;});
+  var opts=['<option value="alla">Alla appar</option>'].concat(Object.keys(appsInUse).sort().map(function(a){return '<option value="'+esc(a)+'">'+esc(a)+'</option>';}));
+  sel.innerHTML=opts.join('');if(cur)sel.value=cur;
+  sel.onchange=renderTavla;
+}
+function passFilter(it){
+  if(fType!=='alla'&&it.type!==fType)return false;
+  var fa=document.getElementById('filter-app').value;
+  if(fa&&fa!=='alla'&&it.app!==fa)return false;
+  if(fStatus==='alla')return true;
+  if(fStatus==='oppna')return !!OPEN_STAT[it.status];
+  return it.status===fStatus;
+}
+function sortItems(a,b){
+  var s=(STAT_ORDER[a.status]||0)-(STAT_ORDER[b.status]||0);if(s)return s;
+  var p=(PRIO_ORDER[a.prio]||1)-(PRIO_ORDER[b.prio]||1);if(p)return p;
+  return String(b.updated||'').localeCompare(String(a.updated||''));
+}
+function itemCard(it){
+  var ty=TYPES[it.type]||TYPES.bugg;var stn=(STAT[it.status]||STAT.ny).n;
+  return '<div class="item t-'+it.status+'" data-id="'+it.id+'">'+
+    '<div class="item-head"><div class="item-ic">'+ty.i+'</div><div class="item-title">'+esc(it.title)+'</div></div>'+
+    (it.desc?'<div class="item-desc">'+esc(it.desc.length>120?it.desc.slice(0,120)+'…':it.desc)+'</div>':'')+
+    '<div class="item-meta">'+
+      '<span class="pill app">'+esc(it.app)+'</span>'+
+      '<span class="pill st st-'+it.status+'">'+esc(stn)+'</span>'+
+      '<span class="pdot">Prio <b class="'+it.prio+'">'+((PRIO[it.prio]||PRIO.mellan).n)+'</b></span>'+
+    '</div></div>';
+}
+function renderTavla(){
+  var list=state.items.filter(passFilter).sort(sortItems);
+  var el=document.getElementById('tavla-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga poster här ännu.<br>Logga din första under ✏️ Logga.</div>';return;}
+  el.innerHTML=list.map(itemCard).join('');
+  el.querySelectorAll('.item').forEach(function(c){c.onclick=function(){openEdit(c.dataset.id);};});
+}
+
+// ── Edit sheet ─────────────────────────────────────────
+var editId=null;
+wireSeg('edit-type');wireSeg('edit-prio');wireSeg('edit-status');
+function openSheet(){document.getElementById('sheet-bg').classList.add('open');document.getElementById('edit-sheet').classList.add('open');}
+function closeSheet(){document.getElementById('sheet-bg').classList.remove('open');document.getElementById('edit-sheet').classList.remove('open');editId=null;document.getElementById('edit-ai-out').innerHTML='';}
+document.getElementById('sheet-bg').onclick=closeSheet;
+document.getElementById('edit-close').onclick=closeSheet;
+function getItem(id){for(var i=0;i<state.items.length;i++)if(state.items[i].id===id)return state.items[i];return null;}
+function renderHist(it){
+  var el=document.getElementById('edit-hist');
+  var l=(it.log||[]).slice().reverse();
+  el.innerHTML=l.length?l.map(function(e){return '<div class="hist-row"><time>'+esc(fmtDate(e.t))+'</time><span>'+esc(e.txt)+'</span></div>';}).join(''):'<div class="empty-msg">Ingen historik.</div>';
+}
+function openEdit(id){
+  var it=getItem(id);if(!it)return;editId=id;
+  document.getElementById('edit-app').value=it.app;
+  segSet('edit-type',it.type);segSet('edit-prio',it.prio);segSet('edit-status',it.status);
+  document.getElementById('edit-title').value=it.title;
+  document.getElementById('edit-desc').value=it.desc||'';
+  document.getElementById('edit-ai-out').innerHTML='';
+  renderHist(it);openSheet();
+}
+document.getElementById('edit-save').onclick=function(){
+  var it=getItem(editId);if(!it)return;
+  var newStatus=segVal('edit-status');var newPrio=segVal('edit-prio');
+  if(newStatus&&newStatus!==it.status)it.log.push({t:nowISO(),txt:'Status → '+(STAT[newStatus]||{n:newStatus}).n});
+  if(newPrio&&newPrio!==it.prio)it.log.push({t:nowISO(),txt:'Prioritet → '+(PRIO[newPrio]||{n:newPrio}).n});
+  it.app=document.getElementById('edit-app').value.trim()||it.app;
+  it.type=segVal('edit-type')||it.type;
+  it.title=document.getElementById('edit-title').value.trim()||it.title;
+  it.desc=document.getElementById('edit-desc').value.trim();
+  it.prio=newPrio||it.prio;it.status=newStatus||it.status;it.updated=nowISO();
+  save();closeSheet();renderTavla();renderOversikt();
+};
+document.getElementById('edit-delete').onclick=function(){
+  if(!editId)return;if(!confirm('Radera den här posten?'))return;
+  state.items=state.items.filter(function(i){return i.id!==editId;});
+  save();closeSheet();renderTavla();renderOversikt();
+};
+document.getElementById('edit-ai').onclick=async function(){
+  var it=getItem(editId);if(!it)return;
+  var btn=this,orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  var prompt='Du hjälper en utvecklare att förtydliga en feedback-post om en av hennes egna appar. Skriv om posten till en tydlig, handlingsbar version på svenska. För buggar: tydlig rubrik plus steg att återskapa och förväntat kontra faktiskt beteende. För idéer eller förbättringar: tydlig rubrik plus kort beskrivning och ett litet acceptanskriterium. Svara ENDAST med ett JSON-objekt på formen {"title":"...","desc":"..."} utan någon annan text och utan markdown.\n\nTyp: '+(TYPES[it.type]||TYPES.bugg).n+'\nApp: '+it.app+'\nRubrik: '+it.title+'\nBeskrivning: '+(it.desc||'(saknas)');
+  try{
+    var txt=await aiCall(prompt);
+    var clean=txt.replace(/\x60{3}(?:json)?/g,'').trim();
+    var obj=JSON.parse(clean);
+    var out=document.getElementById('edit-ai-out');
+    out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Förslag</span><b>'+esc(obj.title||'')+'</b>\n'+esc(obj.desc||'')+'</div>'+
+      '<button class="btn fill" id="edit-ai-apply" style="width:100%;margin-top:8px">Använd förslaget</button>';
+    document.getElementById('edit-ai-apply').onclick=function(){
+      if(obj.title)document.getElementById('edit-title').value=obj.title;
+      if(obj.desc)document.getElementById('edit-desc').value=obj.desc;
+      out.innerHTML='';
+    };
+  }catch(e){if(e.message!=='NOKEY')alert('AI-fel: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+};
+
+// ── Översikt ───────────────────────────────────────────
+function renderOversikt(){
+  var items=state.items;
+  var open=items.filter(function(i){return OPEN_STAT[i.status];}).length;
+  var done=items.filter(function(i){return i.status==='klar';}).length;
+  var bugs=items.filter(function(i){return i.type==='bugg'&&OPEN_STAT[i.status];}).length;
+  document.getElementById('oversikt-tiles').innerHTML=
+    '<div class="tile"><div class="n">'+open+'</div><div class="l">Öppna</div></div>'+
+    '<div class="tile"><div class="n">'+bugs+'</div><div class="l">Öppna buggar</div></div>'+
+    '<div class="tile"><div class="n">'+done+'</div><div class="l">Klara</div></div>'+
+    '<div class="tile"><div class="n">'+items.length+'</div><div class="l">Totalt</div></div>';
+
+  var stOrder=['ny','pagar','avvaktar','klar','slopad'];
+  var max=1;stOrder.forEach(function(s){var c=items.filter(function(i){return i.status===s;}).length;if(c>max)max=c;});
+  document.getElementById('oversikt-status').innerHTML=stOrder.map(function(s){
+    var c=items.filter(function(i){return i.status===s;}).length;
+    return '<div class="bar-row"><span class="lab">'+STAT[s].n+'</span><span class="bar-track"><span class="bar-fill" style="width:'+(c/max*100)+'%;background:var(--'+s+')"></span></span><span class="v">'+c+'</span></div>';
+  }).join('');
+
+  var byApp={};items.forEach(function(i){if(OPEN_STAT[i.status]){byApp[i.app]=(byApp[i.app]||0)+1;}});
+  var rows=Object.keys(byApp).map(function(a){return [a,byApp[a]];}).sort(function(x,y){return y[1]-x[1];}).slice(0,8);
+  var amax=1;rows.forEach(function(r){if(r[1]>amax)amax=r[1];});
+  document.getElementById('oversikt-apps').innerHTML=rows.length?rows.map(function(r){
+    return '<div class="bar-row"><span class="lab">'+esc(r[0])+'</span><span class="bar-track"><span class="bar-fill" style="width:'+(r[1]/amax*100)+'%"></span></span><span class="v">'+r[1]+'</span></div>';
+  }).join(''):'<div class="empty-msg">Inget öppet just nu 🎉</div>';
+
+  if(state.aiPlan)document.getElementById('ai-plan-out').innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Prioriteringsförslag</span>'+esc(state.aiPlan)+'</div>';
+}
+document.getElementById('ai-plan-btn').onclick=async function(){
+  var open=state.items.filter(function(i){return OPEN_STAT[i.status];});
+  if(!open.length){alert('Inga öppna poster att prioritera.');return;}
+  var btn=this,orig=btn.textContent;btn.textContent='✨ Tänker…';btn.disabled=true;
+  var lines=open.map(function(i){return '- ['+(TYPES[i.type]||TYPES.bugg).n+', prio '+(PRIO[i.prio]||PRIO.mellan).n+', '+i.app+'] '+i.title+(i.desc?' — '+i.desc:'');});
+  var prompt='Du är en pragmatisk produktcoach som hjälper en ensam utvecklare (Rebecca) att prioritera vidareutveckling av sin egen app-svit. Här är de öppna posterna. Föreslå på svenska en kort prioriteringsplan i tre delar: 1) Snabba vinster att ta först, 2) Det viktigaste att satsa på härnäst, 3) Sånt som kan vänta. Var konkret och kort, max ungefär 180 ord, ingen onödig artighet och inga rubriknivåer utöver de tre delarna.\n\nÖppna poster:\n'+lines.join('\n');
+  try{
+    var txt=await aiCall(prompt);
+    state.aiPlan=txt;saveLocal();
+    document.getElementById('ai-plan-out').innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Prioriteringsförslag</span>'+esc(txt)+'</div>';
+  }catch(e){if(e.message!=='NOKEY')alert('AI-fel: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+};
+
+// ── Mer: apps, sync, ai-key, data ──────────────────────
+function renderMerApps(){
+  var el=document.getElementById('mer-apps');
+  el.innerHTML=state.apps.map(function(a,i){return '<span class="chip-del">'+esc(a)+'<button data-i="'+i+'">×</button></span>';}).join('')||'<div class="empty-msg">Inga appar.</div>';
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){state.apps.splice(+b.dataset.i,1);save();renderMerApps();renderLoggaApps();};});
+}
+document.getElementById('mer-app-add').onclick=function(){
+  var v=document.getElementById('mer-app-new').value.trim();if(!v)return;
+  if(state.apps.indexOf(v)<0)state.apps.push(v);
+  document.getElementById('mer-app-new').value='';save();renderMerApps();renderLoggaApps();
+};
+function fillSyncFields(){document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;}
+document.getElementById('gh-save').onclick=async function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  saveSync();sync.sha=null;
+  if(syncOn()){await ghPull();await ghPush().catch(function(){});}
+  else setBadge('','Lokal');
+};
+document.getElementById('gh-clear').onclick=function(){sync={owner:'',repo:'',token:'',sha:null};saveSync();fillSyncFields();setBadge('','Lokal');};
+document.getElementById('sync-now').onclick=function(){if(syncOn())ghPull();else alert('Fyll i synkuppgifterna först.');};
+
+document.getElementById('ai-key').value=getAiKey();
+document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);alert('Sparad.');};
+document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify({items:state.items,apps:state.apps},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='feedbackkollen-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&Array.isArray(d.items)){mergeRemote(d);save();renderAll();alert('Importerat.');}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ───────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1A1E22':'#EEF0F2';
+  var b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';saveLocal();applyTheme();};
+
+// ── Nav ────────────────────────────────────────────────
+function go(v){
+  document.querySelectorAll('.nav button').forEach(function(x){x.classList.toggle('active',x.dataset.v===v);});
+  document.querySelectorAll('.view').forEach(function(vw){vw.classList.remove('active');});
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='tavla'){renderFilters();renderTavla();}
+  if(v==='oversikt')renderOversikt();
+  if(v==='mer'){fillSyncFields();renderMerApps();renderChangelog();}
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){go(b.dataset.v);};});
+
+function renderChangelog(){
+  var L=FEEDBACKKOLLEN_LOGG;
+  var v=document.getElementById('mer-version');if(v)v.textContent='v'+L.version+' · '+L.updated;
+  document.getElementById('mer-changelog').innerHTML=L.changelog.map(function(c){
+    return '<div class="cl-entry"><div class="cl-head"><span class="cl-ver">v'+esc(c.version)+'</span>'+(c.date?'<span class="cl-date">'+esc(c.date)+'</span>':'')+'</div><ul class="cl-list">'+c.changes.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  }).join('');
+  document.getElementById('mer-functions').innerHTML=L.functions.map(function(f){
+    return '<div class="fn-area"><b>'+esc(f.area)+'</b><ul class="cl-list">'+f.items.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  }).join('');
+}
+
+function renderAll(){renderLoggaApps();renderFilters();renderTavla();renderOversikt();renderMerApps();renderChangelog();}
+
+// ── Init ───────────────────────────────────────────────
+renderLoggaApps();renderFilters();renderTavla();renderOversikt();renderMerApps();renderChangelog();fillSyncFields();
+applyTheme();setInterval(applyTheme,60000);
+if(syncOn()){setBadge('','Lokal');ghPull();}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>
