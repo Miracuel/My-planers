@@ -133,6 +133,17 @@ textarea{resize:vertical;line-height:1.5}
 .ktag{font-size:10px;border-radius:7px;padding:2px 6px;font-weight:600}
 .ktag.ch{background:var(--blue-soft);color:var(--blue)}
 .ktag.fn{background:var(--accent-soft);color:var(--accent)}
+.proto-tools{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.proto-tools .lnk{color:var(--accent);cursor:pointer;font-size:12px;font-weight:600}
+.btn.sm{padding:7px 12px;font-size:12px;width:auto}
+.frow .selbox{flex-shrink:0;width:22px;height:22px;border:2px solid var(--line);border-radius:7px;margin-right:11px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--panel);background:var(--panel)}
+.frow.sel-on .selbox{border-color:var(--accent);background:var(--accent)}
+.frow.selrow{cursor:pointer}
+.frow.selrow .chev{display:none}
+.bulkbar{position:sticky;bottom:12px;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:11px 13px;box-shadow:0 6px 22px rgba(0,0,0,.16);display:none;align-items:center;gap:12px;flex-wrap:wrap}
+.bulkbar.on{display:flex}
+.bulkbar .bulk-n{font-weight:600;font-size:13px;flex:1;min-width:70px}
+.bulkbar .bulk-actions{display:flex;gap:8px;flex-wrap:wrap}
 .pill.ny{background:var(--accent);color:#fff}
 .tag{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
 
@@ -330,11 +341,13 @@ html[data-theme=dark]{
 
 <!-- PROTOKOLL -->
 <div class="view" id="view-proto">
+  <div class="proto-tools"><button class="btn ghost sm" id="proto-select-btn">Välj flera</button><span id="proto-selall" class="lnk" style="display:none"></span></div>
   <div class="fchips" id="app-filter"></div>
   <div class="fchips" id="kind-filter"></div>
   <div class="fchips" id="status-filter"></div>
   <div class="card-panel" style="margin-top:8px"><div id="proto-list"></div></div>
   <button class="btn fill" id="add-func" style="width:100%;margin-top:12px">+ Lägg till funktion manuellt</button>
+  <div class="bulkbar" id="proto-bulkbar"><div class="bulk-n" id="bulk-n">0 valda</div><div class="bulk-actions"><button class="btn fill sm" id="bulk-approve">✓ Godkänn valda</button><button class="btn ghost sm" id="bulk-skip">⊘ Behöver ej testas</button></div></div>
 </div>
 
 <!-- SYNKADE APPAR -->
@@ -862,7 +875,7 @@ function goView(v){
 document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>goView(b.dataset.v);});
 
 // ── Att testa ─────────────────────────────────────────
-function funcRow(f){
+function funcRow(f,sel){
   const st=statusOf(f);
   const meta=[];
   if(f.app)meta.push('<span class="tag">'+esc(f.app)+'</span>');
@@ -877,7 +890,9 @@ function funcRow(f){
   if(pl.mobil)meta.push('📱');
   if(pl.desktop)meta.push('🖥');
   const isnew=f.source==='changelog'&&!f.opened;
-  return '<div class="frow" data-id="'+esc(f.id)+'"><div class="fmain"><div class="fname">'+esc(f.namn||'(utan namn)')+'</div><div class="fmeta">'+meta.join('')+'</div></div><div class="fright">'+pill(st)+(isnew?'<span class="pill ny">NY</span>':'')+'</div><span class="chev">›</span></div>';
+  const on=sel&&selFuncs.has(f.id);
+  const box=sel?'<div class="selbox">'+(on?'✓':'')+'</div>':'';
+  return '<div class="frow'+(sel?' selrow':'')+(on?' sel-on':'')+'" data-id="'+esc(f.id)+'">'+box+'<div class="fmain"><div class="fname">'+esc(f.namn||'(utan namn)')+'</div><div class="fmeta">'+meta.join('')+'</div></div><div class="fright">'+pill(st)+(isnew?'<span class="pill ny">NY</span>':'')+'</div><span class="chev">›</span></div>';
 }
 function bindRows(container){container.querySelectorAll('.frow').forEach(r=>{r.onclick=()=>openFunc(r.dataset.id);});}
 function renderTodo(){
@@ -898,6 +913,7 @@ function updateDot(){
 
 // ── Protokoll ─────────────────────────────────────────
 let filterApp='*',filterSt='*',filterKind='*';
+let selMode=false;const selFuncs=new Set();let protoFiltered=[];
 function renderProto(){
   const apps=Array.from(new Set(state.funcs.map(f=>f.app||'Allmänt'))).sort();
   const af=$('app-filter');
@@ -916,10 +932,47 @@ function renderProto(){
   if(filterKind!=='*')list=list.filter(f=>(f.kind||'change')===filterKind);
   if(filterSt!=='*')list=list.filter(f=>statusOf(f)===filterSt);
   list.sort((a,b)=>(a.app||'').localeCompare(b.app||'')||(a.namn||'').localeCompare(b.namn||''));
+  protoFiltered=list.map(f=>f.id);
+  // håll urvalet inom synliga rader
+  Array.from(selFuncs).forEach(id=>{if(protoFiltered.indexOf(id)<0)selFuncs.delete(id);});
   const el=$('proto-list');
-  el.innerHTML=list.length?list.map(funcRow).join(''):'<div class="empty-msg">Inga funktioner matchar filtret.</div>';
-  bindRows(el);
+  el.innerHTML=list.length?list.map(f=>funcRow(f,selMode)).join(''):'<div class="empty-msg">Inga funktioner matchar filtret.</div>';
+  if(selMode){
+    el.querySelectorAll('.frow').forEach(r=>{r.onclick=()=>{const id=r.dataset.id;if(selFuncs.has(id))selFuncs.delete(id);else selFuncs.add(id);renderProto();};});
+  }else bindRows(el);
+  renderProtoTools();
 }
+function renderProtoTools(){
+  const btn=$('proto-select-btn');btn.textContent=selMode?'Klar':'Välj flera';btn.classList.toggle('fill',selMode);btn.classList.toggle('ghost',!selMode);
+  const all=$('proto-selall');
+  if(selMode){
+    all.style.display='inline';
+    const allSel=protoFiltered.length&&protoFiltered.every(id=>selFuncs.has(id));
+    all.textContent=allSel?'Avmarkera alla':'Välj alla ('+protoFiltered.length+')';
+    all.onclick=()=>{if(allSel)selFuncs.clear();else protoFiltered.forEach(id=>selFuncs.add(id));renderProto();};
+  }else all.style.display='none';
+  const bar=$('proto-bulkbar');bar.classList.toggle('on',selMode);
+  const n=selFuncs.size;
+  $('bulk-n').textContent=n+(n===1?' vald':' valda');
+  $('bulk-approve').disabled=!n;$('bulk-skip').disabled=!n;
+  $('bulk-approve').style.opacity=n?'1':'.5';$('bulk-skip').style.opacity=n?'1':'.5';
+}
+function bulkVerdict(v){
+  if(!selFuncs.size)return;
+  const who=getMe()||'okänd',ts=nowISO();let n=0;
+  selFuncs.forEach(id=>{const f=state.funcs.find(x=>x.id===id);if(!f)return;
+    f.verdict=v;f.verdictBy=who;f.verdictTs=ts;f.opened=true;
+    if(v==='ok'&&(f.cases||[]).length)f.cases.forEach(c=>{c.status='pass';c.tester=who;c.ts=ts;});
+    n++;});
+  persist();
+  const label=v==='ok'?'godkända':'markerade som ej nödvändiga';
+  toast('✓ '+n+' '+label);
+  selFuncs.clear();selMode=false;
+  renderAll();goView('proto');
+}
+$('proto-select-btn').onclick=()=>{selMode=!selMode;selFuncs.clear();renderProto();};
+$('bulk-approve').onclick=()=>bulkVerdict('ok');
+$('bulk-skip').onclick=()=>bulkVerdict('skip');
 
 // ── Synkade appar (changelogg + funktionslogg) ────────
 const appsExpanded=new Set();
@@ -1575,8 +1628,12 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='2.7';
+const APP_VERSION='2.8';
 const CHANGELOG=[
+  {version:'2.8',date:'2026-06-16',title:'Massgodkänn i protokollet',items:[
+    'Knappen "Välj flera" i Protokoll låter dig kryssa i flera funktioner samtidigt, med "Välj alla" för det filtrerade urvalet.',
+    'Massåtgärder för de valda: "✓ Godkänn valda" och "⊘ Behöver ej testas", signerade med testare och tidsstämpel.'
+  ]},
   {version:'2.7',date:'2026-06-16',title:'Tagga ändring/funktion i protokollet',items:[
     'Varje rad i protokollet (och Att testa) taggas nu som 🔄 Ändring (från changeloggen) eller 🧩 Funktion (från funktionsloggen).',
     'Nytt filter i Protokoll för att visa bara ändringar eller bara funktioner.'
@@ -1672,7 +1729,7 @@ const CHANGELOG=[
 ];
 const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
-  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Varje rad taggas som 🔄 Ändring (changelogg) eller 🧩 Funktion (funktionslogg), med filter för att visa bara den ena.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
+  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Varje rad taggas som 🔄 Ändring (changelogg) eller 🧩 Funktion (funktionslogg), med filter för att visa bara den ena.','"Välj flera" för att kryssa i flera funktioner och massgodkänna ("✓ Godkänn valda") eller markera "Behöver ej testas" på en gång, signerat med testare och tidsstämpel.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Buggregister',items:['Separat register för buggar, fel och förbättringar (typ-filter 🐞/⚠️/💡), med status Ny/Bekräftad/Påbörjad/Fixad/Omtest krävs/Stängd, kopplat till app, funktion och version, med prioritet och rapportör.','Modulomdömena "Funkar inte" och "Kan förbättras" loggar automatiskt här och skickar till Appcentralen. Poster syns i översikten och kan skickas/återsändas till Appcentralen.']},
   {area:'Synkade appar',items:['Egen flik med appens ikon före namnet. Per app växlar du med pill-flikar mellan changeloggen (grupperad per version) och funktionsloggen (grupperad per område), var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".']},
   {area:'Feedback',items:['Tavla i Feedbackkollen-stil över alla loggade poster (bugg/fel/förbättring): kort med färgad statusrand, typikon, rubrik, beskrivning och pillar för app, status och prioritet. Filtrera på typ, status och app, med översiktsrutor och "+ Logga feedback". Tryck på ett kort för att redigera.']},
