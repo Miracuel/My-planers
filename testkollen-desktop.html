@@ -56,10 +56,21 @@ textarea{resize:vertical;line-height:1.5}
 .pill.fail{background:var(--red-soft);color:var(--red)}
 .pill.blocked{background:var(--amber-soft);color:var(--amber)}
 .pill.skip{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.pill.b-ny{background:var(--red-soft);color:var(--red)}
+.pill.b-bekraftad{background:var(--amber-soft);color:var(--amber)}
+.pill.b-paborjad{background:var(--blue-soft);color:var(--blue)}
+.pill.b-fixad{background:var(--green-soft);color:var(--green)}
+.pill.b-omtest{background:var(--accent-soft);color:var(--accent)}
+.pill.b-stangd{background:var(--panel2);color:var(--muted)}
+.seg.wrap button{flex:0 1 auto;min-width:0}
 .quick-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
-.qbtn{flex:1;min-width:150px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:12px;padding:11px 10px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,color .15s}
+.qbtn{flex:1;min-width:130px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:12px;padding:11px 10px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,color .15s}
 .qbtn.ok.on{background:var(--green);border-color:var(--green);color:#fff}
+.qbtn.fail.on{background:var(--red);border-color:var(--red);color:#fff}
 .qbtn.skip.on{background:var(--muted);border-color:var(--muted);color:#fff}
+.plat-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.plat-chip{flex:1;min-width:140px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:12px;padding:9px 10px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}
+.plat-chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .pill.ny{background:var(--accent);color:#fff}
 .tag{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
 
@@ -224,6 +235,7 @@ html[data-theme=dark]{
 <div class="nav">
   <button class="active" data-v="todo"><span class="ico">🔔</span>Att testa<span class="dot" id="todo-dot" style="display:none">0</span></button>
   <button data-v="proto"><span class="ico">📋</span>Protokoll</button>
+  <button data-v="bugs"><span class="ico">🐞</span>Buggar<span class="dot" id="bug-dot" style="display:none">0</span></button>
   <button data-v="testers"><span class="ico">👤</span>Testare</button>
   <button data-v="overview"><span class="ico">📊</span>Översikt</button>
 </div>
@@ -264,6 +276,14 @@ html[data-theme=dark]{
   <button class="btn fill" id="add-func" style="width:100%;margin-top:12px">+ Lägg till funktion manuellt</button>
 </div>
 
+<!-- BUGGAR -->
+<div class="view" id="view-bugs">
+  <div class="fchips" id="bug-status-filter"></div>
+  <div class="fchips" id="bug-app-filter"></div>
+  <div class="card-panel" style="margin-top:8px"><div id="bug-list"></div></div>
+  <button class="btn fill" id="add-bug" style="width:100%;margin-top:12px">+ Ny bugg</button>
+</div>
+
 <!-- TESTARE -->
 <div class="view" id="view-testers">
   <div class="section-title">Vem är du?</div>
@@ -295,6 +315,9 @@ html[data-theme=dark]{
   <div class="section-title">Insats per testare</div>
   <div class="card-panel"><div id="tester-stats"></div></div>
 
+  <div class="section-title">Buggar</div>
+  <div class="card-panel"><div id="bug-summary"></div></div>
+
   <div class="section-title">Senaste resultat</div>
   <div class="card-panel"><div id="result-log"></div></div>
 </div>
@@ -308,6 +331,9 @@ html[data-theme=dark]{
   <h3 id="fs-title">Funktion</h3>
   <div class="sub" id="fs-sub"></div>
   <div class="quick-row" id="fs-quick"></div>
+  <div class="plat-row" id="fs-plat"></div>
+  <button class="btn ghost" id="fs-explain" style="width:100%;margin-bottom:6px">🤔 Jag förstår inte funktionen — låt AI förklara</button>
+  <div id="fs-explain-out"></div>
   <div id="fs-cases"></div>
   <div class="add-row">
     <input type="text" id="fs-case-in" placeholder="Nytt testfall…">
@@ -316,6 +342,7 @@ html[data-theme=dark]{
   <button class="btn ghost" id="fs-ai" style="width:100%;margin-top:10px">✨ Föreslå testfall med AI</button>
   <div id="fs-ai-out"></div>
   <button class="btn ghost" id="fs-del" style="width:100%;margin-top:8px;color:var(--red);border-color:var(--red-soft)">Ta bort funktionen</button>
+  <button class="btn fill" id="fs-next" style="width:100%;margin-top:10px">Nästa att testa →</button>
   <button class="sheet-close" id="fs-close">Klar</button>
 </div>
 
@@ -354,6 +381,29 @@ html[data-theme=dark]{
   <label>Anthropic API-nyckel</label>
   <input type="password" id="ai-key" placeholder="sk-ant-…">
   <button class="sheet-close" id="ai-save">Spara nyckel</button>
+</div>
+
+<!-- Bugg-sheet -->
+<div class="sheet" id="bug-sheet">
+  <h3 id="bug-title">Bugg</h3>
+  <label>Rubrik</label>
+  <input type="text" id="bug-rubrik" placeholder="Kort sammanfattning">
+  <label>Beskrivning</label>
+  <textarea id="bug-desc" rows="3" placeholder="Vad händer? Steg att återskapa."></textarea>
+  <label>Status</label>
+  <div class="seg wrap" id="bug-status"></div>
+  <label>Kopplas till — app</label>
+  <input type="text" id="bug-app" placeholder="T.ex. Tarotdagboken">
+  <label>Funktion</label>
+  <input type="text" id="bug-funktion" placeholder="Vilken funktion">
+  <label>Version</label>
+  <input type="text" id="bug-version" placeholder="T.ex. 2.1">
+  <label>Prioritet</label>
+  <div class="seg" id="bug-prio"></div>
+  <div class="case-sign" id="bug-meta" style="margin-top:8px"></div>
+  <button class="btn ghost" id="bug-tofeedback" style="width:100%;margin-top:10px">Skicka till Appcentralen</button>
+  <button class="btn ghost" id="bug-del" style="width:100%;margin-top:8px;color:var(--red);border-color:var(--red-soft)">Ta bort bugg</button>
+  <button class="sheet-close" id="bug-save">Spara</button>
 </div>
 
 <!-- Feedback → Appcentralen -->
@@ -403,9 +453,9 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 
 // ── State ─────────────────────────────────────────────
 const KEY='testkollen_v1';
-let state={funcs:[],testers:[],cl:{path:'changelog.json',lastPull:null},feedback:[],fbQueue:[],theme:'auto'};
+let state={funcs:[],testers:[],bugs:[],cl:{path:'changelog.json',lastPull:null},feedback:[],fbQueue:[],theme:'auto'};
 try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
-state.funcs=state.funcs||[];state.testers=state.testers||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};state.feedback=state.feedback||[];state.fbQueue=state.fbQueue||[];
+state.funcs=state.funcs||[];state.testers=state.testers||[];state.bugs=state.bugs||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};state.feedback=state.feedback||[];state.fbQueue=state.fbQueue||[];
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 // "Jag" (testare) sparas bara lokalt — aldrig i synk
@@ -425,6 +475,7 @@ function statusOf(f){
     return 'progress';
   }
   if(f.verdict==='ok')return 'pass';
+  if(f.verdict==='fail')return 'fail';
   if(f.verdict==='skip')return 'skip';
   return 'pending';
 }
@@ -465,6 +516,7 @@ async function ghPull(){
     else{
       sync.sha=res.sha;const d=res.data||{};
       if(Array.isArray(d.funcs))state.funcs=mergeFuncs(state.funcs,d.funcs);
+      if(Array.isArray(d.bugs))state.bugs=mergeBugs(state.bugs,d.bugs);
       if(Array.isArray(d.testers))state.testers=Array.from(new Set(state.testers.concat(d.testers)));
       if(d.cl&&d.cl.path)state.cl.path=state.cl.path||d.cl.path;
       save();renderAll();
@@ -479,7 +531,7 @@ function persist(){save();renderAll();if(syncOn()){clearTimeout(pushT);pushT=set
 async function ghPush(){
   if(!syncOn())return;
   setBadge('load','Sparar…');
-  const payload={funcs:state.funcs,testers:state.testers,cl:{path:state.cl.path,lastPull:state.cl.lastPull},updated:nowISO()};
+  const payload={funcs:state.funcs,testers:state.testers,bugs:state.bugs,cl:{path:state.cl.path,lastPull:state.cl.lastPull},updated:nowISO()};
   const content=b64enc(JSON.stringify(payload));
   const doPut=()=>fetch(ghUrl('testkollen.json'),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Testkollen-uppdatering',content,...(sync.sha?{sha:sync.sha}:{})})});
   let r=await doPut();
@@ -505,6 +557,12 @@ function mergeFuncs(local,remote){
     if(!lf.version&&rf.version)lf.version=rf.version;
   });
   return Object.values(map);
+}
+// Slå ihop buggar per id — nyaste updated vinner
+function mergeBugs(local,remote){
+  const m={};(local||[]).forEach(b=>{m[b.id]=b;});
+  (remote||[]).forEach(r=>{const e=m[r.id];if(!e||(r.updated||'')>(e.updated||''))m[r.id]=r;});
+  return Object.values(m);
 }
 
 // ── Changelog → funktionslista ────────────────────────
@@ -684,6 +742,7 @@ function goView(v){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   $('view-'+v).classList.add('active');
   if(v==='proto')renderProto();
+  if(v==='bugs')renderBugs();
   if(v==='overview')renderOverview();
   if(v==='testers')renderTesters();
   if(v==='todo')renderTodo();
@@ -700,6 +759,9 @@ function funcRow(f){
   else if(f.type==='feature')meta.push('✦ funktion');
   const cs=f.cases||[];
   if(cs.length)meta.push(cs.length+' testfall');
+  const pl=f.plat||{};
+  if(pl.mobil)meta.push('📱');
+  if(pl.desktop)meta.push('🖥');
   const isnew=f.source==='changelog'&&!f.opened;
   return '<div class="frow" data-id="'+esc(f.id)+'"><div class="fmain"><div class="fname">'+esc(f.namn||'(utan namn)')+'</div><div class="fmeta">'+meta.join('')+'</div></div><div class="fright">'+pill(st)+(isnew?'<span class="pill ny">NY</span>':'')+'</div><span class="chev">›</span></div>';
 }
@@ -751,24 +813,72 @@ function openFunc(id){
   $('fs-sub').innerHTML=sub.join('');
   $('fs-ai-out').innerHTML='';
   renderQuick();
+  renderPlat();
+  renderExplain();
+  renderNextBtn();
   renderCases();
   openSheet('func-sheet');
+}
+function funcsToTest(){
+  return state.funcs.filter(f=>{const s=statusOf(f);return s==='pending'||s==='progress';});
+}
+function renderNextBtn(){
+  const b=$('fs-next');if(!b)return;
+  const n=funcsToTest().length;
+  b.textContent=n?('Nästa att testa → ('+n+' kvar)'):'Inga fler att testa 🎉';
+}
+function gotoNextTest(){
+  const needs=f=>{const s=statusOf(f);return s==='pending'||s==='progress';};
+  const all=state.funcs.slice().sort((a,b)=>(a.app||'').localeCompare(b.app||'')||(a.namn||'').localeCompare(b.namn||''));
+  if(!all.some(needs)){closeSheets();renderTodo();toast('Inga fler funktioner att testa 🎉');return;}
+  const start=all.findIndex(f=>f.id===curId);
+  for(let i=1;i<=all.length;i++){
+    const f=all[((start<0?-1:start)+i+all.length)%all.length];
+    if(f.id!==curId&&needs(f)){openFunc(f.id);return;}
+  }
+  closeSheets();renderTodo();toast('Klar — inga fler att testa 🎉');
+}
+function renderPlat(){
+  const f=curFunc();if(!f)return;f.plat=f.plat||{mobil:false,desktop:false};
+  const el=$('fs-plat');
+  el.innerHTML=
+    '<button class="plat-chip'+(f.plat.mobil?' on':'')+'" data-p="mobil">'+(f.plat.mobil?'☑':'☐')+' 📱 Testad på mobil</button>'+
+    '<button class="plat-chip'+(f.plat.desktop?' on':'')+'" data-p="desktop">'+(f.plat.desktop?'☑':'☐')+' 🖥 Testad på desktop</button>';
+  el.querySelectorAll('[data-p]').forEach(b=>{b.onclick=()=>togglePlat(b.dataset.p);});
+}
+function togglePlat(k){
+  const f=curFunc();if(!f)return;f.plat=f.plat||{mobil:false,desktop:false};
+  f.plat[k]=!f.plat[k];
+  persist();renderPlat();renderTodo();
+}
+function renderExplain(){
+  const f=curFunc();if(!f)return;
+  $('fs-explain-out').innerHTML=f.explanation?('<div class="ai-box"><span class="ai-lbl">✨ AI-förklaring</span>'+esc(f.explanation)+'</div>'):'';
 }
 function renderQuick(){
   const f=curFunc();if(!f)return;
   const v=f.verdict||'';
   const el=$('fs-quick');
   el.innerHTML=
-    '<button class="qbtn ok'+(v==='ok'?' on':'')+'" data-v="ok">✓ Funktionen fungerar</button>'+
+    '<button class="qbtn ok'+(v==='ok'?' on':'')+'" data-v="ok">✓ Fungerar</button>'+
+    '<button class="qbtn fail'+(v==='fail'?' on':'')+'" data-v="fail">✗ Fungerar inte</button>'+
     '<button class="qbtn skip'+(v==='skip'?' on':'')+'" data-v="skip">⊘ Behöver ej testas</button>'+
-    (v?'<div class="case-sign" style="flex-basis:100%;margin-top:0">'+(v==='ok'?'Markerad som fungerande':'Markerad som ej nödvändig att testa')+(f.verdictBy?' av '+esc(f.verdictBy):'')+(f.verdictTs?' · '+fmtDT(f.verdictTs):'')+'</div>':'');
+    (v?'<div class="case-sign" style="flex-basis:100%;margin-top:0">'+(v==='ok'?'Markerad som fungerande':v==='fail'?'Markerad som trasig — loggad i buggregistret':'Markerad som ej nödvändig att testa')+(f.verdictBy?' av '+esc(f.verdictBy):'')+(f.verdictTs?' · '+fmtDT(f.verdictTs):'')+'</div>':'');
   el.querySelectorAll('[data-v]').forEach(b=>{b.onclick=()=>setVerdict(b.dataset.v);});
 }
 function setVerdict(v){
   const f=curFunc();if(!f)return;
   if(f.verdict===v){f.verdict=null;f.verdictBy='';f.verdictTs='';}
-  else{f.verdict=v;f.verdictBy=getMe()||'okänd';f.verdictTs=nowISO();}
+  else{f.verdict=v;f.verdictBy=getMe()||'okänd';f.verdictTs=nowISO();if(v==='fail')logBugFromFunc(f);}
   persist();refreshSheet();
+}
+function logBugFromFunc(f){
+  state.bugs=state.bugs||[];
+  const ex=state.bugs.find(b=>b.funcId===f.id&&b.status!=='stangd');
+  if(ex){toast('Bugg finns redan i registret.');return;}
+  state.bugs.unshift({id:'bug-'+uid(),rubrik:f.namn||'Funktionen fungerar inte',beskrivning:'',app:f.app||'',funktion:f.namn||'',version:f.version||'',status:'ny',prio:'mellan',tester:getMe()||'okänd',funcId:f.id,created:nowISO(),updated:nowISO()});
+  updateBugDot();
+  toast('🐞 Loggad i buggregistret');
 }
 function renderCases(){
   const f=curFunc();if(!f)return;f.cases=f.cases||[];
@@ -805,10 +915,11 @@ function openFeedbackFromCase(i){
   const f=curFunc();if(!f)return;const c=f.cases[i];
   openFeedback({name:f.app||'',typ:'bugg',rubrik:c.text||'',desc:(c.note?c.note:'')+(c.expected?('\n\nFörväntat: '+c.expected):'')});
 }
-function refreshSheet(){const f=curFunc();if(!f)return;const sub=[];if(f.app)sub.push('<span class="tag">'+esc(f.app)+'</span>');if(f.version)sub.push('v'+esc(f.version));sub.push(pill(statusOf(f)));if(f.date)sub.push(fmtDate(f.date));$('fs-sub').innerHTML=sub.join('');renderQuick();renderCases();}
+function refreshSheet(){const f=curFunc();if(!f)return;const sub=[];if(f.app)sub.push('<span class="tag">'+esc(f.app)+'</span>');if(f.version)sub.push('v'+esc(f.version));sub.push(pill(statusOf(f)));if(f.date)sub.push(fmtDate(f.date));$('fs-sub').innerHTML=sub.join('');renderQuick();renderPlat();renderExplain();renderNextBtn();renderCases();}
 $('fs-case-add').onclick=()=>{const v=$('fs-case-in').value.trim();if(!v)return;const f=curFunc();f.cases.push({id:uid(),text:v,expected:'',status:'pending',tester:'',note:'',ts:''});$('fs-case-in').value='';persist();refreshSheet();};
 $('fs-case-in').onkeydown=e=>{if(e.key==='Enter')$('fs-case-add').click();};
 $('fs-close').onclick=()=>{closeSheets();renderTodo();};
+$('fs-next').onclick=gotoNextTest;
 $('fs-del').onclick=()=>{const f=curFunc();if(!f)return;if(!confirm('Ta bort "'+(f.namn||'funktionen')+'" och dess testfall?'))return;state.funcs=state.funcs.filter(x=>x.id!==curId);persist();closeSheets();renderTodo();};
 
 // ── Avatar för testare (genererad ur namnet) ──────────
@@ -896,6 +1007,66 @@ async function sendFb(){
 $('fb-custom').oninput=()=>{fb.custom=$('fb-custom').value;if(fb.custom){fb.name='';fb.app=null;fb.appNo=null;fb.file='';}renderFbApps();};
 $('fb-send').onclick=sendFb;
 
+// ── Buggregister ──────────────────────────────────────
+const BUG_STATUS=[['ny','Ny'],['bekraftad','Bekräftad'],['paborjad','Påbörjad'],['fixad','Fixad'],['omtest','Omtest krävs'],['stangd','Stängd']];
+const BUG_LABEL=s=>{const m=BUG_STATUS.find(x=>x[0]===s);return m?m[1]:s;};
+function bugPill(s){return '<span class="pill b-'+s+'">'+esc(BUG_LABEL(s))+'</span>';}
+const OPEN_BUG=b=>b.status!=='fixad'&&b.status!=='stangd';
+let bugFilterSt='*',bugFilterApp='*';
+function updateBugDot(){const n=(state.bugs||[]).filter(OPEN_BUG).length;const d=$('bug-dot');if(!d)return;if(n>0){d.style.display='block';d.textContent=n>99?'99+':n;}else d.style.display='none';}
+function renderBugs(){
+  state.bugs=state.bugs||[];
+  const sts=[['*','Alla']].concat(BUG_STATUS);
+  const sf=$('bug-status-filter');
+  sf.innerHTML=sts.map(s=>'<button class="fchip'+(bugFilterSt===s[0]?' sel':'')+'" data-s="'+s[0]+'">'+esc(s[1])+'</button>').join('');
+  sf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{bugFilterSt=c.dataset.s;renderBugs();};});
+  const apps=Array.from(new Set(state.bugs.map(b=>b.app||'—'))).sort();
+  const af=$('bug-app-filter');
+  af.innerHTML=['*'].concat(apps).map(a=>'<button class="fchip'+(bugFilterApp===a?' sel':'')+'" data-a="'+esc(a)+'">'+(a==='*'?'Alla appar':esc(a))+'</button>').join('');
+  af.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{bugFilterApp=c.dataset.a;renderBugs();};});
+  let list=state.bugs.slice();
+  if(bugFilterSt!=='*')list=list.filter(b=>b.status===bugFilterSt);
+  if(bugFilterApp!=='*')list=list.filter(b=>(b.app||'—')===bugFilterApp);
+  const order={ny:0,bekraftad:1,paborjad:2,omtest:3,fixad:4,stangd:5};
+  list.sort((a,b)=>(order[a.status]-order[b.status])||((b.updated||'').localeCompare(a.updated||'')));
+  const el=$('bug-list');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga buggar'+(state.bugs.length?' matchar filtret':' ännu')+'.</div>';updateBugDot();return;}
+  el.innerHTML=list.map(b=>{
+    const meta=[];if(b.app)meta.push('<span class="tag">'+esc(b.app)+'</span>');if(b.funktion)meta.push(esc(b.funktion));if(b.version)meta.push('v'+esc(b.version));if(b.prio&&b.prio!=='mellan')meta.push(b.prio==='hog'?'⬆ hög':'⬇ låg');
+    return '<div class="frow" data-id="'+esc(b.id)+'"><div class="fmain"><div class="fname">'+esc(b.rubrik||'(utan rubrik)')+'</div><div class="fmeta">'+meta.join('')+'</div></div><div class="fright">'+bugPill(b.status)+'</div><span class="chev">›</span></div>';
+  }).join('');
+  el.querySelectorAll('.frow').forEach(r=>{r.onclick=()=>openBug(r.dataset.id);});
+  updateBugDot();
+}
+let bugDraft=null;
+function openBug(id){
+  const ex=id?(state.bugs||[]).find(b=>b.id===id):null;
+  bugDraft=ex?Object.assign({},ex):{id:'bug-'+uid(),rubrik:'',beskrivning:'',app:'',funktion:'',version:'',status:'ny',prio:'mellan',tester:getMe()||'',funcId:null,created:nowISO(),updated:nowISO()};
+  $('bug-title').textContent=ex?'Bugg':'Ny bugg';
+  $('bug-rubrik').value=bugDraft.rubrik;$('bug-desc').value=bugDraft.beskrivning;
+  $('bug-app').value=bugDraft.app;$('bug-funktion').value=bugDraft.funktion;$('bug-version').value=bugDraft.version;
+  $('bug-del').style.display=ex?'block':'none';
+  $('bug-meta').textContent=(bugDraft.tester?('Rapporterad av '+bugDraft.tester):'')+(bugDraft.created?(' · '+fmtDT(bugDraft.created)):'');
+  renderBugStatus();renderBugPrio();
+  openSheet('bug-sheet');
+}
+function renderBugStatus(){const el=$('bug-status');el.innerHTML=BUG_STATUS.map(s=>'<button class="'+(bugDraft.status===s[0]?'sel':'')+'" data-s="'+s[0]+'">'+esc(s[1])+'</button>').join('');el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{bugDraft.status=b.dataset.s;renderBugStatus();};});}
+function renderBugPrio(){const el=$('bug-prio');el.innerHTML=FB_PRIOS.map(p=>'<button class="'+(bugDraft.prio===p[0]?'sel':'')+'" data-p="'+p[0]+'">'+p[1]+'</button>').join('');el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{bugDraft.prio=b.dataset.p;renderBugPrio();};});}
+function saveBug(){
+  bugDraft.rubrik=$('bug-rubrik').value.trim();bugDraft.beskrivning=$('bug-desc').value.trim();
+  bugDraft.app=$('bug-app').value.trim();bugDraft.funktion=$('bug-funktion').value.trim();bugDraft.version=$('bug-version').value.trim();
+  if(!bugDraft.rubrik){toast('Skriv en rubrik.');return;}
+  bugDraft.updated=nowISO();
+  state.bugs=state.bugs||[];
+  const i=state.bugs.findIndex(b=>b.id===bugDraft.id);
+  if(i>=0)state.bugs[i]=bugDraft;else state.bugs.unshift(bugDraft);
+  persist();closeSheets();renderBugs();updateBugDot();toast('Sparad.');
+}
+$('add-bug').onclick=()=>openBug(null);
+$('bug-save').onclick=saveBug;
+$('bug-del').onclick=()=>{if(!bugDraft)return;if(!confirm('Ta bort buggen?'))return;state.bugs=(state.bugs||[]).filter(b=>b.id!==bugDraft.id);persist();closeSheets();renderBugs();updateBugDot();};
+$('bug-tofeedback').onclick=()=>{if(!bugDraft)return;openFeedback({name:bugDraft.app,typ:'bugg',rubrik:bugDraft.rubrik,desc:bugDraft.beskrivning});};
+
 // ── AI: föreslå testfall ──────────────────────────────
 const AI_KEY='testkollen_ai_key';
 function getAiKey(){return localStorage.getItem(AI_KEY)||'';}
@@ -928,6 +1099,16 @@ $('fs-ai').onclick=async()=>{
     $('fs-ai-out').querySelectorAll('[data-add]').forEach(b=>{b.onclick=()=>{addOne(arr[+b.dataset.add]);persist();refreshSheet();b.disabled=true;b.textContent='✓ tillagd';};});
     $('ai-add-all').onclick=()=>{arr.forEach(addOne);persist();refreshSheet();$('fs-ai-out').innerHTML='';toast('Lade till '+arr.length+' testfall.');};
   }catch(e){if(e.message!=='NOKEY')$('fs-ai-out').innerHTML='<div class="ai-box">Kunde inte hämta förslag: '+esc(e.message)+'</div>';}
+  finally{btn.textContent=orig;btn.disabled=false;}
+};
+$('fs-explain').onclick=async()=>{
+  const f=curFunc();if(!f)return;
+  const btn=$('fs-explain');const orig=btn.textContent;btn.textContent='✨ Förklarar…';btn.disabled=true;
+  const prompt='En testare förstår inte vad den här funktionen är. Förklara enkelt och konkret på svenska, i högst 120 ord och utan rubriker eller punktlistor: vad funktionen troligen gör, varför den finns, och vad testaren bör titta efter för att avgöra om den fungerar. Funktion: "'+(f.namn||'')+'"'+(f.app?(' i appen '+f.app):'')+(f.version?(' (version '+f.version+')'):'')+'.';
+  try{
+    const txt=await aiCall(prompt);
+    if(txt){const ff=curFunc();ff.explanation=txt;persist();renderExplain();}
+  }catch(e){if(e.message!=='NOKEY')$('fs-explain-out').innerHTML='<div class="ai-box">Kunde inte hämta förklaring: '+esc(e.message)+'</div>';}
   finally{btn.textContent=orig;btn.disabled=false;}
 };
 
@@ -966,7 +1147,8 @@ function renderOverview(){
     '<div class="stat-box"><div class="num" style="color:var(--muted)">'+(cnt.pending+cnt.progress)+'</div><div class="lab">Kvar att testa</div></div>';
   const seg=(n,c)=>n>0?'<i style="width:'+(n/total*100)+'%;background:'+c+'"></i>':'';
   $('cover-bar').innerHTML=seg(cnt.pass,'var(--green)')+seg(cnt.fail,'var(--red)')+seg(cnt.blocked,'var(--amber)')+seg(cnt.progress,'var(--blue)')+seg(cnt.skip,'var(--line)')+seg(cnt.pending,'var(--panel2)');
-  $('cover-txt').textContent=f.length?('Testtäckning: '+Math.round((cnt.pass+cnt.fail+cnt.blocked)/total*100)+'% berörda · '+cnt.pass+' av '+f.length+' godkända'+(cnt.skip?(' · '+cnt.skip+' behöver ej testas'):'')+'.'):'Inga funktioner ännu.';
+  const platM=f.filter(x=>x.plat&&x.plat.mobil).length,platD=f.filter(x=>x.plat&&x.plat.desktop).length;
+  $('cover-txt').textContent=f.length?('Testtäckning: '+Math.round((cnt.pass+cnt.fail+cnt.blocked)/total*100)+'% berörda · '+cnt.pass+' av '+f.length+' godkända'+(cnt.skip?(' · '+cnt.skip+' behöver ej testas'):'')+' · 📱 '+platM+' · 🖥 '+platD+' testade'):'Inga funktioner ännu.';
   // per app
   const byApp={};f.forEach(x=>{const a=x.app||'Allmänt';(byApp[a]=byApp[a]||[]).push(x);});
   const as=$('app-stats');const apps=Object.keys(byApp).sort();
@@ -986,6 +1168,14 @@ function renderOverview(){
   f.forEach(x=>(x.cases||[]).forEach(c=>{if(c.ts&&c.status&&c.status!=='pending')ev.push({ts:c.ts,who:c.tester||'okänd',st:c.status,fn:x.namn,app:x.app});}));
   f.forEach(x=>{if(x.verdictTs&&x.verdict)ev.push({ts:x.verdictTs,who:x.verdictBy||'okänd',st:x.verdict==='ok'?'pass':'skip',fn:x.namn,app:x.app});});
   ev.sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+  // buggsammanfattning
+  const bs=$('bug-summary');const bugs=state.bugs||[];
+  if(!bugs.length)bs.innerHTML='<div class="empty-msg">Inga buggar i registret.</div>';
+  else{const bc={};BUG_STATUS.forEach(s=>bc[s[0]]=0);bugs.forEach(b=>{if(bc[b.status]!=null)bc[b.status]++;});
+    const open=bugs.filter(OPEN_BUG).length;
+    bs.innerHTML='<div class="ah" style="display:flex;justify-content:space-between;margin-bottom:6px"><b>'+open+' öppna</b><span class="soft">'+bugs.length+' totalt</span></div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+BUG_STATUS.filter(s=>bc[s[0]]>0).map(s=>bugPill(s[0])+' <span class="soft" style="margin-right:6px">'+bc[s[0]]+'</span>').join('')+'</div>';
+  }
   const rl=$('result-log');
   rl.innerHTML=ev.length?ev.slice(0,25).map(e=>'<div class="log-row">'+pill(e.st)+'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">'+avatarSVG(e.who,18)+esc(e.fn||'')+' <span class="soft">· '+esc(e.who)+'</span></span><time>'+fmtDT(e.ts)+'</time></div>').join(''):'<div class="empty-msg">Inga resultat loggade ännu.</div>';
 }
@@ -1019,7 +1209,7 @@ $('ai-sheet').addEventListener('transitionend',()=>{if($('ai-sheet').classList.c
 
 // ── Export / import ───────────────────────────────────
 $('export-btn').onclick=()=>{
-  const blob=new Blob([JSON.stringify({funcs:state.funcs,testers:state.testers,cl:{path:state.cl.path,lastPull:state.cl.lastPull}},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({funcs:state.funcs,testers:state.testers,bugs:state.bugs,cl:{path:state.cl.path,lastPull:state.cl.lastPull}},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);const d=new Date();
   a.download='testkollen-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
   a.click();URL.revokeObjectURL(a.href);
@@ -1027,7 +1217,7 @@ $('export-btn').onclick=()=>{
 $('import-btn').onclick=()=>$('import-file').click();
 $('import-file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&Array.isArray(d.funcs)){state.funcs=mergeFuncs(state.funcs,d.funcs);if(Array.isArray(d.testers))state.testers=Array.from(new Set(state.testers.concat(d.testers)));if(d.cl&&d.cl.path)state.cl.path=d.cl.path;persist();renderAll();toast('Importerat.');}else toast('Ogiltig säkerhetskopia.');}catch(err){toast('Kunde inte läsa filen.');}};
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&Array.isArray(d.funcs)){state.funcs=mergeFuncs(state.funcs,d.funcs);if(Array.isArray(d.testers))state.testers=Array.from(new Set(state.testers.concat(d.testers)));if(Array.isArray(d.bugs))state.bugs=mergeBugs(state.bugs,d.bugs);if(d.cl&&d.cl.path)state.cl.path=d.cl.path;persist();renderAll();toast('Importerat.');}else toast('Ogiltig säkerhetskopia.');}catch(err){toast('Kunde inte läsa filen.');}};
   r.readAsText(f);
 };
 
@@ -1043,8 +1233,23 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='1.5';
+const APP_VERSION='1.8';
 const CHANGELOG=[
+  {version:'1.8',date:'2026-06-16',title:'Nästa att testa',items:[
+    'Ny "Nästa att testa →"-knapp i funktionsvyn som tar dig vidare till nästa funktion som behöver testas — beta av en hel kö utan att gå tillbaka till listan.',
+    'Knappen visar hur många funktioner som är kvar och säger till när allt är testat.'
+  ]},
+  {version:'1.7',date:'2026-06-16',title:'AI-förklaring & plattformsspårning',items:[
+    'Ny knapp "Jag förstår inte funktionen" — AI förklarar enkelt vad funktionen troligen gör och vad du bör titta efter. Förklaringen sparas på funktionen.',
+    'Bocka av om en funktion är testad på mobil och/eller desktop — inte separata tester, bara spårning av var du testat.',
+    'Plattformsmarkörer (📱/🖥) syns på funktionsraderna och plattformstäckning visas i översikten.'
+  ]},
+  {version:'1.6',date:'2026-06-16',title:'Buggregister & "fungerar inte"',items:[
+    'Ny snabbknapp "Funktionen fungerar inte" — markerar funktionen som underkänd och loggar den automatiskt som bugg i buggregistret.',
+    'Nytt buggregister (egen flik): buggar är nu en separat modul, inte bara feedbackposter.',
+    'Status: Ny, Bekräftad, Påbörjad, Fixad, Omtest krävs, Stängd. Varje bugg kopplas till app, funktion och version, med prioritet och rapportör.',
+    'Buggar synkas via repot, syns i översikten och kan skickas vidare till Appcentralen.'
+  ]},
   {version:'1.5',date:'2026-06-16',title:'Egen app-ikon',items:[
     'Egen favicon/app-ikon — teal med vit bock — på webbläsarflik, bokmärke och hemskärm (apple-touch-icon).'
   ]},
@@ -1082,7 +1287,8 @@ const CHANGELOG=[
 ];
 const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
-  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Snabbomdömen utan testfall: "Funktionen fungerar" och "Behöver ej testas", signerade. Lägger du till testfall tar de detaljerade resultaten över.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
+  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Snabbomdömen utan testfall: "Funktionen fungerar", "Funktionen fungerar inte" (loggar bugg) och "Behöver ej testas", signerade. Lägger du till testfall tar de detaljerade resultaten över.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
+  {area:'Buggregister',items:['Separat modul för buggar med status Ny/Bekräftad/Påbörjad/Fixad/Omtest krävs/Stängd, kopplad till app, funktion och version, med prioritet och rapportör.','Snabbknappen "Funktionen fungerar inte" loggar automatiskt en bugg. Buggar synkas via repot, syns i översikten och kan skickas vidare till Appcentralen.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},
   {area:'Översikt',items:['Status totalt, per app och insats per testare, testtäckning samt logg över senaste resultat.']},
   {area:'Changelog-synk',items:['Hittar och läser ALLA changelog-filer i repot automatiskt (Git Trees API med fallback till rotlistning), tolerant parser för flera format, stabila id:n per app och ping vid nya funktioner.','Publicerar sin egen testkollen-changelog.json till repot vid access så Centralen och Appkollen kan läsa den.']},
@@ -1108,10 +1314,11 @@ document.querySelectorAll('#news-tabs .fchip').forEach(c=>{c.onclick=()=>{newsTa
 $('ver-line').textContent='Testkollen v'+APP_VERSION;
 
 // ── Init ──────────────────────────────────────────────
-function renderAll(){renderTodo();if($('view-proto').classList.contains('active'))renderProto();if($('view-overview').classList.contains('active'))renderOverview();if($('view-testers').classList.contains('active'))renderTesters();}
+function renderAll(){renderTodo();updateBugDot();if($('view-proto').classList.contains('active'))renderProto();if($('view-bugs').classList.contains('active'))renderBugs();if($('view-overview').classList.contains('active'))renderOverview();if($('view-testers').classList.contains('active'))renderTesters();}
 loadSync();
 applyTheme();setInterval(applyTheme,60000);
 renderTodo();
+updateBugDot();
 renderClSources();
 if(syncOn()){setBadge('ok','Synkad');(async()=>{try{await ghPull();await pushOwnChangelog(false);await clPullAll();await flushFeedback();}catch(e){}})();}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
