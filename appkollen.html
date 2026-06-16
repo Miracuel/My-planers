@@ -595,6 +595,21 @@ label.chk-item:last-child{border-bottom:none}
 .item.master{background:#FCF9F0}
 .stat-sub{display:block;font-size:9px;color:#9A7B3A;text-transform:none;letter-spacing:0;margin-top:4px;font-weight:600}
 .own-badge{font-size:9px;background:#E7EEF5;color:#3A5878;border-radius:6px;padding:1px 7px;font-weight:600;white-space:nowrap}
+#medit-wrap{max-width:720px;margin:0 auto}
+.medit-h{font-family:Georgia,serif;font-size:20px;margin-bottom:4px}
+.medit-sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
+.medit-ctrl{margin-bottom:12px}
+.me-lbl{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.me-valwrap{display:flex;gap:8px;flex-wrap:wrap}
+.medit-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.me-selinfo{font-size:12px;color:var(--ink-soft);margin-right:auto}
+.me-mini{font-size:12px;padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;font-family:inherit}
+.me-list{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;max-height:52vh;overflow-y:auto}
+.me-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+.me-row input{width:17px;height:17px;flex:0 0 auto;accent-color:var(--ink)}
+.me-name{flex:1;font-size:14px}
+.me-cur{font-size:11px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:2px 9px;white-space:nowrap}
+.me-apply-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-size:15px;cursor:pointer;font-family:inherit;font-weight:600}
 </style>
 </head>
 <body>
@@ -632,7 +647,7 @@ label.chk-item:last-child{border-bottom:none}
   <button class="view-btn" data-v="today">Gör idag</button>
   <button class="view-btn" data-v="cal">Kalender</button>
   <button class="view-btn" data-v="hist">Aktivitet</button>
-  <button class="view-btn" data-v="clog">Logg</button>
+  <button class="view-btn" data-v="clog">Logg</button><button class="view-btn" data-v="medit">Massredigera</button>
 </div>
 <div id="today-head" style="display:none"></div>
 <button id="done-day" class="done-day-btn" style="display:none">🌙 Klar för idag</button>
@@ -675,6 +690,7 @@ label.chk-item:last-child{border-bottom:none}
 <div id="cal-wrap" style="display:none"></div>
 <div id="hist-wrap" style="display:none"></div>
 <div id="clog-wrap" style="display:none"></div>
+<div id="medit-wrap" style="display:none"></div>
 
 <div class="privacy">Data sparas lokalt på enheten — och i ditt privata GitHub-repo om synk är på.</div>
 </div>
@@ -1146,6 +1162,81 @@ function renderRepoClogList(){
   }
 }
 
+var meField='sc.pot',meFlag='ai',meSel={};
+var ME_FIELDS=[
+ {k:'sc.pot',g:'Poäng',label:'Potential (0–10)',type:'num10'},
+ {k:'sc.fun',g:'Poäng',label:'Roligt (0–10)',type:'num10'},
+ {k:'sc.diff',g:'Poäng',label:'Svårighet (0–10)',type:'num10'},
+ {k:'sc.nytta',g:'Poäng',label:'Nytta (0–10)',type:'num10'},
+ {k:'prio',g:'Kort',label:'Prioritet',type:'sel',opts:[['','— rensa —'],['1','P1'],['2','P2'],['3','P3'],['4','P4'],['5','P5']]},
+ {k:'status',g:'Kort',label:'Status',type:'sel',opts:[['auto','Auto'],['none','Ej skapad'],['back','Backlogg'],['pagar','Pågår'],['test','Test'],['klar','Klar']]},
+ {k:'cat',g:'Kort',label:'Kategori',type:'cat'},
+ {k:'family',g:'Kort',label:'Familj',type:'fam'},
+ {k:'mognad',g:'Kort',label:'Mognad',type:'mognad'},
+ {k:'awaitingFeedback',g:'Kort',label:'Inväntar feedback',type:'bool'},
+ {k:'mstatus',g:'Manifest',label:'Livscykel-status',type:'sel',opts:[['','— rensa —'],['Idé','Idé'],['MVP','MVP'],['Beta','Beta'],['Klar','Klar']]},
+ {k:'syncType',g:'Manifest',label:'Synktyp',type:'sel',opts:[['','— rensa —'],['Ingen','Ingen'],['LocalStorage','LocalStorage'],['GitHub','GitHub'],['Supabase','Supabase'],['Firebase','Firebase']]},
+ {k:'flag',g:'Manifest',label:'Funktion / flagga',type:'flag'}
+];
+var ME_FLAGS=[['ai','AI'],['githubSync','GitHub-synk'],['localStorage','localStorage'],['export','Export'],['import','Import'],['offline','Offline'],['search','Sök'],['tags','Taggar'],['statistics','Statistik'],['database','Databas'],['login','Inloggning']];
+function meFieldDef(){for(var i=0;i<ME_FIELDS.length;i++)if(ME_FIELDS[i].k===meField)return ME_FIELDS[i];return ME_FIELDS[0];}
+function meValControl(){
+  var f=meFieldDef();
+  if(f.type==='num10'){var o='';for(var i=0;i<=10;i++)o+='<option value="'+i+'">'+i+'</option>';return '<select id="me-val" class="sel-input">'+o+'</select>';}
+  if(f.type==='bool')return '<select id="me-val" class="sel-input"><option value="1">Ja</option><option value="0">Nej</option></select>';
+  if(f.type==='cat')return '<select id="me-val" class="sel-input"><option value="">— rensa —</option>'+catList().map(function(c){return '<option>'+esc(c)+'</option>';}).join('')+'</select>';
+  if(f.type==='fam')return '<select id="me-val" class="sel-input"><option value="">— rensa —</option>'+famList().map(function(c){return '<option>'+esc(c)+'</option>';}).join('')+'</select>';
+  if(f.type==='mognad')return '<select id="me-val" class="sel-input"><option value="">— rensa —</option>'+MOGNAD.map(function(m){return '<option>'+esc(m)+'</option>';}).join('')+'</select>';
+  if(f.type==='flag')return '<select id="me-flag" class="sel-input">'+ME_FLAGS.map(function(fl){return '<option value="'+fl[0]+'"'+(fl[0]===meFlag?' selected':'')+'>'+esc(fl[1])+'</option>';}).join('')+'</select> <select id="me-val" class="sel-input"><option value="1">På</option><option value="0">Av</option></select>';
+  return '<select id="me-val" class="sel-input">'+f.opts.map(function(o){return '<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>';}).join('')+'</select>';
+}
+function meCurrentVal(a){
+  var fk=meField;
+  if(fk.indexOf('sc.')===0){var sk=fk.slice(3);return (a.scores&&typeof a.scores[sk]==='number')?String(a.scores[sk]):'–';}
+  if(fk==='prio')return a.prio?('P'+a.prio):'–';
+  if(fk==='status')return STATUS[effStatus(a)]?STATUS[effStatus(a)].label:(a.status||'auto');
+  if(fk==='awaitingFeedback')return a.awaitingFeedback?'Ja':'Nej';
+  if(fk==='flag')return (a.flags&&a.flags[meFlag])?'På':'Av';
+  return a[fk]||'–';
+}
+function meApply(){
+  var ids=Object.keys(meSel).filter(function(id){return meSel[id]&&appById(id);});
+  if(!ids.length){alert('Kryssa i minst en app att redigera.');return;}
+  var ve=document.getElementById('me-val');var val=ve?ve.value:'';var fk=meField;var n=0;var lbl=meFieldDef().label;
+  ids.forEach(function(id){var a=appById(id);if(!a)return;
+    if(fk.indexOf('sc.')===0){var sk=fk.slice(3);if(!a.scores)a.scores={};a.scores[sk]=+val;}
+    else if(fk==='prio'){a.prio=(val===''?null:+val);}
+    else if(fk==='awaitingFeedback'){a.awaitingFeedback=(val==='1');}
+    else if(fk==='flag'){if(!a.flags)a.flags={};a.flags[meFlag]=(val==='1');}
+    else{a[fk]=val;}
+    pushHistory(a,'massedit','Massredigering: '+lbl+(fk==='flag'?(' ['+meFlag+']'):'')+' \u2192 '+(val===''?'(tomt)':val));
+    n++;
+  });
+  persist();renderStats();renderCards();renderMassEdit();
+  alert('Uppdaterade '+n+' app'+(n===1?'':'ar')+'.');
+}
+function renderMassEdit(){
+  var wrap=document.getElementById('medit-wrap');if(!wrap)return;
+  var apps=state.apps.filter(function(a){return !a.archived;}).slice().sort(function(x,y){return String(x.name||'').localeCompare(String(y.name||''),'sv',{sensitivity:'base'});});
+  var groups={},order=[];ME_FIELDS.forEach(function(f){if(!groups[f.g]){groups[f.g]=[];order.push(f.g);}groups[f.g].push(f);});
+  var fieldSel='<select id="me-field" class="sel-input">'+order.map(function(g){return '<optgroup label="'+esc(g)+'">'+groups[g].map(function(f){return '<option value="'+f.k+'"'+(f.k===meField?' selected':'')+'>'+esc(f.label)+'</option>';}).join('')+'</optgroup>';}).join('')+'</select>';
+  var selCount=apps.filter(function(a){return meSel[a.id];}).length;
+  var listHtml=apps.length?apps.map(function(a){return '<label class="me-row"><input type="checkbox" class="me-app" value="'+a.id+'"'+(meSel[a.id]?' checked':'')+'><span class="me-name">'+(a.emoji?esc(a.emoji)+' ':'')+esc(a.name)+'</span><span class="me-cur">'+esc(meCurrentVal(a))+'</span></label>';}).join(''):'<div class="dash-empty">Inga appar.</div>';
+  wrap.innerHTML='<div class="medit-h">Massredigera</div>'+
+    '<div class="medit-sub">Välj en inställning, sätt ett värde, kryssa i apparna och spara på alla samtidigt. Värdet till höger visar vad varje app har nu.</div>'+
+    '<div class="medit-ctrl"><label class="me-lbl">Inställning</label>'+fieldSel+'</div>'+
+    '<div class="medit-ctrl"><label class="me-lbl">Nytt värde</label><div class="me-valwrap">'+meValControl()+'</div></div>'+
+    '<div class="medit-bar"><span class="me-selinfo">'+selCount+' av '+apps.length+' valda</span><button class="me-mini" id="me-all">Markera alla</button><button class="me-mini" id="me-none">Rensa val</button></div>'+
+    '<div class="me-list" id="me-list">'+listHtml+'</div>'+
+    '<button class="me-apply-btn" id="me-apply">Spara på '+selCount+' valda app'+(selCount===1?'':'ar')+'</button>';
+  var fe=document.getElementById('me-field');if(fe)fe.onchange=function(){meField=fe.value;renderMassEdit();};
+  var fl=document.getElementById('me-flag');if(fl)fl.onchange=function(){meFlag=fl.value;renderMassEdit();};
+  var ma=document.getElementById('me-all');if(ma)ma.onclick=function(){apps.forEach(function(a){meSel[a.id]=true;});renderMassEdit();};
+  var mn=document.getElementById('me-none');if(mn)mn.onclick=function(){meSel={};renderMassEdit();};
+  var ap=document.getElementById('me-apply');if(ap)ap.onclick=meApply;
+  var cl=document.getElementById('me-list');if(cl)cl.onchange=function(e){var c=e.target.closest('input.me-app');if(!c)return;meSel[c.value]=c.checked;var sc=apps.filter(function(a){return meSel[a.id];}).length;var info=wrap.querySelector('.me-selinfo');if(info)info.textContent=sc+' av '+apps.length+' valda';var ab=document.getElementById('me-apply');if(ab)ab.textContent='Spara på '+sc+' valda app'+(sc===1?'':'ar');};
+}
+
 function renderClogView(){
   var wrap=document.getElementById('clog-wrap');if(!wrap)return;
   var apps=state.apps.filter(function(a){return !a.archived;});
@@ -1172,22 +1263,22 @@ function renderClogView(){
 
 function applyView(v){
   view=v;
-  var isCal=v==='cal',isToday=v==='today',isHist=v==='hist',isClog=v==='clog';
+  var isCal=v==='cal',isToday=v==='today',isHist=v==='hist',isClog=v==='clog',isMedit=v==='medit';
   var cal=document.getElementById('cal-wrap');
-  var hw=document.getElementById('hist-wrap');if(hw)hw.style.display=isHist?'':'none';var cw=document.getElementById('clog-wrap');if(cw)cw.style.display=isClog?'':'none';
+  var hw=document.getElementById('hist-wrap');if(hw)hw.style.display=isHist?'':'none';var cw=document.getElementById('clog-wrap');if(cw)cw.style.display=isClog?'':'none';var mw=document.getElementById('medit-wrap');if(mw)mw.style.display=isMedit?'':'none';
   var search=document.getElementById('search'),tb=document.getElementById('toolbar'),cards=document.getElementById('cards'),idea=document.getElementById('idea-card'),addApp=document.getElementById('add-app'),mainEl=document.getElementById('main'),th=document.getElementById('today-head');
   cal.style.display=isCal?'':'none';
-  if(mainEl){mainEl.style.display=(isCal||isHist||isClog)?'none':'';mainEl.classList.toggle('solo',isToday);}
-  if(search)search.style.display=(isCal||isHist||isClog)?'none':'';
-  if(tb)tb.style.display=(isCal||isHist||isClog)?'none':'';
-  if(cards)cards.style.display=(isCal||isHist||isClog)?'none':'';var _fb=document.getElementById('filt-bar');if(_fb&&(isCal||isHist||isClog))_fb.style.display='none';
-  if(addApp)addApp.style.display=(isCal||isToday||isHist||isClog)?'none':'';
+  if(mainEl){mainEl.style.display=(isCal||isHist||isClog||isMedit)?'none':'';mainEl.classList.toggle('solo',isToday);}
+  if(search)search.style.display=(isCal||isHist||isClog||isMedit)?'none':'';
+  if(tb)tb.style.display=(isCal||isHist||isClog||isMedit)?'none':'';
+  if(cards)cards.style.display=(isCal||isHist||isClog||isMedit)?'none':'';var _fb=document.getElementById('filt-bar');if(_fb&&(isCal||isHist||isClog||isMedit))_fb.style.display='none';
+  if(addApp)addApp.style.display=(isCal||isToday||isHist||isClog||isMedit)?'none':'';
   if(idea)idea.style.display=(v==='cards')?'':'none';
   var _pr=document.getElementById('prompts');if(_pr)_pr.style.display=(v==='cards')?'':'none';
   var _dd=document.getElementById('done-day');if(_dd)_dd.style.display=isToday?'':'none';var _dds=document.getElementById('done-day-sum');if(_dds&&!isToday)_dds.style.display='none';var _tt=document.getElementById('today-time');if(_tt)_tt.style.display=isToday?'':'none';
   if(th){if(isToday){var n=state.apps.filter(function(a){return a.commit===todayISO()&&!a.hidden;}).length;var nd=state.apps.filter(function(a){return a.commit===todayISO()&&a.commitDone===todayISO()&&!a.hidden;}).length;th.style.display='';th.textContent='Gör idag — '+n+(n===1?' app':' appar')+' planerade · '+nd+' klar'+(nd===1?'':'a');}else th.style.display='none';}
   document.querySelectorAll('#views .view-btn').forEach(function(b){b.classList.toggle('active',b.dataset.v===v);});
-  if(isCal)renderCalendar();else if(isHist)renderHistoryView();else if(isClog)renderClogView();else renderCards();if(isToday)renderTodayTime();
+  if(isCal)renderCalendar();else if(isHist)renderHistoryView();else if(isClog)renderClogView();else if(isMedit)renderMassEdit();else renderCards();if(isToday)renderTodayTime();
 }
 function renderCalendar(){
   var wrap=document.getElementById('cal-wrap');if(!wrap)return;
