@@ -97,8 +97,36 @@ textarea{resize:vertical;line-height:1.5}
 .statopt.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
 .fb-summary{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 14px;margin-bottom:12px}
 .fb-summary .lnk{color:var(--accent);cursor:pointer;font-size:12px}
+/* Feedback-tavla (kortstil) */
+.item-list{display:block}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden}
+.item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--red)}
+.item.s-bekraftad::before{background:var(--amber)}
+.item.s-paborjad::before{background:var(--blue)}
+.item.s-omtest::before{background:var(--accent)}
+.item.s-fixad::before{background:var(--green)}
+.item.s-stangd::before{background:var(--muted)}
+.item.s-fixad,.item.s-stangd{opacity:.72}
+.item-head{display:flex;align-items:flex-start;gap:9px}
+.item-ic{font-size:17px;line-height:1.3;flex-shrink:0}
+.item-title{flex:1;font-size:14px;font-weight:600;line-height:1.35}
+.item.s-fixad .item-title,.item.s-stangd .item-title{font-weight:500;text-decoration:line-through;text-decoration-color:var(--muted)}
+.item-desc{font-size:12.5px;color:var(--muted);line-height:1.5;margin:7px 0 0 26px}
+.item-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0 26px}
+.item-meta .tag{background:var(--panel2);color:var(--muted);border:1px solid var(--line);font-size:10.5px;border-radius:8px;padding:2px 7px}
+.item-meta .pdot{font-size:10.5px;color:var(--muted)}
+.item-meta .pdot b.hog{color:var(--red)}.item-meta .pdot b.mellan{color:var(--amber)}.item-meta .pdot b.lag{color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center}
+.tile .n{font-family:Georgia,serif;font-size:24px;line-height:1.1}
+.tile .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 .app-body{padding:0 14px 6px;display:none}
 .app-card.open .app-body{display:block}
+.cl-sec-title{font-family:Georgia,serif;font-size:13px;color:var(--ink);margin:12px 0 4px;letter-spacing:.02em}
+.cl-grp{font-size:11px;font-weight:700;color:var(--accent);margin:9px 0 2px;text-transform:uppercase;letter-spacing:.04em}
+.cl-grp .d{color:var(--muted);font-weight:400;text-transform:none;margin-left:6px;letter-spacing:0}
+.cl-row{padding:6px 0}
+.cl-row .fname{font-size:13px}
 .pill.ny{background:var(--accent);color:#fff}
 .tag{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
 
@@ -304,14 +332,18 @@ html[data-theme=dark]{
 
 <!-- SYNKADE APPAR -->
 <div class="view" id="view-apps">
-  <div class="soft" style="margin-bottom:8px">Varje app och dess funktioner/tester med status och funktionsscore. Tryck på en funktion för full testvy. Appar märkta <span class="tag">synkad</span> kommer från changelogs.</div>
+  <div class="soft" style="margin-bottom:8px">Varje app och dess funktioner. Bocka av en och en med statusikonen (✓ ○ △ ✗), eller tryck på namnet för full testvy. Appar märkta <span class="tag">synkad</span> kommer från changelogs.</div>
   <div id="apps-list"></div>
 </div>
 
-<!-- FEEDBACK / FUNKTIONSTESTNING -->
+<!-- FEEDBACK / TAVLA -->
 <div class="view" id="view-feedback">
-  <div class="soft" style="margin-bottom:8px">All funktionstestning och feedback. Bocka av varje funktion en och en med statusikonen, eller tryck på namnet för full testvy.</div>
-  <div id="feedback-list"></div>
+  <button class="btn fill" id="fb-log" style="width:100%;margin-bottom:12px">+ Logga feedback</button>
+  <div class="tiles" id="fb-tiles"></div>
+  <div class="fchips" id="fb-type-filter" style="margin-top:12px"></div>
+  <div class="fchips" id="fb-status-filter"></div>
+  <div class="fchips" id="fb-app-filter"></div>
+  <div class="item-list" id="fb-board"></div>
 </div>
 
 <!-- KALENDER -->
@@ -512,7 +544,7 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 const KEY='testkollen_v1';
 let state={funcs:[],testers:[],bugs:[],cl:{path:'changelog.json',lastPull:null},feedback:[],fbQueue:[],theme:'auto'};
 try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
-state.funcs=state.funcs||[];state.testers=state.testers||[];state.bugs=state.bugs||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};state.feedback=state.feedback||[];state.fbQueue=state.fbQueue||[];
+state.funcs=state.funcs||[];state.testers=state.testers||[];state.bugs=state.bugs||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};state.feedback=state.feedback||[];state.fbQueue=state.fbQueue||[];state.clStruct=state.clStruct||{};state.appMeta=state.appMeta||{};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 // "Jag" (testare) sparas bara lokalt — aldrig i synk
@@ -715,29 +747,34 @@ function appNameFrom(raw,fileName){
 function parseAppChangelog(raw,fileName){
   const app=appNameFrom(raw,fileName);
   const appId=hash(app.toLowerCase());
-  const out=[];
-  const push=(version,date,text,type)=>{
-    text=String(text||'').trim();if(!text)return;
-    out.push({id:'cl-'+appId+'-'+hash((version||'')+'|'+text),app,version:version||'',namn:text,type:normType(String(type||'')),date:date||'',source:'changelog'});
-  };
+  const funcs=[];const log=[];const cat=[];
+  const mkFunc=(id,version,date,text,type)=>({id,app,version:version||'',date:date||'',namn:String(text).trim(),type:normType(String(type||'')),source:'changelog'});
+  // Changelog[] → versioner
   if(raw&&Array.isArray(raw.changelog)&&raw.changelog.length){
     raw.changelog.forEach(e=>{
-      if(typeof e==='string'){push('','',e,'');return;}
+      if(typeof e==='string'){const id='cl-'+appId+'-'+hash('|'+e);funcs.push(mkFunc(id,'','',e,''));log.push({version:'',date:'',items:[{id,text:String(e).trim()}]});return;}
       if(!e||typeof e!=='object')return;
       const version=e.version||e.ver||'';const date=e.date||e.datum||raw.updated||'';
       const items=['items','changes','funktioner','features','ändringar'].map(k=>e[k]).find(Array.isArray);
-      if(items&&items.length)items.forEach(it=>push(version,date,textOf(it),(typeof it==='object'&&(it.type||it.typ))||''));
-      else if(textOf(e))push(version,date,textOf(e),e.type||e.typ||'');
+      const logItems=[];
+      const add=(text,type)=>{text=String(text||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash((version||'')+'|'+text);funcs.push(mkFunc(id,version,date,text,type));logItems.push({id,text});};
+      if(items&&items.length)items.forEach(it=>add(textOf(it),(typeof it==='object'&&(it.type||it.typ))||''));
+      else if(textOf(e))add(textOf(e),e.type||e.typ||'');
+      if(logItems.length)log.push({version:version||'',date:date||'',items:logItems});
     });
-  }else{
-    // Generell parser för platta listor / andra format
-    parseChangelog(raw).forEach(f=>push(f.version,f.date,f.namn,f.type));
+  }else if(!(raw&&Array.isArray(raw.functions)&&raw.functions.length)){
+    parseChangelog(raw).forEach(f=>{const text=String(f.namn||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash((f.version||'')+'|'+text);funcs.push(mkFunc(id,f.version,f.date,text,f.type));log.push({version:f.version||'',date:f.date||'',items:[{id,text}]});});
   }
-  // Om inget från changelog[]: använd functions[]-katalogen
-  if(!out.length&&raw&&Array.isArray(raw.functions)){
-    raw.functions.forEach(a=>{(a.items||[]).forEach(it=>push('',raw.updated||'',(a.area?a.area+': ':'')+textOf(it),''));});
+  // Functions[] → funktionslogg per område
+  if(raw&&Array.isArray(raw.functions)){
+    raw.functions.forEach(a=>{
+      const area=a.area||a.omrade||'';const catItems=[];
+      (a.items||[]).forEach(it=>{const text=String(textOf(it)||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash('fn|'+area+'|'+text);funcs.push(mkFunc(id,'',raw.updated||'',text,''));catItems.push({id,text});});
+      if(catItems.length)cat.push({area:area||'Funktioner',items:catItems});
+    });
   }
-  return out;
+  const meta={icon:raw&&(raw.icon||raw.emoji)||'',accent:raw&&raw.accent||'',file:raw&&raw.file||fileName||''};
+  return {app,meta,funcs,log,cat};
 }
 
 async function clPullAll(){
@@ -746,14 +783,17 @@ async function clPullAll(){
   try{
     const files=await ghListChangelogs();
     const existing={};state.funcs.forEach(f=>existing[f.id]=f);
+    state.clStruct=state.clStruct||{};state.appMeta=state.appMeta||{};
     let added=0;const sources=[];
     for(const path of files){
       let res;try{res=await ghGetFile(path);}catch(e){continue;}
       if(res.missing||!res.data)continue;
-      const list=parseAppChangelog(res.data,path);
-      if(!list.length)continue;
-      sources.push({path,app:list[0].app,count:list.length});
-      list.forEach(cf=>{
+      const parsed=parseAppChangelog(res.data,path);
+      if(!parsed.funcs.length)continue;
+      sources.push({path,app:parsed.app,count:parsed.funcs.length});
+      state.clStruct[parsed.app]={log:parsed.log,cat:parsed.cat};
+      state.appMeta[parsed.app]={icon:parsed.meta.icon||'',accent:parsed.meta.accent||'',file:parsed.meta.file||''};
+      parsed.funcs.forEach(cf=>{
         if(existing[cf.id]){const f=existing[cf.id];if(!f.namn)f.namn=cf.namn;if(!f.version)f.version=cf.version;if(!f.date)f.date=cf.date;if(!f.app||f.app==='Allmänt')f.app=cf.app;}
         else{const nf={id:cf.id,app:cf.app,version:cf.version,namn:cf.namn,type:cf.type,date:cf.date,source:'changelog',opened:false,isNew:true,added:nowISO(),cases:[]};state.funcs.push(nf);existing[cf.id]=nf;added++;}
       });
@@ -866,68 +906,110 @@ function renderProto(){
   bindRows(el);
 }
 
-// ── Synkade appar (kort) ──────────────────────────────
+// ── Synkade appar (changelogg + funktionslogg) ────────
 const appsExpanded=new Set();
+function clItemRow(it){
+  const f=state.funcs.find(x=>x.id===it.id);
+  const st=f?statusOf(f):'pending';
+  return '<div class="frow cl-row"><button class="statpick '+st+'" data-pick="'+esc(it.id)+'" title="'+esc(ST[st])+'">'+statGlyph(st)+'</button><div class="fmain" data-open="'+esc(it.id)+'"><div class="fname">'+esc(it.text)+'</div></div></div>';
+}
 function renderApps(){
   const byApp={};state.funcs.forEach(f=>{const a=f.app||'Allmänt';(byApp[a]=byApp[a]||[]).push(f);});
   const apps=Object.keys(byApp).sort();
   const el=$('apps-list');
   if(!apps.length){el.innerHTML='<div class="empty-msg">Inga appar ännu. Hämta changelogs (Testa → ⟳) eller lägg till funktioner.</div>';return;}
   el.innerHTML=apps.map(a=>{
-    const arr=byApp[a].slice().sort((x,y)=>(x.namn||'').localeCompare(y.namn||''));
+    const arr=byApp[a];
     const c={pending:0,progress:0,pass:0,fail:0,improve:0,blocked:0,skip:0};arr.forEach(f=>c[statusOf(f)]++);
     const tot=arr.length;
     const openBugs=(state.bugs||[]).filter(b=>(b.app||'')===a&&OPEN_BUG(b)).length;
     const synced=arr.some(f=>f.source==='changelog');
+    const meta=(state.appMeta||{})[a]||{};const icon=meta.icon?(esc(meta.icon)+' '):'';
     const s=(n,col)=>n>0?'<i style="width:'+(n/tot*100)+'%;background:'+col+'"></i>':'';
     const bar='<div class="bar-bg" style="margin:6px 0 4px">'+s(c.pass,'var(--green)')+s(c.fail,'var(--red)')+s(c.improve,'var(--improve)')+s(c.blocked,'var(--amber)')+s(c.progress,'var(--blue)')+s(c.skip,'var(--line)')+s(c.pending,'var(--panel2)')+'</div>';
     const sc='<div class="app-score"><span class="sc ok">✓ '+c.pass+' funkar</span>'+(c.fail?'<span class="sc bad">✗ '+c.fail+' funkar inte</span>':'')+(c.improve?'<span class="sc imp">△ '+c.improve+' kan förbättras</span>':'')+'</div>';
-    const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att testa · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
+    const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att bocka av · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
     const open=appsExpanded.has(a);
-    const rows=arr.map(funcRow).join('');
-    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'"><div class="app-head"><div style="flex:1;min-width:0"><div class="an">'+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div>'+bar+sc+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span></div><div class="app-body">'+rows+'</div></div>';
+    // Kropp: changelogg + funktionslogg om struktur finns, annars platt lista
+    const struct=(state.clStruct||{})[a];
+    let body='';
+    if(struct&&((struct.log&&struct.log.length)||(struct.cat&&struct.cat.length))){
+      if(struct.log&&struct.log.length){
+        body+='<div class="cl-sec-title">Changelogg</div>';
+        body+=struct.log.map(e=>(e.version||e.date?'<div class="cl-grp">'+(e.version?('v'+esc(e.version)):'Ändringar')+(e.date?'<span class="d">'+esc(fmtDate(e.date))+'</span>':'')+'</div>':'')+e.items.map(clItemRow).join('')).join('');
+      }
+      if(struct.cat&&struct.cat.length){
+        body+='<div class="cl-sec-title">Funktionslogg</div>';
+        body+=struct.cat.map(g=>'<div class="cl-grp">'+esc(g.area)+'</div>'+g.items.map(clItemRow).join('')).join('');
+      }
+    }else{
+      body=arr.slice().sort((x,y)=>(x.namn||'').localeCompare(y.namn||'')).map(fbRow).join('');
+    }
+    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'"><div class="app-head"><div style="flex:1;min-width:0"><div class="an">'+icon+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div>'+bar+sc+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span></div><div class="app-body">'+body+'</div></div>';
   }).join('');
   el.querySelectorAll('.app-head').forEach(h=>{h.onclick=()=>{const card=h.closest('.app-card');const a=card.dataset.app;if(appsExpanded.has(a))appsExpanded.delete(a);else appsExpanded.add(a);card.classList.toggle('open');};});
-  el.querySelectorAll('.app-body .frow').forEach(r=>{r.onclick=()=>openFunc(r.dataset.id);});
+  el.querySelectorAll('.statpick').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();openStatusSheet(b.dataset.pick);};});
+  el.querySelectorAll('.app-body .fmain[data-open]').forEach(r=>{r.onclick=()=>openFunc(r.dataset.open);});
 }
 
-// ── Feedback / funktionstestning (avbockning) ─────────
-const fbExpanded=new Set();
+// ── Statusikon-rad (avbockning i Appar-fliken) ────────
 function statGlyph(st){return ({pending:'○',progress:'◐',pass:'✓',fail:'✗',improve:'△',blocked:'⤫',skip:'⊘'})[st]||'○';}
 function fbRow(f){
   const st=statusOf(f);
   const meta=[];if(f.version)meta.push('v'+esc(f.version));const pl=f.plat||{};if(pl.mobil)meta.push('📱');if(pl.desktop)meta.push('🖥');
   return '<div class="frow"><button class="statpick '+st+'" data-pick="'+esc(f.id)+'" title="'+esc(ST[st])+'">'+statGlyph(st)+'</button><div class="fmain" data-open="'+esc(f.id)+'"><div class="fname">'+esc(f.namn||'(utan namn)')+'</div>'+(meta.length?'<div class="fmeta">'+meta.join(' ')+'</div>':'')+'</div><span class="chev">›</span></div>';
 }
+
+// ── Feedback-tavla (loggade poster, Feedbackkollen-stil) ─
+let fbFilterTyp='*',fbFilterSt='oppna',fbFilterApp='*';
 function renderFeedback(){
-  const byApp={};state.funcs.forEach(f=>{const a=f.app||'Allmänt';(byApp[a]=byApp[a]||[]).push(f);});
-  const apps=Object.keys(byApp).sort();
-  const el=$('feedback-list');
-  if(!apps.length){el.innerHTML='<div class="empty-msg">Inga funktioner ännu. Hämta changelogs (Testa → ⟳) eller lägg till funktioner.</div>';return;}
-  const tc={pending:0,progress:0,pass:0,fail:0,improve:0,blocked:0,skip:0};state.funcs.forEach(f=>tc[statusOf(f)]++);
-  const openIssues=(state.bugs||[]).filter(OPEN_BUG).length;
-  const score='<div class="app-score"><span class="sc ok">✓ '+tc.pass+' funkar</span>'+(tc.fail?'<span class="sc bad">✗ '+tc.fail+' funkar inte</span>':'')+(tc.improve?'<span class="sc imp">△ '+tc.improve+' kan förbättras</span>':'')+((tc.pending+tc.progress)?'<span class="sc" style="background:var(--panel2);color:var(--muted)">○ '+(tc.pending+tc.progress)+' väntande</span>':'')+'</div>';
-  let html='<div class="fb-summary"><div class="section-title" style="margin:0 0 6px">Totalt</div>'+score+'<div class="lnk" id="fb-toissues">'+openIssues+' öppna i buggregistret →</div></div>';
-  html+=apps.map(a=>{
-    const arr=byApp[a].slice().sort((x,y)=>(x.namn||'').localeCompare(y.namn||''));
-    const c={pending:0,progress:0,pass:0,fail:0,improve:0,blocked:0,skip:0};arr.forEach(f=>c[statusOf(f)]++);
-    const tot=arr.length;
-    const openBugs=(state.bugs||[]).filter(b=>(b.app||'')===a&&OPEN_BUG(b)).length;
-    const synced=arr.some(f=>f.source==='changelog');
-    const s=(n,col)=>n>0?'<i style="width:'+(n/tot*100)+'%;background:'+col+'"></i>':'';
-    const bar='<div class="bar-bg" style="margin:6px 0 4px">'+s(c.pass,'var(--green)')+s(c.fail,'var(--red)')+s(c.improve,'var(--improve)')+s(c.blocked,'var(--amber)')+s(c.progress,'var(--blue)')+s(c.skip,'var(--line)')+s(c.pending,'var(--panel2)')+'</div>';
-    const sc='<div class="app-score"><span class="sc ok">✓ '+c.pass+' funkar</span>'+(c.fail?'<span class="sc bad">✗ '+c.fail+' funkar inte</span>':'')+(c.improve?'<span class="sc imp">△ '+c.improve+' kan förbättras</span>':'')+'</div>';
-    const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att bocka av · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
-    const open=fbExpanded.has(a);
-    const rows=arr.map(fbRow).join('');
-    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'"><div class="app-head"><div style="flex:1;min-width:0"><div class="an">'+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div>'+bar+sc+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span></div><div class="app-body">'+rows+'</div></div>';
+  state.bugs=state.bugs||[];
+  // tiles
+  const open=state.bugs.filter(OPEN_BUG).length;
+  const nB=state.bugs.filter(b=>(b.typ||'bugg')==='bugg').length;
+  const nF=state.bugs.filter(b=>b.typ==='fel').length;
+  const nFb=state.bugs.filter(b=>b.typ==='forbattring').length;
+  $('fb-tiles').innerHTML=
+    '<div class="tile"><div class="n">'+open+'</div><div class="l">Öppna</div></div>'+
+    '<div class="tile"><div class="n">'+nB+'</div><div class="l">🐞 Bugg</div></div>'+
+    '<div class="tile"><div class="n">'+nF+'</div><div class="l">⚠️ Fel</div></div>'+
+    '<div class="tile"><div class="n">'+nFb+'</div><div class="l">💡 Förb.</div></div>';
+  // typ-filter
+  const typs=[['*','Alla'],['bugg','🐞 Bugg'],['fel','⚠️ Fel'],['forbattring','💡 Förbättring']];
+  const tf=$('fb-type-filter');
+  tf.innerHTML=typs.map(t=>'<button class="fchip'+(fbFilterTyp===t[0]?' sel':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('');
+  tf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{fbFilterTyp=c.dataset.t;renderFeedback();};});
+  // status-filter
+  const sts=[['oppna','Öppna'],['*','Alla']].concat(BUG_STATUS);
+  const sf=$('fb-status-filter');
+  sf.innerHTML=sts.map(s=>'<button class="fchip'+(fbFilterSt===s[0]?' sel':'')+'" data-s="'+s[0]+'">'+esc(s[1])+'</button>').join('');
+  sf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{fbFilterSt=c.dataset.s;renderFeedback();};});
+  // app-filter
+  const apps=Array.from(new Set(state.bugs.map(b=>b.app||'—'))).sort();
+  const af=$('fb-app-filter');
+  af.innerHTML=['*'].concat(apps).map(a=>'<button class="fchip'+(fbFilterApp===a?' sel':'')+'" data-a="'+esc(a)+'">'+(a==='*'?'Alla appar':esc(a))+'</button>').join('');
+  af.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{fbFilterApp=c.dataset.a;renderFeedback();};});
+  // lista
+  let list=state.bugs.slice();
+  if(fbFilterTyp!=='*')list=list.filter(b=>(b.typ||'bugg')===fbFilterTyp);
+  if(fbFilterSt==='oppna')list=list.filter(OPEN_BUG);else if(fbFilterSt!=='*')list=list.filter(b=>b.status===fbFilterSt);
+  if(fbFilterApp!=='*')list=list.filter(b=>(b.app||'—')===fbFilterApp);
+  const order={ny:0,bekraftad:1,paborjad:2,omtest:3,fixad:4,stangd:5},pord={hog:0,mellan:1,lag:2};
+  list.sort((a,b)=>(order[a.status]-order[b.status])||((pord[a.prio]??1)-(pord[b.prio]??1))||((b.updated||'').localeCompare(a.updated||'')));
+  const el=$('fb-board');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inga poster här ännu.<br>Logga din första med + ovan.</div>';return;}
+  const PR={hog:'Hög',mellan:'Mellan',lag:'Låg'};
+  el.innerHTML=list.map(b=>{
+    const st=b.status||'ny';const desc=(b.beskrivning||'').trim();
+    return '<div class="item s-'+st+'" data-id="'+esc(b.id)+'">'+
+      '<div class="item-head"><div class="item-ic">'+BUG_TYP_ICON(b.typ||'bugg').trim()+'</div><div class="item-title">'+esc(b.rubrik||'(utan rubrik)')+'</div></div>'+
+      (desc?'<div class="item-desc">'+esc(desc.length>120?desc.slice(0,120)+'…':desc)+'</div>':'')+
+      '<div class="item-meta">'+(b.app?'<span class="tag">'+esc(b.app)+(b.funktion?(' · '+esc(b.funktion)):'')+'</span>':'')+bugPill(st)+'<span class="pdot">Prio <b class="'+(b.prio||'mellan')+'">'+(PR[b.prio||'mellan'])+'</b></span></div>'+
+    '</div>';
   }).join('');
-  el.innerHTML=html;
-  const toI=$('fb-toissues');if(toI)toI.onclick=()=>goView('bugs');
-  el.querySelectorAll('.app-head').forEach(h=>{h.onclick=()=>{const card=h.closest('.app-card');const a=card.dataset.app;if(fbExpanded.has(a))fbExpanded.delete(a);else fbExpanded.add(a);card.classList.toggle('open');};});
-  el.querySelectorAll('.statpick').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();openStatusSheet(b.dataset.pick);};});
-  el.querySelectorAll('.fmain[data-open]').forEach(r=>{r.onclick=()=>openFunc(r.dataset.open);});
+  el.querySelectorAll('.item').forEach(c=>{c.onclick=()=>openBug(c.dataset.id);});
 }
+$('fb-log').onclick=()=>openBug(null);
 function setFuncVerdict(f,v){
   if(!v){f.verdict=null;f.verdictBy='';f.verdictTs='';}
   else{f.verdict=v;f.verdictBy=getMe()||'okänd';f.verdictTs=nowISO();
@@ -1472,8 +1554,18 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='2.3';
+const APP_VERSION='2.5';
 const CHANGELOG=[
+  {version:'2.5',date:'2026-06-16',title:'Changelogg & funktionslogg per app',items:[
+    'Under Appar visas varje apps changelogg grupperad per version, med en statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte) för varje ändring.',
+    'Separat funktionslogg per app, grupperad per område, med samma statussymboler — bocka av varje funktion en och en.',
+    'Appens ikon visas före namnet i applistan (hämtas från changelog-filen).'
+  ]},
+  {version:'2.4',date:'2026-06-16',title:'Feedback som tavla',items:[
+    'Feedback-fliken är nu en tavla i Feedbackkollen-stil: kort med färgad statusrand, typikon (🐞/⚠️/💡), rubrik, beskrivning och pillar för app, status och prioritet.',
+    'Filtrera tavlan på typ, status (öppna som standard) och app, med översiktsrutor överst och "+ Logga feedback".',
+    'Snabb-avbockningen (✓ ○ △ ✗) en och en flyttade till Appar-fliken, så Feedback fokuserar på de loggade posterna.'
+  ]},
   {version:'2.3',date:'2026-06-16',title:'Separata Appar & Feedback + Fel-typ',items:[
     'Appar och Feedback är nu två egna flikar: Appar visar struktur och funktionsscore per app, Feedback är avbockningslistan med statusikoner och totalsammanfattning.',
     'Ny typ "Fel" i buggregistret utöver Bugg och Förbättring — välj typ när du skapar/redigerar en post, med eget filter (⚠️ Fel).',
@@ -1554,8 +1646,8 @@ const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
   {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Buggregister',items:['Separat register för buggar, fel och förbättringar (typ-filter 🐞/⚠️/💡), med status Ny/Bekräftad/Påbörjad/Fixad/Omtest krävs/Stängd, kopplat till app, funktion och version, med prioritet och rapportör.','Modulomdömena "Funkar inte" och "Kan förbättras" loggar automatiskt här och skickar till Appcentralen. Poster syns i översikten och kan skickas/återsändas till Appcentralen.']},
-  {area:'Synkade appar',items:['Egen flik där varje app visas med sina funktioner/tester, statusstapel och funktionsscore (funkar/funkar inte/kan förbättras). Hopfällbar per app; tryck på en funktion för full testvy. Appar från changelogs märks "synkad".']},
-  {area:'Feedback',items:['Egen flik för avbockning: varje funktion har en statusikon (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte) som sätts en och en via snabbval, eller full testvy via namnet. Överst en totalsammanfattning med score och länk till öppna poster i buggregistret.']},
+  {area:'Synkade appar',items:['Egen flik med appens ikon före namnet. Per app visas changeloggen grupperad per version och en separat funktionslogg grupperad per område, var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".']},
+  {area:'Feedback',items:['Tavla i Feedbackkollen-stil över alla loggade poster (bugg/fel/förbättring): kort med färgad statusrand, typikon, rubrik, beskrivning och pillar för app, status och prioritet. Filtrera på typ, status och app, med översiktsrutor och "+ Logga feedback". Tryck på ett kort för att redigera.']},
   {area:'Kalender',items:['Kalendervy som visar när varje funktion lades till (antal per dag). Tryck på ett datum för att se och testa bara de funktionerna, plus buggar rapporterade samma dag.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},
   {area:'Översikt',items:['Status totalt, per app och insats per testare, testtäckning samt logg över senaste resultat.']},
