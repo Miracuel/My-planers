@@ -127,6 +127,12 @@ textarea{resize:vertical;line-height:1.5}
 .cl-grp .d{color:var(--muted);font-weight:400;text-transform:none;margin-left:6px;letter-spacing:0}
 .cl-row{padding:6px 0}
 .cl-row .fname{font-size:13px}
+.segtabs{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;margin:10px 0 6px}
+.segtabs button{border:none;background:none;color:var(--muted);font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 13px;border-radius:999px;cursor:pointer}
+.segtabs button.sel{background:var(--ink);color:var(--panel)}
+.ktag{font-size:10px;border-radius:7px;padding:2px 6px;font-weight:600}
+.ktag.ch{background:var(--blue-soft);color:var(--blue)}
+.ktag.fn{background:var(--accent-soft);color:var(--accent)}
 .pill.ny{background:var(--accent);color:#fff}
 .tag{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
 
@@ -345,6 +351,7 @@ html[data-theme=dark]{
 <!-- PROTOKOLL -->
 <div class="view" id="view-proto">
   <div class="fchips" id="app-filter"></div>
+  <div class="fchips" id="kind-filter"></div>
   <div class="fchips" id="status-filter"></div>
   <div class="card-panel" style="margin-top:8px"><div id="proto-list"></div></div>
   <button class="btn fill" id="add-func" style="width:100%;margin-top:12px">+ Lägg till funktion manuellt</button>
@@ -666,6 +673,7 @@ function mergeFuncs(local,remote){
     if(!lf.namn&&rf.namn)lf.namn=rf.namn;
     if(!lf.version&&rf.version)lf.version=rf.version;
     if(!lf.note&&rf.note)lf.note=rf.note;
+    if(!lf.kind&&rf.kind)lf.kind=rf.kind;
     if(!lf.explanation&&rf.explanation)lf.explanation=rf.explanation;
     if(!lf.plat&&rf.plat)lf.plat=rf.plat;
   });
@@ -768,28 +776,28 @@ function parseAppChangelog(raw,fileName){
   const app=appNameFrom(raw,fileName);
   const appId=hash(app.toLowerCase());
   const funcs=[];const log=[];const cat=[];
-  const mkFunc=(id,version,date,text,type)=>({id,app,version:version||'',date:date||'',namn:String(text).trim(),type:normType(String(type||'')),source:'changelog'});
-  // Changelog[] → versioner
+  const mkFunc=(id,version,date,text,type,kind)=>({id,app,version:version||'',date:date||'',namn:String(text).trim(),type:normType(String(type||'')),kind:kind||'change',source:'changelog'});
+  // Changelog[] → versioner (ändringar)
   if(raw&&Array.isArray(raw.changelog)&&raw.changelog.length){
     raw.changelog.forEach(e=>{
-      if(typeof e==='string'){const id='cl-'+appId+'-'+hash('|'+e);funcs.push(mkFunc(id,'','',e,''));log.push({version:'',date:'',items:[{id,text:String(e).trim()}]});return;}
+      if(typeof e==='string'){const id='cl-'+appId+'-'+hash('|'+e);funcs.push(mkFunc(id,'','',e,'','change'));log.push({version:'',date:'',items:[{id,text:String(e).trim()}]});return;}
       if(!e||typeof e!=='object')return;
       const version=e.version||e.ver||'';const date=e.date||e.datum||raw.updated||'';
       const items=['items','changes','funktioner','features','ändringar'].map(k=>e[k]).find(Array.isArray);
       const logItems=[];
-      const add=(text,type)=>{text=String(text||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash((version||'')+'|'+text);funcs.push(mkFunc(id,version,date,text,type));logItems.push({id,text});};
+      const add=(text,type)=>{text=String(text||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash((version||'')+'|'+text);funcs.push(mkFunc(id,version,date,text,type,'change'));logItems.push({id,text});};
       if(items&&items.length)items.forEach(it=>add(textOf(it),(typeof it==='object'&&(it.type||it.typ))||''));
       else if(textOf(e))add(textOf(e),e.type||e.typ||'');
       if(logItems.length)log.push({version:version||'',date:date||'',items:logItems});
     });
   }else if(!(raw&&Array.isArray(raw.functions)&&raw.functions.length)){
-    parseChangelog(raw).forEach(f=>{const text=String(f.namn||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash((f.version||'')+'|'+text);funcs.push(mkFunc(id,f.version,f.date,text,f.type));log.push({version:f.version||'',date:f.date||'',items:[{id,text}]});});
+    parseChangelog(raw).forEach(f=>{const text=String(f.namn||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash((f.version||'')+'|'+text);funcs.push(mkFunc(id,f.version,f.date,text,f.type,'change'));log.push({version:f.version||'',date:f.date||'',items:[{id,text}]});});
   }
-  // Functions[] → funktionslogg per område
+  // Functions[] → funktionslogg per område (funktioner)
   if(raw&&Array.isArray(raw.functions)){
     raw.functions.forEach(a=>{
       const area=a.area||a.omrade||'';const catItems=[];
-      (a.items||[]).forEach(it=>{const text=String(textOf(it)||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash('fn|'+area+'|'+text);funcs.push(mkFunc(id,'',raw.updated||'',text,''));catItems.push({id,text});});
+      (a.items||[]).forEach(it=>{const text=String(textOf(it)||'').trim();if(!text)return;const id='cl-'+appId+'-'+hash('fn|'+area+'|'+text);funcs.push(mkFunc(id,'',raw.updated||'',text,'','funktion'));catItems.push({id,text});});
       if(catItems.length)cat.push({area:area||'Funktioner',items:catItems});
     });
   }
@@ -814,8 +822,8 @@ async function clPullAll(){
       state.clStruct[parsed.app]={log:parsed.log,cat:parsed.cat};
       state.appMeta[parsed.app]={icon:parsed.meta.icon||'',accent:parsed.meta.accent||'',file:parsed.meta.file||''};
       parsed.funcs.forEach(cf=>{
-        if(existing[cf.id]){const f=existing[cf.id];if(!f.namn)f.namn=cf.namn;if(!f.version)f.version=cf.version;if(!f.date)f.date=cf.date;if(!f.app||f.app==='Allmänt')f.app=cf.app;}
-        else{const nf={id:cf.id,app:cf.app,version:cf.version,namn:cf.namn,type:cf.type,date:cf.date,source:'changelog',opened:false,isNew:true,added:nowISO(),cases:[]};state.funcs.push(nf);existing[cf.id]=nf;added++;}
+        if(existing[cf.id]){const f=existing[cf.id];if(!f.namn)f.namn=cf.namn;if(!f.version)f.version=cf.version;if(!f.date)f.date=cf.date;if(!f.kind)f.kind=cf.kind;if(!f.app||f.app==='Allmänt')f.app=cf.app;}
+        else{const nf={id:cf.id,app:cf.app,version:cf.version,namn:cf.namn,type:cf.type,kind:cf.kind,date:cf.date,source:'changelog',opened:false,isNew:true,added:nowISO(),cases:[]};state.funcs.push(nf);existing[cf.id]=nf;added++;}
       });
     }
     state.cl.sources=sources;state.cl.lastPull=nowISO();
@@ -878,6 +886,8 @@ function funcRow(f){
   const st=statusOf(f);
   const meta=[];
   if(f.app)meta.push('<span class="tag">'+esc(f.app)+'</span>');
+  if(f.kind==='funktion')meta.push('<span class="ktag fn">🧩 Funktion</span>');
+  else if(f.kind==='change')meta.push('<span class="ktag ch">🔄 Ändring</span>');
   if(f.version)meta.push('v'+esc(f.version));
   if(f.type==='fix')meta.push('🛠 fix');
   else if(f.type==='feature')meta.push('✦ funktion');
@@ -907,18 +917,23 @@ function updateDot(){
 }
 
 // ── Protokoll ─────────────────────────────────────────
-let filterApp='*',filterSt='*';
+let filterApp='*',filterSt='*',filterKind='*';
 function renderProto(){
   const apps=Array.from(new Set(state.funcs.map(f=>f.app||'Allmänt'))).sort();
   const af=$('app-filter');
   af.innerHTML=['*'].concat(apps).map(a=>'<button class="fchip'+(filterApp===a?' sel':'')+'" data-a="'+esc(a)+'">'+(a==='*'?'Alla appar':esc(a))+'</button>').join('');
   af.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{filterApp=c.dataset.a;renderProto();};});
+  const kinds=[['*','Alla'],['change','🔄 Ändringar'],['funktion','🧩 Funktioner']];
+  const kf=$('kind-filter');
+  kf.innerHTML=kinds.map(k=>'<button class="fchip'+(filterKind===k[0]?' sel':'')+'" data-k="'+k[0]+'">'+k[1]+'</button>').join('');
+  kf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{filterKind=c.dataset.k;renderProto();};});
   const sts=[['*','Alla'],['pending','Ej testad'],['progress','Pågår'],['pass','Godkänd'],['fail','Underkänd'],['improve','Kan förbättras'],['blocked','Blockerad']];
   const sf=$('status-filter');
   sf.innerHTML=sts.map(s=>'<button class="fchip'+(filterSt===s[0]?' sel':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>').join('');
   sf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{filterSt=c.dataset.s;renderProto();};});
   let list=state.funcs.slice();
   if(filterApp!=='*')list=list.filter(f=>(f.app||'Allmänt')===filterApp);
+  if(filterKind!=='*')list=list.filter(f=>(f.kind||'change')===filterKind);
   if(filterSt!=='*')list=list.filter(f=>statusOf(f)===filterSt);
   list.sort((a,b)=>(a.app||'').localeCompare(b.app||'')||(a.namn||'').localeCompare(b.namn||''));
   const el=$('proto-list');
@@ -928,6 +943,7 @@ function renderProto(){
 
 // ── Synkade appar (changelogg + funktionslogg) ────────
 const appsExpanded=new Set();
+const appTab={};
 function clItemRow(it){
   const f=state.funcs.find(x=>x.id===it.id);
   const st=f?statusOf(f):'pending';
@@ -950,16 +966,20 @@ function renderApps(){
     const sc='<div class="app-score"><span class="sc ok">✓ '+c.pass+' funkar</span>'+(c.fail?'<span class="sc bad">✗ '+c.fail+' funkar inte</span>':'')+(c.improve?'<span class="sc imp">△ '+c.improve+' kan förbättras</span>':'')+'</div>';
     const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att bocka av · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
     const open=appsExpanded.has(a);
-    // Kropp: changelogg + funktionslogg om struktur finns, annars platt lista
+    // Kropp: växla mellan changelogg och funktionslogg
     const struct=(state.clStruct||{})[a];
     let body='';
-    if(struct&&((struct.log&&struct.log.length)||(struct.cat&&struct.cat.length))){
-      if(struct.log&&struct.log.length){
-        body+='<div class="cl-sec-title">Changelogg</div>';
-        body+=struct.log.map(e=>(e.version||e.date?'<div class="cl-grp">'+(e.version?('v'+esc(e.version)):'Ändringar')+(e.date?'<span class="d">'+esc(fmtDate(e.date))+'</span>':'')+'</div>':'')+e.items.map(clItemRow).join('')).join('');
+    const hasLog=struct&&struct.log&&struct.log.length;
+    const hasCat=struct&&struct.cat&&struct.cat.length;
+    if(hasLog||hasCat){
+      let tab=appTab[a]||(hasLog?'log':'cat');
+      if(tab==='log'&&!hasLog)tab='cat';if(tab==='cat'&&!hasCat)tab='log';
+      if(hasLog&&hasCat){
+        body+='<div class="segtabs"><button class="'+(tab==='log'?'sel':'')+'" data-tab="log" data-app="'+esc(a)+'">Changelogg</button><button class="'+(tab==='cat'?'sel':'')+'" data-tab="cat" data-app="'+esc(a)+'">Funktionslogg</button></div>';
       }
-      if(struct.cat&&struct.cat.length){
-        body+='<div class="cl-sec-title">Funktionslogg</div>';
+      if(tab==='log'&&hasLog){
+        body+=struct.log.map(e=>(e.version||e.date?'<div class="cl-grp">'+(e.version?('v'+esc(e.version)):'Ändringar')+(e.date?'<span class="d">'+esc(fmtDate(e.date))+'</span>':'')+'</div>':'')+e.items.map(clItemRow).join('')).join('');
+      }else if(tab==='cat'&&hasCat){
         body+=struct.cat.map(g=>'<div class="cl-grp">'+esc(g.area)+'</div>'+g.items.map(clItemRow).join('')).join('');
       }
     }else{
@@ -968,6 +988,7 @@ function renderApps(){
     return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'"><div class="app-head"><div style="flex:1;min-width:0"><div class="an">'+icon+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div>'+bar+sc+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span></div><div class="app-body">'+body+'</div></div>';
   }).join('');
   el.querySelectorAll('.app-head').forEach(h=>{h.onclick=()=>{const card=h.closest('.app-card');const a=card.dataset.app;if(appsExpanded.has(a))appsExpanded.delete(a);else appsExpanded.add(a);card.classList.toggle('open');};});
+  el.querySelectorAll('.segtabs button').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();appTab[b.dataset.app]=b.dataset.tab;renderApps();};});
   el.querySelectorAll('.statpick').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();openStatusSheet(b.dataset.pick);};});
   el.querySelectorAll('.app-body .fmain[data-open]').forEach(r=>{r.onclick=()=>openFunc(r.dataset.open);});
 }
@@ -1458,7 +1479,7 @@ $('add-func').onclick=()=>{$('af-app').value='';$('af-ver').value='';$('af-name'
 $('af-save').onclick=()=>{
   const nm=$('af-name').value.trim();if(!nm){toast('Skriv vad som ska testas.');return;}
   const app=$('af-app').value.trim()||'Allmänt';const ver=$('af-ver').value.trim();
-  state.funcs.push({id:'man-'+uid(),app,version:ver,namn:nm,type:'',date:'',source:'manual',opened:true,isNew:false,added:nowISO(),cases:[]});
+  state.funcs.push({id:'man-'+uid(),app,version:ver,namn:nm,type:'',kind:'funktion',date:'',source:'manual',opened:true,isNew:false,added:nowISO(),cases:[]});
   persist();closeSheets();goView('proto');toast('Funktion tillagd.');
 };
 
@@ -1574,8 +1595,15 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='2.5';
+const APP_VERSION='2.7';
 const CHANGELOG=[
+  {version:'2.7',date:'2026-06-16',title:'Tagga ändring/funktion i protokollet',items:[
+    'Varje rad i protokollet (och Att testa) taggas nu som 🔄 Ändring (från changeloggen) eller 🧩 Funktion (från funktionsloggen).',
+    'Nytt filter i Protokoll för att visa bara ändringar eller bara funktioner.'
+  ]},
+  {version:'2.6',date:'2026-06-16',title:'Växla changelogg/funktionslogg',items:[
+    'Pill-flikar i varje app-kort för att växla mellan Changelogg och Funktionslogg i stället för att visa båda samtidigt.'
+  ]},
   {version:'2.5',date:'2026-06-16',title:'Changelogg & funktionslogg per app',items:[
     'Under Appar visas varje apps changelogg grupperad per version, med en statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte) för varje ändring.',
     'Separat funktionslogg per app, grupperad per område, med samma statussymboler — bocka av varje funktion en och en.',
@@ -1664,9 +1692,9 @@ const CHANGELOG=[
 ];
 const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
-  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
+  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Varje rad taggas som 🔄 Ändring (changelogg) eller 🧩 Funktion (funktionslogg), med filter för att visa bara den ena.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Buggregister',items:['Separat register för buggar, fel och förbättringar (typ-filter 🐞/⚠️/💡), med status Ny/Bekräftad/Påbörjad/Fixad/Omtest krävs/Stängd, kopplat till app, funktion och version, med prioritet och rapportör.','Modulomdömena "Funkar inte" och "Kan förbättras" loggar automatiskt här och skickar till Appcentralen. Poster syns i översikten och kan skickas/återsändas till Appcentralen.']},
-  {area:'Synkade appar',items:['Egen flik med appens ikon före namnet. Per app visas changeloggen grupperad per version och en separat funktionslogg grupperad per område, var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".']},
+  {area:'Synkade appar',items:['Egen flik med appens ikon före namnet. Per app växlar du med pill-flikar mellan changeloggen (grupperad per version) och funktionsloggen (grupperad per område), var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".']},
   {area:'Feedback',items:['Tavla i Feedbackkollen-stil över alla loggade poster (bugg/fel/förbättring): kort med färgad statusrand, typikon, rubrik, beskrivning och pillar för app, status och prioritet. Filtrera på typ, status och app, med översiktsrutor och "+ Logga feedback". Tryck på ett kort för att redigera.']},
   {area:'Kalender',items:['Kalendervy som visar när varje funktion lades till (antal per dag). Tryck på ett datum för att se och testa bara de funktionerna, plus buggar rapporterade samma dag.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},
