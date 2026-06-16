@@ -594,6 +594,12 @@ label.chk-item:last-child{border-bottom:none}
 .clog-repo-assign{margin-top:8px}
 .clog-repo-assign select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;background:#fff;font-family:inherit;color:var(--ink)}
 .clog-type{font-size:9px;background:#EEEAF8;color:#5B4FA0;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle;font-weight:600}
+.clog-repo-allset{font-size:12px;color:#3E6B41;background:#E4EDE4;border-radius:8px;padding:8px 10px;text-align:center}
+.clog-coupled-h{font-family:Georgia,serif;font-size:12px;color:var(--ink-soft);margin:16px 0 6px;border-top:1px solid var(--line);padding-top:12px}
+.clog-coupled-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:5px;background:#FCFAF6}
+.clog-coupled-file{font-size:11px;color:var(--ink-soft);font-weight:600}
+.clog-coupled-app{font-size:11px;color:#3E6B41;background:#E4EDE4;border-radius:10px;padding:1px 8px}
+.clog-uncouple{margin-left:auto;font-size:10px;color:#A04545;background:none;border:1px solid #E4C9C9;border-radius:8px;padding:3px 8px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -608,9 +614,6 @@ label.chk-item:last-child{border-bottom:none}
     <button class="hbtn" id="export-btn">Säkerhetskopiera</button>
     <button class="hbtn" id="import-btn">Importera</button>
     <input type="file" id="import-file" accept=".json" style="display:none">
-  <label>App Manifest</label>
-  <div class="set-row"><button id="set-mf-export">📦 Exportera alla manifest</button></div>
-  <div class="field-help">Standardiserad app-manifests.json för alla appar — för en framtida AppCentral / AppKollen 2.0.</div>
     <button class="hbtn" id="sync-now">Synka</button>
     <button class="hbtn" id="open-settings">Inställningar</button>
     <button class="sync-pill offline" id="sync-badge">Lokal</button>
@@ -907,6 +910,11 @@ label.chk-item:last-child{border-bottom:none}
   <div class="master-row"><select id="master-typ" class="sel-input"><option value="ide">Idé</option><option value="forb">Förbättring</option><option value="bugg">Bugg</option></select></div>
   <div class="new-row"><input type="text" id="master-txt" placeholder="T.ex. lägg till mörkt läge..."><button id="master-add">Lägg till i alla</button></div>
   </div>
+      <button class="acc-head" id="acc-mf"><span>📋 Manifest</span><span class="acc-chev" id="acc-mf-chev">▸</span></button>
+  <div class="acc-body" id="acc-mf-body" style="display:none">
+  <div class="sub">Standardiserad app-manifests.json för alla appar — för en framtida AppCentral / AppKollen 2.0.</div>
+  <div class="set-row"><button id="set-mf-export">📦 Exportera alla manifest</button></div>
+  </div>
     <button class="box-close" id="set-done">Klar</button>
   </div>
 </div>
@@ -1127,18 +1135,28 @@ function doFetchRepoClogs(){
 function assignClog(file,appId){state.apps.forEach(function(a){if(a.clogFile===file)a.clogFile='';});if(appId){var a=appById(appId);if(a)a.clogFile=file;}persist();renderRepoClogList();}
 function renderRepoClogList(){
   var box=document.getElementById('clog-repo-list');if(!box)return;
-  if(!repoClogs.length){box.innerHTML='';return;}
+  var wrap=document.getElementById('clog-wrap');var cbox=document.getElementById('clog-coupled');
+  if(!cbox&&wrap){cbox=document.createElement('div');cbox.id='clog-coupled';wrap.appendChild(cbox);}
+  if(!repoClogs.length){box.innerHTML='';if(cbox)cbox.innerHTML='';return;}
   function opts(sel){var o='<option value="">— koppla till app-ID —</option>';state.apps.filter(function(a){return !a.archived;}).slice().sort(function(x,y){return (x.name||'').localeCompare(y.name||'');}).forEach(function(a){o+='<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+esc(a.name)+(a.mid?' ('+esc(a.mid)+')':'')+'</option>';});return o;}
   function flag(ok,lbl){return '<span class="clog-flag '+(ok?'ok':'no')+'">'+(ok?'✓':'✗')+' '+lbl+'</span>';}
-  box.innerHTML=repoClogs.map(function(rc){
+  function typeLbl(d){return (d.features||d.flags||d.business)?'Manifest':'Changelogg';}
+  var unassigned=[],coupled=[];
+  repoClogs.forEach(function(rc){var app=state.apps.find(function(a){return a.clogFile===rc.file;});if(app)coupled.push({rc:rc,app:app});else unassigned.push(rc);});
+  box.innerHTML=unassigned.map(function(rc){
     var d=rc.data||{};var entries=Array.isArray(d.changelog)?d.changelog:[];
-    var assignedApp=state.apps.find(function(a){return a.clogFile===rc.file;});
-    var nFunc=Array.isArray(d.functions)?d.functions.reduce(function(s,f){return s+((f.items&&f.items.length)||0);},0):0;if(!nFunc&&Array.isArray(d.features))nFunc=d.features.length;var isMan=!!(d.features||d.flags||d.business);
+    var nFunc=Array.isArray(d.functions)?d.functions.reduce(function(s,f){return s+((f.items&&f.items.length)||0);},0):0;if(!nFunc&&Array.isArray(d.features))nFunc=d.features.length;
     var hasAud=!!(d.targetAudience||d.audience||d.malgrupp);
     var meta=flag(entries.length>0,'changelogg')+flag(nFunc>0,'funktioner')+flag(hasAud,'målgrupp')+flag(!!d.description,'beskrivning');
     var latest=entries.slice(0,3).map(function(e){return '<div class="clog-entry"><span class="clog-date">'+esc(e.version?('v'+e.version):(e.date||''))+'</span><span class="clog-txt">'+esc(e.title||((e.items&&e.items[0])||''))+'</span></div>';}).join('');
-    return '<div class="clog-repo-item"><div class="clog-repo-top"><span class="clog-repo-file">'+esc(rc.file)+'<span class="clog-type">'+(isMan?'Manifest':'Changelogg')+'</span>'+(d.version?' <span class="clog-ver">v'+esc(d.version)+'</span>':'')+'</span>'+(assignedApp?'<span class="clog-repo-app">\u2192 '+esc(assignedApp.name)+'</span>':'')+'</div>'+(d.description?'<div class="clog-repo-desc">'+esc(d.description)+'</div>':'')+'<div class="clog-flags">'+meta+'</div>'+latest+'<div class="clog-repo-assign"><select class="clog-assign" data-file="'+esc(rc.file)+'">'+opts(assignedApp?assignedApp.id:'')+'</select></div></div>';
-  }).join('');
+    return '<div class="clog-repo-item"><div class="clog-repo-top"><span class="clog-repo-file">'+esc(rc.file)+'<span class="clog-type">'+typeLbl(d)+'</span>'+(d.version?' <span class="clog-ver">v'+esc(d.version)+'</span>':'')+'</span></div>'+(d.description?'<div class="clog-repo-desc">'+esc(d.description)+'</div>':'')+'<div class="clog-flags">'+meta+'</div>'+latest+'<div class="clog-repo-assign"><select class="clog-assign" data-file="'+esc(rc.file)+'">'+opts('')+'</select></div></div>';
+  }).join('')||(coupled.length?'<div class="clog-repo-allset">Alla hämtade filer är kopplade till app-ID \u2713</div>':'');
+  if(cbox){
+    if(coupled.length){
+      coupled.sort(function(x,y){return (x.app.name||'').localeCompare(y.app.name||'');});
+      cbox.innerHTML='<div class="clog-coupled-h">\ud83d\udd17 Kopplade till app-ID ('+coupled.length+')</div>'+coupled.map(function(c){var d=c.rc.data||{};return '<div class="clog-coupled-row"><span class="clog-coupled-file">'+esc(c.rc.file)+'<span class="clog-type">'+typeLbl(d)+'</span></span><span class="clog-coupled-app">\u2192 '+esc(c.app.name)+'</span><button class="clog-uncouple" data-file="'+esc(c.rc.file)+'">Koppla bort</button></div>';}).join('');
+    } else cbox.innerHTML='';
+  }
 }
 
 function renderClogView(){
@@ -1162,7 +1180,7 @@ function renderClogView(){
     return '<div class="clog-app" data-id="'+a.id+'"><div class="clog-app-h">'+(a.emoji?esc(a.emoji)+' ':'')+esc(a.name)+(a.mver?'<span class="clog-ver">v'+esc(a.mver)+'</span>':'')+'<span class="clog-count">'+entries.length+' post'+(entries.length===1?'':'er')+'</span></div>'+rows+'</div>';
   }).join('');
   wrap.innerHTML=html;
-  wrap.onclick=function(e){if(e.target.closest('#clog-repo-fetch')){doFetchRepoClogs();return;}var el=e.target.closest('[data-id]');if(el)openApp(el.getAttribute('data-id'));};wrap.onchange=function(e){var sel=e.target.closest('.clog-assign');if(sel)assignClog(sel.getAttribute('data-file'),sel.value);};renderRepoClogList();
+  wrap.onclick=function(e){if(e.target.closest('#clog-repo-fetch')){doFetchRepoClogs();return;}var unc=e.target.closest('.clog-uncouple');if(unc){assignClog(unc.getAttribute('data-file'),'');return;}var el=e.target.closest('[data-id]');if(el)openApp(el.getAttribute('data-id'));};wrap.onchange=function(e){var sel=e.target.closest('.clog-assign');if(sel)assignClog(sel.getAttribute('data-file'),sel.value);};renderRepoClogList();
 }
 
 function applyView(v){
@@ -2007,6 +2025,7 @@ document.getElementById('afl-name').onkeydown=function(e){if(e.key==='Enter')doc
 document.getElementById('app-funclog').onclick=function(e){var x=e.target.closest('.afl-x');if(!x)return;state.funcLog=(state.funcLog||[]).filter(function(f){return f.id!==x.dataset.id;});persist();renderAppFuncLog();};
 document.getElementById('app-funclog').oninput=function(e){var t=e.target;if(!t.classList.contains('afl-note'))return;var f=(state.funcLog||[]).find(function(x){return x.id===t.dataset.id;});if(f){f.note=t.value;persistSoon();}};
 document.getElementById('acc-updates').onclick=function(){var b=document.getElementById('acc-updates-body');var op=b.style.display==='none';b.style.display=op?'':'none';document.getElementById('acc-updates-chev').textContent=op?'\u25be':'\u25b8';};
+var _amf=document.getElementById('acc-mf');if(_amf)_amf.onclick=function(){var b=document.getElementById('acc-mf-body');var op=b.style.display==='none';b.style.display=op?'':'none';document.getElementById('acc-mf-chev').textContent=op?'\u25be':'\u25b8';};
 document.getElementById('acc-mass').onclick=function(){var b=document.getElementById('acc-mass-body');var op=b.style.display==='none';b.style.display=op?'':'none';document.getElementById('acc-mass-chev').textContent=op?'\u25be':'\u25b8';};
 document.getElementById('pr-add').onclick=function(){var t=document.getElementById('pr-title').value.trim();var x=document.getElementById('pr-text').value.trim();if(!x)return;if(!state.prompts)state.prompts=[];state.prompts.unshift({id:uid(),title:t,text:x});document.getElementById('pr-title').value='';document.getElementById('pr-text').value='';persist();renderPrompts();};
 document.getElementById('pr-list').onclick=function(e){var c=e.target.closest('.prompt-copy');if(c){var p=(state.prompts||[]).find(function(x){return x.id===c.dataset.id;});if(p)copyText(p.text,c);return;}var d=e.target.closest('.prompt-del');if(d){if(!confirm('Ta bort prompten?'))return;state.prompts=(state.prompts||[]).filter(function(x){return x.id!==d.dataset.id;});persist();renderPrompts();return;}};
