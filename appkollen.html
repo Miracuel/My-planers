@@ -541,6 +541,28 @@ label.chk-item:last-child{border-bottom:none}
 .clog-date{flex:0 0 auto;color:var(--ink-soft);font-size:11px;min-width:74px;padding-top:1px}
 .clog-txt{color:var(--ink)}
 .clog-empty{color:var(--ink-soft);font-size:13px;padding:14px;text-align:center}
+.ts-tobacklog{border:1px solid var(--line);background:#fff;color:#5B4FA0;font-size:11px;padding:4px 9px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ts-tobacklog:hover{background:#EEEAF8;border-color:#7A6CC4}
+.fb-all-btn{width:100%;margin-top:8px;padding:9px;border:1px dashed var(--line);background:var(--paper);color:var(--ink-soft);font-size:13px;border-radius:10px;cursor:pointer;font-family:inherit}
+.fb-all-btn:hover{border-color:#7A6CC4;color:#5B4FA0}
+.tt-sec-h{font-family:Georgia,serif;font-size:17px;margin:14px 0 8px}
+.tt-summary{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.tt-summary b{color:var(--ink)}
+.tt-empty{color:var(--ink-soft);font-size:13px;padding:12px;text-align:center;border:1px dashed var(--line);border-radius:10px}
+.tt-gen-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.tt-gen-lbl{font-size:13px;color:var(--ink);flex:1 1 100%;margin-bottom:2px}
+.tt-gen-row input{width:56px;border:1px solid var(--line);border-radius:8px;padding:7px;font-size:14px;background:var(--paper);font-family:inherit;color:var(--ink)}
+.tt-mini{padding:7px 12px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink);margin-left:auto}
+.tt-hint{font-size:11px;color:var(--ink-soft);font-style:italic;margin:4px 0 10px}
+.tt-app{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.tt-app-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.tt-app-name{font-weight:600;font-size:14px}
+.tt-app-clock{font-size:11px;color:var(--ink-soft)}
+.tt-app-add{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tt-add-lbl{font-size:12px;color:var(--ink-soft)}
+.tt-alloc{width:70px;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:14px;background:var(--paper);font-family:inherit;color:var(--ink)}
+.tt-app-tot{font-size:12px;color:#5B4FA0;font-weight:600;margin-left:auto}
+.tt-commit{width:100%;margin-top:6px;padding:11px;border:1px solid #7A6CC4;background:#EEEAF8;color:#5B4FA0;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -583,6 +605,7 @@ label.chk-item:last-child{border-bottom:none}
 <div id="today-head" style="display:none"></div>
 <button id="done-day" class="done-day-btn" style="display:none">🌙 Klar för idag</button>
 <div id="done-day-sum" class="done-day-sum" style="display:none"></div>
+<div id="today-time" style="display:none"></div>
 
 <div class="stale-note" id="stale-note"></div>
 
@@ -767,6 +790,7 @@ label.chk-item:last-child{border-bottom:none}
     <button id="t-add-person">Lägg till</button>
   </div>
   <div id="a-testers"></div>
+  <button class="fb-all-btn" id="fb-to-backlog-all" style="display:none">↳ Omvandla all feedback till backloggpunkter</button>
   <label>Anteckning</label>
   <textarea id="a-note" rows="2" placeholder="T.ex. väntar på Lars, idé från jobbet..."></textarea>
   <label>Redigera</label>
@@ -913,10 +937,10 @@ function renderTesters(a){
     return '<div class="tester" data-tid="'+t.id+'">'+
       '<span class="tester-name">'+esc(t.name)+'</span>'+
       '<button class="ts-pill '+cls+'" data-act="cycle">'+TS[cls]+'</button>'+
-      '<button class="tester-x" data-act="del">×</button>'+
+      '<button class="ts-tobacklog" data-act="tolog" title="Gör feedbacken till backloggpunkt(er)">→ Punkt</button>'+'<button class="tester-x" data-act="del">×</button>'+
       '<textarea class="tester-fb" rows="1" placeholder="Feedback..." data-act="fb">'+esc(t.fb||'')+'</textarea>'+
       '</div>';
-  }).join('')||'<div class="empty-items">Inga testpersoner än.</div>';
+  }).join('')||'<div class="empty-items">Inga testpersoner än.</div>';var _anyFb=(a.testers||[]).some(function(t){return (t.fb||'').trim();});var _fba=document.getElementById('fb-to-backlog-all');if(_fba)_fba.style.display=_anyFb?'':'none';
 }
 function fixCounter(){let mx=0;state.ideas.forEach(i=>{if(i.no>mx)mx=i.no;});if(!state.nextIdeaNo||state.nextIdeaNo<=mx)state.nextIdeaNo=mx+1;}
 
@@ -1011,6 +1035,28 @@ function prioScore(a){var s=a.scores||{};if(typeof s.pot!=='number'||typeof s.fu
 function scoreDesc(x,y){var sx=prioScore(x),sy=prioScore(y);sx=(sx==null?-1:sx);sy=(sy==null?-1:sy);return sy-sx;}
 function updatePrioscore(a){var el=document.getElementById('prioscore');if(!el)return;var ps=prioScore(a);var bt=betygTotal(a);var psHtml=ps!==null?('Prioriteringsscore <b>'+ps+' / 10</b><br><small>(potential + rolighet + nytta + (10−svårighet)) ÷ 4</small>'):'<small>Sätt alla fyra reglagen för att räkna ut prioriteringsscore.</small>';var btHtml=bt!==null?('<div class="bt-line">Totalbetyg <b>'+bt+' / 10</b> <small>(snitt av '+(a.betyg||[]).length+' betyg)</small></div>'):'';var pvHtml='<div class="pv-modal-line">Portf\u00f6ljv\u00e4rde <b>'+portfolioValue(a)+'</b> <small>(po\u00e4ng + betyg + tid + status)</small></div>';var roi=roiScore(a);var roiHtml=roi!==null?('<div class="pv-modal-line">ROI <b>'+roi+'</b> <small>(nytta \u00f7 nedlagd tid)</small></div>'):'';el.innerHTML=psHtml+btHtml+pvHtml+roiHtml;}
 function renderBetyg(a){var list=a.betyg||[];document.getElementById('a-betyg').innerHTML=list.map(function(b){return'<div class="betyg-row" data-bid="'+b.id+'"><span class="betyg-area">'+esc(b.area)+'</span><span class="betyg-score">'+esc(b.score||'')+'</span><button class="betyg-x" data-act="del">×</button></div>';}).join('')||'<div class="empty-items">Inga betyg än.</div>';}
+function logClock(a,ms){if(!(ms>0))return;if(!a.dayClock)a.dayClock={};var d=todayISO();a.dayClock[d]=(a.dayClock[d]||0)+ms;}
+function clockedTodayMs(a){var d=todayISO();var v=(a.dayClock&&a.dayClock[d])||0;if(state.timers&&state.timers[a.id])v+=Date.now()-state.timers[a.id];if(state.testTimers&&state.testTimers[a.id])v+=Date.now()-state.testTimers[a.id];return v;}
+function generalTodayMs(a){var d=todayISO();return (a.dayGeneral&&a.dayGeneral[d])||0;}
+function workedTodayApps(){var d=todayISO();return state.apps.filter(function(a){if(a.hidden||a.archived)return false;return a.commit===d||a.commitDone===d||clockedTodayMs(a)>0||generalTodayMs(a)>0;});}
+function renderTodayTime(){
+  var wrap=document.getElementById('today-time');if(!wrap)return;
+  var apps=workedTodayApps();var totalClock=0,totalGen=0;
+  apps.forEach(function(a){totalClock+=clockedTodayMs(a);totalGen+=generalTodayMs(a);});
+  var h='<div class="tt-sec-h">⏱ Tid idag</div>';
+  h+='<div class="tt-summary"><span>Klockad: <b>'+fmtDur(totalClock)+'</b></span><span>Allmän: <b>'+fmtDur(totalGen)+'</b></span><span>Totalt: <b>'+fmtDur(totalClock+totalGen)+'</b></span></div>';
+  if(!apps.length){h+='<div class="tt-empty">Inga appar att fördela tid på idag. Planera appar för idag eller starta en klocka.</div>';wrap.innerHTML=h;return;}
+  h+='<div class="tt-gen-row"><span class="tt-gen-lbl">Allmän tid att fördela</span><input type="number" id="tt-gen-h" min="0" placeholder="h"><span>h</span><input type="number" id="tt-gen-m" min="0" max="59" placeholder="min"><span>min</span><button id="tt-gen-split" class="tt-mini">Fördela jämnt</button></div>';
+  h+='<div class="tt-hint">Fördela jämnt delar tiden lika på dagens appar och drar av det du redan klockat per app. Justera valfri rad och tryck Lägg till.</div>';
+  h+=apps.map(function(a){var ck=clockedTodayMs(a),gn=generalTodayMs(a);
+    return '<div class="tt-app"><div class="tt-app-top"><span class="tt-app-name">'+(a.emoji?esc(a.emoji)+' ':'')+esc(a.name)+'</span><span class="tt-app-clock">klockad: '+fmtDur(ck)+(gn?' · allmän: '+fmtDur(gn):'')+'</span></div><div class="tt-app-add"><span class="tt-add-lbl">Lägg till allmän (min):</span><input type="number" class="tt-alloc" data-id="'+a.id+'" data-clock="'+Math.round(ck/60000)+'" data-base="'+Math.round((ck+gn)/60000)+'" min="0" placeholder="0"><span class="tt-app-tot">= '+fmtDur(ck+gn)+'</span></div></div>';
+  }).join('');
+  h+='<button id="tt-gen-commit" class="tt-commit">Lägg till tid på apparna</button>';
+  wrap.innerHTML=h;
+}
+function ttSplitEven(){var poolMin=(+(document.getElementById('tt-gen-h').value||0))*60+(+(document.getElementById('tt-gen-m').value||0));var rows=document.querySelectorAll('#today-time .tt-alloc');var n=rows.length;if(!n)return;var share=Math.round(poolMin/n);Array.prototype.forEach.call(rows,function(inp){var clk=+inp.dataset.clock||0;var v=Math.max(0,share-clk);inp.value=v?v:'';var row=inp.closest('.tt-app');var base=+inp.dataset.base||0;var tot=row&&row.querySelector('.tt-app-tot');if(tot)tot.textContent='= '+fmtDur((base+v)*60000);});}
+function ttCommit(){var rows=document.querySelectorAll('#today-time .tt-alloc');var d=todayISO();var total=0,napps=0;Array.prototype.forEach.call(rows,function(inp){var min=+inp.value||0;if(min<=0)return;var a=appById(inp.dataset.id);if(!a)return;var ms=min*60000;a.timeMs=(a.timeMs||0)+ms;if(!a.dayGeneral)a.dayGeneral={};a.dayGeneral[d]=(a.dayGeneral[d]||0)+ms;pushHistory(a,'time','Allmän tid: '+fmtDur(ms));total+=ms;napps++;});if(!total){alert('Fyll i minuter på minst en app först.');return;}document.getElementById('tt-gen-h').value='';document.getElementById('tt-gen-m').value='';persist();renderTodayTime();renderCards();alert(fmtDur(total)+' fördelat på '+napps+' app'+(napps===1?'':'ar')+'.');}
+
 function renderClogView(){
   var wrap=document.getElementById('clog-wrap');if(!wrap)return;
   var apps=state.apps.filter(function(a){return !a.archived;});
@@ -1049,10 +1095,10 @@ function applyView(v){
   if(addApp)addApp.style.display=(isCal||isToday||isHist||isClog)?'none':'';
   if(idea)idea.style.display=(v==='cards')?'':'none';
   var _pr=document.getElementById('prompts');if(_pr)_pr.style.display=(v==='cards')?'':'none';
-  var _dd=document.getElementById('done-day');if(_dd)_dd.style.display=isToday?'':'none';var _dds=document.getElementById('done-day-sum');if(_dds&&!isToday)_dds.style.display='none';
+  var _dd=document.getElementById('done-day');if(_dd)_dd.style.display=isToday?'':'none';var _dds=document.getElementById('done-day-sum');if(_dds&&!isToday)_dds.style.display='none';var _tt=document.getElementById('today-time');if(_tt)_tt.style.display=isToday?'':'none';
   if(th){if(isToday){var n=state.apps.filter(function(a){return a.commit===todayISO()&&!a.hidden;}).length;var nd=state.apps.filter(function(a){return a.commit===todayISO()&&a.commitDone===todayISO()&&!a.hidden;}).length;th.style.display='';th.textContent='Gör idag — '+n+(n===1?' app':' appar')+' planerade · '+nd+' klar'+(nd===1?'':'a');}else th.style.display='none';}
   document.querySelectorAll('#views .view-btn').forEach(function(b){b.classList.toggle('active',b.dataset.v===v);});
-  if(isCal)renderCalendar();else if(isHist)renderHistoryView();else if(isClog)renderClogView();else renderCards();
+  if(isCal)renderCalendar();else if(isHist)renderHistoryView();else if(isClog)renderClogView();else renderCards();if(isToday)renderTodayTime();
 }
 function renderCalendar(){
   var wrap=document.getElementById('cal-wrap');if(!wrap)return;
@@ -1091,13 +1137,13 @@ function fmtDur(ms){var t=Math.max(0,Math.floor(ms/1000));var h=Math.floor(t/360
 function appElapsed(a){var base=a.timeMs||0;if(state.timers&&state.timers[a.id])base+=Date.now()-state.timers[a.id];return base;}
 function timerActive(a){return!!(state.timers&&state.timers[a.id]);}
 function startTimer(id){if(!state.timers||typeof state.timers!=='object')state.timers={};state.timers[id]=Date.now();persist();renderTimerBar();renderCards();}
-function stopTimer(id){if(!state.timers||!state.timers[id])return;var a=appById(id);if(a)a.timeMs=(a.timeMs||0)+(Date.now()-state.timers[id]);delete state.timers[id];persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTimer(ca);}}
-function stopAllTimers(){if(!state.timers)return;Object.keys(state.timers).forEach(function(id){var a=appById(id);if(a)a.timeMs=(a.timeMs||0)+(Date.now()-state.timers[id]);});state.timers={};persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTimer(ca);}}
+function stopTimer(id){if(!state.timers||!state.timers[id])return;var a=appById(id);if(a){var _d=Date.now()-state.timers[id];a.timeMs=(a.timeMs||0)+_d;logClock(a,_d);}delete state.timers[id];persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTimer(ca);}}
+function stopAllTimers(){if(!state.timers)return;Object.keys(state.timers).forEach(function(id){var a=appById(id);if(a){var _d=Date.now()-state.timers[id];a.timeMs=(a.timeMs||0)+_d;logClock(a,_d);}});state.timers={};persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTimer(ca);}}
 function appTestElapsed(a){var base=a.testMs||0;if(state.testTimers&&state.testTimers[a.id])base+=Date.now()-state.testTimers[a.id];return base;}
 function testTimerActive(a){return!!(state.testTimers&&state.testTimers[a.id]);}
 function startTestTimer(id){if(!state.testTimers||typeof state.testTimers!=='object')state.testTimers={};state.testTimers[id]=Date.now();persist();renderTimerBar();renderCards();}
-function stopTestTimer(id){if(!state.testTimers||!state.testTimers[id])return;var a=appById(id);if(a)a.testMs=(a.testMs||0)+(Date.now()-state.testTimers[id]);delete state.testTimers[id];persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTestTimer(ca);}}
-function stopAllTestTimers(){if(!state.testTimers)return;Object.keys(state.testTimers).forEach(function(id){var a=appById(id);if(a)a.testMs=(a.testMs||0)+(Date.now()-state.testTimers[id]);});state.testTimers={};persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTestTimer(ca);}}
+function stopTestTimer(id){if(!state.testTimers||!state.testTimers[id])return;var a=appById(id);if(a){var _d=Date.now()-state.testTimers[id];a.testMs=(a.testMs||0)+_d;logClock(a,_d);}delete state.testTimers[id];persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTestTimer(ca);}}
+function stopAllTestTimers(){if(!state.testTimers)return;Object.keys(state.testTimers).forEach(function(id){var a=appById(id);if(a){var _d=Date.now()-state.testTimers[id];a.testMs=(a.testMs||0)+_d;logClock(a,_d);}});state.testTimers={};persist();renderTimerBar();renderCards();if(curId){var ca=appById(curId);if(ca)renderAppTestTimer(ca);}}
 function runningTimers(){var out=[];if(state.timers)Object.keys(state.timers).forEach(function(id){if(appById(id))out.push({id:id,type:'dev',start:state.timers[id]});});if(state.testTimers)Object.keys(state.testTimers).forEach(function(id){if(appById(id))out.push({id:id,type:'test',start:state.testTimers[id]});});return out;}
 function renderTimerBar(){var bar=document.getElementById('timer-bar');if(!bar)return;var run=runningTimers();if(!run.length){bar.style.display='none';return;}bar.style.display='';if(run.length===1){var r=run[0];var a=appById(r.id);var el=r.type==='test'?appTestElapsed(a):appElapsed(a);var verb=r.type==='test'?'Testar: ':'Spårar: ';bar.innerHTML='<span class="tb-dot'+(r.type==='test'?' test':'')+'"></span><span class="tb-name">'+verb+esc(a.name)+'</span><span class="tb-time" id="tb-time">'+fmtClock(el)+'</span><button class="tb-stop" id="tb-stop">Stoppa</button>';}else{var nd=run.filter(function(x){return x.type==='dev';}).length,nt=run.filter(function(x){return x.type==='test';}).length;var parts=[];if(nd)parts.push(nd+' utv');if(nt)parts.push(nt+' test');bar.innerHTML='<span class="tb-dot"></span><span class="tb-name">Spårar '+run.length+' tidur ('+parts.join(' · ')+')</span><button class="tb-stop" id="tb-stop">Stoppa alla</button>';}document.getElementById('tb-stop').onclick=function(){if(run.length===1){if(run[0].type==='test')stopTestTimer(run[0].id);else stopTimer(run[0].id);}else{stopAllTimers();stopAllTestTimers();}};}
 function renderAppTimer(a){var disp=document.getElementById('tm-display'),btn=document.getElementById('tm-toggle');if(!disp||!btn)return;disp.textContent=fmtClock(appElapsed(a));var on=timerActive(a);disp.classList.toggle('running',on);btn.textContent=on?'Stoppa':'Starta';btn.classList.toggle('stop',on);if(typeof updatePrioscore==='function')updatePrioscore(a);}
@@ -1317,7 +1363,7 @@ function normalizeApps(){(state.apps||[]).forEach(function(a){
   if(typeof a.unique!=='string')a.unique='';
   if(!Array.isArray(a.categories))a.categories=[];
   if(typeof a.syncType!=='string')a.syncType='';
-  if(!a.flags||typeof a.flags!=='object')a.flags={};
+  if(!a.flags||typeof a.flags!=='object')a.flags={};if(!a.dayClock||typeof a.dayClock!=='object')a.dayClock={};if(!a.dayGeneral||typeof a.dayGeneral!=='object')a.dayGeneral={};
   if(typeof a.mid!=='string'||!a.mid){var f=(a.file||a.name||'').toLowerCase();a.mid=f.split('.html').join('').split('.htm').join('').split(' ').join('-');}
   (a.modules||[]).forEach(function(m){(m.funcs||[]).forEach(function(fn){if(typeof fn.st!=='string')fn.st='klar';});});
 });}
@@ -1617,6 +1663,21 @@ document.getElementById('a-ais').onclick=e=>{
 document.getElementById('t-ide').onclick=()=>{newTyp='ide';syncAppSheet();};
 document.getElementById('t-forb').onclick=()=>{newTyp='forb';syncAppSheet();};
 document.getElementById('t-bugg').onclick=()=>{newTyp='bugg';syncAppSheet();};
+function feedbackToItems(a,t){
+  var lines=(t.fb||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  if(!lines.length)return 0;
+  var who=t.name?(' ('+t.name+')'):'';
+  var added=0;
+  lines.forEach(function(line){
+    var txt=line+who;
+    if((a.items||[]).some(function(it){return it.txt===txt;}))return;
+    a.items.unshift({id:uid(),txt:txt,typ:'forb',st:'back',d:todayISO(),mod:''});
+    pushHistory(a,'item','Feedback \u2192 punkt: '+txt);
+    added++;
+  });
+  return added;
+}
+
 function addItem(){
   const inp=document.getElementById('a-new');
   const txt=inp.value.trim();
@@ -1686,13 +1747,14 @@ document.getElementById('a-testers').onclick=e=>{
   const t=a.testers.find(x=>x.id===row.dataset.tid);if(!t)return;
   const act=e.target.dataset.act;
   if(act==='cycle'){t.st=t.st==='fragad'?'testar':t.st==='testar'?'klar':'fragad';persist();syncAppSheet();}
-  else if(act==='del'){a.testers=a.testers.filter(x=>x.id!==t.id);persist();syncAppSheet();}
+  else if(act==='del'){a.testers=a.testers.filter(x=>x.id!==t.id);persist();syncAppSheet();}else if(act==='tolog'){if(!(t.fb||'').trim()){alert('Skriv feedback först, så omvandlar jag den till backloggpunkt(er).');return;}var _n=feedbackToItems(a,t);persist();syncAppSheet();renderStats();renderCards();if(!_n)alert('Feedbacken är redan omvandlad till punkt(er).');}
 };
 document.getElementById('a-testers').oninput=e=>{
   if(e.target.dataset.act!=='fb')return;
   const row=e.target.closest('.tester');const a=appById(curId);if(!a||!a.testers)return;
   const t=a.testers.find(x=>x.id===row.dataset.tid);if(t){t.fb=e.target.value;persistSoon();}
 };
+document.getElementById('fb-to-backlog-all').onclick=function(){var a=appById(curId);if(!a||!a.testers)return;var withFb=a.testers.filter(function(t){return (t.fb||'').trim();});if(!withFb.length){alert('Ingen feedback att omvandla än.');return;}if(!confirm('Omvandla feedback från '+withFb.length+' testperson'+(withFb.length===1?'':'er')+' till backloggpunkter?'))return;var total=0;withFb.forEach(function(t){total+=feedbackToItems(a,t);});persist();syncAppSheet();renderStats();renderCards();alert(total?(total+' punkt'+(total===1?'':'er')+' tillagda i backloggen.'):'Inget nytt — feedbacken var redan omvandlad.');};
 document.getElementById('a-status').onclick=e=>{
   const b=e.target.closest('.sopt');if(!b)return;
   const a=appById(curId);if(!a)return;
@@ -1713,10 +1775,10 @@ var _hw=document.getElementById('hist-wrap');if(_hw)_hw.onclick=function(e){var 
 document.getElementById('cal-wrap').onclick=e=>{const dd=e.target.closest('.cal-cell[data-d]');if(dd){calSel=dd.dataset.d;renderCalendar();return;}const ab=e.target.closest('.cal-app');if(ab){openApp(ab.dataset.id);}};
 document.getElementById('tm-toggle').onclick=function(){var a=appById(curId);if(!a)return;if(timerActive(a))stopTimer(a.id);else startTimer(a.id);renderAppTimer(a);};
 document.getElementById('tm-reset').onclick=function(){var a=appById(curId);if(!a)return;if(timerActive(a))stopTimer(a.id);a.timeMs=0;persist();renderAppTimer(a);renderCards();};
-document.getElementById('tm-add').onclick=function(){var a=appById(curId);if(!a)return;var hh=+(document.getElementById('tm-h').value||0),mm=+(document.getElementById('tm-m').value||0);if(!hh&&!mm)return;a.timeMs=(a.timeMs||0)+hh*3600000+mm*60000;document.getElementById('tm-h').value='';document.getElementById('tm-m').value='';if(typeof pushHistory==='function')pushHistory(a,'time','La till '+(hh?hh+'h ':'')+(mm?mm+'m':''));persist();renderAppTimer(a);renderCards();if(typeof renderHistory==='function')renderHistory(a);};
+document.getElementById('tm-add').onclick=function(){var a=appById(curId);if(!a)return;var hh=+(document.getElementById('tm-h').value||0),mm=+(document.getElementById('tm-m').value||0);if(!hh&&!mm)return;a.timeMs=(a.timeMs||0)+hh*3600000+mm*60000;logClock(a,hh*3600000+mm*60000);document.getElementById('tm-h').value='';document.getElementById('tm-m').value='';if(typeof pushHistory==='function')pushHistory(a,'time','La till '+(hh?hh+'h ':'')+(mm?mm+'m':''));persist();renderAppTimer(a);renderCards();if(typeof renderHistory==='function')renderHistory(a);};
 document.getElementById('tt-toggle').onclick=function(){var a=appById(curId);if(!a)return;if(testTimerActive(a))stopTestTimer(a.id);else startTestTimer(a.id);renderAppTestTimer(a);};
 document.getElementById('tt-reset').onclick=function(){var a=appById(curId);if(!a)return;if(testTimerActive(a))stopTestTimer(a.id);a.testMs=0;persist();renderAppTestTimer(a);renderCards();};
-document.getElementById('tt-add').onclick=function(){var a=appById(curId);if(!a)return;var hh=+(document.getElementById('tt-h').value||0),mm=+(document.getElementById('tt-m').value||0);if(!hh&&!mm)return;a.testMs=(a.testMs||0)+hh*3600000+mm*60000;document.getElementById('tt-h').value='';document.getElementById('tt-m').value='';if(typeof pushHistory==='function')pushHistory(a,'time','La till testtid '+(hh?hh+'h ':'')+(mm?mm+'m':''));persist();renderAppTestTimer(a);renderCards();if(typeof renderHistory==='function')renderHistory(a);};
+document.getElementById('tt-add').onclick=function(){var a=appById(curId);if(!a)return;var hh=+(document.getElementById('tt-h').value||0),mm=+(document.getElementById('tt-m').value||0);if(!hh&&!mm)return;a.testMs=(a.testMs||0)+hh*3600000+mm*60000;logClock(a,hh*3600000+mm*60000);document.getElementById('tt-h').value='';document.getElementById('tt-m').value='';if(typeof pushHistory==='function')pushHistory(a,'time','La till testtid '+(hh?hh+'h ':'')+(mm?mm+'m':''));persist();renderAppTestTimer(a);renderCards();if(typeof renderHistory==='function')renderHistory(a);};
 document.getElementById('a-family').onchange=function(e){var a=appById(curId);if(!a)return;var v=e.target.value;if(v==='__new__'){var far=document.getElementById('fam-add-row');if(far)far.style.display='flex';var fn=document.getElementById('fam-new');if(fn)fn.focus();e.target.value=a.family||'';return;}a.family=v;persist();renderCards();};
 document.getElementById('fam-add-btn').onclick=function(){var a=appById(curId);if(!a)return;var nm=document.getElementById('fam-new').value.trim();if(!nm)return;if(!state.families)state.families=[];if(state.families.indexOf(nm)<0)state.families.push(nm);a.family=nm;document.getElementById('fam-new').value='';persist();syncAppSheet();renderCards();};
 document.getElementById('fam-new').onkeydown=function(e){if(e.key==='Enter')document.getElementById('fam-add-btn').click();};
@@ -1893,8 +1955,9 @@ renderAll();
 startResetTick();
 document.getElementById('dash-toggle').onclick=()=>{dashOpen=!dashOpen;renderDashboard();};
 document.getElementById('theme-row').onclick=function(e){var b=e.target.closest('.theme-btn');if(b)applyTheme(b.dataset.theme);};
-document.getElementById('done-day').onclick=function(){var run=runningTimers().length;stopAllTimers();stopAllTestTimers();var dt=state.apps.filter(function(a){return a.commitDone===todayISO();}).length;var pt=state.apps.filter(function(a){return a.commit===todayISO()&&!a.hidden;}).length;var sum=document.getElementById('done-day-sum');if(sum){sum.innerHTML='Klar för idag! \ud83c\udf19<br>'+(run>0?('Stoppade '+run+' tidur. '):'Inga tidur var igång. ')+dt+' av '+pt+' planerade appar klarmarkerade idag.';sum.style.display='';}};
+document.getElementById('done-day').onclick=function(){var run=runningTimers().length;stopAllTimers();stopAllTestTimers();var dt=state.apps.filter(function(a){return a.commitDone===todayISO();}).length;var pt=state.apps.filter(function(a){return a.commit===todayISO()&&!a.hidden;}).length;var sum=document.getElementById('done-day-sum');if(sum){sum.innerHTML='Klar för idag! \ud83c\udf19<br>'+(run>0?('Stoppade '+run+' tidur. '):'Inga tidur var igång. ')+dt+' av '+pt+' planerade appar klarmarkerade idag.';sum.style.display='';}renderTodayTime();};
 var _db=document.getElementById('dash-body');if(_db)_db.onclick=function(e){var rc=e.target.closest('[data-recid]');if(rc){openApp(rc.getAttribute('data-recid'));return;}var el=e.target.closest('[data-filter]');if(el)applyDashFilter(el.getAttribute('data-filter'));};
+(function(){var _ttw=document.getElementById('today-time');if(!_ttw)return;_ttw.onclick=function(e){if(e.target.closest('#tt-gen-split')){ttSplitEven();return;}if(e.target.closest('#tt-gen-commit')){ttCommit();return;}};_ttw.oninput=function(e){var al=e.target.closest('.tt-alloc');if(al){var row=al.closest('.tt-app');if(!row)return;var base=+al.dataset.base||0;var add=+al.value||0;var tot=row.querySelector('.tt-app-tot');if(tot)tot.textContent='= '+fmtDur((base+add)*60000);}};})();
 applyView('cards');
 if(syncOn())ghPull();
 </script>
