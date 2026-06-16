@@ -475,8 +475,9 @@ body.desktopfil:not(.desktop) .ws-frame{height:80vh}
         <button id="btn-favoriter" type="button">★ Mina favoriter</button>
         <button id="btn-arbetsyta" type="button">▣ Arbetsyta</button>
         <button id="btn-dash" type="button">▦ Översikt</button>
-        <button id="btn-flode" type="button">🕒 Senaste</button>
+        <button id="btn-flode" type="button">🕒 Uppdateringar</button>
         <button id="btn-insikt" type="button">📊 Insikt</button>
+        <button id="btn-synka" type="button">🔄 Synka nu</button>
       </div>
       <div class="mode">
         <button id="btn-edit" type="button">✎ Redigera</button>
@@ -1550,7 +1551,22 @@ document.getElementById("open-omlogg").addEventListener("click", () => openLogg(
   if(arDesktopFil){ el.textContent = "Byt till mobilversion"; el.setAttribute("href", "index.html"); }
   else { el.textContent = "Byt till desktopversion"; el.setAttribute("href", "index-desktop.html"); }
 })();
-document.getElementById("sync-badge").addEventListener("click", () => { if(synkPa()) ghPull(); else oppnaInstallningar(); });
+// Full synk: data + changeloggar + Appkollen-data (så nya changeloggar dyker upp direkt)
+function synkaAllt(){
+  if(!synkPa()){ oppnaInstallningar(); return; }
+  ghPull();
+  laddaChangelogs();
+  laddaAppkollen();
+  if(visarDash) laddaDash();
+}
+document.getElementById("sync-badge").addEventListener("click", synkaAllt);
+const btnSynka = document.getElementById("btn-synka");
+btnSynka.addEventListener("click", () => {
+  const t = btnSynka.textContent;
+  btnSynka.textContent = "🔄 Synkar…"; btnSynka.disabled = true;
+  synkaAllt();
+  setTimeout(() => { btnSynka.textContent = t; btnSynka.disabled = false; }, 1500);
+});
 document.getElementById("set-done").addEventListener("click", stangInstallningar);
 skalSet.addEventListener("click", (e) => { if(e.target === skalSet) stangInstallningar(); });
 
@@ -1742,14 +1758,19 @@ const CENTRALEN_LOGG = {
   name: "Centralen",
   icon: "🎛️",
   description: "Startsida och appöversikt – hubben för alla dina appar, med arbetsyta, översikt och synk.",
-  version: "3.0",
+  version: "3.1",
   updated: "2026-06-15",
   latest: [
-    "Insikt-vy: Insikten inbäddad i Centralen, samlar data från alla appar",
-    "Temaväljare: Ljus, Mörk, Pergament, Nattblå, Skogsgrön",
-    "Snabbstart överst + egna taggar/vyer i arbetsytan"
+    "\"Senaste\" heter nu Uppdateringar, med en Synka nu-knapp",
+    "Synk läser nu även in apparnas changeloggar direkt",
+    "Insikt-vy: Insikten inbäddad i Centralen"
   ],
   changelog: [
+    { version: "3.1", date: "2026-06-15", changes: [
+      "\"Senaste\" heter nu \"Uppdateringar\"",
+      "Ny \"Synka nu\"-knapp i menyn som hämtar data, changeloggar och Appkollen-data",
+      "Synk-knappen läser nu även in apparnas changelog-filer (nya changeloggar syns direkt)"
+    ]},
     { version: "3.0", date: "2026-06-15", changes: [
       "Ny Insikt-vy: Insikten är inbäddad i Centralen och visar samlad data från alla appar",
       "Insikten finns även som eget appkort och förblir en helt fristående app"
@@ -1969,7 +1990,7 @@ function ritaFlode(wrap){
 // Senaste uppdateringar som egen vy
 function ritaFlodeVy(wrap){
   if(Object.keys(CHANGELOGS).length === 0){
-    wrap.appendChild(sekRubrik("Senaste uppdateringar"));
+    wrap.appendChild(sekRubrik("Uppdateringar"));
     const tom = document.createElement("div");
     tom.className = "logg-tom";
     tom.textContent = synkPa() ? "Inga changelog-filer i repot ännu." : "Slå på GitHub-synk för att hämta apparnas uppdateringar.";
