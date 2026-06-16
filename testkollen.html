@@ -53,6 +53,11 @@ textarea{resize:vertical;line-height:1.5}
 .pill.pass{background:var(--green-soft);color:var(--green)}
 .pill.fail{background:var(--red-soft);color:var(--red)}
 .pill.blocked{background:var(--amber-soft);color:var(--amber)}
+.pill.skip{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.quick-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.qbtn{flex:1;min-width:150px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:12px;padding:11px 10px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,color .15s}
+.qbtn.ok.on{background:var(--green);border-color:var(--green);color:#fff}
+.qbtn.skip.on{background:var(--muted);border-color:var(--muted);color:#fff}
 .pill.ny{background:var(--accent);color:#fff}
 .tag{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
 
@@ -69,6 +74,12 @@ textarea{resize:vertical;line-height:1.5}
 .fchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
 .fchip{border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:6px 11px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
 .fchip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{flex:1;min-width:84px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:12px;padding:11px 8px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.seg button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+#fb-status,#gh-status{display:none;margin:8px 0 2px;font-size:12px;padding:8px 11px;border-radius:10px;line-height:1.5}
+.avatar{vertical-align:middle;flex-shrink:0}
+.case-fb{background:none;border:1px solid var(--line);border-radius:9px;color:var(--accent);font-size:11px;padding:4px 9px;cursor:pointer;font-family:inherit;margin-top:7px}
 
 /* Testfall i sheet */
 .case{padding:11px 0;border-top:1px solid var(--line)}
@@ -274,6 +285,7 @@ html[data-theme=dark]{
 <div class="sheet" id="func-sheet">
   <h3 id="fs-title">Funktion</h3>
   <div class="sub" id="fs-sub"></div>
+  <div class="quick-row" id="fs-quick"></div>
   <div id="fs-cases"></div>
   <div class="add-row">
     <input type="text" id="fs-case-in" placeholder="Nytt testfall…">
@@ -322,6 +334,25 @@ html[data-theme=dark]{
   <button class="sheet-close" id="ai-save">Spara nyckel</button>
 </div>
 
+<!-- Feedback → Appcentralen -->
+<div class="sheet" id="fb-sheet">
+  <h3>💬 Skicka feedback</h3>
+  <div class="soft">Skickas till Appcentralen och hamnar i appens backlogg i Appkollen vid synk.</div>
+  <label>Vilken app gäller det?</label>
+  <div class="fchips" id="fb-apps"></div>
+  <input type="text" id="fb-custom" placeholder="…eller skriv en annan app" style="margin-top:6px">
+  <label>Typ</label>
+  <div class="seg" id="fb-typ"></div>
+  <label>Rubrik</label>
+  <input type="text" id="fb-rubrik" placeholder="Kort sammanfattning">
+  <label>Beskrivning</label>
+  <textarea id="fb-desc" rows="3" placeholder="Vad hände? Steg att återskapa, eller hur idén skulle funka."></textarea>
+  <label>Prioritet</label>
+  <div class="seg" id="fb-prio"></div>
+  <div id="fb-status"></div>
+  <button class="sheet-close" id="fb-send">Lägg till i tavlan</button>
+</div>
+
 <!-- Nyheter & funktioner -->
 <div class="sheet" id="news-sheet">
   <h3>✔ Testkollen</h3>
@@ -350,9 +381,9 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 
 // ── State ─────────────────────────────────────────────
 const KEY='testkollen_v1';
-let state={funcs:[],testers:[],cl:{path:'changelog.json',lastPull:null},theme:'auto'};
+let state={funcs:[],testers:[],cl:{path:'changelog.json',lastPull:null},feedback:[],fbQueue:[],theme:'auto'};
 try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
-state.funcs=state.funcs||[];state.testers=state.testers||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};
+state.funcs=state.funcs||[];state.testers=state.testers||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};state.feedback=state.feedback||[];state.fbQueue=state.fbQueue||[];
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 // "Jag" (testare) sparas bara lokalt — aldrig i synk
@@ -361,15 +392,18 @@ function getMe(){return localStorage.getItem(ME_KEY)||'';}
 function setMe(n){localStorage.setItem(ME_KEY,n);}
 
 // ── Status-logik ──────────────────────────────────────
-const ST={pending:'Ej testad',progress:'Pågår',pass:'Godkänd',fail:'Underkänd',blocked:'Blockerad'};
+const ST={pending:'Ej testad',progress:'Pågår',pass:'Godkänd',fail:'Underkänd',blocked:'Blockerad',skip:'Behöver ej testas'};
 function statusOf(f){
-  const cs=f.cases||[];
-  if(!cs.length)return 'pending';
-  const has=k=>cs.some(c=>c.status===k);
-  if(has('fail'))return 'fail';
-  if(has('blocked')&&!cs.some(c=>c.status==='pass'||c.status==='pending'))return 'blocked';
-  if(cs.every(c=>c.status==='pass'))return 'pass';
-  if(cs.some(c=>c.status&&c.status!=='pending'))return 'progress';
+  const all=f.cases||[];
+  const tested=all.filter(c=>c.status&&c.status!=='pending');
+  if(tested.length){
+    if(tested.some(c=>c.status==='fail'))return 'fail';
+    if(all.length&&all.every(c=>c.status==='pass'))return 'pass';
+    if(tested.some(c=>c.status==='blocked')&&!all.some(c=>c.status==='pass'||c.status==='pending'))return 'blocked';
+    return 'progress';
+  }
+  if(f.verdict==='ok')return 'pass';
+  if(f.verdict==='skip')return 'skip';
   return 'pending';
 }
 function pill(st){return '<span class="pill '+st+'">'+ST[st]+'</span>';}
@@ -694,8 +728,25 @@ function openFunc(id){
   const sub=[];if(f.app)sub.push('<span class="tag">'+esc(f.app)+'</span>');if(f.version)sub.push('v'+esc(f.version));sub.push(pill(statusOf(f)));if(f.date)sub.push(fmtDate(f.date));
   $('fs-sub').innerHTML=sub.join('');
   $('fs-ai-out').innerHTML='';
+  renderQuick();
   renderCases();
   openSheet('func-sheet');
+}
+function renderQuick(){
+  const f=curFunc();if(!f)return;
+  const v=f.verdict||'';
+  const el=$('fs-quick');
+  el.innerHTML=
+    '<button class="qbtn ok'+(v==='ok'?' on':'')+'" data-v="ok">✓ Funktionen fungerar</button>'+
+    '<button class="qbtn skip'+(v==='skip'?' on':'')+'" data-v="skip">⊘ Behöver ej testas</button>'+
+    (v?'<div class="case-sign" style="flex-basis:100%;margin-top:0">'+(v==='ok'?'Markerad som fungerande':'Markerad som ej nödvändig att testa')+(f.verdictBy?' av '+esc(f.verdictBy):'')+(f.verdictTs?' · '+fmtDT(f.verdictTs):'')+'</div>':'');
+  el.querySelectorAll('[data-v]').forEach(b=>{b.onclick=()=>setVerdict(b.dataset.v);});
+}
+function setVerdict(v){
+  const f=curFunc();if(!f)return;
+  if(f.verdict===v){f.verdict=null;f.verdictBy='';f.verdictTs='';}
+  else{f.verdict=v;f.verdictBy=getMe()||'okänd';f.verdictTs=nowISO();}
+  persist();refreshSheet();
 }
 function renderCases(){
   const f=curFunc();if(!f)return;f.cases=f.cases||[];
@@ -712,24 +763,116 @@ function renderCases(){
       '</div>'+
       (c.status&&c.status!=='pending'?'<div class="case-sign">'+(c.tester?esc(c.tester):'okänd')+' · '+fmtDT(c.ts)+(c.status==='pass'||c.status==='blocked'||c.status==='fail'?' <a href="#" data-reset="'+i+'" style="color:var(--muted)">återställ</a>':'')+'</div>':'')+
       '<div class="case-note"><textarea rows="1" placeholder="Anteckning / hur det betedde sig…" data-note="'+i+'">'+esc(note)+'</textarea></div>'+
+      '<button class="case-fb" data-fb="'+i+'">💬 Skicka feedback om detta</button>'+
       '</div>';
   }).join('');
   el.querySelectorAll('[data-set]').forEach(b=>{b.onclick=()=>setCase(+b.dataset.set,b.dataset.st);});
   el.querySelectorAll('[data-reset]').forEach(a=>{a.onclick=e=>{e.preventDefault();setCase(+a.dataset.reset,'pending');};});
   el.querySelectorAll('[data-del]').forEach(b=>{b.onclick=()=>{const f=curFunc();f.cases.splice(+b.dataset.del,1);persist();refreshSheet();};});
   el.querySelectorAll('[data-note]').forEach(t=>{t.onchange=()=>{const f=curFunc();f.cases[+t.dataset.note].note=t.value;persist();};});
+  el.querySelectorAll('[data-fb]').forEach(b=>{b.onclick=()=>openFeedbackFromCase(+b.dataset.fb);});
 }
 function setCase(i,st){
   const f=curFunc();if(!f)return;const c=f.cases[i];
   if(st==='pending'){c.status='pending';c.tester='';c.ts='';}
   else{c.status=(c.status===st?'pending':st);if(c.status==='pending'){c.tester='';c.ts='';}else{c.tester=getMe()||'okänd';c.ts=nowISO();}}
   persist();refreshSheet();
+  if(c.status==='fail')openFeedbackFromCase(i);
 }
-function refreshSheet(){const f=curFunc();if(!f)return;const sub=[];if(f.app)sub.push('<span class="tag">'+esc(f.app)+'</span>');if(f.version)sub.push('v'+esc(f.version));sub.push(pill(statusOf(f)));if(f.date)sub.push(fmtDate(f.date));$('fs-sub').innerHTML=sub.join('');renderCases();}
+function openFeedbackFromCase(i){
+  const f=curFunc();if(!f)return;const c=f.cases[i];
+  openFeedback({name:f.app||'',typ:'bugg',rubrik:c.text||'',desc:(c.note?c.note:'')+(c.expected?('\n\nFörväntat: '+c.expected):'')});
+}
+function refreshSheet(){const f=curFunc();if(!f)return;const sub=[];if(f.app)sub.push('<span class="tag">'+esc(f.app)+'</span>');if(f.version)sub.push('v'+esc(f.version));sub.push(pill(statusOf(f)));if(f.date)sub.push(fmtDate(f.date));$('fs-sub').innerHTML=sub.join('');renderQuick();renderCases();}
 $('fs-case-add').onclick=()=>{const v=$('fs-case-in').value.trim();if(!v)return;const f=curFunc();f.cases.push({id:uid(),text:v,expected:'',status:'pending',tester:'',note:'',ts:''});$('fs-case-in').value='';persist();refreshSheet();};
 $('fs-case-in').onkeydown=e=>{if(e.key==='Enter')$('fs-case-add').click();};
 $('fs-close').onclick=()=>{closeSheets();renderTodo();};
 $('fs-del').onclick=()=>{const f=curFunc();if(!f)return;if(!confirm('Ta bort "'+(f.namn||'funktionen')+'" och dess testfall?'))return;state.funcs=state.funcs.filter(x=>x.id!==curId);persist();closeSheets();renderTodo();};
+
+// ── Avatar för testare (genererad ur namnet) ──────────
+function hueOf(s){let h=0;s=String(s||'');for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h;}
+function initials(name){name=String(name||'').trim();if(!name)return '?';const p=name.split(/\s+/);if(p.length===1)return p[0].slice(0,2).toUpperCase();return (p[0][0]+p[p.length-1][0]).toUpperCase();}
+function avatarSVG(name,size){
+  size=size||30;const h=hueOf(name),h2=(h+42)%360,id='av'+hash(name);
+  return '<svg class="avatar" width="'+size+'" height="'+size+'" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="border-radius:50%">'+
+    '<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl('+h+',52%,57%)"/><stop offset="1" stop-color="hsl('+h2+',54%,43%)"/></linearGradient></defs>'+
+    '<rect width="40" height="40" rx="20" fill="url(#'+id+')"/>'+
+    '<text x="20" y="21" font-family="Georgia,serif" font-size="16" fill="#fff" text-anchor="middle" dominant-baseline="central">'+esc(initials(name))+'</text></svg>';
+}
+
+// ── Feedback → Appcentralen ───────────────────────────
+const FALLBACK_APPS=['Batteriet','Älsklingen','Kitteln','Grannskapet','HobbyKollen','Jobbplanering','Min planering','Dagstavlan','Tarot','Månen','Stjärnkartan','Jag och min ledare','FörhandlingsKompassen','LajvKompassen','LajvMästaren','Centralen'];
+const FB_TYPES=[['bugg','🐞 Bugg'],['ide','💡 Idé'],['forb','🔧 Förbättring'],['beröm','💚 Beröm']];
+const FB_PRIOS=[['lag','Låg'],['mellan','Mellan'],['hog','Hög']];
+let appkollenApps=null;
+let fb={app:null,appNo:null,file:'',name:'',custom:'',typ:'bugg',rubrik:'',desc:'',prio:'mellan'};
+async function loadAppList(){
+  if(appkollenApps)return appkollenApps;
+  if(!syncOn())return null;
+  try{const g=await ghGetFile('appkollen.json');if(!g.missing&&g.data&&Array.isArray(g.data.apps))appkollenApps=g.data.apps;}catch(e){}
+  return appkollenApps;
+}
+function fbStatus(msg,kind){const e=$('fb-status');e.style.display='block';e.textContent=msg;e.style.background=kind==='err'?'var(--red-soft)':kind===null?'var(--panel2)':'var(--green-soft)';e.style.color=kind==='err'?'var(--red)':kind===null?'var(--muted)':'var(--green)';}
+function fbAppList(){return appkollenApps?appkollenApps.map(a=>({name:a.name||a.file||'',appNo:(a.appNo!=null?a.appNo:null),file:a.file||''})):FALLBACK_APPS.map(n=>({name:n,appNo:null,file:''}));}
+function renderFbApps(){
+  const el=$('fb-apps');const list=fbAppList();
+  if(!list.length){el.innerHTML='<div class="empty-msg">Ingen applista — skriv app nedan.</div>';return;}
+  el.innerHTML=list.map((a,i)=>'<button class="fchip'+(!fb.custom&&fb.name===a.name?' sel':'')+'" data-i="'+i+'">'+esc(a.name)+'</button>').join('');
+  el.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{const a=list[+c.dataset.i];fb.name=a.name;fb.app=a.name;fb.appNo=a.appNo;fb.file=a.file;fb.custom='';$('fb-custom').value='';renderFbApps();};});
+}
+function renderFbTyp(){const el=$('fb-typ');el.innerHTML=FB_TYPES.map(t=>'<button class="'+(fb.typ===t[0]?'sel':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('');el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{fb.typ=b.dataset.t;renderFbTyp();};});}
+function renderFbPrio(){const el=$('fb-prio');el.innerHTML=FB_PRIOS.map(p=>'<button class="'+(fb.prio===p[0]?'sel':'')+'" data-p="'+p[0]+'">'+p[1]+'</button>').join('');el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{fb.prio=b.dataset.p;renderFbPrio();};});}
+async function openFeedback(pre){
+  fb={app:null,appNo:null,file:'',name:'',custom:'',typ:'bugg',rubrik:'',desc:'',prio:'mellan'};
+  if(pre)Object.assign(fb,pre);
+  $('fb-rubrik').value=fb.rubrik||'';$('fb-desc').value=fb.desc||'';$('fb-custom').value='';
+  $('fb-status').style.display='none';
+  renderFbTyp();renderFbPrio();
+  $('fb-apps').innerHTML='<div class="empty-msg">'+(syncOn()?'Hämtar applista…':'Kopplas appar via synk')+'</div>';
+  openSheet('fb-sheet');
+  await loadAppList();
+  // matcha förifyllt appnamn mot listan; annars lägg i fritextfältet
+  const want=(fb.name||'').toLowerCase();
+  const m=want?fbAppList().find(a=>a.name.toLowerCase()===want):null;
+  if(m){fb.name=m.name;fb.app=m.name;fb.appNo=m.appNo;fb.file=m.file;}
+  else if(fb.name){fb.custom=fb.name;fb.name='';fb.app=null;$('fb-custom').value=fb.custom;}
+  renderFbApps();
+}
+function closeFb(){$('fb-sheet').classList.remove('open');if(!document.querySelector('.sheet.open'))bg.classList.remove('open');}
+function markSent(id){(state.feedback||[]).forEach(f=>{if(f.id===id)f.sent=true;});}
+async function sendToInbox(item){
+  for(let attempt=0;attempt<2;attempt++){
+    let sha=null,inbox={items:[]};
+    try{const g=await ghGetFile('appkollen-inbox.json');if(!g.missing){sha=g.sha;if(g.data&&Array.isArray(g.data.items))inbox=g.data;}}catch(e){}
+    inbox.items.push(item);
+    const content=b64enc(JSON.stringify(inbox,null,2));
+    const r=await fetch(ghUrl('appkollen-inbox.json'),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Feedback via Testkollen',content,...(sha?{sha}:{})})});
+    if(r.ok)return true;
+    if(r.status!==409&&r.status!==422)return false;
+  }
+  return false;
+}
+async function flushFeedback(){
+  if(!syncOn()||!(state.fbQueue&&state.fbQueue.length))return;
+  for(const it of state.fbQueue.slice()){const ok=await sendToInbox(it);if(ok){state.fbQueue=state.fbQueue.filter(x=>x.id!==it.id);markSent(it.id);save();}}
+}
+async function sendFb(){
+  const rubrik=$('fb-rubrik').value.trim();
+  if(!fb.name&&!fb.custom.trim()){fbStatus('Välj eller skriv en app.','err');return;}
+  if(!rubrik){fbStatus('Skriv en rubrik.','err');return;}
+  fb.desc=$('fb-desc').value.trim();
+  const name=fb.custom.trim()||fb.name||'';
+  const item={id:'tk-'+uid(),name:name,file:fb.file||'',typ:fb.typ,txt:rubrik+(fb.desc?('\n\n'+fb.desc):''),rubrik:rubrik,beskrivning:fb.desc,prio:fb.prio,d:fmtDate(nowISO()),ts:nowISO(),kalla:'Testkollen'};
+  if(fb.appNo!=null)item.appNo=fb.appNo;
+  state.feedback=state.feedback||[];state.feedback.unshift(Object.assign({sent:false},item));
+  if(!syncOn()){state.fbQueue=state.fbQueue||[];state.fbQueue.push(item);save();closeFb();toast('Sparad lokalt — skickas när du kopplar repot.');return;}
+  fbStatus('Skickar…',null);
+  const ok=await sendToInbox(item);
+  if(ok){markSent(item.id);save();closeFb();toast('🐞 Skickad till Appcentralen ✓');}
+  else{state.fbQueue=state.fbQueue||[];state.fbQueue.push(item);save();fbStatus('Kunde inte skicka nu — köad och skickas vid nästa synk.','err');}
+}
+$('fb-custom').oninput=()=>{fb.custom=$('fb-custom').value;if(fb.custom){fb.name='';fb.app=null;fb.appNo=null;fb.file='';}renderFbApps();};
+$('fb-send').onclick=sendFb;
 
 // ── AI: föreslå testfall ──────────────────────────────
 const AI_KEY='testkollen_ai_key';
@@ -778,10 +921,10 @@ $('af-save').onclick=()=>{
 // ── Testare ───────────────────────────────────────────
 function renderTesters(){
   const me=getMe();
-  $('me-now').innerHTML=me?('Du signerar som <b style="color:var(--accent)">'+esc(me)+'</b>.'):'Ingen vald än — markera dig i listan nedan så signeras dina resultat.';
+  $('me-now').innerHTML=me?('<span style="display:inline-flex;align-items:center;gap:8px">'+avatarSVG(me,34)+'<span>Du signerar som <b style="color:var(--accent)">'+esc(me)+'</b>.</span></span>'):'Ingen vald än — markera dig i listan nedan så signeras dina resultat.';
   const el=$('tester-list');
   if(!state.testers.length){el.innerHTML='<div class="empty-msg">Inga testare ännu.</div>';return;}
-  el.innerHTML=state.testers.map((t,i)=>'<div class="edit-item"><span class="ename">'+esc(t)+'</span>'+(me===t?'<span class="me-tag">Jag</span>':'<button class="set-me" data-me="'+i+'">Det är jag</button>')+'<button data-del="'+i+'">×</button></div>').join('');
+  el.innerHTML=state.testers.map((t,i)=>'<div class="edit-item">'+avatarSVG(t,30)+'<span class="ename">'+esc(t)+'</span>'+(me===t?'<span class="me-tag">Jag</span>':'<button class="set-me" data-me="'+i+'">Det är jag</button>')+'<button data-del="'+i+'">×</button></div>').join('');
   el.querySelectorAll('[data-me]').forEach(b=>{b.onclick=()=>{setMe(state.testers[+b.dataset.me]);renderTesters();toast('Du signerar nu som '+state.testers[+b.dataset.me]+'.');};});
   el.querySelectorAll('[data-del]').forEach(b=>{b.onclick=()=>{const n=state.testers[+b.dataset.del];if(getMe()===n)setMe('');state.testers.splice(+b.dataset.del,1);persist();renderTesters();};});
 }
@@ -791,7 +934,7 @@ $('tester-in').onkeydown=e=>{if(e.key==='Enter')$('tester-add').click();};
 // ── Översikt ──────────────────────────────────────────
 function renderOverview(){
   const f=state.funcs;
-  const cnt={pending:0,progress:0,pass:0,fail:0,blocked:0};
+  const cnt={pending:0,progress:0,pass:0,fail:0,blocked:0,skip:0};
   f.forEach(x=>cnt[statusOf(x)]++);
   const total=f.length||1;
   $('stat-grid').innerHTML=
@@ -800,26 +943,29 @@ function renderOverview(){
     '<div class="stat-box"><div class="num" style="color:var(--amber)">'+cnt.blocked+'</div><div class="lab">Blockerade</div></div>'+
     '<div class="stat-box"><div class="num" style="color:var(--muted)">'+(cnt.pending+cnt.progress)+'</div><div class="lab">Kvar att testa</div></div>';
   const seg=(n,c)=>n>0?'<i style="width:'+(n/total*100)+'%;background:'+c+'"></i>':'';
-  $('cover-bar').innerHTML=seg(cnt.pass,'var(--green)')+seg(cnt.fail,'var(--red)')+seg(cnt.blocked,'var(--amber)')+seg(cnt.progress,'var(--blue)')+seg(cnt.pending,'var(--panel2)');
-  const tested=cnt.pass+cnt.fail;
-  $('cover-txt').textContent=f.length?('Testtäckning: '+Math.round((cnt.pass+cnt.fail+cnt.blocked)/total*100)+'% berörda · '+cnt.pass+' av '+f.length+' godkända.'):'Inga funktioner ännu.';
+  $('cover-bar').innerHTML=seg(cnt.pass,'var(--green)')+seg(cnt.fail,'var(--red)')+seg(cnt.blocked,'var(--amber)')+seg(cnt.progress,'var(--blue)')+seg(cnt.skip,'var(--line)')+seg(cnt.pending,'var(--panel2)');
+  $('cover-txt').textContent=f.length?('Testtäckning: '+Math.round((cnt.pass+cnt.fail+cnt.blocked)/total*100)+'% berörda · '+cnt.pass+' av '+f.length+' godkända'+(cnt.skip?(' · '+cnt.skip+' behöver ej testas'):'')+'.'):'Inga funktioner ännu.';
   // per app
   const byApp={};f.forEach(x=>{const a=x.app||'Allmänt';(byApp[a]=byApp[a]||[]).push(x);});
   const as=$('app-stats');const apps=Object.keys(byApp).sort();
   as.innerHTML=apps.length?apps.map(a=>{
-    const arr=byApp[a];const c={pending:0,progress:0,pass:0,fail:0,blocked:0};arr.forEach(x=>c[statusOf(x)]++);const tot=arr.length;
+    const arr=byApp[a];const c={pending:0,progress:0,pass:0,fail:0,blocked:0,skip:0};arr.forEach(x=>c[statusOf(x)]++);const tot=arr.length;
     const s=(n,col)=>n>0?'<i style="width:'+(n/tot*100)+'%;background:'+col+'"></i>':'';
-    return '<div class="app-stat"><div class="ah"><b>'+esc(a)+'</b><span class="soft">'+c.pass+'/'+tot+' godkända</span></div><div class="bar-bg">'+s(c.pass,'var(--green)')+s(c.fail,'var(--red)')+s(c.blocked,'var(--amber)')+s(c.progress,'var(--blue)')+s(c.pending,'var(--panel2)')+'</div></div>';
+    return '<div class="app-stat"><div class="ah"><b>'+esc(a)+'</b><span class="soft">'+c.pass+'/'+tot+' godkända</span></div><div class="bar-bg">'+s(c.pass,'var(--green)')+s(c.fail,'var(--red)')+s(c.blocked,'var(--amber)')+s(c.progress,'var(--blue)')+s(c.skip,'var(--line)')+s(c.pending,'var(--panel2)')+'</div></div>';
   }).join(''):'<div class="empty-msg">Inga funktioner ännu.</div>';
-  // per testare
-  const byT={};f.forEach(x=>(x.cases||[]).forEach(c=>{if(c.tester&&c.status&&c.status!=='pending'){byT[c.tester]=byT[c.tester]||{pass:0,fail:0,blocked:0};byT[c.tester][c.status]++;}}));
+  // per testare (testfall + snabbomdömen)
+  const byT={};
+  f.forEach(x=>(x.cases||[]).forEach(c=>{if(c.tester&&c.status&&c.status!=='pending'){byT[c.tester]=byT[c.tester]||{pass:0,fail:0,blocked:0};byT[c.tester][c.status]++;}}));
+  f.forEach(x=>{if(x.verdict==='ok'&&x.verdictBy){byT[x.verdictBy]=byT[x.verdictBy]||{pass:0,fail:0,blocked:0};byT[x.verdictBy].pass++;}});
   const ts=$('tester-stats');const names=Object.keys(byT).sort();
-  ts.innerHTML=names.length?names.map(n=>{const b=byT[n];return '<div class="app-stat"><div class="ah"><b>'+esc(n)+'</b><span class="soft">'+(b.pass+b.fail+b.blocked)+' testfall</span></div><div class="soft">✓ '+b.pass+' · ✗ '+b.fail+' · ⤫ '+b.blocked+'</div></div>';}).join(''):'<div class="empty-msg">Inga signerade resultat ännu.</div>';
-  // logg
-  const ev=[];f.forEach(x=>(x.cases||[]).forEach(c=>{if(c.ts&&c.status&&c.status!=='pending')ev.push({ts:c.ts,who:c.tester||'okänd',st:c.status,fn:x.namn,app:x.app});}));
+  ts.innerHTML=names.length?names.map(n=>{const b=byT[n];return '<div class="app-stat"><div class="ah"><b style="display:inline-flex;align-items:center;gap:7px">'+avatarSVG(n,24)+esc(n)+'</b><span class="soft">'+(b.pass+b.fail+b.blocked)+' omdömen</span></div><div class="soft">✓ '+b.pass+' · ✗ '+b.fail+' · ⤫ '+b.blocked+'</div></div>';}).join(''):'<div class="empty-msg">Inga signerade resultat ännu.</div>';
+  // logg (testfall + snabbomdömen)
+  const ev=[];
+  f.forEach(x=>(x.cases||[]).forEach(c=>{if(c.ts&&c.status&&c.status!=='pending')ev.push({ts:c.ts,who:c.tester||'okänd',st:c.status,fn:x.namn,app:x.app});}));
+  f.forEach(x=>{if(x.verdictTs&&x.verdict)ev.push({ts:x.verdictTs,who:x.verdictBy||'okänd',st:x.verdict==='ok'?'pass':'skip',fn:x.namn,app:x.app});});
   ev.sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
   const rl=$('result-log');
-  rl.innerHTML=ev.length?ev.slice(0,25).map(e=>'<div class="log-row">'+pill(e.st)+'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.fn||'')+' <span class="soft">· '+esc(e.who)+'</span></span><time>'+fmtDT(e.ts)+'</time></div>').join(''):'<div class="empty-msg">Inga resultat loggade ännu.</div>';
+  rl.innerHTML=ev.length?ev.slice(0,25).map(e=>'<div class="log-row">'+pill(e.st)+'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">'+avatarSVG(e.who,18)+esc(e.fn||'')+' <span class="soft">· '+esc(e.who)+'</span></span><time>'+fmtDT(e.ts)+'</time></div>').join(''):'<div class="empty-msg">Inga resultat loggade ännu.</div>';
 }
 
 // ── Synk-sheet UI ─────────────────────────────────────
@@ -833,6 +979,7 @@ $('gh-save').onclick=async()=>{
     await ghPull();
     const pub=await pushOwnChangelog(false);
     await clPullAll();
+    await flushFeedback();
     ghStatus('Synkat ✓ — läste '+((state.cl.sources||[]).length)+' changelogs'+(pub?', publicerade Testkollens egen':'')+'.','ok');
     setTimeout(closeSheets,1300);renderTodo();
   }catch(e){ghStatus('Fel: '+e.message+'. Kontrollera namn, repo och token-behörighet (Contents: Read and write).','err');}
@@ -874,8 +1021,19 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='1.2';
+const APP_VERSION='1.4';
 const CHANGELOG=[
+  {version:'1.4',date:'2026-06-16',title:'Snabbomdömen utan testfall',items:[
+    'Testfall behövs inte alltid: två snabbknappar direkt på funktionen — "Funktionen fungerar" (markerar som godkänd) och "Behöver ej testas".',
+    'Snabbomdömet signeras med testare och tidsstämpel, syns i resultatloggen och räknas i översikten. Lägger du till testfall tar de detaljerade resultaten över.',
+    'Ny status "Behöver ej testas" som hålls utanför det som väntar på test.'
+  ]},
+  {version:'1.3',date:'2026-06-16',title:'Feedback till Appcentralen & testar-avatarer',items:[
+    'Skicka feedback (bugg, idé, förbättring, beröm) direkt till Appcentralen — poppar upp när du rapporterar ett testfall, och automatiskt när du underkänner ett.',
+    'Välj app, rubrik, beskrivning och prioritet; posten skrivs till appkollen-inbox.json och hamnar i rätt apps backlogg i Appkollen vid synk (matchas via App-ID/filnamn).',
+    'Feedback utan synk köas lokalt och skickas automatiskt när du kopplar repot.',
+    'Varje testare får en genererad avatar (initialer + färg ur namnet) i testarlistan, "Jag"-raden, insatslistan och resultatloggen.'
+  ]},
   {version:'1.2',date:'2026-06-16',title:'Läser alla changelogs & publicerar sig själv',items:[
     'Hittar och läser automatiskt ALLA changelog-filer i repot (t.ex. appkollen-changelog.json, centralen-changelog.json) — inte bara en.',
     'Funktioner taggas med rätt app från changeloggen, med stabila id:n per app så en ompull aldrig dubblerar.',
@@ -899,12 +1057,14 @@ const CHANGELOG=[
 ];
 const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
-  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
+  {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Snabbomdömen utan testfall: "Funktionen fungerar" och "Behöver ej testas", signerade. Lägger du till testfall tar de detaljerade resultaten över.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},
   {area:'Översikt',items:['Status totalt, per app och insats per testare, testtäckning samt logg över senaste resultat.']},
   {area:'Changelog-synk',items:['Hittar och läser ALLA changelog-filer i repot automatiskt (Git Trees API med fallback till rotlistning), tolerant parser för flera format, stabila id:n per app och ping vid nya funktioner.','Publicerar sin egen testkollen-changelog.json till repot vid access så Centralen och Appkollen kan läsa den.']},
   {area:'Synk & data',items:['GitHub Contents API-synk (privat repo, egen fil testkollen.json), status-badge, auto-pull vid start och synlighet, debouncad push, export/import som JSON.']},
-  {area:'Skrivbord & tema',items:['Separat skrivbordsversion med sidomeny och paneler, auto mörkt/ljust 20–07.']}
+  {area:'Skrivbord & tema',items:['Separat skrivbordsversion med sidomeny och paneler, auto mörkt/ljust 20–07.']},
+  {area:'Feedback till Appcentralen',items:['Skicka bugg/idé/förbättring/beröm med app, rubrik, beskrivning och prioritet. Poppar vid rapportering av ett testfall och automatiskt vid underkänt.','Skrivs till appkollen-inbox.json och landar i rätt apps backlogg i Appkollen (App-ID/filnamn-matchning). Köas lokalt utan synk och skickas vid koppling.']},
+  {area:'Testar-avatarer',items:['Genererad avatar per testare (initialer + färg ur namnet) i listan, "Jag"-raden, insatslistan och resultatloggen.']}
 ];
 let newsTab='changelog';
 function renderNews(){
@@ -928,7 +1088,7 @@ loadSync();
 applyTheme();setInterval(applyTheme,60000);
 renderTodo();
 renderClSources();
-if(syncOn()){setBadge('ok','Synkad');(async()=>{try{await ghPull();await pushOwnChangelog(false);await clPullAll();}catch(e){}})();}
+if(syncOn()){setBadge('ok','Synkad');(async()=>{try{await ghPull();await pushOwnChangelog(false);await clPullAll();await flushFeedback();}catch(e){}})();}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
 </script>
 </body>
