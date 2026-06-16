@@ -416,6 +416,8 @@ body.desktopfil:not(.desktop) .ws-frame{height:80vh}
 }
 .logg-kopf h2{margin:0}
 .logg-meta{font-size:11px;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:12px}
+.logg-besk{font-size:14px;line-height:1.55;color:var(--ink);margin-bottom:12px}
+.logg-malgrupp{font-size:14px;line-height:1.55;color:var(--ink)}
 .logg-senaste{
   background:#fff;border:1px solid var(--line);border-radius:14px;
   padding:12px 13px;margin-bottom:14px;
@@ -691,15 +693,18 @@ body.desktopfil:not(.desktop) .ws-frame{height:80vh}
         <div class="logg-meta" id="logg-meta"></div>
       </div>
     </div>
+    <div class="logg-besk" id="logg-besk" hidden></div>
     <div class="logg-senaste" id="logg-senaste" hidden>
       <div class="etikett">Senaste</div>
       <ul id="logg-senaste-lista"></ul>
     </div>
     <div class="logg-flikar" role="group" aria-label="Visa">
       <button id="flik-fun" type="button">Funktioner</button>
+      <button id="flik-mal" type="button">Målgrupp</button>
       <button id="flik-upp" type="button">Uppdateringar</button>
     </div>
     <div class="logg-panel" id="panel-fun" hidden></div>
+    <div class="logg-panel" id="panel-mal" hidden></div>
     <div class="logg-panel" id="panel-upp"></div>
     <div class="sheet-knappar">
       <button class="kn" id="logg-stang" type="button">Stäng</button>
@@ -1757,15 +1762,21 @@ function appIdForCg(fil, data){
 const CENTRALEN_LOGG = {
   name: "Centralen",
   icon: "🎛️",
-  description: "Startsida och appöversikt – hubben för alla dina appar, med arbetsyta, översikt och synk.",
-  version: "3.1",
+  description: "Startsida och appöversikt – hubben för alla dina appar, med arbetsyta, översikt, insikt och synk.",
+  audience: "För dig som har många egna appar och vill ha en samlad startsida med översikt, snabb åtkomst och synk mellan enheter.",
+  version: "3.2",
   updated: "2026-06-15",
   latest: [
+    "App-infon visar nu Beskrivning och Målgrupp",
     "\"Senaste\" heter nu Uppdateringar, med en Synka nu-knapp",
-    "Synk läser nu även in apparnas changeloggar direkt",
     "Insikt-vy: Insikten inbäddad i Centralen"
   ],
   changelog: [
+    { version: "3.2", date: "2026-06-15", changes: [
+      "App-infon visar Beskrivning överst och en egen Målgrupp-flik",
+      "Ordningen är Beskrivning → Funktioner → Målgrupp → Uppdateringar",
+      "Beskrivning och målgrupp läses från appens changelog-fil (description, audience)"
+    ]},
     { version: "3.1", date: "2026-06-15", changes: [
       "\"Senaste\" heter nu \"Uppdateringar\"",
       "Ny \"Synka nu\"-knapp i menyn som hämtar data, changeloggar och Appkollen-data",
@@ -2022,6 +2033,12 @@ function openLogg(id){
   if(!c) metaDelar.push(synkPa() ? "Ingen changelog-fil i repot ännu" : "Synk av – ingen changelog hämtad");
   document.getElementById("logg-meta").textContent = metaDelar.join(" · ");
 
+  // Beskrivning (överst)
+  const besk = valjFalt(data, ["description","beskrivning"], "");
+  const bBox = document.getElementById("logg-besk");
+  if(besk && String(besk).trim()){ bBox.textContent = String(besk); bBox.hidden = false; }
+  else bBox.hidden = true;
+
   // Senaste-höjdpunkter
   const hl = tillLista(valjFalt(data, ["latest","senaste"], null));
   const sBox = document.getElementById("logg-senaste");
@@ -2033,8 +2050,23 @@ function openLogg(id){
 
   ritaLoggUppdateringar(data);
   ritaLoggFunktioner(data);
+  const harMal = ritaLoggMalgrupp(data);
+  document.getElementById("flik-mal").hidden = !harMal;
   visaLoggFlik("fun");
   skalLogg.hidden = false;
+}
+
+function ritaLoggMalgrupp(data){
+  const panel = document.getElementById("panel-mal");
+  const mg = valjFalt(data, ["audience","målgrupp","malgrupp","target","targetAudience"], null);
+  const tom = (mg == null) || (Array.isArray(mg) && !mg.length) || (typeof mg === "string" && !mg.trim());
+  if(tom){ panel.innerHTML = '<div class="logg-tom">Ingen målgrupp angiven.</div>'; return false; }
+  if(Array.isArray(mg)){
+    panel.innerHTML = '<div class="logg-grupp"><ul>' + tillLista(mg).map(r => '<li>' + esc(radText(r)) + '</li>').join("") + '</ul></div>';
+  } else {
+    panel.innerHTML = '<div class="logg-malgrupp">' + esc(String(mg)) + '</div>';
+  }
+  return true;
 }
 
 function ritaLoggUppdateringar(data){
@@ -2079,14 +2111,17 @@ function ritaLoggFunktioner(data){
 
 function visaLoggFlik(vilken){
   loggFlik = vilken;
-  document.getElementById("flik-upp").classList.toggle("on", vilken === "upp");
   document.getElementById("flik-fun").classList.toggle("on", vilken === "fun");
-  document.getElementById("panel-upp").hidden = vilken !== "upp";
+  document.getElementById("flik-mal").classList.toggle("on", vilken === "mal");
+  document.getElementById("flik-upp").classList.toggle("on", vilken === "upp");
   document.getElementById("panel-fun").hidden = vilken !== "fun";
+  document.getElementById("panel-mal").hidden = vilken !== "mal";
+  document.getElementById("panel-upp").hidden = vilken !== "upp";
 }
 function stangLogg(){ skalLogg.hidden = true; loggId = null; }
 
 document.getElementById("flik-upp").addEventListener("click", () => visaLoggFlik("upp"));
+document.getElementById("flik-mal").addEventListener("click", () => visaLoggFlik("mal"));
 document.getElementById("flik-fun").addEventListener("click", () => visaLoggFlik("fun"));
 document.getElementById("logg-stang").addEventListener("click", stangLogg);
 skalLogg.addEventListener("click", (e) => { if(e.target === skalLogg) stangLogg(); });
