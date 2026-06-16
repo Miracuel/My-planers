@@ -594,6 +594,7 @@ label.chk-item:last-child{border-bottom:none}
 .master-tag{font-size:9px;background:#F3ECD6;color:#7A5520;border-radius:6px;padding:1px 6px;vertical-align:middle;font-weight:600;white-space:nowrap}
 .item.master{background:#FCF9F0}
 .stat-sub{display:block;font-size:9px;color:#9A7B3A;text-transform:none;letter-spacing:0;margin-top:4px;font-weight:600}
+.own-badge{font-size:9px;background:#E7EEF5;color:#3A5878;border-radius:6px;padding:1px 7px;font-weight:600;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -652,7 +653,7 @@ label.chk-item:last-child{border-bottom:none}
 </div>
 
 <input type="text" id="search" class="search" placeholder="Sök app, punkt eller anteckning...">
-<div class="toolbar" id="toolbar"><span class="tlabel">Sortera</span><button class="fchip" id="sort-added">Tillagd</button><button class="fchip" id="sort-az">A–Ö</button><button class="fchip" id="sort-prio">Prio</button><button class="fchip" id="sort-upd">Senast uppd.</button><button class="fchip" id="sort-score">Poäng</button><button class="fchip" id="sort-status">Status</button><button class="fchip" id="sort-family">Familjer</button><button class="fchip" id="sort-appid">App-ID</button><button class="fchip" id="sort-value">Värde</button><button class="fchip" id="sort-roi">ROI</button><span class="tdiv"></span><span class="tlabel">Visa</span><button class="fchip" id="f-mobil">✓ Mobil</button><button class="fchip" id="f-desktop">✓ Desktop</button><button class="fchip" id="f-token">✓ Token</button><button class="fchip" id="f-hidden">Dolda (0)</button><button class="fchip" id="f-archived">Arkiverade (0)</button><span class="tdiv"></span><select class="cat-filter" id="f-cat"><option value="">Alla kategorier</option></select><select class="cat-filter" id="f-family"><option value="">Alla familjer</option></select></div>
+<div class="toolbar" id="toolbar"><span class="tlabel">Sortera</span><button class="fchip" id="sort-added">Tillagd</button><button class="fchip" id="sort-az">A–Ö</button><button class="fchip" id="sort-prio">Prio</button><button class="fchip" id="sort-upd">Senast uppd.</button><button class="fchip" id="sort-score">Poäng</button><button class="fchip" id="sort-status">Status</button><button class="fchip" id="sort-family">Familjer</button><button class="fchip" id="sort-appid">App-ID</button><button class="fchip" id="sort-value">Värde</button><button class="fchip" id="sort-roi">ROI</button><span class="tdiv"></span><span class="tlabel">Visa</span><button class="fchip" id="f-mobil">✓ Mobil</button><button class="fchip" id="f-desktop">✓ Desktop</button><button class="fchip" id="f-token">✓ Token</button><button class="fchip" id="f-own">✎ Ej master</button><button class="fchip" id="f-hidden">Dolda (0)</button><button class="fchip" id="f-archived">Arkiverade (0)</button><span class="tdiv"></span><select class="cat-filter" id="f-cat"><option value="">Alla kategorier</option></select><select class="cat-filter" id="f-family"><option value="">Alla familjer</option></select></div>
 
 <div class="filt-bar" id="filt-bar" style="display:none"></div>
 <div id="cards"></div>
@@ -1315,7 +1316,7 @@ function renderVersions(a){
 }
 var PRIOCOL={1:'#C96A6A',2:'#C98A3D',3:'#D9A441',4:'#5E8C61',5:'#B8B0A4'};
 var TYPLBL={ide:'Idéer',forb:'Förbättringar',bugg:'Buggar',pagar:'Pågår'};
-function clearFilters(){typFilt=null;catFilt='';famFilt='';statusFilt='';prioFilt='';dateFilt='';mognadFilt='';chkFilt={mobil:false,desktop:false,token:false};var fc=document.getElementById('f-cat');if(fc)fc.value='';renderStats();renderCards();}
+function clearFilters(){typFilt=null;catFilt='';famFilt='';statusFilt='';prioFilt='';dateFilt='';mognadFilt='';chkFilt={mobil:false,desktop:false,token:false};ownFilt=false;var fc=document.getElementById('f-cat');if(fc)fc.value='';renderStats();renderCards();}
 function applyDashFilter(tok){if(!tok){clearFilters();if(view!=='cards')applyView('cards');return;}var i=tok.indexOf(':');var type=tok.slice(0,i),val=tok.slice(i+1);
   if(type==='status')statusFilt=statusFilt===val?'':val;
   else if(type==='prio')prioFilt=prioFilt===val?'':val;
@@ -1499,11 +1500,11 @@ function exportManifest(a){downloadJSON((a.mid||'app')+'-manifest.json',buildMan
 function exportAllManifests(){var arr=(state.apps||[]).filter(function(a){return !a.archived;}).map(buildManifest);downloadJSON('app-manifests.json',arr);}
 
 function cardHtml(a){
-    let cIde=0,cForb=0,cBugg=0,cPagar=0,cKlar=0;
+    let cIde=0,cForb=0,cBugg=0,cPagar=0,cKlar=0,cOwn=0;
     a.items.forEach(it=>{
       if(it.st==='klar'){cKlar++;return;}
       if(it.typ==='ide')cIde++;else if(it.typ==='forb')cForb++;else if(it.typ==='bugg')cBugg++;
-      if(it.st==='pagar')cPagar++;
+      if(it.st==='pagar')cPagar++;if(!it.master)cOwn++;
     });
     let pills='';
     if(a.hidden)pills+='<span class="pill klar">Dold</span>';
@@ -1541,7 +1542,7 @@ function cardHtml(a){
     var _wts=Math.max(a.upd||0,_lu?Date.parse(_lu):0);
     var workedLine=_wts?'<div class="worked-line">Senast jobbad p\u00e5 '+fmt(new Date(_wts).toISOString().slice(0,10))+'</div>':'';
     var connBadge=connCount(a)>0?'<span class="conn-badge">\ud83d\udd17 '+connCount(a)+'</span>':'';
-    var metaParts=catChip(a.cat)+famChip(a.family)+mognadChip(a.mognad)+mfStatusChip(a.mstatus)+commitBadge+timeBadge+testBadge+upBadge+connBadge;
+    var ownBadge=cOwn?'<span class="own-badge" title="'+cOwn+' egna (ej master) punkter">✎ '+cOwn+' egna</span>':'';var metaParts=catChip(a.cat)+famChip(a.family)+mognadChip(a.mognad)+mfStatusChip(a.mstatus)+ownBadge+commitBadge+timeBadge+testBadge+upBadge+connBadge;
     var todayHtml=(view==='today')?'<span class="today-done-btn'+(a.commitDone===todayISO()?' done':'')+'" data-id="'+a.id+'">'+(a.commitDone===todayISO()?'\u2713 Klar idag':'Markera klar idag')+'</span>':'';
     var metaHtml=metaParts?'<div class="meta-row">'+metaParts+'</div>':'';
     var linkParts='';
@@ -1560,7 +1561,7 @@ function renderCards(){
   let list=state.apps.filter(a=>(showArchived?true:!a.archived)&&(showHidden?true:!a.hidden));
   if(q){const s=q.toLowerCase();list=list.filter(a=>(a.name||'').toLowerCase().includes(s)||(a.nick||'').toLowerCase().includes(s)||(a.file||'').toLowerCase().includes(s)||(a.note||'').toLowerCase().includes(s)||a.items.some(it=>it.txt.toLowerCase().includes(s))||(a.appNo&&appIdStr(a.appNo).toLowerCase().includes(s)));}
   if(typFilt)list=list.filter(a=>a.items.some(it=>it.st!=='klar'&&(typFilt==='pagar'?it.st==='pagar':it.typ===typFilt)));
-  ['mobil','desktop','token'].forEach(k=>{if(chkFilt[k])list=list.filter(a=>a.chk&&a.chk[k]);});
+  ['mobil','desktop','token'].forEach(k=>{if(chkFilt[k])list=list.filter(a=>a.chk&&a.chk[k]);});if(ownFilt)list=list.filter(a=>(a.items||[]).some(it=>!it.master&&it.st!=='klar'));
   if(catFilt)list=list.filter(a=>(a.cat||'')===catFilt);
   if(famFilt)list=list.filter(a=>(a.family||'')===famFilt);
   if(statusFilt)list=list.filter(a=>effStatus(a)===statusFilt);
@@ -1593,7 +1594,7 @@ function renderCards(){
   document.getElementById('sort-roi').classList.toggle('sel',state.sort==='roi');
   document.getElementById('f-mobil').classList.toggle('sel',chkFilt.mobil);
   document.getElementById('f-desktop').classList.toggle('sel',chkFilt.desktop);
-  document.getElementById('f-token').classList.toggle('sel',chkFilt.token);
+  document.getElementById('f-token').classList.toggle('sel',chkFilt.token);var _foc=document.getElementById('f-own');if(_foc)_foc.classList.toggle('sel',ownFilt);
   const hb=document.getElementById('f-hidden');
   hb.classList.toggle('sel',showHidden);
   hb.textContent='Dolda ('+state.apps.filter(a=>a.hidden).length+')';
@@ -1601,7 +1602,7 @@ function renderCards(){
   var ff=document.getElementById('f-family');
   if(ff){var fl=famList();ff.innerHTML='<option value="">Alla familjer</option>'+fl.map(function(f){return'<option'+(f===famFilt?' selected':'')+'>'+esc(f)+'</option>';}).join('');}
   var _fcatEl=document.getElementById('f-cat');if(_fcatEl){var _cl=catList();_fcatEl.innerHTML='<option value="">Alla kategorier</option>'+_cl.map(function(c){return'<option'+(c===catFilt?' selected':'')+'>'+esc(c)+'</option>';}).join('');}
-  var _fb=document.getElementById('filt-bar');if(_fb){var _p=[];if(typFilt)_p.push(TYPLBL[typFilt]||typFilt);if(catFilt)_p.push('Kategori: '+catFilt);if(famFilt)_p.push('Familj: '+famFilt);if(statusFilt)_p.push('Status: '+(STATUS[statusFilt]?STATUS[statusFilt].label:statusFilt));if(prioFilt)_p.push('Prioritet '+prioFilt);if(mognadFilt)_p.push('Mognad: '+mognadFilt);if(dateFilt==='today')_p.push('Planerat idag');if(dateFilt==='donetoday')_p.push('Klart idag');if(dateFilt==='week')_p.push('Denna vecka');['mobil','desktop','token'].forEach(function(k){if(chkFilt[k])_p.push(k.charAt(0).toUpperCase()+k.slice(1));});_fb.innerHTML=_p.length?('<span class="filt-lbl">Filter:</span>'+_p.map(function(p){return'<span class="filt-chip">'+esc(p)+'</span>';}).join('')+'<button class="filt-clear" id="filt-clear">\u2715 Rensa</button>'):'';_fb.style.display=_p.length?'flex':'none';var _fc=document.getElementById('filt-clear');if(_fc)_fc.onclick=clearFilters;}
+  var _fb=document.getElementById('filt-bar');if(_fb){var _p=[];if(typFilt)_p.push(TYPLBL[typFilt]||typFilt);if(catFilt)_p.push('Kategori: '+catFilt);if(famFilt)_p.push('Familj: '+famFilt);if(statusFilt)_p.push('Status: '+(STATUS[statusFilt]?STATUS[statusFilt].label:statusFilt));if(prioFilt)_p.push('Prioritet '+prioFilt);if(mognadFilt)_p.push('Mognad: '+mognadFilt);if(dateFilt==='today')_p.push('Planerat idag');if(dateFilt==='donetoday')_p.push('Klart idag');if(dateFilt==='week')_p.push('Denna vecka');['mobil','desktop','token'].forEach(function(k){if(chkFilt[k])_p.push(k.charAt(0).toUpperCase()+k.slice(1));});if(ownFilt)_p.push('Ej-master-förslag');_fb.innerHTML=_p.length?('<span class="filt-lbl">Filter:</span>'+_p.map(function(p){return'<span class="filt-chip">'+esc(p)+'</span>';}).join('')+'<button class="filt-clear" id="filt-clear">\u2715 Rensa</button>'):'';_fb.style.display=_p.length?'flex':'none';var _fc=document.getElementById('filt-clear');if(_fc)_fc.onclick=clearFilters;}
   let html;
   if(state.sort==='family'){
     var groups={};list.forEach(function(a){var f=a.family||'';(groups[f]=groups[f]||[]).push(a);});
@@ -1643,7 +1644,7 @@ const appSheet=document.getElementById('app-sheet');
 const newSheet=document.getElementById('new-sheet');
 const setSheet=document.getElementById('set-sheet');
 let curId=null,newTyp='ide',filt='alla',editItem=null;
-let q='',typFilt=null,chkFilt={mobil:false,desktop:false,token:false},showHidden=false;
+let q='',typFilt=null,chkFilt={mobil:false,desktop:false,token:false},showHidden=false,ownFilt=false;
 let showDoneIdeas=false;
 let view='cards',catFilt='',famFilt='';
 let statusFilt='',prioFilt='',dateFilt='',mognadFilt='';
@@ -1936,7 +1937,7 @@ document.getElementById('search').oninput=e=>{q=e.target.value.trim();renderCard
   document.getElementById(id).onclick=()=>{chkFilt[k]=!chkFilt[k];renderCards();};
 });
 document.getElementById('f-hidden').onclick=()=>{showHidden=!showHidden;renderCards();};
-document.getElementById('f-archived').onclick=()=>{showArchived=!showArchived;renderCards();};
+document.getElementById('f-archived').onclick=()=>{showArchived=!showArchived;renderCards();};var _fownb=document.getElementById('f-own');if(_fownb)_fownb.onclick=()=>{ownFilt=!ownFilt;renderCards();};
 document.getElementById('sort-prio').onclick=()=>{state.sort='prio';persist();renderCards();};
 document.getElementById('a-archive').onclick=()=>{var a=appById(curId);if(!a)return;a.archived=!a.archived;pushHistory(a,a.archived?'archive':'unarchive',a.archived?'Arkiverad':'Avarkiverad');persist();syncAppSheet();renderStats();renderCards();renderHistory(a);};
 document.getElementById('a-del').onclick=()=>{
