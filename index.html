@@ -693,16 +693,17 @@ body.desktopfil:not(.desktop) .ws-frame{height:80vh}
         <div class="logg-meta" id="logg-meta"></div>
       </div>
     </div>
-    <div class="logg-besk" id="logg-besk" hidden></div>
     <div class="logg-senaste" id="logg-senaste" hidden>
       <div class="etikett">Senaste</div>
       <ul id="logg-senaste-lista"></ul>
     </div>
     <div class="logg-flikar" role="group" aria-label="Visa">
+      <button id="flik-besk" type="button">Beskrivning</button>
       <button id="flik-fun" type="button">Funktioner</button>
       <button id="flik-mal" type="button">Målgrupp</button>
       <button id="flik-upp" type="button">Uppdateringar</button>
     </div>
+    <div class="logg-panel" id="panel-besk" hidden></div>
     <div class="logg-panel" id="panel-fun" hidden></div>
     <div class="logg-panel" id="panel-mal" hidden></div>
     <div class="logg-panel" id="panel-upp"></div>
@@ -1764,14 +1765,17 @@ const CENTRALEN_LOGG = {
   icon: "🎛️",
   description: "Startsida och appöversikt – hubben för alla dina appar, med arbetsyta, översikt, insikt och synk.",
   audience: "För dig som har många egna appar och vill ha en samlad startsida med översikt, snabb åtkomst och synk mellan enheter.",
-  version: "3.3",
-  updated: "2026-06-15",
+  version: "3.4",
+  updated: "2026-06-16",
   latest: [
+    "Beskrivning är nu en egen flik (först) i app-infon",
     "Kortet visar kort beskrivning; den långa visas i app-infon",
-    "App-infon visar Beskrivning och Målgrupp",
-    "\"Senaste\" heter nu Uppdateringar, med en Synka nu-knapp"
+    "App-infon visar Beskrivning, Funktioner, Målgrupp, Uppdateringar"
   ],
   changelog: [
+    { version: "3.4", date: "2026-06-16", changes: [
+      "Beskrivningen ligger inte längre högst upp – den är en egen flik \"Beskrivning\" först (före Funktioner) och öppnas som standard"
+    ]},
     { version: "3.3", date: "2026-06-15", changes: [
       "Appkortet visar den korta beskrivningen igen – den långa beskrivningen från changeloggen visas bara i app-infon (ⓘ)"
     ]},
@@ -2036,12 +2040,6 @@ function openLogg(id){
   if(!c) metaDelar.push(synkPa() ? "Ingen changelog-fil i repot ännu" : "Synk av – ingen changelog hämtad");
   document.getElementById("logg-meta").textContent = metaDelar.join(" · ");
 
-  // Beskrivning (överst)
-  const besk = valjFalt(data, ["description","beskrivning"], "");
-  const bBox = document.getElementById("logg-besk");
-  if(besk && String(besk).trim()){ bBox.textContent = String(besk); bBox.hidden = false; }
-  else bBox.hidden = true;
-
   // Senaste-höjdpunkter
   const hl = tillLista(valjFalt(data, ["latest","senaste"], null));
   const sBox = document.getElementById("logg-senaste");
@@ -2051,11 +2049,19 @@ function openLogg(id){
     sBox.hidden = false;
   } else { sBox.hidden = true; }
 
+  // Beskrivning (egen flik, först)
+  const besk = valjFalt(data, ["description","beskrivning"], "");
+  const harBesk = !!(besk && String(besk).trim());
+  document.getElementById("panel-besk").innerHTML = harBesk
+    ? '<div class="logg-besk">' + esc(String(besk)) + '</div>'
+    : '<div class="logg-tom">Ingen beskrivning ännu.</div>';
+  document.getElementById("flik-besk").hidden = !harBesk;
+
   ritaLoggUppdateringar(data);
   ritaLoggFunktioner(data);
   const harMal = ritaLoggMalgrupp(data);
   document.getElementById("flik-mal").hidden = !harMal;
-  visaLoggFlik("fun");
+  visaLoggFlik(harBesk ? "besk" : "fun");
   skalLogg.hidden = false;
 }
 
@@ -2114,15 +2120,18 @@ function ritaLoggFunktioner(data){
 
 function visaLoggFlik(vilken){
   loggFlik = vilken;
+  document.getElementById("flik-besk").classList.toggle("on", vilken === "besk");
   document.getElementById("flik-fun").classList.toggle("on", vilken === "fun");
   document.getElementById("flik-mal").classList.toggle("on", vilken === "mal");
   document.getElementById("flik-upp").classList.toggle("on", vilken === "upp");
+  document.getElementById("panel-besk").hidden = vilken !== "besk";
   document.getElementById("panel-fun").hidden = vilken !== "fun";
   document.getElementById("panel-mal").hidden = vilken !== "mal";
   document.getElementById("panel-upp").hidden = vilken !== "upp";
 }
 function stangLogg(){ skalLogg.hidden = true; loggId = null; }
 
+document.getElementById("flik-besk").addEventListener("click", () => visaLoggFlik("besk"));
 document.getElementById("flik-upp").addEventListener("click", () => visaLoggFlik("upp"));
 document.getElementById("flik-mal").addEventListener("click", () => visaLoggFlik("mal"));
 document.getElementById("flik-fun").addEventListener("click", () => visaLoggFlik("fun"));
