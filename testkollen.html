@@ -199,9 +199,10 @@ html[data-theme=dark]{
 <div class="view active" id="view-todo">
   <div class="sync-bar">
     <span id="sync-badge" class="sp-badge offline">Lokal</span>
-    <button class="gear-btn" id="cl-pull">⟳ Hämta changelog</button>
+    <button class="gear-btn" id="cl-pull">⟳ Hämta changelogs</button>
     <button class="gear-btn" id="sync-settings">⚙ Synk</button>
   </div>
+  <div id="cl-sources" style="margin:-4px 0 8px"></div>
 
   <div class="section-title">Nya sedan senaste hämtning</div>
   <div class="card-panel"><div id="todo-new"></div></div>
@@ -299,17 +300,17 @@ html[data-theme=dark]{
 <!-- Synk-sheet -->
 <div class="sheet" id="sync-sheet">
   <h3>⚙ Synk via GitHub</h3>
-  <div class="soft">Testkollen läser och sparar <b>testkollen.json</b> i ett <b>privat</b> repo så att flera testare ser samma protokoll. Den läser dessutom din <b>changelog/funktionslista</b> från samma repo och pingar när nya funktioner dykt upp. Token sparas bara här på enheten — aldrig i koden eller i synk.</div>
+  <div class="soft">Testkollen läser och sparar <b>testkollen.json</b> i ett <b>privat</b> repo så att flera testare ser samma protokoll. Token sparas bara här på enheten — aldrig i koden eller i synk.</div>
   <label>GitHub-användarnamn (ägare av repot)</label>
   <input type="text" id="gh-owner" placeholder="miracuel">
   <label>Privat repo</label>
   <input type="text" id="gh-repo" placeholder="app-data">
-  <label>Sökväg till changelog i repot</label>
-  <input type="text" id="gh-clpath" placeholder="changelog.json">
   <label>Fine-grained token (Contents: Read and write)</label>
   <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="soft" style="margin-top:10px">När du kopplar hittar och läser Testkollen <b>alla</b> changelog-filer i repot automatiskt (t.ex. <code>appkollen-changelog.json</code>, <code>centralen-changelog.json</code>) och pingar när nya funktioner dykt upp. Den lägger samtidigt till sin <b>egen</b> <code>testkollen-changelog.json</code> i repot, så Centralen och Appkollen kan läsa den utan manuell uppladdning.</div>
   <div id="gh-status"></div>
   <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
+  <button class="btn ghost" id="gh-publish" style="width:100%;margin-top:8px">Publicera Testkollens changelog nu</button>
 </div>
 
 <!-- AI-nyckel -->
@@ -499,33 +500,126 @@ function normType(t){
   return t||'';
 }
 
-async function clPull(){
-  if(!syncOn()){toast('Koppla ett repo först (⚙ Synk).');openSheet('sync-sheet');return;}
-  const path=(state.cl.path||'changelog.json').trim();
-  setBadge('load','Changelog…');
+// ── Upptäck ALLA changelogs i repot ───────────────────
+async function ghJson(suffix){
+  const r=await fetch('https://api.github.com/repos/'+sync.owner+'/'+sync.repo+suffix,{headers:ghHeaders(),cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+const baseName=p=>String(p).split('/').pop();
+function isChangelogName(p){return /changelog[^/]*\.json$/i.test(baseName(p));}
+async function ghListChangelogs(){
+  // 1) Rekursivt git-träd (hittar changelogs även i undermappar)
   try{
-    const res=await ghGetFile(path);
-    if(res.missing){setBadge('ok','Synkad');toast('Hittade ingen '+path+' i repot.');return;}
-    const list=parseChangelog(res.data);
-    if(!list.length){setBadge('ok','Synkad');toast('Changeloggen var tom eller okänt format.');return;}
-    const existing={};state.funcs.forEach(f=>existing[f.id]=f);
-    let added=0;
-    list.forEach(cf=>{
-      if(existing[cf.id]){
-        const f=existing[cf.id];
-        if(!f.namn)f.namn=cf.namn;if(!f.version)f.version=cf.version;if(!f.date)f.date=cf.date;
-      }else{
-        state.funcs.push({id:cf.id,app:cf.app,version:cf.version,namn:cf.namn,type:normType(cf.type),date:cf.date,source:'changelog',opened:false,isNew:true,added:nowISO(),cases:[]});
-        added++;
-      }
+    const meta=await ghJson('');
+    const branch=meta.default_branch||'main';
+    const tree=await ghJson('/git/trees/'+encodeURIComponent(branch)+'?recursive=1');
+    if(tree&&Array.isArray(tree.tree)){
+      const files=tree.tree.filter(n=>n.type==='blob'&&isChangelogName(n.path)).map(n=>n.path);
+      if(files.length)return files;
+    }
+  }catch(e){}
+  // 2) Rotlistning via Contents API
+  try{
+    const root=await ghJson('/contents');
+    if(Array.isArray(root)){
+      const files=root.filter(n=>n.type==='file'&&isChangelogName(n.path)).map(n=>n.path);
+      if(files.length)return files;
+    }
+  }catch(e){}
+  // 3) Fallback: en känd sökväg
+  return [state.cl.path||'changelog.json'];
+}
+const capWord=s=>{s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);};
+function appNameFrom(raw,fileName){
+  if(raw&&typeof raw==='object'){if(raw.app)return String(raw.app);if(raw.name)return String(raw.name);if(raw.id)return capWord(raw.id);}
+  let n=baseName(fileName).replace(/\.json$/i,'').replace(/changelog/ig,'').replace(/[-_]+/g,' ').trim();
+  return n?capWord(n):'Allmänt';
+}
+// En appspecifik changelog → testbara funktioner, taggade med app + stabila id:n per app
+function parseAppChangelog(raw,fileName){
+  const app=appNameFrom(raw,fileName);
+  const appId=hash(app.toLowerCase());
+  const out=[];
+  const push=(version,date,text,type)=>{
+    text=String(text||'').trim();if(!text)return;
+    out.push({id:'cl-'+appId+'-'+hash((version||'')+'|'+text),app,version:version||'',namn:text,type:normType(String(type||'')),date:date||'',source:'changelog'});
+  };
+  if(raw&&Array.isArray(raw.changelog)&&raw.changelog.length){
+    raw.changelog.forEach(e=>{
+      if(typeof e==='string'){push('','',e,'');return;}
+      if(!e||typeof e!=='object')return;
+      const version=e.version||e.ver||'';const date=e.date||e.datum||raw.updated||'';
+      const items=['items','changes','funktioner','features','ändringar'].map(k=>e[k]).find(Array.isArray);
+      if(items&&items.length)items.forEach(it=>push(version,date,textOf(it),(typeof it==='object'&&(it.type||it.typ))||''));
+      else if(textOf(e))push(version,date,textOf(e),e.type||e.typ||'');
     });
-    state.cl.lastPull=nowISO();
-    persist();
+  }else{
+    // Generell parser för platta listor / andra format
+    parseChangelog(raw).forEach(f=>push(f.version,f.date,f.namn,f.type));
+  }
+  // Om inget från changelog[]: använd functions[]-katalogen
+  if(!out.length&&raw&&Array.isArray(raw.functions)){
+    raw.functions.forEach(a=>{(a.items||[]).forEach(it=>push('',raw.updated||'',(a.area?a.area+': ':'')+textOf(it),''));});
+  }
+  return out;
+}
+
+async function clPullAll(){
+  if(!syncOn()){toast('Koppla ett repo först (⚙ Synk).');openSheet('sync-sheet');return;}
+  setBadge('load','Changelogs…');
+  try{
+    const files=await ghListChangelogs();
+    const existing={};state.funcs.forEach(f=>existing[f.id]=f);
+    let added=0;const sources=[];
+    for(const path of files){
+      let res;try{res=await ghGetFile(path);}catch(e){continue;}
+      if(res.missing||!res.data)continue;
+      const list=parseAppChangelog(res.data,path);
+      if(!list.length)continue;
+      sources.push({path,app:list[0].app,count:list.length});
+      list.forEach(cf=>{
+        if(existing[cf.id]){const f=existing[cf.id];if(!f.namn)f.namn=cf.namn;if(!f.version)f.version=cf.version;if(!f.date)f.date=cf.date;if(!f.app||f.app==='Allmänt')f.app=cf.app;}
+        else{const nf={id:cf.id,app:cf.app,version:cf.version,namn:cf.namn,type:cf.type,date:cf.date,source:'changelog',opened:false,isNew:true,added:nowISO(),cases:[]};state.funcs.push(nf);existing[cf.id]=nf;added++;}
+      });
+    }
+    state.cl.sources=sources;state.cl.lastPull=nowISO();
+    persist();renderClSources();updateDot();
     setBadge('ok','Synkad');
     if(added>0){toast('🔔 '+added+(added===1?' ny funktion':' nya funktioner')+' att testa!');goView('todo');}
-    else toast('Inget nytt — allt från changeloggen finns redan.');
-    updateDot();
-  }catch(e){setBadge('err','Synkfel');toast('Kunde inte läsa changeloggen: '+e.message);}
+    else toast('Inget nytt — läste '+files.length+' changelog'+(files.length===1?'':'ar')+'.');
+  }catch(e){setBadge('err','Synkfel');toast('Kunde inte läsa changelogs: '+e.message);}
+}
+
+// ── Publicera Testkollens EGEN changelog till repot ───
+function ownChangelogPayload(){
+  return {
+    app:'Testkollen',id:'testkollen',name:'Testkollen',file:'testkollen.html',desktop:'testkollen-desktop.html',
+    accent:'#127C7C',icon:'✔',category:'Verktyg',ai:true,sync:true,
+    version:APP_VERSION,updated:fmtDate(nowISO()),
+    description:'Testprotokoll och testare för hela appsviten. Synkar mot funktionslistan i changeloggen och pingar när det finns nya funktioner att testa.',
+    latest:(CHANGELOG[0]?CHANGELOG[0].items.slice(0,3):[]),
+    changelog:CHANGELOG.map(e=>({date:e.date,version:e.version,title:e.title,items:e.items})),
+    functions:FUNCTIONS.map(f=>({area:f.area,items:f.items}))
+  };
+}
+let ownClSha=null;
+async function pushOwnChangelog(force){
+  if(!syncOn())return false;
+  const file='testkollen-changelog.json';
+  try{const g=await ghGetFile(file);if(g.missing){ownClSha=null;}else{ownClSha=g.sha;if(!force&&g.data&&g.data.version===APP_VERSION)return false;}}catch(e){ownClSha=null;}
+  const content=b64enc(JSON.stringify(ownChangelogPayload(),null,2));
+  const doPut=()=>fetch(ghUrl(file),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Testkollen changelog v'+APP_VERSION,content,...(ownClSha?{sha:ownClSha}:{})})});
+  let r=await doPut();
+  if(r.status===409||r.status===422){try{const g=await ghGetFile(file);ownClSha=g.missing?null:g.sha;}catch(e){}r=await doPut();}
+  if(r.ok){const j=await r.json();if(j.content&&j.content.sha)ownClSha=j.content.sha;return true;}
+  return false;
+}
+function renderClSources(){
+  const el=$('cl-sources');if(!el)return;
+  const s=state.cl.sources||[];
+  if(!s.length){el.innerHTML='';return;}
+  el.innerHTML='<span class="soft">Läser changelogs från: '+s.map(x=>esc(x.app)+' ('+x.count+')').join(', ')+(state.cl.lastPull?' · '+esc(fmtDT(state.cl.lastPull)):'')+'</span>';
 }
 
 // ── Navigation ────────────────────────────────────────
@@ -729,17 +823,26 @@ function renderOverview(){
 }
 
 // ── Synk-sheet UI ─────────────────────────────────────
-$('sync-settings').onclick=()=>{$('gh-owner').value=sync.owner;$('gh-repo').value=sync.repo;$('gh-token').value=sync.token;$('gh-clpath').value=state.cl.path||'changelog.json';$('gh-status').style.display='none';openSheet('sync-sheet');};
+$('sync-settings').onclick=()=>{$('gh-owner').value=sync.owner;$('gh-repo').value=sync.repo;$('gh-token').value=sync.token;$('gh-status').style.display='none';openSheet('sync-sheet');};
 function ghStatus(msg,kind){const e=$('gh-status');e.style.display='block';e.textContent=msg;e.style.background=kind==='err'?'var(--red-soft)':'var(--green-soft)';e.style.color=kind==='err'?'var(--red)':'var(--green)';}
 $('gh-save').onclick=async()=>{
   sync.owner=$('gh-owner').value.trim();sync.repo=$('gh-repo').value.trim();sync.token=$('gh-token').value.trim();
-  state.cl.path=($('gh-clpath').value.trim()||'changelog.json');
   if(!syncOn()){ghStatus('Fyll i användarnamn, repo och token.','err');return;}
   saveSync();save();
-  try{await ghPull();await ghPush();ghStatus('Synkat ✓','ok');setTimeout(closeSheets,900);renderTodo();}
-  catch(e){ghStatus('Fel: '+e.message+'. Kontrollera namn, repo och token-behörighet (Contents: Read and write).','err');}
+  try{
+    await ghPull();
+    const pub=await pushOwnChangelog(false);
+    await clPullAll();
+    ghStatus('Synkat ✓ — läste '+((state.cl.sources||[]).length)+' changelogs'+(pub?', publicerade Testkollens egen':'')+'.','ok');
+    setTimeout(closeSheets,1300);renderTodo();
+  }catch(e){ghStatus('Fel: '+e.message+'. Kontrollera namn, repo och token-behörighet (Contents: Read and write).','err');}
 };
-$('cl-pull').onclick=clPull;
+$('gh-publish').onclick=async()=>{
+  if(!syncOn()){ghStatus('Fyll i och spara repo + token först.','err');return;}
+  try{const pub=await pushOwnChangelog(true);ghStatus(pub?'Publicerade testkollen-changelog.json ✓':'Kunde inte publicera.',pub?'ok':'err');}
+  catch(e){ghStatus('Fel: '+e.message,'err');}
+};
+$('cl-pull').onclick=clPullAll;
 
 // ── AI-nyckel ─────────────────────────────────────────
 $('ai-save').onclick=()=>{const v=$('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();toast(v?'Nyckel sparad.':'Ingen nyckel angiven.');};
@@ -771,8 +874,14 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='1.1';
+const APP_VERSION='1.2';
 const CHANGELOG=[
+  {version:'1.2',date:'2026-06-16',title:'Läser alla changelogs & publicerar sig själv',items:[
+    'Hittar och läser automatiskt ALLA changelog-filer i repot (t.ex. appkollen-changelog.json, centralen-changelog.json) — inte bara en.',
+    'Funktioner taggas med rätt app från changeloggen, med stabila id:n per app så en ompull aldrig dubblerar.',
+    'Publicerar sin egen testkollen-changelog.json till repot automatiskt när den får access — så Centralen och Appkollen kan läsa den utan manuell uppladdning.',
+    'Visar vilka appars changelogs som lästs in.'
+  ]},
   {version:'1.1',date:'2026-06-16',title:'Skrivbord & changelog',items:[
     'Separat skrivbordsversion (testkollen-desktop.html) med sidomeny, hover och bredare layout — samma data och synk som mobilen, på samma enhet och via repot.',
     'Inbyggd changelog: den här "Nyheter & funktioner"-vyn.',
@@ -793,7 +902,7 @@ const FUNCTIONS=[
   {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},
   {area:'Översikt',items:['Status totalt, per app och insats per testare, testtäckning samt logg över senaste resultat.']},
-  {area:'Changelog-synk',items:['Läser funktionslistan ur changeloggen i repot, tolerant parser för flera format, stabila id:n och ping vid nya funktioner.']},
+  {area:'Changelog-synk',items:['Hittar och läser ALLA changelog-filer i repot automatiskt (Git Trees API med fallback till rotlistning), tolerant parser för flera format, stabila id:n per app och ping vid nya funktioner.','Publicerar sin egen testkollen-changelog.json till repot vid access så Centralen och Appkollen kan läsa den.']},
   {area:'Synk & data',items:['GitHub Contents API-synk (privat repo, egen fil testkollen.json), status-badge, auto-pull vid start och synlighet, debouncad push, export/import som JSON.']},
   {area:'Skrivbord & tema',items:['Separat skrivbordsversion med sidomeny och paneler, auto mörkt/ljust 20–07.']}
 ];
@@ -818,7 +927,8 @@ function renderAll(){renderTodo();if($('view-proto').classList.contains('active'
 loadSync();
 applyTheme();setInterval(applyTheme,60000);
 renderTodo();
-if(syncOn()){setBadge('ok','Synkad');ghPull();}
+renderClSources();
+if(syncOn()){setBadge('ok','Synkad');(async()=>{try{await ghPull();await pushOwnChangelog(false);await clPullAll();}catch(e){}})();}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
 </script>
 </body>
