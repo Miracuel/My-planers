@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Flickvännen">
+<meta name="theme-color" content="#FAF1F0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%9E%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Flickvännen","short_name":"Flickvännen","display":"standalone","background_color":"%23FAF1F0","theme_color":"%23FAF1F0","start_url":"."}'>
+<title>Flickvännen</title>
+<style>
+:root{
+  --bg:#FAF1F0;--panel:#FFF8F7;--panel2:#F4E3E3;--line:#E9D2D2;
+  --ink:#3E3437;--muted:#8C757A;--rose:#B65A72;--rose-soft:#F3DDE2;
+  --gold:#B0813F;--green:#5E8C61;--navbg:rgba(250,241,240,.95);
+}
+html[data-theme=dark]{
+  --bg:#241E20;--panel:#2C2528;--panel2:#352C30;--line:#473A3E;
+  --ink:#EBDFE2;--muted:#A48E94;--rose:#D58698;--rose-soft:#43333A;
+  --gold:#CBA968;--green:#8FA383;--navbg:rgba(36,30,32,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;transition:background .4s,color .4s}
+.app{max-width:480px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1.brand{font-family:Georgia,serif;font-size:20px;font-weight:400;letter-spacing:.03em}
+.gear{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-size:16px;cursor:pointer;color:var(--muted)}
+.theme-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;font-family:inherit;margin-right:8px}
+.top-actions{display:flex;align-items:center}
+.btn{border:1px solid var(--rose);background:var(--panel);color:var(--rose);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--rose-soft)}
+.btn.fill{background:var(--rose);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-weight:500;font-size:13px;padding:9px 12px}
+.btn.danger{border-color:#C0584E;color:#C0584E}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 4px}
+input,select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:16px;padding:10px;font-family:inherit;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--rose)}
+textarea{resize:vertical;min-height:70px;line-height:1.5}
+.empty-msg{font-size:13px;color:var(--muted);padding:14px 0;text-align:center;line-height:1.6}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+.sec-title{font-family:Georgia,serif;font-size:17px;font-weight:400;margin:18px 2px 8px;display:flex;align-items:center;justify-content:space-between}
+.sec-title button{font-size:12px;color:var(--rose);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600}
+
+/* Hem */
+.hello{font-family:Georgia,serif;font-size:22px;font-weight:400;margin-bottom:2px}
+.hello small{display:block;font-family:-apple-system,sans-serif;font-size:13px;color:var(--muted);margin-top:3px}
+.count-card{background:linear-gradient(135deg,var(--rose),#9E4A60);color:#fff;border:none;text-align:center;padding:20px 16px}
+.count-card .cc-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.1em;opacity:.85}
+.count-card .cc-name{font-family:Georgia,serif;font-size:21px;margin:6px 0 8px}
+.count-card .cc-num{font-size:46px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.count-card .cc-sub{font-size:13px;opacity:.9;margin-top:4px}
+.nudge{background:var(--rose-soft);border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin-bottom:12px}
+.nudge .nu-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--rose);font-weight:700}
+.nudge .nu-txt{font-size:16px;line-height:1.5;margin-top:5px}
+.nudge .nu-row{display:flex;gap:8px;margin-top:12px}
+.nudge .nu-row .btn{flex:1}
+.stat-row{display:flex;gap:10px;margin-bottom:12px}
+.stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted)}
+
+/* Listposter */
+.row{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:none}
+.row .ico{width:40px;height:40px;border-radius:11px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.row .body{flex:1;min-width:0}
+.row .body .t{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .body .s{font-size:12px;color:var(--muted);margin-top:2px}
+.row.done .body .t{text-decoration:line-through;color:var(--muted)}
+.badge{font-size:11px;font-weight:700;border-radius:9px;padding:4px 9px;white-space:nowrap}
+.badge.due{background:#F6DCD7;color:#A8443A}
+.badge.soon{background:#F8EAD2;color:#9A6B1F}
+.badge.far{background:var(--rose-soft);color:var(--rose)}
+.badge.ok{background:#DDEEE0;color:#3E7A52}
+html[data-theme=dark] .badge.due{background:#4A302C;color:#E0A89E}
+html[data-theme=dark] .badge.soon{background:#473A26;color:#D8B878}
+html[data-theme=dark] .badge.ok{background:#2E3F31;color:#9DC2A4}
+.x-del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 2px;flex-shrink:0}
+.x-del:active{color:#C0584E}
+.chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--rose);background:var(--panel);cursor:pointer;flex-shrink:0;font-size:14px;color:#fff;line-height:22px;text-align:center}
+.row.done .chk{background:var(--rose)}
+
+/* Taggar */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;display:flex;align-items:center;gap:6px}
+.tag.bad{background:transparent}
+.tag button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1}
+.tag-add{display:flex;gap:6px;margin-top:8px}
+.tag-add input{flex:1}
+.tag-add .btn{padding:8px 14px}
+
+/* AI */
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ai-chip{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 10px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;color:var(--ink);font-family:inherit;line-height:1.3}
+.ai-chip:active{background:var(--rose-soft)}
+.ai-chip span{display:block;font-size:20px;margin-bottom:4px}
+.ai-out{background:var(--rose-soft);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:4px;font-size:15px;line-height:1.6;white-space:pre-wrap;display:none}
+.ai-out.show{display:block}
+.ai-out .ao-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--rose);font-weight:700;display:block;margin-bottom:8px}
+.ai-out .ao-row{display:flex;gap:8px;margin-top:14px}
+.ai-out .ao-row .btn{flex:1}
+.ai-fav{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;font-size:14px;line-height:1.55}
+.ai-fav .af-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.ai-fav .af-kind{font-size:11px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:.05em;flex:1}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid var(--rose);border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:10px 2px 9px;cursor:pointer;font-family:inherit;font-weight:600}
+.nav button.active{color:var(--rose)}
+.nav button span{display:block;font-size:17px;margin-bottom:2px}
+.view{display:none}
+.view.active{display:block}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(40,30,33,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.12)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:19px;font-weight:400;margin-bottom:4px}
+.sheet p.hint{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:6px}
+.sheet-close{width:100%;padding:13px;border-radius:13px;border:none;background:var(--rose);color:#fff;font-size:16px;font-weight:600;cursor:pointer;margin-top:16px}
+.seg{display:flex;gap:6px;margin-top:4px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted);font-weight:600}
+.seg button.sel{border-color:var(--rose);background:var(--rose-soft);color:var(--rose)}
+.emoji-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.emoji-row button{width:42px;height:42px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);font-size:21px;cursor:pointer}
+.emoji-row button.sel{border-color:var(--rose);background:var(--rose-soft)}
+.set-row{display:flex;align-items:center;gap:8px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.set-row:first-child{border-top:none}
+.set-row span{flex:1}
+.switch{width:50px;height:30px;border-radius:15px;background:var(--panel2);border:1px solid var(--line);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch.on{background:var(--rose)}
+.switch.on::after{left:24px}
+.sync-badge{font-size:11px;font-weight:600;border-radius:20px;padding:4px 10px;background:var(--panel2);color:var(--muted)}
+.sync-badge.ok{background:#DDEEE0;color:#3E7A52}
+.sync-badge.err{background:#F6DCD7;color:#A8443A}
+html[data-theme=dark] .sync-badge.ok{background:#2E3F31;color:#9DC2A4}
+.toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-40px);background:var(--rose);color:#fff;font-weight:700;font-size:14px;border-radius:14px;padding:11px 18px;opacity:0;transition:all .25s;z-index:97;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.foot{text-align:center;font-size:11px;color:var(--muted);margin-top:16px;line-height:1.7}
+code{font-family:monospace;background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <h1 class="brand">&#128158; Flickvännen</h1>
+  <div class="top-actions">
+    <button class="theme-btn" id="theme-btn" aria-label="Tema">&#9680;</button>
+    <button class="gear" id="open-set">&#9881;</button>
+  </div>
+</div>
+
+<!-- IDAG -->
+<div class="view active" id="view-home">
+  <div class="hello" id="hello"></div>
+  <div id="home-count"></div>
+  <div class="nudge">
+    <div class="nu-lbl">Dagens omtanke</div>
+    <div class="nu-txt" id="nudge-txt"></div>
+    <div class="nu-row">
+      <button class="btn ghost" id="nudge-new">&#8635; Ny idé</button>
+      <button class="btn ghost" id="nudge-ai">&#10024; AI-idé</button>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><b id="st-streak">0</b><span>dagar i rad</span></div>
+    <div class="stat"><b id="st-month">0</b><span>omtankar i månaden</span></div>
+  </div>
+  <div class="sec-title">Dagbok <button id="add-journal">+ Lägg till</button></div>
+  <div class="card" id="journal-list"></div>
+</div>
+
+<!-- DATUM -->
+<div class="view" id="view-dates">
+  <div class="sec-title">Viktiga datum <button id="add-date">+ Datum</button></div>
+  <div class="card" id="dates-list"></div>
+  <div class="sec-title">Date-idéer <button id="add-idea">+ Idé</button></div>
+  <div class="card" id="ideas-list"></div>
+</div>
+
+<!-- HEN -->
+<div class="view" id="view-partner">
+  <div class="card">
+    <label>Vem appen handlar om</label>
+    <input type="text" id="p-name" placeholder="Namn eller smeknamn">
+    <label>Kärleksspråk</label>
+    <select id="p-lovelang">
+      <option value="">— Välj —</option>
+      <option>Ord som bekräftar</option>
+      <option>Kvalitetstid</option>
+      <option>Gåvor</option>
+      <option>Tjänster &amp; handlingar</option>
+      <option>Fysisk närhet</option>
+    </select>
+    <label>Storlekar &amp; mått (för present­köp)</label>
+    <input type="text" id="p-sizes" placeholder="T.ex. tröja M, skor 39, ringstorlek 17">
+  </div>
+
+  <div class="sec-title">Gillar</div>
+  <div class="card">
+    <div class="tags" id="likes-tags"></div>
+    <div class="tag-add">
+      <input type="text" id="like-in" placeholder="Lägg till något hen gillar">
+      <button class="btn" data-tagadd="likes">+</button>
+    </div>
+  </div>
+
+  <div class="sec-title">Undviker</div>
+  <div class="card">
+    <div class="tags" id="dislikes-tags"></div>
+    <div class="tag-add">
+      <input type="text" id="dislike-in" placeholder="Allergi, ogillar, känsligt ämne…">
+      <button class="btn" data-tagadd="dislikes">+</button>
+    </div>
+  </div>
+
+  <div class="sec-title">Presentidéer <button id="add-gift">+ Idé</button></div>
+  <div class="card" id="gifts-list"></div>
+
+  <div class="sec-title">Personer att minnas <button id="add-person">+ Person</button></div>
+  <div class="card" id="people-list"></div>
+</div>
+
+<!-- AI -->
+<div class="view" id="view-ai">
+  <div class="ai-grid">
+    <button class="ai-chip" data-ai="message"><span>&#128172;</span>Sött meddelande</button>
+    <button class="ai-chip" data-ai="date"><span>&#127801;</span>Date-idé</button>
+    <button class="ai-chip" data-ai="gift"><span>&#127873;</span>Presentidé</button>
+    <button class="ai-chip" data-ai="sorry"><span>&#129309;</span>Säga förlåt</button>
+    <button class="ai-chip" data-ai="talk"><span>&#128483;</span>Svåra samtalet</button>
+    <button class="ai-chip" data-ai="week"><span>&#10024;</span>Veckans omtanke</button>
+  </div>
+  <label>Eller fråga fritt</label>
+  <textarea id="ai-free" placeholder="T.ex. Hur kan jag visa att jag bryr mig en stressig vecka?"></textarea>
+  <button class="btn fill" id="ai-ask" style="margin-top:8px;width:100%">&#10024; Fråga Flickvännen-AI</button>
+  <div class="ai-out" id="ai-out"></div>
+  <div class="sec-title">Sparade &#9733;</div>
+  <div id="ai-favs"></div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" data-v="home"><span>&#128150;</span>Idag</button>
+  <button data-v="dates"><span>&#128197;</span>Datum</button>
+  <button data-v="partner"><span>&#128100;</span>Hen</button>
+  <button data-v="ai"><span>&#10024;</span>AI</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<!-- Datum -->
+<div class="sheet" id="date-sheet">
+  <h3 id="date-title">Nytt datum</h3>
+  <label>Vad firar ni?</label>
+  <input type="text" id="d-label" placeholder="T.ex. Vår årsdag, Hens födelsedag">
+  <label>Datum</label>
+  <input type="date" id="d-date">
+  <label>Symbol</label>
+  <div class="emoji-row" id="d-emoji-row"></div>
+  <div class="set-row" style="border-top:1px solid var(--line);margin-top:12px"><span>Upprepa varje år</span><button class="switch" id="d-recur"></button></div>
+  <button class="sheet-close" id="d-save">Spara</button>
+</div>
+
+<!-- Date-idé -->
+<div class="sheet" id="idea-sheet">
+  <h3>Ny date-idé</h3>
+  <label>Idé</label>
+  <input type="text" id="i-text" placeholder="T.ex. Picknick i Hagaparken">
+  <button class="sheet-close" id="i-save">Spara</button>
+</div>
+
+<!-- Present -->
+<div class="sheet" id="gift-sheet">
+  <h3>Ny presentidé</h3>
+  <label>Present</label>
+  <input type="text" id="g-text" placeholder="T.ex. Keramikkurs ihop">
+  <label>Tillfälle (valfritt)</label>
+  <input type="text" id="g-occasion" placeholder="Födelsedag, jul…">
+  <button class="sheet-close" id="g-save">Spara</button>
+</div>
+
+<!-- Person -->
+<div class="sheet" id="person-sheet">
+  <h3>Person att minnas</h3>
+  <label>Namn</label>
+  <input type="text" id="pe-name" placeholder="T.ex. Anna">
+  <label>Relation</label>
+  <input type="text" id="pe-rel" placeholder="Bästis, mamma, kollega…">
+  <label>Att komma ihåg</label>
+  <input type="text" id="pe-note" placeholder="Allergi, viktigt datum, namn på husdjur…">
+  <button class="sheet-close" id="pe-save">Spara</button>
+</div>
+
+<!-- Dagbok -->
+<div class="sheet" id="journal-sheet">
+  <h3>Dagboksnotering</h3>
+  <p class="hint">En liten logg över omtanke — det hen gjorde, eller det du gjorde.</p>
+  <div class="seg" id="j-type">
+    <button data-jt="gesture" class="sel">Jag visade omtanke</button>
+    <button data-jt="appreciation">Tacksam för</button>
+  </div>
+  <label>Vad?</label>
+  <textarea id="j-text" placeholder="Skriv något litet…"></textarea>
+  <button class="sheet-close" id="j-save">Spara</button>
+</div>
+
+<!-- Inställningar -->
+<div class="sheet" id="set-sheet">
+  <h3>Inställningar</h3>
+
+  <div class="sec-title" style="margin-top:8px">AI-stöd</div>
+  <p class="hint">Välj leverantör och klistra in din egen API-nyckel. Nyckeln sparas bara lokalt på den här enheten — den synkas aldrig.</p>
+  <div class="seg" id="ai-provider">
+    <button data-prov="claude" class="sel">Claude</button>
+    <button data-prov="openai">ChatGPT</button>
+  </div>
+  <label id="key-label">Anthropic API-nyckel</label>
+  <input type="password" id="ai-key" placeholder="sk-ant-…">
+
+  <div class="sec-title">Synk via GitHub</div>
+  <p class="hint">Sparar <code>flickvannen.json</code> i ett <strong>privat</strong> repo så att alla dina enheter ser samma sak. Token sparas bara lokalt.</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <span style="font-size:13px;color:var(--muted)">Status</span>
+    <span class="sync-badge" id="sync-badge">Lokal</span>
+  </div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label>Privat repo-namn</label>
+  <input type="text" id="gh-repo" placeholder="planer-data">
+  <label>Fine-grained token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+
+  <div class="sec-title">Tema</div>
+  <div class="seg" id="theme-seg">
+    <button data-th="auto">Auto</button>
+    <button data-th="light">Ljust</button>
+    <button data-th="dark">Mörkt</button>
+  </div>
+
+  <div class="sec-title">Säkerhetskopia</div>
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn ghost" id="export-btn">Exportera</button>
+    <button class="btn ghost" id="import-btn">Importera</button>
+  </div>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+
+  <button class="btn danger" id="reset-btn" style="width:100%;margin-top:14px">Nollställ allt</button>
+  <button class="sheet-close" id="set-save">Spara &amp; stäng</button>
+  <div class="foot">Flickvännen v1.0 &middot; en del av planer-sviten<br>Allt sparas på din enhet.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='flickvannen_v1';
+var state={
+  partner:{name:'',loveLang:'',sizes:'',likes:[],dislikes:[]},
+  dates:[],ideas:[],gifts:[],people:[],journal:{},favs:[],
+  theme:'auto',set:{provider:'claude'}
+};
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);state=Object.assign(state,p);state.partner=Object.assign({name:'',loveLang:'',sizes:'',likes:[],dislikes:[]},p.partner||{});state.set=Object.assign({provider:'claude'},p.set||{});}}catch(e){}
+['dates','ideas','gifts','people','favs'].forEach(function(k){if(!Array.isArray(state[k]))state[k]=[];});
+if(!state.journal||typeof state.journal!=='object')state.journal={};
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}persist();}
+
+// ── Hjälpare ──────────────────────────────────────────
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+var MONTHS=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+function fmtDate(iso){var p=iso.split('-');return parseInt(p[2],10)+' '+MONTHS[parseInt(p[1],10)-1];}
+function fmtFull(iso){var p=iso.split('-');return parseInt(p[2],10)+' '+MONTHS[parseInt(p[1],10)-1]+' '+p[0];}
+function midnight(d){var x=new Date(d);x.setHours(0,0,0,0);return x;}
+function nextOccur(iso,recur){
+  var p=iso.split('-').map(Number);var today=midnight(new Date());
+  var d=new Date(p[0],p[1]-1,p[2]);d=midnight(d);
+  if(!recur)return d;
+  var y=today.getFullYear();
+  d=midnight(new Date(y,p[1]-1,p[2]));
+  if(d<today)d=midnight(new Date(y+1,p[1]-1,p[2]));
+  return d;
+}
+function daysUntil(d){return Math.round((midnight(d)-midnight(new Date()))/86400000);}
+
+// ── Toast ─────────────────────────────────────────────
+var toastEl=document.getElementById('toast');var toastT=null;
+function toast(msg){toastEl.textContent=msg;toastEl.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('on');},1700);}
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#241E20':'#FAF1F0';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'\u25D0':(m==='dark'?'\u263E':'\u2600');
+  b.title=m==='auto'?'Tema: auto (mörkt 20–07)':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+  document.querySelectorAll('#theme-seg button').forEach(function(x){x.classList.toggle('sel',x.dataset.th===m);});
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+document.querySelectorAll('#theme-seg button').forEach(function(b){b.onclick=function(){state.theme=b.dataset.th;save();applyTheme();};});
+
+// ── GitHub-synk (appkollen-stil) ──────────────────────
+var SYNC_KEY='flickvannensync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+try{var ss=localStorage.getItem(SYNC_KEY);if(ss){var sd=JSON.parse(ss);sync.owner=sd.owner||'';sync.repo=sd.repo||'';sync.token=sd.token||'';}}catch(e){}
+function saveSyncCfg(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/flickvannen.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(kind,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sync-badge'+(kind?' '+kind:'');}
+
+// Payload utan känsliga fält (tema/nycklar synkas aldrig)
+function syncPayload(){
+  return {partner:state.partner,dates:state.dates,ideas:state.ideas,gifts:state.gifts,people:state.people,journal:state.journal,favs:state.favs,updated:new Date().toISOString()};
+}
+// Union-by-id sammanslagning för arrayer (förlorar inga poster mellan enheter)
+function mergeById(local,remote){
+  if(!Array.isArray(remote))return local;
+  var map={};local.forEach(function(o){if(o&&o.id)map[o.id]=o;});
+  remote.forEach(function(o){if(o&&o.id&&!map[o.id]){map[o.id]=o;local.push(o);}});
+  return local;
+}
+function mergeRemote(data){
+  if(!data)return;
+  if(data.partner){
+    ['name','loveLang','sizes'].forEach(function(f){if(!state.partner[f]&&data.partner[f])state.partner[f]=data.partner[f];});
+    ['likes','dislikes'].forEach(function(f){
+      if(Array.isArray(data.partner[f])){var set={};(state.partner[f]||[]).forEach(function(t){set[t]=1;});data.partner[f].forEach(function(t){if(!set[t]){state.partner[f].push(t);set[t]=1;}});}
+    });
+  }
+  ['dates','ideas','gifts','people','favs'].forEach(function(k){state[k]=mergeById(state[k],data[k]);});
+  if(data.journal){Object.keys(data.journal).forEach(function(day){
+    if(!state.journal[day])state.journal[day]=[];
+    state.journal[day]=mergeById(state.journal[day],data.journal[day]);
+  });}
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('','Hämtar…');
+  return ghGet().then(function(data){
+    mergeRemote(data);
+    try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+    renderAll();setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+var pushT=null;
+function persist(){
+  if(!syncOn())return;
+  clearTimeout(pushT);
+  pushT=setTimeout(ghPush,1200);
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('','Sparar…');
+  var content=b64enc(JSON.stringify(syncPayload()));
+  var body=function(){var o={message:'Uppdatering via Flickvännen',content:content};if(sync.sha)o.sha=sync.sha;return JSON.stringify(o);};
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:body()});};
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── AI ────────────────────────────────────────────────
+var CLAUDE_KEY='flickvannen_claude_key';
+var OPENAI_KEY='flickvannen_openai_key';
+function getKey(){return localStorage.getItem(state.set.provider==='openai'?OPENAI_KEY:CLAUDE_KEY)||'';}
+function setKey(v){localStorage.setItem(state.set.provider==='openai'?OPENAI_KEY:CLAUDE_KEY,v);}
+function aiCall(system,prompt){
+  var key=getKey();
+  if(!key){openSheet('set-sheet');toast('Lägg in en API-nyckel först');return Promise.reject(new Error('NOKEY'));}
+  if(state.set.provider==='openai'){
+    return fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'gpt-4o-mini',max_tokens:700,messages:[{role:'system',content:system},{role:'user',content:prompt}]})
+    }).then(function(r){if(!r.ok)throw new Error(r.status===401?'Ogiltig nyckel':'HTTP '+r.status);return r.json();})
+      .then(function(j){return (j.choices&&j.choices[0]&&j.choices[0].message.content||'').trim();});
+  }
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:700,system:system,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){if(!r.ok)throw new Error(r.status===401?'Ogiltig nyckel':'HTTP '+r.status);return r.json();})
+    .then(function(j){return (j.content||[]).map(function(b){return b.text||'';}).join('').trim();});
+}
+function partnerContext(){
+  var p=state.partner;var who=p.name?p.name:'min partner';
+  var bits=['Det handlar om '+who+'.'];
+  if(p.loveLang)bits.push('Kärleksspråk: '+p.loveLang+'.');
+  if(p.likes&&p.likes.length)bits.push('Gillar: '+p.likes.join(', ')+'.');
+  if(p.dislikes&&p.dislikes.length)bits.push('Undviker/känsligt: '+p.dislikes.join(', ')+'.');
+  if(p.sizes)bits.push('Storlekar: '+p.sizes+'.');
+  return bits.join(' ');
+}
+var AI_SYS='Du är en varm, klok och jordnära relationscoach som hjälper användaren vara en omtänksam partner. Svara alltid på svenska, konkret och kärleksfullt, utan moraliserande. Håll dig kort: högst 160 ord, ingen punktlista om det inte är ombett. Respektera att relationen bygger på ömsesidig respekt och samtycke.';
+var AI_PROMPTS={
+  message:'Skriv ett kort, äkta och personligt meddelande jag kan skicka för att visa kärlek idag. Inga klyschor.',
+  date:'Föreslå en konkret date-idé som passar oss, med en mening om varför den passar.',
+  gift:'Föreslå tre genomtänkta presentidéer som passar, med en kort motivering var.',
+  sorry:'Hjälp mig formulera en uppriktig ursäkt som tar ansvar utan bortförklaringar. Ge ett färdigt förslag.',
+  talk:'Jag behöver ta ett känsligt samtal. Ge mig ett varsamt sätt att inleda och tre saker att tänka på.',
+  week:'Ge mig en enda liten, genomförbar omtanke-gest för veckan som visar att jag bryr mig.'
+};
+var AI_TITLES={message:'Sött meddelande',date:'Date-idé',gift:'Presentidé',sorry:'Ursäkt',talk:'Svåra samtalet',week:'Veckans omtanke',free:'Fråga'};
+var lastAi=null;
+function runAi(kind,extra){
+  var out=document.getElementById('ai-out');
+  out.classList.add('show');
+  out.innerHTML='<span class="ao-lbl">'+esc(AI_TITLES[kind]||'AI')+'</span><span class="spin"></span> Tänker…';
+  var prompt=(kind==='free'?extra:AI_PROMPTS[kind])+'\n\nOm mig & partnern: '+partnerContext();
+  aiCall(AI_SYS,prompt).then(function(text){
+    lastAi={kind:kind,text:text};
+    out.innerHTML='<span class="ao-lbl">'+esc(AI_TITLES[kind]||'AI')+'</span>'+esc(text)+
+      '<div class="ao-row"><button class="btn ghost" data-aiact="copy">Kopiera</button><button class="btn" data-aiact="fav">&#9733; Spara</button></div>';
+  }).catch(function(e){
+    if(e.message==='NOKEY'){out.classList.remove('show');return;}
+    out.innerHTML='<span class="ao-lbl">Hoppsan</span>Kunde inte hämta svar: '+esc(e.message)+'. Kolla nyckeln i inställningar.';
+  });
+}
+document.querySelectorAll('[data-ai]').forEach(function(b){b.onclick=function(){runAi(b.dataset.ai);};});
+document.getElementById('ai-ask').onclick=function(){var v=document.getElementById('ai-free').value.trim();if(!v){toast('Skriv en fråga först');return;}runAi('free',v);};
+document.getElementById('ai-out').addEventListener('click',function(e){
+  var t=e.target.closest('[data-aiact]');if(!t||!lastAi)return;
+  if(t.dataset.aiact==='copy'){navigator.clipboard&&navigator.clipboard.writeText(lastAi.text);toast('Kopierat');}
+  if(t.dataset.aiact==='fav'){state.favs.unshift({id:uid(),kind:lastAi.kind,text:lastAi.text,ts:Date.now()});save();renderFavs();toast('Sparat \u2605');}
+});
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('open');});}
+bg.onclick=closeSheets;
+document.querySelectorAll('.sheet-close').forEach(function(b){if(b.id!=='set-save')b.addEventListener('click',function(){});});
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    window.scrollTo(0,0);
+  };
+});
+
+// ── Dagliga omtankar ──────────────────────────────────
+var NUDGES=[
+  'Skicka ett oväntat meddelande om något du uppskattar.',
+  'Fråga hur dagen var — och lyssna utan att lösa något.',
+  'Gör en liten syssla hen brukar göra, utan att bli ombedd.',
+  'Lägg undan telefonen helt under middagen ikväll.',
+  'Påminn om ett fint minne ni delar.',
+  'Ge en kram som varar lite längre än vanligt.',
+  'Fråga vad hen ser fram emot den här veckan.',
+  'Säg tre konkreta saker du är tacksam för hos hen.',
+  'Förbered hens favoritdryck innan hen frågar.',
+  'Lämna en liten lapp där hen hittar den.',
+  'Planera något ni båda ser fram emot.',
+  'Fråga om det är något du kan ta av hens tallrik just nu.',
+  'Berätta varför du valde just hen.',
+  'Föreslå en promenad utan mål, bara ni.',
+  'Ge en komplimang om något inre, inte bara utseende.',
+  'Fråga: finns det något du behöver mer av från mig?',
+  'Gör hens morgon enklare imorgon på något litet sätt.',
+  'Dela en sång eller bild som fick dig att tänka på hen.',
+  'Var helt närvarande nästa gång hen berättar något.',
+  'Tacka för något hen ofta gör som du tar för givet.'
+];
+function nudgeOfDay(){var k=todayKey().split('-').join('');var n=parseInt(k,10)%NUDGES.length;return NUDGES[n];}
+var nudgeIdx=null;
+function renderNudge(){document.getElementById('nudge-txt').textContent=nudgeIdx===null?nudgeOfDay():NUDGES[nudgeIdx];}
+document.getElementById('nudge-new').onclick=function(){nudgeIdx=Math.floor(Math.random()*NUDGES.length);renderNudge();};
+document.getElementById('nudge-ai').onclick=function(){
+  document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+  document.querySelector('.nav button[data-v="ai"]').classList.add('active');
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  document.getElementById('view-ai').classList.add('active');
+  window.scrollTo(0,0);runAi('week');
+};
+
+// ── Render: Hem ───────────────────────────────────────
+function nextDate(){
+  if(!state.dates.length)return null;
+  var arr=state.dates.map(function(d){return {d:d,when:nextOccur(d.date,d.recur!==false),days:0};});
+  arr.forEach(function(o){o.days=daysUntil(o.when);});
+  arr=arr.filter(function(o){return o.days>=0;}).sort(function(a,b){return a.days-b.days;});
+  return arr[0]||null;
+}
+function renderHome(){
+  var name=state.partner.name;
+  var hr=new Date().getHours();
+  var hi=hr<10?'God morgon':hr<17?'Hej':'God kväll';
+  document.getElementById('hello').innerHTML=esc(hi)+'<small>'+(name?'En liten omtanke om '+esc(name)+' idag?':'Lägg till din partner under fliken Hen \u2192')+'</small>';
+  var nx=nextDate();var cc=document.getElementById('home-count');
+  if(nx){
+    var dd=nx.days;var sub=dd===0?'Det är idag! \u2764':dd===1?'imorgon':'om '+dd+' dagar';
+    cc.innerHTML='<div class="card count-card"><div class="cc-lbl">Nästa viktiga datum</div><div class="cc-name">'+(nx.d.emoji||'\ud83d\udcc5')+' '+esc(nx.d.label)+'</div><div class="cc-num">'+(dd===0?'\u2764':dd)+'</div><div class="cc-sub">'+esc(sub)+' &middot; '+fmtDate(toISO(nx.when))+'</div></div>';
+  }else{
+    cc.innerHTML='<div class="card" style="text-align:center"><div class="empty-msg">Inga datum än. Lägg till er årsdag eller en födelsedag under <b>Datum</b>.</div></div>';
+  }
+  renderNudge();
+  // statistik
+  var days=Object.keys(state.journal).filter(function(k){return (state.journal[k]||[]).length;}).sort();
+  var streak=0;var cur=midnight(new Date());
+  for(var i=0;i<400;i++){var k=toISO(cur);if(state.journal[k]&&state.journal[k].length){streak++;cur.setDate(cur.getDate()-1);}else{if(i===0){cur.setDate(cur.getDate()-1);continue;}break;}}
+  var mPref=todayKey().slice(0,7);var mc=0;Object.keys(state.journal).forEach(function(k){if(k.slice(0,7)===mPref)mc+=state.journal[k].length;});
+  document.getElementById('st-streak').textContent=streak;
+  document.getElementById('st-month').textContent=mc;
+  renderJournal();
+}
+function renderJournal(){
+  var box=document.getElementById('journal-list');
+  var keys=Object.keys(state.journal).filter(function(k){return (state.journal[k]||[]).length;}).sort().reverse().slice(0,14);
+  if(!keys.length){box.innerHTML='<div class="empty-msg">Ingen notering än. Logga en liten omtanke \u2014 det bygger en fin tillbakablick.</div>';return;}
+  var html='';
+  keys.forEach(function(k){
+    state.journal[k].forEach(function(e){
+      var ico=e.type==='appreciation'?'\ud83d\ude4f':'\ud83d\udc9e';
+      html+='<div class="row"><div class="ico">'+ico+'</div><div class="body"><div class="t" style="white-space:normal">'+esc(e.text)+'</div><div class="s">'+fmtDate(k)+(e.type==='appreciation'?' &middot; tacksam':' &middot; omtanke')+'</div></div><button class="x-del" data-jdel="'+k+'|'+e.id+'">&times;</button></div>';
+    });
+  });
+  box.innerHTML=html;
+}
+
+// ── Render: Datum ─────────────────────────────────────
+function renderDates(){
+  var box=document.getElementById('dates-list');
+  if(!state.dates.length){box.innerHTML='<div class="empty-msg">Lägg till viktiga datum \u2014 årsdag, födelsedagar, första dejten.</div>';}
+  else{
+    var arr=state.dates.map(function(d){var w=nextOccur(d.date,d.recur!==false);return {d:d,when:w,days:daysUntil(w)};}).sort(function(a,b){return a.days-b.days;});
+    var html='';
+    arr.forEach(function(o){
+      var cls=o.days<=3?'due':o.days<=14?'soon':'far';
+      var txt=o.days===0?'Idag':o.days===1?'Imorgon':o.days+' dgr';
+      html+='<div class="row"><div class="ico">'+(o.d.emoji||'\ud83d\udcc5')+'</div><div class="body"><div class="t">'+esc(o.d.label)+'</div><div class="s">'+fmtDate(toISO(o.when))+(o.d.recur!==false?' &middot; varje år':'')+'</div></div><span class="badge '+cls+'">'+txt+'</span><button class="x-del" data-ddel="'+o.d.id+'">&times;</button></div>';
+    });
+    box.innerHTML=html;
+  }
+  var ib=document.getElementById('ideas-list');
+  if(!state.ideas.length){ib.innerHTML='<div class="empty-msg">Spara date-idéer så de finns när inspirationen tryter.</div>';}
+  else{
+    var ih='';
+    state.ideas.forEach(function(it){
+      ih+='<div class="row'+(it.done?' done':'')+'"><button class="chk" data-idone="'+it.id+'">'+(it.done?'\u2713':'')+'</button><div class="body"><div class="t" style="white-space:normal">'+esc(it.text)+'</div></div><button class="x-del" data-idel="'+it.id+'">&times;</button></div>';
+    });
+    ib.innerHTML=ih;
+  }
+}
+
+// ── Render: Hen ───────────────────────────────────────
+function renderPartner(){
+  document.getElementById('p-name').value=state.partner.name||'';
+  document.getElementById('p-lovelang').value=state.partner.loveLang||'';
+  document.getElementById('p-sizes').value=state.partner.sizes||'';
+  renderTags('likes');renderTags('dislikes');
+  // present
+  var gb=document.getElementById('gifts-list');
+  if(!state.gifts.length){gb.innerHTML='<div class="empty-msg">Notera presentidéer när du får dem \u2014 inte i panik på födelsedagen.</div>';}
+  else{
+    var gh='';
+    state.gifts.forEach(function(g){
+      gh+='<div class="row'+(g.bought?' done':'')+'"><button class="chk" data-gdone="'+g.id+'">'+(g.bought?'\u2713':'')+'</button><div class="body"><div class="t" style="white-space:normal">'+esc(g.text)+'</div>'+(g.occasion?'<div class="s">'+esc(g.occasion)+'</div>':'')+'</div><button class="x-del" data-gdel="'+g.id+'">&times;</button></div>';
+    });
+    gb.innerHTML=gh;
+  }
+  // personer
+  var pb=document.getElementById('people-list');
+  if(!state.people.length){pb.innerHTML='<div class="empty-msg">Kom ihåg viktiga personer i hens liv \u2014 bästis, familj, husdjur.</div>';}
+  else{
+    var ph='';
+    state.people.forEach(function(pe){
+      ph+='<div class="row"><div class="ico">\ud83d\udc64</div><div class="body"><div class="t">'+esc(pe.name)+(pe.rel?' &middot; '+esc(pe.rel):'')+'</div>'+(pe.note?'<div class="s" style="white-space:normal">'+esc(pe.note)+'</div>':'')+'</div><button class="x-del" data-pedel="'+pe.id+'">&times;</button></div>';
+    });
+    pb.innerHTML=ph;
+  }
+}
+function renderTags(which){
+  var box=document.getElementById(which+'-tags');
+  var arr=state.partner[which]||[];
+  if(!arr.length){box.innerHTML='<span class="empty-msg" style="padding:4px 0">Inget tillagt än.</span>';return;}
+  box.innerHTML=arr.map(function(t,i){return '<span class="tag'+(which==='dislikes'?' bad':'')+'">'+esc(t)+'<button data-tagdel="'+which+'|'+i+'">&times;</button></span>';}).join('');
+}
+
+// ── Render: AI-favoriter ──────────────────────────────
+function renderFavs(){
+  var box=document.getElementById('ai-favs');
+  if(!state.favs.length){box.innerHTML='<div class="empty-msg">Spara AI-svar du gillar med stjärnan så hittar du dem igen.</div>';return;}
+  box.innerHTML=state.favs.map(function(f){
+    return '<div class="ai-fav"><div class="af-top"><span class="af-kind">'+esc(AI_TITLES[f.kind]||'AI')+'</span><button class="x-del" data-fdel="'+f.id+'">&times;</button></div>'+esc(f.text)+'</div>';
+  }).join('');
+}
+
+function renderAll(){renderHome();renderDates();renderPartner();renderFavs();}
+
+// ── Delegerade klick (radera/toggla) ──────────────────
+document.body.addEventListener('click',function(e){
+  var t=e.target;
+  var m;
+  if((m=t.closest('[data-jdel]'))){var pr=m.dataset.jdel.split('|');if(state.journal[pr[0]]){state.journal[pr[0]]=state.journal[pr[0]].filter(function(x){return x.id!==pr[1];});if(!state.journal[pr[0]].length)delete state.journal[pr[0]];}save();renderHome();return;}
+  if((m=t.closest('[data-ddel]'))){state.dates=state.dates.filter(function(x){return x.id!==m.dataset.ddel;});save();renderDates();renderHome();return;}
+  if((m=t.closest('[data-idel]'))){state.ideas=state.ideas.filter(function(x){return x.id!==m.dataset.idel;});save();renderDates();return;}
+  if((m=t.closest('[data-idone]'))){var it=state.ideas.find(function(x){return x.id===m.dataset.idone;});if(it){it.done=!it.done;save();renderDates();}return;}
+  if((m=t.closest('[data-gdel]'))){state.gifts=state.gifts.filter(function(x){return x.id!==m.dataset.gdel;});save();renderPartner();return;}
+  if((m=t.closest('[data-gdone]'))){var g=state.gifts.find(function(x){return x.id===m.dataset.gdone;});if(g){g.bought=!g.bought;save();renderPartner();}return;}
+  if((m=t.closest('[data-pedel]'))){state.people=state.people.filter(function(x){return x.id!==m.dataset.pedel;});save();renderPartner();return;}
+  if((m=t.closest('[data-fdel]'))){state.favs=state.favs.filter(function(x){return x.id!==m.dataset.fdel;});save();renderFavs();return;}
+  if((m=t.closest('[data-tagdel]'))){var p=m.dataset.tagdel.split('|');state.partner[p[0]].splice(parseInt(p[1],10),1);save();renderTags(p[0]);return;}
+});
+
+// ── Hen: fält + taggar ────────────────────────────────
+document.getElementById('p-name').addEventListener('input',function(){state.partner.name=this.value;save();});
+document.getElementById('p-lovelang').addEventListener('change',function(){state.partner.loveLang=this.value;save();});
+document.getElementById('p-sizes').addEventListener('input',function(){state.partner.sizes=this.value;save();});
+document.querySelectorAll('[data-tagadd]').forEach(function(btn){
+  btn.onclick=function(){
+    var which=btn.dataset.tagadd;
+    var inp=document.getElementById(which==='likes'?'like-in':'dislike-in');
+    var v=inp.value.trim();if(!v)return;
+    if(!Array.isArray(state.partner[which]))state.partner[which]=[];
+    state.partner[which].push(v);inp.value='';save();renderTags(which);
+  };
+});
+['like-in','dislike-in'].forEach(function(id){document.getElementById(id).addEventListener('keydown',function(e){if(e.key==='Enter'){var w=id==='like-in'?'likes':'dislikes';document.querySelector('[data-tagadd="'+w+'"]').click();}});});
+
+// ── Datum-sheet ───────────────────────────────────────
+var DATE_EMOJI=['\u2764\ufe0f','\ud83c\udf82','\ud83d\udc8d','\ud83c\udf38','\ud83c\udf89','\ud83c\udf77','\ud83d\udc95','\u2b50','\ud83c\udfa1','\ud83c\udf85'];
+var curEmoji=DATE_EMOJI[0];var curRecur=true;
+function buildEmojiRow(){
+  var row=document.getElementById('d-emoji-row');
+  row.innerHTML=DATE_EMOJI.map(function(em){return '<button data-em="'+em+'"'+(em===curEmoji?' class="sel"':'')+'>'+em+'</button>';}).join('');
+  row.querySelectorAll('button').forEach(function(b){b.onclick=function(){curEmoji=b.dataset.em;buildEmojiRow();};});
+}
+document.getElementById('add-date').onclick=function(){
+  curEmoji=DATE_EMOJI[0];curRecur=true;
+  document.getElementById('date-title').textContent='Nytt datum';
+  document.getElementById('d-label').value='';document.getElementById('d-date').value='';
+  document.getElementById('d-recur').classList.add('on');
+  buildEmojiRow();openSheet('date-sheet');
+};
+document.getElementById('d-recur').onclick=function(){this.classList.toggle('on');curRecur=this.classList.contains('on');};
+document.getElementById('d-save').onclick=function(){
+  var label=document.getElementById('d-label').value.trim();var date=document.getElementById('d-date').value;
+  if(!label||!date){toast('Fyll i namn och datum');return;}
+  state.dates.push({id:uid(),label:label,date:date,emoji:curEmoji,recur:document.getElementById('d-recur').classList.contains('on')});
+  save();renderDates();renderHome();closeSheets();
+};
+
+// ── Idé-sheet ─────────────────────────────────────────
+document.getElementById('add-idea').onclick=function(){document.getElementById('i-text').value='';openSheet('idea-sheet');};
+document.getElementById('i-save').onclick=function(){var v=document.getElementById('i-text').value.trim();if(!v){toast('Skriv en idé');return;}state.ideas.unshift({id:uid(),text:v,done:false});save();renderDates();closeSheets();};
+
+// ── Present-sheet ─────────────────────────────────────
+document.getElementById('add-gift').onclick=function(){document.getElementById('g-text').value='';document.getElementById('g-occasion').value='';openSheet('gift-sheet');};
+document.getElementById('g-save').onclick=function(){var v=document.getElementById('g-text').value.trim();if(!v){toast('Skriv en idé');return;}state.gifts.unshift({id:uid(),text:v,occasion:document.getElementById('g-occasion').value.trim(),bought:false});save();renderPartner();closeSheets();};
+
+// ── Person-sheet ──────────────────────────────────────
+document.getElementById('add-person').onclick=function(){['pe-name','pe-rel','pe-note'].forEach(function(id){document.getElementById(id).value='';});openSheet('person-sheet');};
+document.getElementById('pe-save').onclick=function(){var n=document.getElementById('pe-name').value.trim();if(!n){toast('Fyll i namn');return;}state.people.push({id:uid(),name:n,rel:document.getElementById('pe-rel').value.trim(),note:document.getElementById('pe-note').value.trim()});save();renderPartner();closeSheets();};
+
+// ── Dagbok-sheet ──────────────────────────────────────
+var jType='gesture';
+document.getElementById('add-journal').onclick=function(){jType='gesture';document.getElementById('j-text').value='';document.querySelectorAll('#j-type button').forEach(function(b){b.classList.toggle('sel',b.dataset.jt==='gesture');});openSheet('journal-sheet');};
+document.querySelectorAll('#j-type button').forEach(function(b){b.onclick=function(){jType=b.dataset.jt;document.querySelectorAll('#j-type button').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');};});
+document.getElementById('j-save').onclick=function(){
+  var v=document.getElementById('j-text').value.trim();if(!v){toast('Skriv något');return;}
+  var k=todayKey();if(!state.journal[k])state.journal[k]=[];
+  state.journal[k].push({id:uid(),text:v,type:jType});save();renderHome();closeSheets();toast('Sparat \ud83d\udc9e');
+};
+
+// ── Inställningar ─────────────────────────────────────
+document.getElementById('open-set').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('ai-key').value=getKey();
+  setBadge(syncOn()?'ok':'','');document.getElementById('sync-badge').textContent=syncOn()?'Synkad':'Lokal';
+  document.querySelectorAll('#ai-provider button').forEach(function(b){b.classList.toggle('sel',b.dataset.prov===state.set.provider);});
+  document.querySelectorAll('#theme-seg button').forEach(function(x){x.classList.toggle('sel',x.dataset.th===(state.theme||'auto'));});
+  openSheet('set-sheet');
+};
+document.querySelectorAll('#ai-provider button').forEach(function(b){b.onclick=function(){
+  state.set.provider=b.dataset.prov;save();
+  document.querySelectorAll('#ai-provider button').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');
+  document.getElementById('key-label').textContent=state.set.provider==='openai'?'OpenAI API-nyckel':'Anthropic API-nyckel';
+  document.getElementById('ai-key').placeholder=state.set.provider==='openai'?'sk-…':'sk-ant-…';
+  document.getElementById('ai-key').value=getKey();
+};});
+document.getElementById('ai-key').addEventListener('change',function(){setKey(this.value.trim());toast('Nyckel sparad');});
+document.getElementById('set-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  saveSyncCfg();setKey(document.getElementById('ai-key').value.trim());
+  closeSheets();
+  if(syncOn())ghPull().then(function(){ghPush();});
+};
+
+// ── Export/import ─────────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='flickvannen-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.partner){state=Object.assign(state,d);save();renderAll();closeSheets();toast('Importerat');}else toast('Ogiltig fil');}catch(err){toast('Kunde inte läsa filen');}};
+  r.readAsText(f);
+};
+document.getElementById('reset-btn').onclick=function(){
+  if(!confirm('Nollställa allt? Detta raderar all lokal data på den här enheten.'))return;
+  state={partner:{name:'',loveLang:'',sizes:'',likes:[],dislikes:[]},dates:[],ideas:[],gifts:[],people:[],journal:{},favs:[],theme:state.theme,set:{provider:state.set.provider}};
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}renderAll();closeSheets();toast('Nollställt');
+};
+
+// ── Init ──────────────────────────────────────────────
+applyTheme();
+setInterval(applyTheme,60000);
+renderAll();
+if(syncOn())ghPull();
+</script>
+</body>
+</html>

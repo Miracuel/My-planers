@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pausen">
+<meta name="theme-color" content="#F2EEE8">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Pausen","short_name":"Pausen","display":"standalone","background_color":"%23F2EEE8","theme_color":"%23F2EEE8","start_url":"."}'>
+<title>Pausen</title>
+<style>
+:root{
+  --bg:#F2EEE8;--panel:#FAF7F2;--panel2:#EDE6DB;--line:#E0D6C8;
+  --ink:#403930;--muted:#8A8175;--accent:#B5836A;--accent-soft:#EDDBCF;
+  --good:#7E9476;--navbg:rgba(242,238,232,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Hero */
+.hero{text-align:center;padding:6px 4px 4px}
+.hero-lead{font-family:Georgia,serif;font-size:17px;margin-bottom:4px}
+.hero-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.big-btn{width:100%;border:none;background:var(--accent);color:#fff;border-radius:18px;padding:20px 14px;font-size:17px;font-family:Georgia,serif;letter-spacing:.02em;cursor:pointer;transition:transform .15s,background .3s}
+.big-btn:active{transform:scale(.985);background:#A4745C}
+.preset-row{display:flex;gap:8px;margin-top:12px}
+.preset-row .chip{flex:1;text-align:center}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip:active{background:var(--accent-soft)}
+.chip.sel:active{background:var(--accent)}
+
+/* Ring / aktiv paus */
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px 0}
+.ring{width:200px;height:200px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--accent) 0%,var(--panel2) 0);transition:background .5s linear}
+.ring-inner{width:168px;height:168px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ring-time{font-size:40px;font-weight:600;font-variant-numeric:tabular-nums}
+.ring-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pause-act{font-family:Georgia,serif;font-size:15px;color:var(--ink);text-align:center}
+.pause-act span{color:var(--accent)}
+.pause-msg{font-family:Georgia,serif;font-size:18px;line-height:1.5;text-align:center;min-height:54px;display:flex;align-items:center;justify-content:center;padding:0 6px;transition:opacity .5s}
+
+/* Klart-kort */
+.done-card{text-align:center;padding:6px 4px}
+.done-emoji{font-size:40px}
+.done-lead{font-family:Georgia,serif;font-size:19px;margin:6px 0 4px}
+.feel-row{display:flex;gap:8px;margin-top:12px}
+.feel-row .chip{flex:1;text-align:center}
+
+/* Logg */
+.log-day{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px}
+.log-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-min{font-weight:600;color:var(--accent);min-width:46px}
+.log-act{flex:1}
+.log-act small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+.log-row time{color:var(--muted);font-size:11px}
+.log-row button{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+
+/* Mönster */
+.stat-grid{display:flex;gap:10px}
+.stat-box{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px 6px}
+.stat-num{font-family:Georgia,serif;font-size:26px;color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.bar-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
+.bar-row .bd{min-width:34px;color:var(--muted)}
+.bar-track{flex:1;height:14px;background:var(--panel2);border-radius:7px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:7px;transition:width .4s}
+.bar-row .bn{min-width:18px;text-align:right;color:var(--muted)}
+.avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.avg-row:first-child{border-top:none}
+.care-banner{background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#5C4536;margin-bottom:12px}
+
+/* Edit lists */
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:18px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(64,57,48,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:15px;cursor:pointer;margin-top:14px;font-family:inherit}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#23201C;--panel:#2C2823;--panel2:#34302A;--line:#433D35;
+  --ink:#E8E2D8;--muted:#9D9486;--accent:#C99B83;--accent-soft:#3E332B;
+  --good:#90A487;--navbg:rgba(35,32,28,.95);
+}
+html[data-theme=dark] .care-banner{color:#E6D6C9}
+html[data-theme=dark] .big-btn:active{background:#B8896F}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+/* ── Desktop-override (CSS-only, JS byte-identisk med mobil) ── */
+@media (min-width:820px){
+  body{padding-left:212px}
+  .app{max-width:600px;margin:0 auto;padding:28px 22px 48px}
+  h1.brand{text-align:left;font-size:24px;margin:2px 0 18px}
+
+  /* Bottennav -> fast vänstersidofalt */
+  .nav{top:0;bottom:0;right:auto;left:0;width:212px;flex-direction:column;
+       justify-content:flex-start;align-items:stretch;max-width:none;margin:0;
+       border-top:none;border-right:1px solid var(--line);
+       background:var(--panel);backdrop-filter:none;padding:0 0 14px;z-index:46}
+  .nav::before{content:"\1F343  Pausen";font-family:Georgia,serif;font-size:18px;
+       color:var(--ink);padding:24px 20px 16px;letter-spacing:.03em;
+       border-bottom:1px solid var(--line);margin-bottom:8px}
+  .nav button{flex:0 0 auto;flex-direction:row;align-items:center;justify-content:flex-start;
+       gap:11px;width:100%;text-align:left;font-size:14px;padding:12px 20px;border-radius:0}
+  .nav button span{display:inline;margin:0;font-size:17px;width:24px;text-align:center}
+  .nav button.active{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+
+  /* Bottom-sheets -> centrerade modaler */
+  .sheet{left:50%;top:50%;right:auto;bottom:auto;max-width:460px;width:calc(100% - 48px);
+         border-radius:20px;padding:22px 22px 18px;max-height:86vh;
+         transform:translate(-50%,-46%);opacity:0;visibility:hidden;pointer-events:none;
+         transition:opacity .2s ease,transform .2s ease;box-shadow:0 18px 50px rgba(0,0,0,.22)}
+  .sheet.open{transform:translate(-50%,-50%);opacity:1;visibility:visible;pointer-events:auto}
+  .sheet-close{position:static;margin-top:14px}
+
+  /* Tema-knapp i hornet */
+  .theme-btn{right:22px;top:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🍃 Pausen</h1>
+
+<!-- PAUS -->
+<div class="view active" id="view-pause">
+
+  <!-- Start -->
+  <div id="state-idle">
+    <div class="card-panel">
+      <div class="hero">
+        <div class="hero-lead" id="hero-lead">Dags att pusta ut?</div>
+        <div class="hero-sub" id="hero-sub">En paus är inte slöseri. Den är en del av arbetet.</div>
+        <button class="big-btn" id="start-pause">Jag tar en paus nu</button>
+      </div>
+    </div>
+    <div class="section-title">Eller starta direkt</div>
+    <div class="card-panel">
+      <div class="preset-row" id="quick-presets"></div>
+      <div class="soft" style="margin-top:8px">Hämtar din senaste aktivitet. Du kan ändra när som helst.</div>
+    </div>
+    <div class="section-title">Idag</div>
+    <div class="card-panel"><div id="today-summary"></div></div>
+
+    <div class="foot">
+      <button id="open-settings">Inställningar</button>
+      <button id="export-btn">Säkerhetskopiera</button>
+      <button id="import-btn">Importera</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+    <div class="privacy">Allt sparas bara i din enhet. Pausen är ett vänligt påminnelsestöd — inte vård. 🍃</div>
+  </div>
+
+  <!-- Aktiv paus -->
+  <div id="state-running" style="display:none">
+    <div class="card-panel">
+      <div class="timer-wrap">
+        <div class="pause-act" id="run-act"></div>
+        <div class="ring" id="ring">
+          <div class="ring-inner">
+            <div class="ring-time" id="ring-time">10:00</div>
+            <div class="ring-label" id="ring-label">Paus</div>
+          </div>
+        </div>
+        <div class="pause-msg" id="pause-msg"></div>
+        <div class="btn-row" style="width:100%">
+          <button class="btn" id="extend-btn">+5 min</button>
+          <button class="btn ghost" id="finish-btn">Avsluta pausen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Klart -->
+  <div id="state-done" style="display:none">
+    <div class="card-panel">
+      <div class="done-card">
+        <div class="done-emoji">🌿</div>
+        <div class="done-lead" id="done-lead">Pausen är slut</div>
+        <div class="soft" id="done-sub"></div>
+        <label style="margin-top:14px">Hur känns det nu?</label>
+        <div class="feel-row" id="feel-row"></div>
+        <div class="btn-row" style="width:100%;margin-top:14px">
+          <button class="btn" id="again5">5 min till</button>
+          <button class="btn fill" id="back-work">Tillbaka, redo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LOGG -->
+<div class="view" id="view-log">
+  <div class="section-title" style="margin-top:0">Dina pauser</div>
+  <div id="log-list"></div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-pattern">
+  <div class="care-banner" id="care-banner" style="display:none"></div>
+  <div class="section-title" style="margin-top:0">Idag</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-num" id="st-count">0</div><div class="stat-lbl">Pauser</div></div>
+    <div class="stat-box"><div class="stat-num" id="st-min">0</div><div class="stat-lbl">Minuter</div></div>
+    <div class="stat-box"><div class="stat-num" id="st-since">–</div><div class="stat-lbl">Sedan senaste</div></div>
+  </div>
+  <div class="section-title">Pauser senaste 7 dagarna</div>
+  <div class="card-panel" id="week-bars"></div>
+  <div class="section-title">Vad du oftast pausar från <span class="soft">(30 dagar)</span></div>
+  <div class="card-panel" id="top-acts"></div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="pause"><span>🍃</span>Paus</button>
+  <button data-v="log"><span>☰</span>Logg</button>
+  <button data-v="pattern"><span>〰</span>Mönster</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="start-sheet">
+  <h3>Från vilken aktivitet tog du en paus?</h3>
+  <div class="soft">Så får du syn på vad som tär — och du behöver inte hålla det i huvudet.</div>
+  <label>Aktivitet</label>
+  <input type="text" id="act-in" placeholder="T.ex. jobb, skärm, möte…">
+  <div class="chips" id="act-chips"></div>
+  <label>Hur länge?</label>
+  <div class="chips" id="dur-chips"></div>
+  <button class="sheet-close" id="start-go">Starta pausen 🍃</button>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <h3>Inställningar</h3>
+  <label>Förvald pauslängd: <span id="def-val">10</span> min</label>
+  <input type="range" id="def-min" min="1" max="60" step="1" value="10">
+  <label>Vibrera när pausen är slut</label>
+  <div class="btn-row"><button class="btn" id="vib-toggle">Vibration: på</button></div>
+  <label>Aviseringar (om enheten tillåter)</label>
+  <div class="btn-row"><button class="btn" id="notif-toggle">Avisering: av</button></div>
+  <label>Mina aktiviteter</label>
+  <div id="act-edit"></div>
+  <div class="add-row"><input type="text" id="ae-in" placeholder="Lägg till aktivitet…"><button id="ae-add">+</button></div>
+  <label>Snabbval för längd (min)</label>
+  <div id="dur-edit"></div>
+  <div class="add-row"><input type="number" id="de-in" placeholder="T.ex. 25" style="max-width:120px"><button id="de-add">+</button></div>
+  <button class="sheet-close" id="settings-done">Klar</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+var KEY='pausen_v1';
+var state={
+  activities:['Jobb','Skärmtid','Möte','Plugg','Hushåll','Vård av andra'],
+  presets:[5,10,15,20],
+  defaultMinutes:10,
+  lastActivity:'',
+  vibrate:true,
+  notify:false,
+  log:{},
+  active:null,
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+// ── Helpers ───────────────────────────────────────────
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var todayKey=function(){return toISO(new Date());};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+var fmtT=function(s){if(s<0)s=0;return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
+var hhmm=function(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+
+// ── Sheets ────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ls=document.querySelectorAll('.sheet');for(var i=0;i<ls.length;i++)ls[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── Lugna meddelanden ─────────────────────────────────
+var MSGS=[
+  'Axlarna ner. Käken lös.',
+  'Du behöver inte göra någonting just nu.',
+  'Andas in lugnt… och långsamt ut.',
+  'Titta upp från skärmen en stund.',
+  'Den här stunden är bara din.',
+  'Ett glas vatten gör underverk.',
+  'Sträck på ryggen, rulla axlarna bakåt.',
+  'Allt hinns inte — och det är okej.',
+  'Blunda i tio sekunder om du vill.',
+  'Du gör tillräckligt idag.',
+  'Vila räknas också som att göra något.',
+  'Känn fötterna mot golvet. Du är här nu.',
+  'Inget måste lösas den här minuten.',
+  'Lite rörelse? Sträck armarna mot taket.'
+];
+var DONE_MSGS=[
+  'Bra att du tog den. Återgå i din egen takt.',
+  'Mjuk start tillbaka — du behöver inte rusa.',
+  'Du gav dig själv en stund. Det räknas.',
+  'Pausen är slut. Ta med dig lugnet in igen.'
+];
+
+// ── Visa rätt läge i Paus-vyn ─────────────────────────
+function showState(name){
+  document.getElementById('state-idle').style.display=name==='idle'?'block':'none';
+  document.getElementById('state-running').style.display=name==='running'?'block':'none';
+  document.getElementById('state-done').style.display=name==='done'?'block':'none';
+}
+
+// ── Logg-hjälp ────────────────────────────────────────
+function logFor(k){state.log=state.log||{};if(!state.log[k])state.log[k]=[];return state.log[k];}
+function addPause(activity,minutes,startedAt){
+  var k=toISO(new Date(startedAt));
+  logFor(k).push({id:uid(),activity:activity,minutes:minutes,at:hhmm(new Date(startedAt)),ts:startedAt,feel:''});
+  save();
+}
+
+// ── Hero-text efter tid på dygnet ─────────────────────
+function heroText(){
+  var h=new Date().getHours();
+  var lead,sub;
+  if(h<10){lead='God morgon 🌅';sub='Börja mjukt. Pauser nu håller dig hel hela dagen.';}
+  else if(h<14){lead='Dags att pusta ut?';sub='En paus är inte slöseri. Den är en del av arbetet.';}
+  else if(h<18){lead='Hur är energin?';sub='Eftermiddagen blir snällare med en liten paus.';}
+  else if(h<22){lead='Kvällslugn 🌙';sub='Du har gjort nog idag. Unna dig en stund.';}
+  else {lead='Sent — var snäll mot dig';sub='Kanske dags att landa för natten?';}
+  document.getElementById('hero-lead').textContent=lead;
+  document.getElementById('hero-sub').textContent=sub;
+}
+
+// ── Idag-sammanfattning ───────────────────────────────
+function renderTodaySummary(){
+  var list=logFor(todayKey());
+  var el=document.getElementById('today-summary');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Ingen paus ännu idag. Den första är ofta den viktigaste. 🍃</div>';return;}
+  var mins=0;for(var i=0;i<list.length;i++)mins+=list[i].minutes;
+  var word=list.length===1?'paus':'pauser';
+  el.innerHTML='<div class="avg-row"><span>'+list.length+' '+word+' idag</span><b>'+mins+' min vila</b></div>'+
+    '<div class="soft" style="margin-top:6px">Senast från <b>'+esc(list[list.length-1].activity||'—')+'</b> kl '+list[list.length-1].at+'. Fint jobbat. 🌿</div>';
+}
+
+// ── Snabbval (presets) på startsidan ──────────────────
+function renderQuickPresets(){
+  var el=document.getElementById('quick-presets');
+  var html='';
+  for(var i=0;i<state.presets.length;i++)html+='<button class="chip" data-m="'+state.presets[i]+'">'+state.presets[i]+' min</button>';
+  el.innerHTML=html;
+  var cs=el.querySelectorAll('.chip');
+  for(var j=0;j<cs.length;j++)cs[j].onclick=function(){startPause(state.lastActivity||'',+this.dataset.m);};
+}
+
+// ── Start-sheet ───────────────────────────────────────
+var pickAct='',pickDur=10;
+function renderStartSheet(){
+  pickAct=state.lastActivity||'';
+  pickDur=state.defaultMinutes||10;
+  document.getElementById('act-in').value=pickAct;
+  var ac=document.getElementById('act-chips');
+  var html='';
+  for(var i=0;i<state.activities.length;i++){var a=state.activities[i];html+='<button class="chip'+(a===pickAct?' sel':'')+'" data-a="'+esc(a)+'">'+esc(a)+'</button>';}
+  ac.innerHTML=html;
+  var acs=ac.querySelectorAll('.chip');
+  for(var j=0;j<acs.length;j++)acs[j].onclick=function(){pickAct=this.dataset.a;document.getElementById('act-in').value=pickAct;markActSel();};
+  var dc=document.getElementById('dur-chips');
+  var dhtml='';
+  for(var k=0;k<state.presets.length;k++){var m=state.presets[k];dhtml+='<button class="chip'+(m===pickDur?' sel':'')+'" data-m="'+m+'">'+m+' min</button>';}
+  dc.innerHTML=dhtml;
+  var dcs=dc.querySelectorAll('.chip');
+  for(var l=0;l<dcs.length;l++)dcs[l].onclick=function(){pickDur=+this.dataset.m;markDurSel();};
+}
+function markActSel(){var cs=document.getElementById('act-chips').querySelectorAll('.chip');for(var i=0;i<cs.length;i++)cs[i].classList.toggle('sel',cs[i].dataset.a===pickAct);}
+function markDurSel(){var cs=document.getElementById('dur-chips').querySelectorAll('.chip');for(var i=0;i<cs.length;i++)cs[i].classList.toggle('sel',+cs[i].dataset.m===pickDur);}
+document.getElementById('act-in').oninput=function(){pickAct=this.value.trim();markActSel();};
+document.getElementById('start-pause').onclick=function(){renderStartSheet();openSheet('start-sheet');};
+document.getElementById('start-go').onclick=function(){closeSheets();startPause(pickAct,pickDur);};
+
+// ── Timer ─────────────────────────────────────────────
+var timerInt=null,msgInt=null,msgIdx=0;
+function startPause(activity,minutes){
+  activity=(activity||'').trim();
+  minutes=minutes||state.defaultMinutes||10;
+  if(activity){
+    state.lastActivity=activity;
+    if(state.activities.indexOf(activity)<0)state.activities.unshift(activity);
+  }
+  state.active={activity:activity,minutes:minutes,endTime:Date.now()+minutes*60000,startedAt:Date.now(),logged:false};
+  save();
+  goToPauseView();
+  enterRunning();
+}
+function enterRunning(){
+  showState('running');
+  var a=state.active;
+  document.getElementById('run-act').innerHTML=a.activity?('Paus från <span>'+esc(a.activity)+'</span>'):'En stund för dig';
+  msgIdx=Math.floor(Math.random()*MSGS.length);
+  showMsg();
+  tick();
+  clearInterval(timerInt);timerInt=setInterval(tick,1000);
+  clearInterval(msgInt);msgInt=setInterval(nextMsg,8000);
+}
+function showMsg(){var el=document.getElementById('pause-msg');el.style.opacity='0';setTimeout(function(){el.textContent=MSGS[msgIdx%MSGS.length];el.style.opacity='1';},120);}
+function nextMsg(){msgIdx=(msgIdx+1)%MSGS.length;showMsg();}
+function tick(){
+  var a=state.active;if(!a)return;
+  var leftMs=a.endTime-Date.now();
+  var left=Math.ceil(leftMs/1000);
+  document.getElementById('ring-time').textContent=fmtT(left);
+  var total=a.minutes*60;
+  var pct=total?Math.max(0,Math.min(100,100*(1-left/total))):0;
+  document.getElementById('ring').style.background='conic-gradient(var(--accent) '+pct+'%,var(--panel2) 0)';
+  if(leftMs<=0){completePause();}
+}
+function completePause(){
+  clearInterval(timerInt);timerInt=null;clearInterval(msgInt);msgInt=null;
+  var a=state.active;if(!a)return;
+  if(!a.logged){addPause(a.activity,a.minutes,a.startedAt);a.logged=true;}
+  if(state.vibrate&&navigator.vibrate)navigator.vibrate([180,90,180]);
+  if(state.notify&&typeof Notification!=='undefined'&&Notification.permission==='granted'){
+    try{new Notification('Pausen är slut 🍃',{body:a.activity?('Tillbaka till '+a.activity+' i din egen takt.'):'Mjuk start tillbaka.'});}catch(e){}
+  }
+  state.active=null;save();
+  enterDone(a);
+}
+function enterDone(a){
+  showState('done');
+  document.getElementById('done-lead').textContent=a&&a.minutes?(a.minutes+' minuters paus klar 🌿'):'Pausen är slut';
+  document.getElementById('done-sub').textContent=DONE_MSGS[Math.floor(Math.random()*DONE_MSGS.length)];
+  lastDoneAct=a?a.activity:'';
+  renderFeelRow();
+}
+var lastDoneAct='';
+function renderFeelRow(){
+  var fr=document.getElementById('feel-row');
+  var feels=[['Bättre','😊'],['Sig lik','😐'],['Trött','😴']];
+  var html='';
+  for(var i=0;i<feels.length;i++)html+='<button class="chip" data-f="'+feels[i][0]+'">'+feels[i][1]+' '+feels[i][0]+'</button>';
+  fr.innerHTML=html;
+  var cs=fr.querySelectorAll('.chip');
+  for(var j=0;j<cs.length;j++)cs[j].onclick=function(){
+    var sel=this;
+    var siblings=fr.querySelectorAll('.chip');for(var k=0;k<siblings.length;k++)siblings[k].classList.remove('sel');
+    sel.classList.add('sel');
+    setFeelOnLast(sel.dataset.f);
+  };
+}
+function setFeelOnLast(feel){
+  var list=logFor(todayKey());
+  if(list.length){list[list.length-1].feel=feel;save();}
+}
+document.getElementById('extend-btn').onclick=function(){
+  if(!state.active)return;
+  state.active.endTime+=5*60000;state.active.minutes+=5;save();tick();
+  var el=document.getElementById('pause-msg');el.textContent='+5 minuter. Ingen brådska. 🍃';
+};
+document.getElementById('finish-btn').onclick=function(){
+  if(!state.active)return;
+  clearInterval(timerInt);timerInt=null;clearInterval(msgInt);msgInt=null;
+  var a=state.active;
+  var elapsedMin=Math.max(1,Math.round((Date.now()-a.startedAt)/60000));
+  if(!a.logged){addPause(a.activity,elapsedMin,a.startedAt);a.logged=true;}
+  a.minutes=elapsedMin;
+  state.active=null;save();
+  enterDone(a);
+};
+document.getElementById('again5').onclick=function(){startPause(lastDoneAct,5);};
+document.getElementById('back-work').onclick=function(){showState('idle');refreshIdle();};
+
+// ── Logg-vy ───────────────────────────────────────────
+function renderLog(){
+  var el=document.getElementById('log-list');
+  var keys=Object.keys(state.log||{}).sort().reverse();
+  if(!keys.length){el.innerHTML='<div class="card-panel"><div class="empty-msg">Inga pauser loggade ännu. När du tar en paus dyker den upp här. 🍃</div></div>';return;}
+  var html='';
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];var list=state.log[k].slice().sort(function(a,b){return b.ts-a.ts;});
+    html+='<div class="log-day">'+dayLabel(k)+'</div><div class="card-panel">';
+    for(var j=0;j<list.length;j++){
+      var p=list[j];
+      var feel=p.feel?('<small>kändes: '+esc(p.feel.toLowerCase())+'</small>'):'';
+      html+='<div class="log-row"><span class="log-min">'+p.minutes+' min</span>'+
+        '<span class="log-act">'+esc(p.activity||'En stund för dig')+feel+'</span>'+
+        '<time>'+p.at+'</time>'+
+        '<button data-k="'+k+'" data-id="'+p.id+'">×</button></div>';
+    }
+    html+='</div>';
+  }
+  el.innerHTML=html;
+  var bs=el.querySelectorAll('button');
+  for(var b=0;b<bs.length;b++)bs[b].onclick=function(){
+    var k=this.dataset.k,id=this.dataset.id;
+    state.log[k]=state.log[k].filter(function(x){return x.id!==id;});
+    if(!state.log[k].length)delete state.log[k];
+    save();renderLog();
+  };
+}
+function dayLabel(k){
+  if(k===todayKey())return 'Idag';
+  var y=new Date();y.setDate(y.getDate()-1);
+  if(k===toISO(y))return 'Igår';
+  var d=new Date(k+'T00:00:00');
+  var days=['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  var mon=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  return days[d.getDay()]+' '+d.getDate()+' '+mon[d.getMonth()];
+}
+
+// ── Mönster-vy ────────────────────────────────────────
+function renderPattern(){
+  var today=logFor(todayKey());
+  var mins=0;for(var i=0;i<today.length;i++)mins+=today[i].minutes;
+  document.getElementById('st-count').textContent=today.length;
+  document.getElementById('st-min').textContent=mins;
+  var lastTs=0;
+  for(var t=0;t<today.length;t++)if(today[t].ts>lastTs)lastTs=today[t].ts;
+  var sinceEl=document.getElementById('st-since');
+  if(!lastTs)sinceEl.textContent='–';
+  else{var m=Math.round((Date.now()-lastTs)/60000);sinceEl.textContent=m<60?(m+'m'):(Math.floor(m/60)+'h');}
+
+  var labels=['M','T','O','T','F','L','S'];
+  var counts=[],maxc=1;
+  for(var d=6;d>=0;d--){
+    var dt=new Date();dt.setDate(dt.getDate()-d);
+    var n=(state.log[toISO(dt)]||[]).length;
+    counts.push([dt,n]);if(n>maxc)maxc=n;
+  }
+  var wb=document.getElementById('week-bars');var whtml='';
+  for(var c=0;c<counts.length;c++){
+    var dt2=counts[c][0],n2=counts[c][1];
+    var wd=(dt2.getDay()+6)%7;
+    var pct=Math.round(100*n2/maxc);
+    whtml+='<div class="bar-row"><span class="bd">'+labels[wd]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="bn">'+n2+'</span></div>';
+  }
+  wb.innerHTML=whtml;
+
+  var cnt={};
+  for(var g=0;g<30;g++){
+    var gd=new Date();gd.setDate(gd.getDate()-g);
+    var ll=state.log[toISO(gd)]||[];
+    for(var h=0;h<ll.length;h++){var a=ll[h].activity||'En stund för dig';if(!cnt[a])cnt[a]={n:0,m:0};cnt[a].n++;cnt[a].m+=ll[h].minutes;}
+  }
+  var ent=Object.keys(cnt).map(function(k){return [k,cnt[k]];}).sort(function(a,b){return b[1].n-a[1].n;}).slice(0,5);
+  var ta=document.getElementById('top-acts');
+  if(!ent.length){ta.innerHTML='<div class="empty-msg">Logga några pauser så syns mönstren här.</div>';}
+  else{
+    var thtml='';
+    for(var e=0;e<ent.length;e++)thtml+='<div class="avg-row"><span>'+esc(ent[e][0])+' × '+ent[e][1].n+'</span><b>'+ent[e][1].m+' min</b></div>';
+    ta.innerHTML=thtml;
+  }
+
+  var cb=document.getElementById('care-banner');
+  var todayN=today.length,hour=new Date().getHours();
+  if(hour>=14&&todayN===0){cb.style.display='block';cb.textContent='Du har inte tagit en enda paus idag. En kort stund nu kan rädda hela eftermiddagen. 🌿';}
+  else if(todayN>=8){cb.style.display='block';cb.textContent='Många pauser idag — kanske är det en tung dag. Var extra snäll mot dig själv. 🍃';}
+  else cb.style.display='none';
+}
+
+// ── Inställningar ─────────────────────────────────────
+function renderSettings(){
+  document.getElementById('def-min').value=state.defaultMinutes;
+  document.getElementById('def-val').textContent=state.defaultMinutes;
+  document.getElementById('vib-toggle').textContent='Vibration: '+(state.vibrate?'på':'av');
+  document.getElementById('notif-toggle').textContent='Avisering: '+(state.notify?'på':'av');
+  var ae=document.getElementById('act-edit');var ahtml='';
+  for(var i=0;i<state.activities.length;i++)ahtml+='<div class="edit-item"><span>'+esc(state.activities[i])+'</span><button data-i="'+i+'">×</button></div>';
+  ae.innerHTML=ahtml||'<div class="empty-msg">Tomt</div>';
+  var abs=ae.querySelectorAll('button');
+  for(var j=0;j<abs.length;j++)abs[j].onclick=function(){state.activities.splice(+this.dataset.i,1);save();renderSettings();renderQuickPresets();};
+  var de=document.getElementById('dur-edit');var dhtml='';
+  for(var k=0;k<state.presets.length;k++)dhtml+='<div class="edit-item"><span>'+state.presets[k]+' min</span><button data-i="'+k+'">×</button></div>';
+  de.innerHTML=dhtml||'<div class="empty-msg">Tomt</div>';
+  var dbs=de.querySelectorAll('button');
+  for(var l=0;l<dbs.length;l++)dbs[l].onclick=function(){state.presets.splice(+this.dataset.i,1);save();renderSettings();renderQuickPresets();};
+}
+document.getElementById('open-settings').onclick=function(){renderSettings();openSheet('settings-sheet');};
+document.getElementById('settings-done').onclick=closeSheets;
+document.getElementById('def-min').oninput=function(){state.defaultMinutes=+this.value;document.getElementById('def-val').textContent=this.value;save();};
+document.getElementById('vib-toggle').onclick=function(){state.vibrate=!state.vibrate;save();renderSettings();};
+document.getElementById('notif-toggle').onclick=function(){
+  if(!state.notify&&typeof Notification!=='undefined'){
+    if(Notification.permission==='granted'){state.notify=true;}
+    else{Notification.requestPermission().then(function(p){state.notify=(p==='granted');save();renderSettings();});return;}
+  }else{state.notify=!state.notify;}
+  save();renderSettings();
+};
+document.getElementById('ae-add').onclick=function(){
+  var v=document.getElementById('ae-in').value.trim();if(!v)return;
+  if(state.activities.indexOf(v)<0)state.activities.push(v);save();
+  document.getElementById('ae-in').value='';renderSettings();renderQuickPresets();
+};
+document.getElementById('de-add').onclick=function(){
+  var v=parseInt(document.getElementById('de-in').value,10);if(!v||v<1)return;
+  if(state.presets.indexOf(v)<0){state.presets.push(v);state.presets.sort(function(a,b){return a-b;});}
+  save();document.getElementById('de-in').value='';renderSettings();renderQuickPresets();
+};
+
+// ── Export / import ───────────────────────────────────
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='pausen-backup-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.log){state=Object.assign(state,d);state.active=null;save();refreshIdle();renderLog();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';
+  var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#23201C':'#F2EEE8';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var nb=0;nb<navBtns.length;nb++)navBtns[nb].onclick=function(){
+  for(var i=0;i<navBtns.length;i++)navBtns[i].classList.remove('active');
+  this.classList.add('active');
+  var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+  document.getElementById('view-'+this.dataset.v).classList.add('active');
+  if(this.dataset.v==='log')renderLog();
+  if(this.dataset.v==='pattern')renderPattern();
+};
+function goToPauseView(){
+  for(var i=0;i<navBtns.length;i++)navBtns[i].classList.remove('active');
+  navBtns[0].classList.add('active');
+  var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+  document.getElementById('view-pause').classList.add('active');
+}
+
+// ── Init / återuppta ──────────────────────────────────
+function refreshIdle(){heroText();renderQuickPresets();renderTodaySummary();}
+function resumeIfActive(){
+  if(state.active){
+    if(state.active.endTime-Date.now()>0){enterRunning();}
+    else{
+      var a=state.active;
+      if(!a.logged){addPause(a.activity,a.minutes,a.startedAt);}
+      state.active=null;save();enterDone(a);
+    }
+  }else{showState('idle');}
+}
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden&&state.active)tick();
+});
+
+refreshIdle();
+resumeIfActive();
+applyTheme();
+setInterval(applyTheme,60000);
+</script>
+</body>
+</html>
