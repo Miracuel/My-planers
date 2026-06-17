@@ -187,7 +187,7 @@ html[data-theme=dark] .batt-wrap.zr{background:linear-gradient(180deg,rgba(192,1
 .cal-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
 /* Dagskurva */
 .curve-wrap{margin-top:4px}
-.curve-wrap svg{width:100%;height:150px;display:block}
+.curve-wrap canvas{width:100%;height:160px;display:block}
 .curve .c-grid{stroke:var(--line);stroke-width:1}
 .curve .c-area{opacity:.16}
 .curve .c-line{fill:none;stroke:var(--moss);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
@@ -1504,11 +1504,11 @@ document.getElementById('ask-reflect').onclick=async function(){
 
 // ── In-app changelog ───────────────────────────────────
 var CHANGELOG={
-  appId:'batteriet',version:'2.3.1',updated:'2026-06-17',
+  appId:'batteriet',version:'2.3.2',updated:'2026-06-17',
   tagline:'Ett varsamt energistöd för vardagen.',
   description:'Batteriet hjälper dig följa din energi som ett batteri som laddas och dras. Du loggar det som drar och laddar, gör en morgonkoll, ser mönster över tid och planerar imorgon — helt offline, med dina data i din egen telefon.',
   audience:'För dig som lätt blir överstimulerad eller utmattad och vill ha ett lugnt, reklamfritt verktyg för att märka och respektera din energi. Ett vardagsstöd — inte vård. Vid djup utmattning: ta hjälp av vården eller företagshälsan.',
-  latest:'2.3.1',
+  latest:'2.3.2',
   functions:[
     'Batterinivå i zoner (grön/gul/röd) med rekommendation',
     'Snabbregistrera det som drar och laddar energi',
@@ -1538,6 +1538,7 @@ var CHANGELOG={
     'Export/import som säkerhetskopia'
   ],
   changelog:[
+    {version:'2.3.2',date:'2026-06-17',items:['Dagskurvan i samma stil som 14-dagarsgrafen (staplar + linje)']},
     {version:'2.3.1',date:'2026-06-17',items:['Efterregistrera morgonkoll per dag','Efterregistrera mående per dag']},
     {version:'2.3.0',date:'2026-06-17',items:['Kalendervy med månadsöversikt','Dagskurva timme för timme','Efterregistrera batteri och händelser bakåt','Kollapsbar Nyheter & funktioner']},
     {version:'2.2.1',date:'2026-06-17',items:['Stödkort "Behöver du stöd just nu?"','Mjuka kortskuggor','Luftigare marginaler']},
@@ -1642,36 +1643,57 @@ function ensureDay(k){
 }
 function openCalDay(k){calSel=k;calPick=null;ensureDay(k);renderCalDay();openSheet('cal-sheet');}
 
-function dayCurveSVG(d){
-  var W=320,H=150,padL=8,padR=8,padT=12,padB=24;
-  var innerW=W-padL-padR,innerH=H-padT-padB;
+function dayCurvePoints(d){
   var start=dayStartVal(d)||0;
-  // bygg punkter: (minut, värde)
   var logs=(d.log||[]).slice().filter(function(l){return minOf(l.t)!=null;}).sort(function(a,b){return minOf(a.t)-minOf(b.t);});
   var pts=[];
-  var firstMin=logs.length?Math.min(420,minOf(logs[0].t)):420; // start senast 07:00
+  var firstMin=logs.length?Math.min(420,minOf(logs[0].t)):420;
   pts.push({m:firstMin,v:start});
   var cum=start;
   logs.forEach(function(l){cum=clamp(cum+l.delta);pts.push({m:minOf(l.t),v:cum});});
   var lastMin=logs.length?minOf(logs[logs.length-1].t):firstMin+60;
   if(lastMin<=firstMin)lastMin=firstMin+60;
-  // slutpunkt: håll kvar nuvarande värde till slutet av spannet
-  pts.push({m:Math.max(lastMin, firstMin+60),v:clamp(d.val)});
+  pts.push({m:Math.max(lastMin,firstMin+60),v:clamp(d.val)});
+  return pts;
+}
+function drawDayCanvas(d){
+  var cv=document.getElementById('cd-canvas');if(!cv)return;
+  var dpr=window.devicePixelRatio||1;
+  var cssW=cv.clientWidth||(cv.parentNode?cv.parentNode.clientWidth:0)||320;
+  var cssH=160;
+  cv.width=Math.round(cssW*dpr);cv.height=Math.round(cssH*dpr);
+  cv.style.height=cssH+'px';
+  var ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cssW,cssH);
+  var css=getComputedStyle(document.documentElement);
+  var col=function(v){return css.getPropertyValue(v).trim();};
+  var pts=dayCurvePoints(d);
   var minM=pts[0].m,maxM=pts[pts.length-1].m;if(maxM<=minM)maxM=minM+60;
-  var X=function(m){return padL+(m-minM)/(maxM-minM)*innerW;};
-  var Y=function(v){return padT+(1-v/100)*innerH;};
-  var g='';
-  [0,50,100].forEach(function(v){var y=Y(v);g+='<line class="c-grid" x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'"/>';g+='<text class="c-lbl" x="'+(padL+2)+'" y="'+(y-2)+'">'+v+'</text>';});
-  // tidsetiketter (start, mitt, slut)
-  var tlabels=[minM,(minM+maxM)/2,maxM];
-  tlabels.forEach(function(m,i){var hh=String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(Math.round(m%60)).padStart(2,'0');var x=X(m);var anc=i===0?'start':i===2?'end':'middle';g+='<text class="c-lbl" x="'+x+'" y="'+(H-8)+'" text-anchor="'+anc+'">'+hh+'</text>';});
-  // linje + area
-  var line=pts.map(function(pp,i){return (i?'L':'M')+X(pp.m).toFixed(1)+','+Y(pp.v).toFixed(1);}).join(' ');
-  var area=line+' L'+X(maxM).toFixed(1)+','+Y(0).toFixed(1)+' L'+X(minM).toFixed(1)+','+Y(0).toFixed(1)+' Z';
-  g+='<path class="c-area" d="'+area+'" style="fill:var(--'+zone(d.val)+')"/>';
-  g+='<path class="c-line" d="'+line+'"/>';
-  pts.forEach(function(pp){g+='<circle class="c-dot" cx="'+X(pp.m).toFixed(1)+'" cy="'+Y(pp.v).toFixed(1)+'" r="3.5"/>';});
-  return '<svg class="curve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'+g+'</svg>';
+  var padL=30,padR=16,padT=14,padB=24,W=cssW,H=cssH;
+  var X=function(m){return padL+(m-minM)/(maxM-minM)*(W-padL-padR);};
+  var Y=function(v){return padT+(1-v/100)*(H-padT-padB);};
+  // gridlinjer 0/50/100 + värdeetiketter
+  ctx.strokeStyle=col("--line");ctx.lineWidth=1;
+  ctx.fillStyle=col("--muted");ctx.font="11px -apple-system,system-ui,sans-serif";ctx.textAlign="left";
+  [0,50,100].forEach(function(v){var y=Y(v);ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.fillText(String(v),4,y+4);});
+  // staplar (zonfärgade, rundade toppar) — som 14-dagarsgrafen
+  var bw=Math.max(10,Math.min(30,(W-padL-padR)/(pts.length+1)*0.7));
+  pts.forEach(function(pp){
+    var x=X(pp.m)-bw/2,y=Y(pp.v),h=Y(0)-y;
+    ctx.fillStyle=col("--"+zone(pp.v));
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(x,y,bw,Math.max(2,h),5);
+    else ctx.rect(x,y,bw,Math.max(2,h));
+    ctx.fill();
+  });
+  // linje + fyllda prickar ovanpå (som humörlinjen)
+  ctx.strokeStyle=col("--moss");ctx.lineWidth=2.5;ctx.lineJoin="round";ctx.lineCap="round";
+  ctx.beginPath();pts.forEach(function(pp,i){var x=X(pp.m),y=Y(pp.v);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.stroke();
+  ctx.fillStyle=col("--moss");
+  pts.forEach(function(pp){ctx.beginPath();ctx.arc(X(pp.m),Y(pp.v),4,0,7);ctx.fill();});
+  // tidsetiketter
+  ctx.fillStyle=col("--muted");ctx.font="11px -apple-system,system-ui,sans-serif";
+  var tl=[minM,(minM+maxM)/2,maxM];
+  tl.forEach(function(m,i){var hh=String(Math.floor(m/60)%24).padStart(2,"0")+":"+String(Math.round(m%60)).padStart(2,"0");ctx.textAlign=i===0?"left":i===2?"right":"center";ctx.fillText(hh,X(m),H-7);});
 }
 
 function renderCalDay(){
@@ -1681,7 +1703,8 @@ function renderCalDay(){
   var months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
   document.getElementById('cd-date').textContent=wd+' '+dt.getDate()+' '+months[dt.getMonth()];
   // kurva
-  document.getElementById('cd-curve').innerHTML=dayCurveSVG(d);
+  document.getElementById('cd-curve').innerHTML='<canvas id="cd-canvas" style="width:100%;height:160px;display:block"></canvas>';
+  drawDayCanvas(d);
   // start-slider
   var sv=dayStartVal(d);
   document.getElementById('cd-start').value=sv;
@@ -1763,7 +1786,7 @@ document.getElementById('cd-start').oninput=function(e){
   var d=ensureDay(calSel);d.start=+e.target.value;
   document.getElementById('cd-start-val').textContent=e.target.value;
   recalcDay(d);
-  document.getElementById('cd-curve').innerHTML=dayCurveSVG(d);
+  drawDayCanvas(d);
   var net=(d.log||[]).reduce(function(a,l){return a+l.delta;},0);
   document.getElementById('cd-summary').textContent='Start '+d.start+'% → slut '+clamp(d.val)+'% · netto '+(net>0?'+':'')+net;
 };

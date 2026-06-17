@@ -302,6 +302,16 @@ html[data-theme=dark] .warm-note{color:#EBC9B9}
   </div>
 </div>
 
+<!-- ════════ NYHETER & FUNKTIONER ════════ -->
+<div class="view" id="view-news">
+  <div class="section-title" style="margin-top:2px">Nyheter &amp; funktioner <span class="mini soft" id="news-version"></span></div>
+  <div class="card-panel"><div class="soft" id="news-tagline"></div></div>
+  <div class="section-title">Senaste uppdateringar</div>
+  <div id="news-changelog"></div>
+  <div class="section-title">Funktioner</div>
+  <div id="news-functions"></div>
+</div>
+
 <!-- ════════ NAV ════════ -->
 <div class="nav">
   <button class="active" data-v="home"><span>&#127969;</span>Hem</button>
@@ -309,6 +319,7 @@ html[data-theme=dark] .warm-note{color:#EBC9B9}
   <button data-v="share"><span>&#129309;</span>Dela</button>
   <button data-v="cal"><span>&#128197;</span>Kalender</button>
   <button data-v="safety"><span>&#128737;</span>Trygghet</button>
+  <button data-v="news"><span>&#128226;</span>Nytt</button>
 </div>
 
 <!-- ════════ SHEETS ════════ -->
@@ -509,6 +520,49 @@ html[data-theme=dark] .warm-note{color:#EBC9B9}
 </div>
 
 <script>
+// ════════ APPINFO / CHANGELOG ════════
+var APPINFO={
+  id:'grannskapet',
+  version:'1.1.0',
+  tagline:'Var en bra granne på ditt eget sätt — utan press.',
+  audience:'För dig som vill ha lagom, trygg grannkontakt utan social press — särskilt anpassad för ADHD, autism, social ångest och utmattning.',
+  functions:[
+    {area:'Hem & lågkravsläge',items:['Dagens lågkravsläge i fyra nivåer som styr vilka förslag du får.','Små vänliga handlingar filtrerade efter hur mycket du orkar.','Översikt: senaste kontakt, kommande händelser och öppna lån.']},
+    {area:'Grannar & kontaktlogg',items:['Grannkort med kontaktväg, gränser, intressen, husdjur, familj och anteckningar.','Skuldfri kontaktlogg med mjuka påminnelser om uppföljning.']},
+    {area:'Dela',items:['Lån (utlånat/lånat) med återlämningsdatum och sen-markering.','Grannhjälp: behöver/erbjuder med tydliga kategorier.','Byteshylla med status (ledig/reserverad/hämtad) och växtkompis.']},
+    {area:'Kalender',items:['Grannhändelser med tydliga sociala förväntningar som pillar.']},
+    {area:'Trygghet & kris',items:['Vem-kan-vad, viktiga kontakter med klickbara nummer.','Lugna kris-checklistor för nio vanliga situationer.','Husdjursnätverk med matning, medicin och akutkontakt.']},
+    {area:'AI-grannassistent',items:['Hjälp att skriva vänliga meddelanden, säga nej snällt och lösa konflikter lugnt (egen Anthropic-nyckel, sparas bara lokalt).']},
+    {area:'Synk & data',items:['GitHub-synk i appkollen-stil med union-merge per id.','Export/import som JSON och auto-tema (mörkt 20–07).']}
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-17',items:[
+      'Inbyggd synk uppgraderad till appkollen-stil med union-merge per id — inget försvinner när du synkar mellan enheter.',
+      'Synkar nu till en egen fil (grannskapet.json) så flera appar kan dela samma privata repo, med debounced push (~1,2 s) och 409/422-retry.',
+      'Ny vy "Nyheter & funktioner" med changelog och funktionslista.',
+      'Centralen-metadata inbäddad så hubben kan rita appkortet automatiskt.',
+      'Separata changelog-filer (grannskapet-changelog.json + changelog-grannskapet.md).'
+    ]},
+    {v:'1.0.0',d:'2026-06-17',items:[
+      'Grannskapet lanseras: lågkravsläge, små vänliga handlingar, grannkort och kontaktlogg.',
+      'Dela: lån, grannhjälp, byteshylla och växtkompis.',
+      'Kalender med tydliga sociala förväntningar samt trygghetsvy med kris-checklistor och husdjursnätverk.',
+      'AI-grannassistent, GitHub-synk, export/import och auto-tema.'
+    ]}
+  ]
+};
+// Centralen-kortmetadata (sektion sätts i Centralen, inte här). Accent matchar favicon-emojin 🏡.
+var CENTRALEN_META={
+  id:'grannskapet',
+  namn:'Grannskapet',
+  ikon:'\uD83C\uDFE1',
+  desc:'Lagom, trygg grannkontakt utan social press',
+  mobil:'grannskapet.html',
+  desktop:'grannskapet-desktop.html',
+  farger:{bg:'#F3EEE6',line:'#DED3C2',ink:'#3D362E',muted:'#8A7E6E',accent:'#C16B4F',iconbg:'#F0DDD3'}
+};
+APPINFO.centralen=CENTRALEN_META;
+
 // ════════ STATE ════════
 var KEY='grannskapet_v1';
 var SYNC_KEY='grannskapet_sync_v1';
@@ -521,7 +575,8 @@ var state={
 try{var _s=localStorage.getItem(KEY);if(_s){var _d=JSON.parse(_s);for(var k in _d){if(k==='safety'){state.safety.contacts=_d.safety.contacts||[];state.safety.whoCan=Object.assign(state.safety.whoCan,_d.safety.whoCan||{});}else{state[k]=_d[k];}}}}catch(e){}
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
-function persist(){save();if(syncOn())ghPush().catch(function(){});}
+var pushT=null;
+function persist(){save();if(syncOn()){clearTimeout(pushT);pushT=setTimeout(function(){ghPush().catch(function(){});},1200);}}
 
 // ════════ HELPERS ════════
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
@@ -1054,13 +1109,38 @@ var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
-function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';}
+var SYNC_FILE='grannskapet.json';
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+SYNC_FILE;}
 function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
 function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+// Synkbara fält — API-nyckel och tema utesluts medvetet ur payloaden.
 var SYNC_FIELDS=['energy','energyDate','kindDone','neighbors','log','loans','help','swap','plants','events','pets','safety'];
+var ID_ARRAYS=['neighbors','log','loans','help','swap','plants','events','pets'];
 function dataPayload(){var o={updated:new Date().toISOString()};SYNC_FIELDS.forEach(function(f){o[f]=state[f];});return o;}
-function applyPayload(d){SYNC_FIELDS.forEach(function(f){if(d[f]!==undefined)state[f]=d[f];});if(!state.safety)state.safety={contacts:[],whoCan:{}};}
+// Union-by-id: behåll alla poster från båda enheter, inkommande (remote) vinner vid id-krock — inget raderas, inget dubbleras.
+function mergeById(local,remote){
+  local=Array.isArray(local)?local:[];remote=Array.isArray(remote)?remote:[];
+  var map={},order=[];
+  local.forEach(function(x){if(x&&x.id){if(!map[x.id])order.push(x.id);map[x.id]=x;}});
+  remote.forEach(function(x){if(x&&x.id){if(!map[x.id])order.push(x.id);map[x.id]=x;}});
+  return order.map(function(id){return map[id];});
+}
+// Import (overwrite-merge): ersätter fält med filens innehåll.
+function applyPayload(d){SYNC_FIELDS.forEach(function(f){if(d[f]!==undefined)state[f]=d[f];});if(!state.safety)state.safety={contacts:[],whoCan:{}};if(!state.safety.whoCan)state.safety.whoCan={};}
+// Synk-pull (union-merge per id) så inga poster försvinner mellan enheter.
+function mergePull(d){
+  if(!d)return;
+  ID_ARRAYS.forEach(function(f){state[f]=mergeById(state[f],d[f]);});
+  if(d.safety){
+    if(!state.safety)state.safety={contacts:[],whoCan:{}};
+    state.safety.contacts=mergeById(state.safety.contacts,d.safety.contacts);
+    if(d.safety.whoCan){for(var k in d.safety.whoCan){var rv=d.safety.whoCan[k];if(rv)state.safety.whoCan[k]=rv;else if(state.safety.whoCan[k]===undefined)state.safety.whoCan[k]='';}}
+  }
+  if(d.kindDone){if(!state.kindDone)state.kindDone={};for(var day in d.kindDone){var loc=state.kindDone[day]||[],rem=d.kindDone[day]||[];var u=loc.slice();rem.forEach(function(t){if(u.indexOf(t)<0)u.push(t);});state.kindDone[day]=u;}}
+  if(d.energy!==undefined)state.energy=d.energy;
+  if(d.energyDate)state.energyDate=d.energyDate;
+}
 
 function setBadge(st,msg){
   var b=$('sync-badge');$('sync-label').textContent=msg;
@@ -1077,7 +1157,7 @@ function ghPull(){
   if(!syncOn())return Promise.resolve();
   setBadge('load','Hämtar…');
   return ghGet().then(function(d){
-    if(d){applyPayload(d);save();renderAll();}
+    if(d){mergePull(d);save();renderAll();}
     setBadge('ok','Synkad');
   }).catch(function(){setBadge('err','Synkfel');});
 }
@@ -1164,6 +1244,26 @@ function wireSeg(segId){
 }
 wireSeg('seg-neighbors');wireSeg('seg-share');wireSeg('seg-safety');
 
+// ════════ NYHETER & FUNKTIONER ════════
+function renderNews(){
+  $('news-version').textContent='v'+APPINFO.version;
+  $('news-tagline').textContent=APPINFO.tagline;
+  var cl=$('news-changelog');cl.innerHTML='';
+  APPINFO.changelog.forEach(function(p){
+    var card=document.createElement('div');card.className='card-panel';card.style.marginBottom='10px';
+    var items=p.items.map(function(t){return '<div class="crisis-step"><b>&middot;</b><span>'+esc(t)+'</span></div>';}).join('');
+    card.innerHTML='<div class="section-title" style="margin:0 0 4px"><span>v'+esc(p.v)+'</span><span class="mini soft" style="font-weight:400">'+esc(p.d)+'</span></div>'+items;
+    cl.appendChild(card);
+  });
+  var fn=$('news-functions');fn.innerHTML='';
+  APPINFO.functions.forEach(function(g){
+    var d=document.createElement('details');d.className='crisis-cat';
+    var items=g.items.map(function(t){return '<div class="crisis-step"><b>&middot;</b><span>'+esc(t)+'</span></div>';}).join('');
+    d.innerHTML='<summary>'+esc(g.area)+'</summary><div class="crisis-body">'+items+'</div>';
+    fn.appendChild(d);
+  });
+}
+
 // ════════ INIT ════════
 function renderAll(){
   renderEnergy();renderKind();renderRecent();renderHomeEvents();renderHomeLoans();
@@ -1171,6 +1271,7 @@ function renderAll(){
   renderLoans();renderHelp();renderSwap();renderPlants();
   renderEvents();
   renderWhoCan();renderContacts();renderCrisis();renderPets();
+  renderNews();
 }
 loadSync();
 renderAll();
