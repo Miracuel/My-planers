@@ -610,6 +610,28 @@ label.chk-item:last-child{border-bottom:none}
 .me-name{flex:1;font-size:14px}
 .me-cur{font-size:11px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:2px 9px;white-space:nowrap}
 .me-apply-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-size:15px;cursor:pointer;font-family:inherit;font-weight:600}
+.me-md{border:1px dashed #C9BBA0;background:#FBF8F1;border-radius:12px;padding:12px 14px;margin-bottom:16px}
+.me-md-h{font-family:Georgia,serif;font-size:15px;margin-bottom:4px}
+.me-md-sub{font-size:11px;color:var(--ink-soft);margin-bottom:10px;line-height:1.55}
+.me-md input[type=file]{font-size:12px;width:100%}
+.me-md-report{font-size:12px;color:var(--ink);font-weight:600;margin:10px 0 4px}
+.me-md-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:5px 0;border-top:1px solid var(--line);font-size:12px}
+.me-md-title{font-weight:600;min-width:130px}
+.me-md-fields{color:var(--ink-soft);flex:1}
+.me-md-count{color:#3E6B41;font-weight:600;white-space:nowrap}
+.me-md-actions{display:flex;gap:8px;align-items:center;margin-top:10px}
+.me-md-actions .me-apply-btn{flex:1}
+.md-up{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.md-up-h{font-family:Georgia,serif;font-size:15px;margin-bottom:4px}
+.md-up-sub{font-size:11px;color:var(--ink-soft);margin-bottom:10px}
+.md-file{display:block;width:100%;font-size:13px;font-family:inherit;color:var(--ink);margin-bottom:6px}
+.md-prevsum{font-size:12px;color:var(--ink);font-weight:600;margin:8px 0}
+.md-grp{border:1px solid var(--line);border-radius:10px;padding:8px 11px;margin-bottom:6px;background:var(--paper)}
+.md-grp-h{font-size:13px;font-weight:600}
+.md-grp-f{font-size:11px;color:#5B4FA0;margin:2px 0}
+.md-grp-m{font-size:11px;color:var(--ink-soft)}
+.me-div{text-align:center;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:6px 0 14px}
+.add-card-bottom{margin-top:4px}
 </style>
 </head>
 <body>
@@ -672,6 +694,7 @@ label.chk-item:last-child{border-bottom:none}
 
 <div class="filt-bar" id="filt-bar" style="display:none"></div>
 <div id="cards"></div>
+<button class="add-card add-card-bottom" id="add-app-bottom">+ Lägg till app</button>
 <div id="today-time" style="display:none"></div>
 
 <div class="prompts" id="prompts">
@@ -1162,7 +1185,7 @@ function renderRepoClogList(){
   }
 }
 
-var meField='sc.pot',meFlag='ai',meSel={};
+var meField='sc.pot',meFlag='ai',meSel={},meMdGroups=null;
 var ME_FIELDS=[
  {k:'sc.pot',g:'Poäng',label:'Potential (0–10)',type:'num10'},
  {k:'sc.fun',g:'Poäng',label:'Roligt (0–10)',type:'num10'},
@@ -1215,6 +1238,71 @@ function meApply(){
   persist();renderStats();renderCards();renderMassEdit();
   alert('Uppdaterade '+n+' app'+(n===1?'':'ar')+'.');
 }
+function mdStatusKey(v){var x=(v||'').trim().toLowerCase();var map={'pågår':'pagar','pagar':'pagar','backlogg':'back','back':'back','test':'test','klar':'klar','ej skapad':'none','none':'none','auto':'auto'};return map[x]||v;}
+function parseMassMd(text){
+  var lines=(text||'').split(/\r?\n/);
+  var FMAP={'familj':'family','kategori':'cat','status':'status','prioritet':'prio','mognad':'mognad','synktyp':'syncType','livscykel':'mstatus','livscykel-status':'mstatus'};
+  var groups=[],cur=null;
+  lines.forEach(function(ln){
+    var t=ln.trim();if(!t)return;
+    if(t.indexOf('## ')===0){cur={title:t.slice(3).trim(),fields:{},refs:[]};groups.push(cur);return;}
+    if(t.charAt(0)==='#')return;
+    var m=t.match(/^APP-(\d+)/i);
+    if(m){if(cur)cur.refs.push(parseInt(m[1],10));return;}
+    var ci=t.indexOf(':');
+    if(ci>0&&cur){var key=t.slice(0,ci).trim().toLowerCase();var val=t.slice(ci+1).trim();if(FMAP[key]){var fk=FMAP[key];if(fk==='prio'){var pm=val.match(/\d+/);cur.fields.prio=pm?parseInt(pm[0],10):null;}else if(fk==='status'){cur.fields.status=mdStatusKey(val);}else cur.fields[fk]=val;}}
+  });
+  return groups;
+}
+function applyMassMd(){
+  if(!meMdGroups||!meMdGroups.length){alert('Ingen .md inläst.');return;}
+  var nApps=0,nGroups=0,miss=0;
+  meMdGroups.forEach(function(g){var keys=Object.keys(g.fields);if(!keys.length||!g.refs.length)return;var any=false;
+    g.refs.forEach(function(no){var a=state.apps.find(function(x){return x.appNo===no;});if(!a){miss++;return;}
+      keys.forEach(function(fk){if(fk==='prio')a.prio=g.fields.prio;else a[fk]=g.fields[fk];});
+      pushHistory(a,'massedit','Massredigering (.md): '+keys.map(function(k){return k+'='+g.fields[k];}).join(', '));nApps++;any=true;});
+    if(any)nGroups++;});
+  persist();renderStats();renderCards();renderMassEdit();
+  alert('Applicerade på '+nApps+' app'+(nApps===1?'':'ar')+' i '+nGroups+' grupp'+(nGroups===1?'':'er')+'.'+(miss?('\nHittade inte: '+miss+' app-ID.'):''));
+}
+function meMdImportHtml(){
+  var h='<div class="me-md"><div class="me-md-h">📥 Importera .md för massredigering</div><div class="me-md-sub">Ladda upp en snabbgrupps-fil: rubrik <b>## Grupp</b>, sedan rader som <b>Familj:</b> / <b>Kategori:</b> och en lista med <b>APP-ID</b>. Apparna matchas på app-ID.</div><input type="file" id="me-md-file" accept=".md,.markdown,.txt,text/markdown,text/plain">';
+  if(meMdGroups){
+    var DLBL={family:'Familj',cat:'Kategori',status:'Status',prio:'Prioritet',mognad:'Mognad',syncType:'Synktyp',mstatus:'Livscykel'};
+    var totRefs=0,matched=0,unmatched=0,rows='';
+    meMdGroups.forEach(function(g){var refN=g.refs.length;totRefs+=refN;var mN=g.refs.filter(function(no){return state.apps.some(function(x){return x.appNo===no;});}).length;matched+=mN;unmatched+=(refN-mN);
+      var fs=Object.keys(g.fields).map(function(k){return (DLBL[k]||k)+': '+esc(String(g.fields[k]));}).join(' \u00b7 ');
+      rows+='<div class="me-md-row"><span class="me-md-title">'+esc(g.title)+'</span><span class="me-md-fields">'+(fs||'<i>inga fält</i>')+'</span><span class="me-md-count">'+mN+'/'+refN+'</span></div>';});
+    h+='<div class="me-md-report">'+meMdGroups.length+' grupper \u00b7 '+matched+' av '+totRefs+' app-ID matchade'+(unmatched?(' \u00b7 '+unmatched+' ej hittade'):'')+'</div>'+rows+'<div class="me-md-actions"><button class="me-apply-btn" id="me-md-apply">Applicera p\u00e5 '+matched+' app'+(matched===1?'':'ar')+'</button><button class="me-mini" id="me-md-clear">Rensa</button></div>';
+  }
+  h+='</div>';return h;
+}
+
+var mdGroups=[];
+function appByNo(no){return state.apps.find(function(a){return a.appNo===no;});}
+function mdAppNo(line){var u=line.toUpperCase();if(u.indexOf('APP')!==0)return null;var j=3,n='';while(j<line.length){var ch=line.charAt(j);if(ch>='0'&&ch<='9'){n+=ch;}else if(n.length){break;}else if(ch==='-'||ch===' '){}else{break;}j++;}return n.length?parseInt(n,10):null;}
+function mdStatusVal(v){var m={'auto':'auto','ej skapad':'none','none':'none','backlogg':'back','back':'back','pågår':'pagar','pagar':'pagar','test':'test','klar':'klar'};return m[String(v).toLowerCase()]||v;}
+function mdFieldLabel(fk){var m={'family':'Familj','cat':'Kategori','status':'Status','prio':'Prioritet','mognad':'Mognad','mstatus':'Livscykel','syncType':'Synktyp','sc.pot':'Potential','sc.fun':'Roligt','sc.diff':'Svårighet','sc.nytta':'Nytta'};return m[fk]||fk;}
+function parseMdGroups(text){
+  var lines=String(text).split('\n');var groups=[],cur=null;
+  var FMAP={'familj':'family','kategori':'cat','status':'status','prioritet':'prio','prio':'prio','mognad':'mognad','livscykel':'mstatus','livscykelstatus':'mstatus','synktyp':'syncType','synk':'syncType','potential':'sc.pot','roligt':'sc.fun','kul':'sc.fun','svårighet':'sc.diff','nytta':'sc.nytta'};
+  for(var i=0;i<lines.length;i++){var line=lines[i].trim();if(!line)continue;
+    if(line.slice(0,3)==='## '){cur={title:line.slice(3).trim(),fields:{},ids:[]};groups.push(cur);continue;}
+    if(line.charAt(0)==='#')continue;
+    var no=mdAppNo(line);if(no!==null){if(cur)cur.ids.push(no);continue;}
+    var ci=line.indexOf(':');if(ci>0&&cur){var key=line.slice(0,ci).trim().toLowerCase();var val=line.slice(ci+1).trim();if(FMAP[key])cur.fields[FMAP[key]]=val;}
+  }
+  return groups.filter(function(g){return g.ids.length>0&&Object.keys(g.fields).length>0;});
+}
+function mdApply(groups){var nApps=0,nChanges=0,unmatched=[];groups.forEach(function(g){g.ids.forEach(function(no){var a=appByNo(no);if(!a){unmatched.push(no);return;}Object.keys(g.fields).forEach(function(fk){var val=g.fields[fk];if(fk.indexOf('sc.')===0){var sk=fk.slice(3);var num=parseFloat(val);if(!isNaN(num)){if(!a.scores)a.scores={};a.scores[sk]=num;nChanges++;}}else if(fk==='prio'){var p=parseInt(val,10);a.prio=isNaN(p)?null:p;nChanges++;}else if(fk==='status'){a.status=mdStatusVal(val);nChanges++;}else{a[fk]=val;nChanges++;}});pushHistory(a,'massedit','Massredigering (underlag): '+Object.keys(g.fields).map(function(fk){return mdFieldLabel(fk)+'='+g.fields[fk];}).join(', '));nApps++;});});return {apps:nApps,changes:nChanges,unmatched:unmatched};}
+function mdPreviewHtml(){
+  var prev='';
+  if(mdGroups.length){var totApps=0,totUn=0;
+    var rows=mdGroups.map(function(g){var matched=0,un=[];g.ids.forEach(function(no){if(appByNo(no))matched++;else un.push(no);});totApps+=matched;totUn+=un.length;var fstr=Object.keys(g.fields).map(function(fk){return mdFieldLabel(fk)+': '+esc(g.fields[fk]);}).join(' · ');return '<div class="md-grp"><div class="md-grp-h">'+esc(g.title)+'</div><div class="md-grp-f">'+fstr+'</div><div class="md-grp-m">'+matched+' appar'+(un.length?(' · '+un.length+' ej hittade: '+un.map(function(x){return appIdStr(x);}).join(', ')):'')+'</div></div>';}).join('');
+    prev='<div class="md-prevsum">'+mdGroups.length+' grupper · '+totApps+' app-träffar'+(totUn?(' · '+totUn+' ej hittade'):'')+'</div>'+rows+'<button class="me-apply-btn" id="me-mdapply">Applicera underlaget på '+totApps+' appar</button>';
+  }
+  return '<div class="md-up"><div class="md-up-h">📄 Ladda upp underlag (.md)</div><div class="md-up-sub">Ladda upp en .md-fil med grupper (## rubrik, t.ex. "Familj:" och "Kategori:", samt APP-ID-rader). Fälten appliceras på alla matchande app-ID.</div><input type="file" id="me-mdfile" accept=".md,.markdown,.txt" class="md-file">'+prev+'</div>';
+}
 function renderMassEdit(){
   var wrap=document.getElementById('medit-wrap');if(!wrap)return;
   var apps=state.apps.filter(function(a){return !a.archived;}).slice().sort(function(x,y){return String(x.name||'').localeCompare(String(y.name||''),'sv',{sensitivity:'base'});});
@@ -1222,9 +1310,9 @@ function renderMassEdit(){
   var fieldSel='<select id="me-field" class="sel-input">'+order.map(function(g){return '<optgroup label="'+esc(g)+'">'+groups[g].map(function(f){return '<option value="'+f.k+'"'+(f.k===meField?' selected':'')+'>'+esc(f.label)+'</option>';}).join('')+'</optgroup>';}).join('')+'</select>';
   var selCount=apps.filter(function(a){return meSel[a.id];}).length;
   var listHtml=apps.length?apps.map(function(a){return '<label class="me-row"><input type="checkbox" class="me-app" value="'+a.id+'"'+(meSel[a.id]?' checked':'')+'><span class="me-name">'+(a.emoji?esc(a.emoji)+' ':'')+esc(a.name)+'</span><span class="me-cur">'+esc(meCurrentVal(a))+'</span></label>';}).join(''):'<div class="dash-empty">Inga appar.</div>';
-  wrap.innerHTML='<div class="medit-h">Massredigera</div>'+
-    '<div class="medit-sub">Välj en inställning, sätt ett värde, kryssa i apparna och spara på alla samtidigt. Värdet till höger visar vad varje app har nu.</div>'+
-    '<div class="medit-ctrl"><label class="me-lbl">Inställning</label>'+fieldSel+'</div>'+
+  var mdHtml=meMdImportHtml();wrap.innerHTML='<div class="medit-h">Massredigera</div>'+
+    '<div class="medit-sub">Välj en inställning, sätt ett värde, kryssa i apparna och spara på alla samtidigt. Värdet till höger visar vad varje app har nu.</div>'+mdHtml+
+    mdPreviewHtml()+'<div class="me-div">eller redigera ett fält manuellt</div>'+'<div class="medit-ctrl"><label class="me-lbl">Inställning</label>'+fieldSel+'</div>'+
     '<div class="medit-ctrl"><label class="me-lbl">Nytt värde</label><div class="me-valwrap">'+meValControl()+'</div></div>'+
     '<div class="medit-bar"><span class="me-selinfo">'+selCount+' av '+apps.length+' valda</span><button class="me-mini" id="me-all">Markera alla</button><button class="me-mini" id="me-none">Rensa val</button></div>'+
     '<div class="me-list" id="me-list">'+listHtml+'</div>'+
@@ -1233,8 +1321,8 @@ function renderMassEdit(){
   var fl=document.getElementById('me-flag');if(fl)fl.onchange=function(){meFlag=fl.value;renderMassEdit();};
   var ma=document.getElementById('me-all');if(ma)ma.onclick=function(){apps.forEach(function(a){meSel[a.id]=true;});renderMassEdit();};
   var mn=document.getElementById('me-none');if(mn)mn.onclick=function(){meSel={};renderMassEdit();};
-  var ap=document.getElementById('me-apply');if(ap)ap.onclick=meApply;
-  var cl=document.getElementById('me-list');if(cl)cl.onchange=function(e){var c=e.target.closest('input.me-app');if(!c)return;meSel[c.value]=c.checked;var sc=apps.filter(function(a){return meSel[a.id];}).length;var info=wrap.querySelector('.me-selinfo');if(info)info.textContent=sc+' av '+apps.length+' valda';var ab=document.getElementById('me-apply');if(ab)ab.textContent='Spara på '+sc+' valda app'+(sc===1?'':'ar');};
+  var ap=document.getElementById('me-apply');if(ap)ap.onclick=meApply;var mf=document.getElementById('me-mdfile');if(mf)mf.onchange=function(e){var file=e.target.files&&e.target.files[0];if(!file)return;var rd=new FileReader();rd.onload=function(){mdGroups=parseMdGroups(String(rd.result||''));renderMassEdit();};rd.readAsText(file);};var mda=document.getElementById('me-mdapply');if(mda)mda.onclick=function(){var r=mdApply(mdGroups);persist();renderStats();renderCards();var msg='Uppdaterade '+r.apps+' app-träffar ('+r.changes+' ändringar).';if(r.unmatched.length)msg+=' — Ej hittade app-ID: '+r.unmatched.map(function(x){return appIdStr(x);}).join(', ');mdGroups=[];renderMassEdit();alert(msg);};
+  var cl=document.getElementById('me-list');if(cl)cl.onchange=function(e){var c=e.target.closest('input.me-app');if(!c)return;meSel[c.value]=c.checked;var sc=apps.filter(function(a){return meSel[a.id];}).length;var info=wrap.querySelector('.me-selinfo');if(info)info.textContent=sc+' av '+apps.length+' valda';var ab=document.getElementById('me-apply');if(ab)ab.textContent='Spara på '+sc+' valda app'+(sc===1?'':'ar');};var mdf=document.getElementById('me-md-file');if(mdf)mdf.onchange=function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{meMdGroups=parseMassMd(String(rd.result));}catch(_e){meMdGroups=[];}renderMassEdit();};rd.readAsText(f);};var mda=document.getElementById('me-md-apply');if(mda)mda.onclick=applyMassMd;var mdc=document.getElementById('me-md-clear');if(mdc)mdc.onclick=function(){meMdGroups=null;renderMassEdit();};
 }
 
 function renderClogView(){
@@ -1272,7 +1360,7 @@ function applyView(v){
   if(search)search.style.display=(isCal||isHist||isClog||isMedit)?'none':'';
   if(tb)tb.style.display=(isCal||isHist||isClog||isMedit)?'none':'';
   if(cards)cards.style.display=(isCal||isHist||isClog||isMedit)?'none':'';var _fb=document.getElementById('filt-bar');if(_fb&&(isCal||isHist||isClog||isMedit))_fb.style.display='none';
-  if(addApp)addApp.style.display=(isCal||isToday||isHist||isClog||isMedit)?'none':'';
+  if(addApp)addApp.style.display=(isCal||isToday||isHist||isClog||isMedit)?'none':'';var addApp2=document.getElementById('add-app-bottom');if(addApp2)addApp2.style.display=(isCal||isToday||isHist||isClog||isMedit)?'none':'';
   if(idea)idea.style.display=(v==='cards')?'':'none';
   var _pr=document.getElementById('prompts');if(_pr)_pr.style.display=(v==='cards')?'':'none';
   var _dd=document.getElementById('done-day');if(_dd)_dd.style.display=isToday?'':'none';var _dds=document.getElementById('done-day-sum');if(_dds&&!isToday)_dds.style.display='none';var _tt=document.getElementById('today-time');if(_tt)_tt.style.display=isToday?'':'none';
@@ -2045,6 +2133,7 @@ document.getElementById('add-app').onclick=()=>{
   sheetBg.classList.add('open');newSheet.classList.add('open');
   setTimeout(()=>document.getElementById('n-name').focus(),250);
 };
+var _aab=document.getElementById('add-app-bottom');if(_aab)_aab.onclick=()=>document.getElementById('add-app').click();
 document.getElementById('n-create').onclick=()=>{
   const name=document.getElementById('n-name').value.trim();
   if(!name){document.getElementById('n-name').focus();return;}
