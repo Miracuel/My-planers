@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Medarbetaren">
+<meta name="theme-color" content="#EEF0F0">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Medarbetaren","short_name":"Medarbetaren","display":"standalone","background_color":"%23EEF0F0","theme_color":"%23EEF0F0","start_url":"."}'>
+<title>Medarbetaren</title>
+<style>
+:root{
+  --bg:#EEF0F0;--panel:#F8FAFA;--panel2:#E6EBEB;--line:#D5DCDC;
+  --ink:#2A3535;--muted:#76817F;--accent:#2C6E73;--accent-soft:#D2E2E0;
+  --pos:#4F8A5B;--pos-soft:#DCEBDD;--neg:#C06A5E;--neg-soft:#F1DED9;
+  --warn:#C99A4A;--warn-soft:#F3E7CC;
+  --navbg:rgba(238,240,240,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 4px}
+.brand-sub{text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px;letter-spacing:.03em}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .25s}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* Idag */
+.clock-big{font-family:Georgia,serif;font-size:42px;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em;margin:2px 0}
+.clock-date{text-align:center;font-size:12px;color:var(--muted);text-transform:capitalize;margin-bottom:12px}
+.stamp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px}
+.stamp{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
+.stamp .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stamp .val{font-size:18px;font-variant-numeric:tabular-nums;margin-top:3px}
+.stamp .val.empty{color:var(--muted)}
+.stamp input{text-align:center;font-size:16px;padding:5px 2px;background:transparent;border:none;border-radius:0}
+.big-btn{width:100%;margin-top:12px;font-size:15px;padding:14px}
+.metric-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.metric{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px}
+.metric .m-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.metric .m-val{font-family:Georgia,serif;font-size:24px;margin-top:4px;font-variant-numeric:tabular-nums}
+.m-val.pos{color:var(--pos)}.m-val.neg{color:var(--neg)}
+.bar-track{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden;margin-top:8px;border:1px solid var(--line)}
+.bar-fill{height:100%;background:var(--accent);border-radius:5px;transition:width .4s}
+.bar-fill.over{background:var(--warn)}
+.type-pick{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.tchip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:7px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.tchip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Kalender */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-head button{background:none;border:1px solid var(--line);border-radius:10px;width:36px;height:32px;font-size:16px;color:var(--ink);cursor:pointer}
+.cal-title{font-family:Georgia,serif;font-size:16px;text-transform:capitalize}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{font-size:10px;color:var(--muted);text-align:center;padding-bottom:2px;text-transform:uppercase}
+.cal-cell{aspect-ratio:1;border-radius:10px;background:var(--panel2);border:1px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;font-size:11px;cursor:pointer;position:relative;overflow:hidden}
+.cal-cell.empty{background:transparent;cursor:default}
+.cal-cell.we{background:var(--bg)}
+.cal-cell.hol{background:var(--neg-soft)}
+.cal-cell.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.cal-cell .dn{font-weight:600;color:var(--ink)}
+.cal-cell.we .dn,.cal-cell.hol .dn{color:var(--muted)}
+.cal-sal{font-size:9px;margin-top:auto;margin-bottom:3px;font-weight:600;font-variant-numeric:tabular-nums}
+.cal-sal.pos{color:var(--pos)}.cal-sal.neg{color:var(--neg)}
+.cal-tag{font-size:13px;margin-top:auto;margin-bottom:2px}
+.cal-dot{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.totbar{display:flex;justify-content:space-between;align-items:center;background:var(--accent-soft);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:10px}
+.totbar .t-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.totbar .t-val{font-family:Georgia,serif;font-size:22px;font-variant-numeric:tabular-nums}
+.t-val.pos{color:var(--pos)}.t-val.neg{color:var(--neg)}
+.leg{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.leg span{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.leg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* Belastning */
+.chart{display:flex;align-items:flex-end;gap:4px;height:140px;padding:8px 2px 0;border-bottom:1px solid var(--line)}
+.cbar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;min-width:0}
+.cbar{width:100%;max-width:22px;border-radius:4px 4px 0 0;background:var(--accent);transition:height .3s}
+.cbar.over{background:var(--warn)}
+.cbar.under{background:var(--accent-soft)}
+.cbar-lbl{font-size:8px;color:var(--muted);white-space:nowrap}
+.target-line{position:relative;height:0;border-top:1.5px dashed var(--neg);margin-top:-1px}
+.wk-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.wk-row:first-child{border-top:none}
+.wk-row .wk-name{flex:1;color:var(--ink)}
+.wk-row .wk-h{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.wk-row .wk-s{font-weight:600;font-variant-numeric:tabular-nums;min-width:54px;text-align:right}
+.wk-s.pos{color:var(--pos)}.wk-s.neg{color:var(--neg)}
+.warn-banner{background:var(--warn-soft);border:1px solid var(--warn);border-radius:14px;padding:11px 14px;font-size:13px;line-height:1.55;color:#6E5320;margin-top:12px;display:none}
+.warn-banner.show{display:block}
+
+/* Mer */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line)}
+.set-row:first-child{border-top:none}
+.set-row .s-lbl{font-size:13px}
+.set-row .s-lbl small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.set-row input,.set-row select{width:96px;text-align:center}
+.sp-badge{font-size:11px;padding:3px 10px;border-radius:11px;background:var(--pos-soft);color:var(--pos);font-weight:600}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:var(--neg-soft);color:var(--neg)}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(42,53,53,.38);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.10)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:4px}
+.sheet-close{width:100%;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.sheet .del-link{text-align:center;margin-top:10px}
+.sheet .del-link button{background:none;border:none;color:var(--neg);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.time-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:11px;color:var(--muted);font-family:monospace;background:var(--panel2);padding:4px 8px;border-radius:6px;margin-top:4px}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#1E2424;--panel:#262D2D;--panel2:#2E3636;--line:#3C4544;
+  --ink:#DDE4E2;--muted:#8E9996;--accent:#5FA39F;--accent-soft:#2C3A39;
+  --pos:#7FAE86;--pos-soft:#2C3A2E;--neg:#C9897E;--neg-soft:#3A2C29;
+  --warn:#CDA866;--warn-soft:#3A3320;--navbg:rgba(30,36,36,.95);
+}
+html[data-theme=dark] .warn-banner{color:#E4CF9E}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+/* ── Desktop-overrides (genererade, endast CSS) ─────────── */
+@media(min-width:760px){
+  .nav{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:212px;max-width:212px;margin:0;border-top:none;border-right:1px solid var(--line);background:var(--panel);backdrop-filter:none;padding-bottom:0;align-items:stretch}
+  .nav::before{content:'\23F1 Medarbetaren';font-family:Georgia,serif;font-size:17px;color:var(--ink);padding:22px 18px 14px;display:block;border-bottom:1px solid var(--line);margin-bottom:6px;letter-spacing:.03em}
+  .nav button{flex:none;display:flex;align-items:center;gap:11px;text-align:left;justify-content:flex-start;padding:12px 18px;font-size:14px;border-radius:0}
+  .nav button span{display:inline-block;font-size:18px;margin:0;width:22px;text-align:center}
+  .nav button.active{background:var(--accent-soft)}
+  .app{max-width:680px;margin:0;margin-left:max(212px,calc((100vw - 680px)/2));padding:30px 36px 56px}
+  h1.brand,.brand-sub{display:none}
+  .theme-btn{top:18px;right:28px;left:auto}
+  /* Bottom-sheets blir centrerade modaler */
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;margin:0;width:460px;max-width:calc(100vw - 48px);max-height:86vh;border-radius:18px;transform:translate(-50%,-46%);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">⏱ Medarbetaren</h1>
+<div class="brand-sub">Timsaldo · kalender · belastning</div>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <div class="card-panel">
+    <div class="clock-big" id="now-clock">--:--</div>
+    <div class="clock-date" id="now-date"></div>
+    <div class="stamp-row">
+      <div class="stamp"><div class="lbl">In</div><div class="val empty" id="st-start" data-act="edit-start">—</div></div>
+      <div class="stamp"><div class="lbl">Lunch</div><div class="val" id="st-lunch" data-act="edit-lunch">30m</div></div>
+      <div class="stamp"><div class="lbl">Ut</div><div class="val empty" id="st-end" data-act="edit-end">—</div></div>
+    </div>
+    <button class="btn fill big-btn" id="stamp-btn">Stämpla in</button>
+    <div class="type-pick" id="today-types" style="margin-top:12px"></div>
+  </div>
+
+  <div class="section-title">Idag</div>
+  <div class="metric-row">
+    <div class="metric"><div class="m-lbl">Arbetad tid</div><div class="m-val" id="m-worked">0:00</div><div class="soft" id="m-norm"></div></div>
+    <div class="metric"><div class="m-lbl">Dagssaldo</div><div class="m-val" id="m-saldo">±0:00</div><div class="soft">mot normtid</div></div>
+  </div>
+
+  <div class="section-title">Beläggning idag</div>
+  <div class="card-panel">
+    <div class="soft" id="bel-text">Hur mycket av arbetstiden var inbokad/uppbokad?</div>
+    <div class="metric-row" style="margin-top:8px">
+      <div class="metric"><div class="m-lbl">Belagd tid</div><div class="m-val" id="m-belagd" data-act="edit-belagd">0:00</div></div>
+      <div class="metric"><div class="m-lbl">Beläggningsgrad</div><div class="m-val" id="m-belgrad">0%</div></div>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="bel-bar" style="width:0%"></div></div>
+    <div class="soft" id="bel-target" style="margin-top:6px"></div>
+  </div>
+
+  <div class="section-title">Total timsaldo</div>
+  <div class="totbar">
+    <span class="t-lbl">Flexsaldo totalt</span>
+    <span class="t-val" id="m-total">±0:00</span>
+  </div>
+</div>
+
+<!-- KALENDER -->
+<div class="view" id="view-cal">
+  <div class="totbar">
+    <span class="t-lbl">Saldo t.o.m. idag</span>
+    <span class="t-val" id="cal-total">±0:00</span>
+  </div>
+  <div class="cal-head">
+    <button data-act="cal-prev">‹</button>
+    <span class="cal-title" id="cal-title"></span>
+    <button data-act="cal-next">›</button>
+  </div>
+  <div class="card-panel" style="padding:10px">
+    <div class="cal-grid" id="cal-dows"></div>
+    <div class="cal-grid" id="cal-grid" style="margin-top:3px"></div>
+    <div class="leg">
+      <span><i style="background:var(--pos)"></i>plus</span>
+      <span><i style="background:var(--neg)"></i>minus</span>
+      <span><i style="background:var(--neg-soft)"></i>röd dag</span>
+      <span>S semester · Sj sjuk · V vab · L ledig · F förälder</span>
+    </div>
+  </div>
+  <div class="section-title" id="mon-sum-title">Månadens summa</div>
+  <div class="metric-row">
+    <div class="metric"><div class="m-lbl">Arbetad</div><div class="m-val" id="mon-worked">0:00</div></div>
+    <div class="metric"><div class="m-lbl">Saldo</div><div class="m-val" id="mon-saldo">±0:00</div></div>
+  </div>
+</div>
+
+<!-- BELASTNING -->
+<div class="view" id="view-load">
+  <div class="section-title" style="margin-top:0">Beläggning — senaste arbetsdagarna</div>
+  <div class="card-panel">
+    <div class="chart" id="load-chart"></div>
+    <div class="soft" id="load-avg" style="margin-top:8px;text-align:center"></div>
+  </div>
+  <div class="warn-banner" id="load-warn"></div>
+
+  <div class="section-title">Veckor</div>
+  <div class="card-panel" id="week-list"></div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-more">
+  <div class="section-title" style="margin-top:0">Inställningar</div>
+  <div class="card-panel">
+    <div class="set-row">
+      <div class="s-lbl">Normtid per dag<small>arbetstid efter avdragen lunch</small></div>
+      <input type="text" id="set-norm" placeholder="8:00">
+    </div>
+    <div class="set-row">
+      <div class="s-lbl">Standardlunch<small>minuter, dras från arbetad tid</small></div>
+      <input type="number" id="set-lunch" min="0" max="180">
+    </div>
+    <div class="set-row">
+      <div class="s-lbl">Beläggningsmål<small>mål för andel inbokad tid</small></div>
+      <input type="number" id="set-target" min="0" max="100">
+    </div>
+    <div class="set-row">
+      <div class="s-lbl">Ingående saldo<small>flexsaldo vid start, t.ex. +2:00 / -1:30</small></div>
+      <input type="text" id="set-start" placeholder="±0:00">
+    </div>
+  </div>
+
+  <div class="section-title">Synk &amp; säkerhetskopia</div>
+  <div class="card-panel">
+    <div class="set-row">
+      <div class="s-lbl">GitHub-synk<small id="sync-sub">av</small></div>
+      <span class="sp-badge offline" id="sync-badge">Lokal</span>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn ghost" id="sync-setup">Anslut GitHub</button>
+      <button class="btn ghost" id="sync-now">Synka nu</button>
+    </div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn ghost" id="export-btn">Exportera JSON</button>
+      <button class="btn ghost" id="import-btn">Importera</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+    <button class="btn ghost" id="insikt-btn" style="width:100%;margin-top:8px">Exportera till Insikten</button>
+  </div>
+
+  <div class="foot">
+    <button id="about-btn">Om appen</button>
+  </div>
+  <div class="privacy">Allt sparas i din enhet. Med GitHub-synk ligger din data i ett privat repo som du själv styr. API-nyckel och tema synkas aldrig.</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="active" data-v="today"><span>⏱</span>Idag</button>
+  <button data-v="cal"><span>📅</span>Kalender</button>
+  <button data-v="load"><span>📊</span>Belastning</button>
+  <button data-v="more"><span>⚙️</span>Mer</button>
+</nav>
+
+<!-- SHEETS -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="day-sheet">
+  <h3 id="day-sheet-title">Dag</h3>
+  <div class="soft" id="day-sheet-sub"></div>
+  <label>Typ av dag</label>
+  <div class="type-pick" id="day-types"></div>
+  <div id="day-time-fields">
+    <div class="time-grid">
+      <div><label>In</label><input type="time" id="day-start"></div>
+      <div><label>Ut</label><input type="time" id="day-end"></div>
+    </div>
+    <div class="time-grid">
+      <div><label>Lunch (min)</label><input type="number" id="day-lunch" min="0" max="180"></div>
+      <div><label>Belagd tid (min)</label><input type="number" id="day-belagd" min="0"></div>
+    </div>
+  </div>
+  <label>Anteckning</label>
+  <input type="text" id="day-note" placeholder="frivilligt">
+  <div class="soft" id="day-calc" style="margin-top:10px"></div>
+  <button class="sheet-close" id="day-save">Spara</button>
+  <div class="del-link"><button id="day-clear">Rensa dagen</button></div>
+</div>
+
+<div class="sheet" id="quick-sheet">
+  <h3 id="quick-title">Ange tid</h3>
+  <input type="time" id="quick-time">
+  <button class="sheet-close" id="quick-save">Spara</button>
+</div>
+
+<div class="sheet" id="num-sheet">
+  <h3 id="num-title">Ange minuter</h3>
+  <input type="number" id="num-val" min="0" max="600">
+  <div class="soft" id="num-hint" style="margin-top:6px"></div>
+  <button class="sheet-close" id="num-save">Spara</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>GitHub-synk</h3>
+  <div class="soft">Synkar mellan dina enheter via ett privat repo. Skapa en fine-grained token med Contents: read/write på just det repot.</div>
+  <label>Användarnamn (owner)</label>
+  <input type="text" id="gh-owner" placeholder="t.ex. miracuel">
+  <label>Repo</label>
+  <input type="text" id="gh-repo" placeholder="t.ex. app-data">
+  <label>Token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="hint">Filnamn: medarbetaren.json</div>
+  <button class="sheet-close" id="gh-save">Anslut</button>
+  <div class="del-link"><button id="gh-clear">Koppla från</button></div>
+</div>
+
+<div class="sheet" id="about-sheet">
+  <h3>Om Medarbetaren</h3>
+  <div class="soft" id="about-text"></div>
+  <button class="sheet-close" id="about-close">Stäng</button>
+</div>
+
+<script>
+// ── Helgdagar (svenska) ───────────────────────────────
+var SE_HOL={
+  2026:['2026-01-01','2026-01-06','2026-04-03','2026-04-05','2026-04-06','2026-05-01','2026-05-14','2026-05-24','2026-06-06','2026-06-20','2026-10-31','2026-12-25','2026-12-26'],
+  2027:['2027-01-01','2027-01-06','2027-03-26','2027-03-28','2027-03-29','2027-05-01','2027-05-06','2027-05-16','2027-06-06','2027-06-26','2027-11-06','2027-12-25','2027-12-26'],
+  2028:['2028-01-01','2028-01-06','2028-04-14','2028-04-16','2028-04-17','2028-05-01','2028-05-25','2028-06-04','2028-06-06','2028-06-24','2028-11-04','2028-12-25','2028-12-26'],
+  2029:['2029-01-01','2029-01-06','2029-03-30','2029-04-01','2029-04-02','2029-05-01','2029-05-10','2029-05-20','2029-06-06','2029-06-23','2029-11-03','2029-12-25','2029-12-26'],
+  2030:['2030-01-01','2030-01-06','2030-04-19','2030-04-21','2030-04-22','2030-05-01','2030-05-30','2030-06-06','2030-06-09','2030-06-22','2030-11-02','2030-12-25','2030-12-26'],
+  2031:['2031-01-01','2031-01-06','2031-04-11','2031-04-13','2031-04-14','2031-05-01','2031-05-22','2031-06-01','2031-06-06','2031-06-21','2031-11-01','2031-12-25','2031-12-26'],
+  2032:['2032-01-01','2032-01-06','2032-03-26','2032-03-28','2032-03-29','2032-05-01','2032-05-06','2032-05-16','2032-06-06','2032-06-26','2032-11-06','2032-12-25','2032-12-26'],
+  2033:['2033-01-01','2033-01-06','2033-04-15','2033-04-17','2033-04-18','2033-05-01','2033-05-26','2033-06-05','2033-06-06','2033-06-25','2033-11-05','2033-12-25','2033-12-26'],
+  2034:['2034-01-01','2034-01-06','2034-03-31','2034-04-02','2034-04-03','2034-05-01','2034-05-11','2034-05-21','2034-06-06','2034-06-24','2034-11-04','2034-12-25','2034-12-26'],
+  2035:['2035-01-01','2035-01-06','2035-04-20','2035-04-22','2035-04-23','2035-05-01','2035-05-31','2035-06-06','2035-06-10','2035-06-23','2035-11-03','2035-12-25','2035-12-26']
+};
+
+// ── State ──────────────────────────────────────────────
+var KEY='medarbetaren_v1';
+var state={
+  days:{},
+  settings:{normMin:480,lunchDefault:30,target:80,startSaldo:0},
+  theme:'auto'
+};
+try{var s=localStorage.getItem(KEY);if(s){var p=JSON.parse(s);state.days=p.days||{};state.settings=Object.assign(state.settings,p.settings||{});state.theme=p.theme||'auto';}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({days:state.days,settings:state.settings,theme:state.theme}));}catch(e){}}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+// ── Helpers ────────────────────────────────────────────
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var pad2=function(n){return String(n).padStart(2,'0');};
+var toISO=function(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());};
+var todayKey=function(){return toISO(new Date());};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+var parseHM=function(t){if(!t)return null;var m=String(t).split(':');if(m.length<2)return null;var h=parseInt(m[0],10),mi=parseInt(m[1],10);if(isNaN(h)||isNaN(mi))return null;return h*60+mi;};
+var fmtClock=function(min){min=((min%1440)+1440)%1440;return pad2(Math.floor(min/60))+':'+pad2(min%60);};
+var fmtDur=function(min){var n=Math.abs(min);return Math.floor(n/60)+':'+pad2(n%60);};
+var fmtSigned=function(min){var sign=min>0?'+':min<0?'−':'±';return sign+fmtDur(min);};
+var isWE=function(d){return d.getDay()===0||d.getDay()===6;};
+var isHol=function(d){var arr=SE_HOL[d.getFullYear()];return arr?arr.indexOf(toISO(d))>=0:false;};
+
+var DAY_TYPES=[
+  {id:'work',label:'Arbete',tag:''},
+  {id:'semester',label:'Semester',tag:'S'},
+  {id:'sjuk',label:'Sjuk',tag:'Sj'},
+  {id:'vab',label:'Vab',tag:'V'},
+  {id:'ledig',label:'Ledig',tag:'L'},
+  {id:'foralder',label:'Förälder',tag:'F'}
+];
+var typeOf=function(id){for(var i=0;i<DAY_TYPES.length;i++)if(DAY_TYPES[i].id===id)return DAY_TYPES[i];return DAY_TYPES[0];};
+
+function getDay(k){return state.days[k]||null;}
+function ensureDay(k){if(!state.days[k])state.days[k]={type:'work',start:'',end:'',lunch:state.settings.lunchDefault,belagd:0,note:''};return state.days[k];}
+
+// arbetad tid i minuter för en dagpost
+function workedMin(rec){
+  if(!rec)return 0;
+  var a=parseHM(rec.start),b=parseHM(rec.end);
+  if(a===null||b===null)return 0;
+  var w=b-a;if(w<0)w+=1440;
+  w-=(rec.lunch||0);
+  return w>0?w:0;
+}
+// normtid som förväntas en viss dag
+function normMin(k,rec){
+  rec=rec||getDay(k);
+  if(rec&&rec.type&&rec.type!=='work')return 0; // ledighet neutraliserar dagen
+  return state.settings.normMin;
+}
+// dagssaldo: bidrar bara om tider loggats (arbetsdag) eller dagen är markerad som ledig (0)
+function daySaldo(k){
+  var rec=getDay(k);if(!rec)return 0;
+  if(rec.type&&rec.type!=='work')return 0;
+  var w=workedMin(rec);
+  if(w===0)return 0;
+  return w-state.settings.normMin;
+}
+function dayHasData(k){var r=getDay(k);return !!(r&&(workedMin(r)>0||(r.type&&r.type!=='work')||r.note));}
+
+// totalt flexsaldo t.o.m. en viss dag (inkl idag)
+function totalSaldo(maxKey){
+  var sum=state.settings.startSaldo||0;
+  Object.keys(state.days).forEach(function(k){
+    if(maxKey&&k>maxKey)return;
+    sum+=daySaldo(k);
+  });
+  return sum;
+}
+
+// ── Sheets ─────────────────────────────────────────────
+var bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');var ss=document.querySelectorAll('.sheet');for(var i=0;i<ss.length;i++)ss[i].classList.remove('open');}
+bg.onclick=closeSheets;
+
+// ── IDAG ───────────────────────────────────────────────
+function renderTypesInline(container,curId,onPick){
+  var html='';
+  for(var i=0;i<DAY_TYPES.length;i++){
+    var t=DAY_TYPES[i];
+    html+='<button class="tchip'+(t.id===curId?' sel':'')+'" data-tid="'+t.id+'">'+esc(t.label)+'</button>';
+  }
+  container.innerHTML=html;
+  var btns=container.querySelectorAll('.tchip');
+  for(var j=0;j<btns.length;j++){
+    btns[j].onclick=(function(b){return function(){onPick(b.dataset.tid);};})(btns[j]);
+  }
+}
+
+function renderToday(){
+  var k=todayKey();
+  var rec=getDay(k);
+  var t=rec?rec.type:'work';
+  // stämplingsrutor
+  var elS=document.getElementById('st-start'),elE=document.getElementById('st-end'),elL=document.getElementById('st-lunch');
+  elS.textContent=rec&&rec.start?rec.start:'—';elS.className='val'+(rec&&rec.start?'':' empty');
+  elE.textContent=rec&&rec.end?rec.end:'—';elE.className='val'+(rec&&rec.end?'':' empty');
+  elL.textContent=((rec?rec.lunch:state.settings.lunchDefault)||0)+'m';
+  // stämpla-knapp
+  var sb=document.getElementById('stamp-btn');
+  if(!rec||!rec.start){sb.textContent='Stämpla in';sb.className='btn fill big-btn';}
+  else if(!rec.end){sb.textContent='Stämpla ut';sb.className='btn big-btn';}
+  else{sb.textContent='Klart för idag ✓';sb.className='btn ghost big-btn';}
+  // typval
+  renderTypesInline(document.getElementById('today-types'),t,function(tid){
+    var r=ensureDay(k);r.type=tid;persist();renderToday();renderCal();renderLoad();
+  });
+  // mätare
+  var w=workedMin(rec);
+  document.getElementById('m-worked').textContent=fmtDur(w);
+  document.getElementById('m-norm').textContent=(t==='work')?('av '+fmtDur(state.settings.normMin)):typeOf(t).label;
+  var ds=daySaldo(k);
+  var msEl=document.getElementById('m-saldo');
+  msEl.textContent=fmtSigned(ds);
+  msEl.className='m-val'+(ds>0?' pos':ds<0?' neg':'');
+  // beläggning
+  var bel=rec?(rec.belagd||0):0;
+  document.getElementById('m-belagd').textContent=fmtDur(bel);
+  var grad=w>0?Math.round(bel/w*100):0;
+  document.getElementById('m-belgrad').textContent=grad+'%';
+  var bar=document.getElementById('bel-bar');
+  bar.style.width=Math.min(100,grad)+'%';
+  bar.className='bar-fill'+(grad>100?' over':'');
+  document.getElementById('bel-target').textContent='Mål: '+state.settings.target+'%'+(w>0?(grad>=state.settings.target?' — uppnått ✓':' — '+(state.settings.target-grad)+' procentenheter kvar'):'');
+  // total
+  var tot=totalSaldo(k);
+  var mt=document.getElementById('m-total');
+  mt.textContent=fmtSigned(tot);mt.className='t-val'+(tot>0?' pos':tot<0?' neg':'');
+}
+
+document.getElementById('stamp-btn').onclick=function(){
+  var k=todayKey();var rec=ensureDay(k);
+  var now=fmtClock(new Date().getHours()*60+new Date().getMinutes());
+  if(!rec.start)rec.start=now;
+  else if(!rec.end)rec.end=now;
+  else{return;}
+  persist();renderToday();renderCal();renderLoad();
+};
+
+// klick på stämplingsrutor -> snabbredigering
+var quickTarget=null;
+document.getElementById('view-today').addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');if(!el)return;
+  var act=el.getAttribute('data-act');var k=todayKey();var rec=getDay(k);
+  if(act==='edit-start'||act==='edit-end'){
+    quickTarget=act==='edit-start'?'start':'end';
+    document.getElementById('quick-title').textContent=quickTarget==='start'?'Stämplat in':'Stämplat ut';
+    document.getElementById('quick-time').value=(rec&&rec[quickTarget])||'';
+    openSheet('quick-sheet');
+  }else if(act==='edit-lunch'){
+    quickTarget='lunch';
+    document.getElementById('num-title').textContent='Lunch (minuter)';
+    document.getElementById('num-hint').textContent='Dras från arbetad tid.';
+    document.getElementById('num-val').value=(rec?rec.lunch:state.settings.lunchDefault)||0;
+    openSheet('num-sheet');
+  }else if(act==='edit-belagd'){
+    quickTarget='belagd';
+    document.getElementById('num-title').textContent='Belagd tid (minuter)';
+    document.getElementById('num-hint').textContent='Inbokad/uppbokad tid idag, t.ex. möten och planerade ärenden.';
+    document.getElementById('num-val').value=(rec?rec.belagd:0)||0;
+    openSheet('num-sheet');
+  }
+});
+document.getElementById('quick-save').onclick=function(){
+  var v=document.getElementById('quick-time').value;var k=todayKey();var rec=ensureDay(k);
+  rec[quickTarget]=v;persist();closeSheets();renderToday();renderCal();renderLoad();
+};
+document.getElementById('num-save').onclick=function(){
+  var v=parseInt(document.getElementById('num-val').value,10)||0;var k=todayKey();var rec=ensureDay(k);
+  rec[quickTarget]=v;persist();closeSheets();renderToday();renderCal();renderLoad();
+};
+
+// ── KALENDER ───────────────────────────────────────────
+var calRef=new Date();calRef.setDate(1);
+var MONTHS=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+var DOWS=['mån','tis','ons','tors','fre','lör','sön'];
+function renderCal(){
+  // total t.o.m. idag
+  var ct=totalSaldo(todayKey());
+  var cte=document.getElementById('cal-total');
+  cte.textContent=fmtSigned(ct);cte.className='t-val'+(ct>0?' pos':ct<0?' neg':'');
+  // dow-rad
+  var dowEl=document.getElementById('cal-dows');
+  if(!dowEl.childElementCount){var dh='';for(var i=0;i<7;i++)dh+='<div class="cal-dow">'+DOWS[i]+'</div>';dowEl.innerHTML=dh;}
+  var y=calRef.getFullYear(),m=calRef.getMonth();
+  document.getElementById('cal-title').textContent=MONTHS[m]+' '+y;
+  // första dagens veckodag (mån=0)
+  var first=new Date(y,m,1);var lead=(first.getDay()+6)%7;
+  var dim=new Date(y,m+1,0).getDate();
+  var tk=todayKey();
+  var html='';
+  for(var l=0;l<lead;l++)html+='<div class="cal-cell empty"></div>';
+  var monWorked=0,monSaldo=0;
+  for(var d=1;d<=dim;d++){
+    var dateObj=new Date(y,m,d);var k=toISO(dateObj);
+    var rec=getDay(k);var cls='cal-cell';
+    if(isHol(dateObj))cls+=' hol';else if(isWE(dateObj))cls+=' we';
+    if(k===tk)cls+=' today';
+    var inner='<div class="dn">'+d+'</div>';
+    if(rec&&rec.type&&rec.type!=='work'){
+      inner+='<div class="cal-tag">'+typeOf(rec.type).tag+'</div>';
+    }else{
+      var w=workedMin(rec);
+      if(w>0){
+        monWorked+=w;var sal=w-state.settings.normMin;monSaldo+=sal;
+        inner+='<div class="cal-sal '+(sal>0?'pos':sal<0?'neg':'')+'">'+fmtSigned(sal)+'</div>';
+      }
+    }
+    if(rec&&(rec.belagd||0)>0)inner+='<div class="cal-dot"></div>';
+    html+='<div class="'+cls+'" data-k="'+k+'">'+inner+'</div>';
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  document.getElementById('mon-sum-title').textContent=MONTHS[m]+'s summa';
+  document.getElementById('mon-worked').textContent=fmtDur(monWorked);
+  var mse=document.getElementById('mon-saldo');
+  mse.textContent=fmtSigned(monSaldo);mse.className='m-val'+(monSaldo>0?' pos':monSaldo<0?' neg':'');
+}
+document.getElementById('cal-grid').addEventListener('click',function(e){
+  var c=e.target.closest('.cal-cell');if(!c||c.classList.contains('empty'))return;
+  openDaySheet(c.getAttribute('data-k'));
+});
+document.getElementById('view-cal').addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b)return;
+  if(b.getAttribute('data-act')==='cal-prev')calRef.setMonth(calRef.getMonth()-1);
+  if(b.getAttribute('data-act')==='cal-next')calRef.setMonth(calRef.getMonth()+1);
+  renderCal();
+});
+
+// dag-redigering (sheet)
+var daySheetKey=null;
+function openDaySheet(k){
+  daySheetKey=k;
+  var rec=getDay(k);
+  var parts=k.split('-');var dObj=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  document.getElementById('day-sheet-title').textContent=parts[2]+' '+MONTHS[+parts[1]-1];
+  var sub=DOWS[(dObj.getDay()+6)%7];
+  if(isHol(dObj))sub+=' · röd dag';else if(isWE(dObj))sub+=' · helg';
+  document.getElementById('day-sheet-sub').textContent=sub;
+  var t=rec?rec.type:'work';
+  renderTypesInline(document.getElementById('day-types'),t,function(tid){
+    daySheetTempType=tid;
+    document.getElementById('day-time-fields').style.display=(tid==='work')?'block':'none';
+    refreshDayCalc();
+    var btns=document.getElementById('day-types').querySelectorAll('.tchip');
+    for(var i=0;i<btns.length;i++)btns[i].classList.toggle('sel',btns[i].dataset.tid===tid);
+  });
+  daySheetTempType=t;
+  document.getElementById('day-start').value=rec?rec.start||'':'';
+  document.getElementById('day-end').value=rec?rec.end||'':'';
+  document.getElementById('day-lunch').value=rec?(rec.lunch||0):state.settings.lunchDefault;
+  document.getElementById('day-belagd').value=rec?(rec.belagd||0):0;
+  document.getElementById('day-note').value=rec?rec.note||'':'';
+  document.getElementById('day-time-fields').style.display=(t==='work')?'block':'none';
+  refreshDayCalc();
+  openSheet('day-sheet');
+}
+var daySheetTempType='work';
+function readDaySheet(){
+  return {type:daySheetTempType,start:document.getElementById('day-start').value,end:document.getElementById('day-end').value,
+    lunch:parseInt(document.getElementById('day-lunch').value,10)||0,belagd:parseInt(document.getElementById('day-belagd').value,10)||0,
+    note:document.getElementById('day-note').value};
+}
+function refreshDayCalc(){
+  var r=readDaySheet();
+  var el=document.getElementById('day-calc');
+  if(r.type!=='work'){el.textContent=typeOf(r.type).label+' — räknas som ledig (±0:00).';return;}
+  var w=workedMin(r);
+  if(w===0){el.textContent='Ange in- och uttid för att beräkna saldo.';return;}
+  var sal=w-state.settings.normMin;
+  var grad=w>0?Math.round((r.belagd||0)/w*100):0;
+  el.textContent='Arbetad '+fmtDur(w)+' · saldo '+fmtSigned(sal)+' · beläggning '+grad+'%';
+}
+['day-start','day-end','day-lunch','day-belagd'].forEach(function(id){document.getElementById(id).addEventListener('input',refreshDayCalc);});
+document.getElementById('day-save').onclick=function(){
+  if(!daySheetKey)return;
+  state.days[daySheetKey]=readDaySheet();
+  persist();closeSheets();renderToday();renderCal();renderLoad();
+};
+document.getElementById('day-clear').onclick=function(){
+  if(daySheetKey&&state.days[daySheetKey]){delete state.days[daySheetKey];persist();}
+  closeSheets();renderToday();renderCal();renderLoad();
+};
+
+// ── BELASTNING ─────────────────────────────────────────
+function renderLoad(){
+  // senaste arbetsdagar med loggad tid
+  var keys=Object.keys(state.days).filter(function(k){var r=state.days[k];return r.type==='work'&&workedMin(r)>0;}).sort();
+  var recent=keys.slice(-14);
+  var chart=document.getElementById('load-chart');
+  if(!recent.length){chart.innerHTML='<div class="empty-msg" style="margin:auto">Ingen loggad arbetstid ännu.</div>';document.getElementById('load-avg').textContent='';}
+  else{
+    var html='';var sumGrad=0;
+    for(var i=0;i<recent.length;i++){
+      var r=state.days[recent[i]];var w=workedMin(r);var grad=w>0?Math.round((r.belagd||0)/w*100):0;sumGrad+=grad;
+      var h=Math.max(3,Math.min(100,grad));
+      var cls='cbar'+(grad>state.settings.target?' over':grad<state.settings.target*0.6?' under':'');
+      var lbl=recent[i].slice(8)+'/'+(+recent[i].slice(5,7));
+      html+='<div class="cbar-wrap"><div class="'+cls+'" style="height:'+h+'%" title="'+grad+'%"></div><div class="cbar-lbl">'+lbl+'</div></div>';
+    }
+    chart.innerHTML=html;
+    var avg=Math.round(sumGrad/recent.length);
+    document.getElementById('load-avg').textContent='Snittbeläggning '+avg+'% · mål '+state.settings.target+'% ('+recent.length+' dagar)';
+    var warn=document.getElementById('load-warn');
+    if(avg>95){warn.textContent='Hög belastning: din snittbeläggning är '+avg+'%. Lite luft i kalendern minskar risken för stress och övertid.';warn.classList.add('show');}
+    else if(avg<state.settings.target*0.6){warn.textContent='Låg beläggning ('+avg+'%). Det kan vara helt okej — men kan också signalera att tid läggs på sådant som inte loggas.';warn.classList.add('show');}
+    else warn.classList.remove('show');
+  }
+  renderWeeks();
+}
+function weekKeyOf(dObj){
+  // ISO-vecka
+  var d=new Date(Date.UTC(dObj.getFullYear(),dObj.getMonth(),dObj.getDate()));
+  var day=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-day+3);
+  var first=new Date(Date.UTC(d.getUTCFullYear(),0,4));
+  var wk=1+Math.round(((d-first)/86400000-3+((first.getUTCDay()+6)%7))/7);
+  return d.getUTCFullYear()+'-v'+pad2(wk);
+}
+function renderWeeks(){
+  var byWeek={};
+  Object.keys(state.days).forEach(function(k){
+    var r=state.days[k];if(r.type!=='work')return;var w=workedMin(r);if(w===0)return;
+    var parts=k.split('-');var dObj=new Date(+parts[0],+parts[1]-1,+parts[2]);
+    var wk=weekKeyOf(dObj);
+    if(!byWeek[wk])byWeek[wk]={worked:0,norm:0,days:0};
+    byWeek[wk].worked+=w;byWeek[wk].norm+=state.settings.normMin;byWeek[wk].days++;
+  });
+  var wks=Object.keys(byWeek).sort().reverse().slice(0,8);
+  var el=document.getElementById('week-list');
+  if(!wks.length){el.innerHTML='<div class="empty-msg">Inga veckor med loggad tid ännu.</div>';return;}
+  var html='';
+  for(var i=0;i<wks.length;i++){
+    var wd=byWeek[wks[i]];var sal=wd.worked-wd.norm;
+    var nm=wks[i].split('-v');
+    html+='<div class="wk-row"><span class="wk-name">v.'+(+nm[1])+' '+nm[0]+'</span><span class="wk-h">'+fmtDur(wd.worked)+' / '+wd.days+ ' d</span><span class="wk-s '+(sal>0?'pos':sal<0?'neg':'')+'">'+fmtSigned(sal)+'</span></div>';
+  }
+  el.innerHTML=html;
+}
+
+// ── MER / inställningar ────────────────────────────────
+function loadSettingsUI(){
+  document.getElementById('set-norm').value=fmtDur(state.settings.normMin);
+  document.getElementById('set-lunch').value=state.settings.lunchDefault;
+  document.getElementById('set-target').value=state.settings.target;
+  document.getElementById('set-start').value=fmtSigned(state.settings.startSaldo);
+}
+function parseSignedHM(str){
+  str=String(str).trim();var sign=1;
+  if(str[0]==='-'||str[0]==='−'){sign=-1;str=str.slice(1);}
+  else if(str[0]==='+'||str[0]==='±'){str=str.slice(1);}
+  var m=parseHM(str);if(m===null){var n=parseInt(str,10);return isNaN(n)?0:sign*n*60;}
+  return sign*m;
+}
+document.getElementById('set-norm').addEventListener('change',function(e){var m=parseHM(e.target.value);if(m!==null){state.settings.normMin=m;persist();renderAll();}loadSettingsUI();});
+document.getElementById('set-lunch').addEventListener('change',function(e){state.settings.lunchDefault=parseInt(e.target.value,10)||0;persist();});
+document.getElementById('set-target').addEventListener('change',function(e){state.settings.target=Math.max(0,Math.min(100,parseInt(e.target.value,10)||0));persist();renderAll();loadSettingsUI();});
+document.getElementById('set-start').addEventListener('change',function(e){state.settings.startSaldo=parseSignedHM(e.target.value);persist();renderAll();loadSettingsUI();});
+
+// export / import
+document.getElementById('export-btn').onclick=function(){
+  var blob=new Blob([JSON.stringify({app:'medarbetaren',version:1,days:state.days,settings:state.settings,exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='medarbetaren-'+todayKey()+'.json';a.click();
+};
+document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
+document.getElementById('import-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){try{var p=JSON.parse(rd.result);if(p.days)state.days=p.days;if(p.settings)state.settings=Object.assign(state.settings,p.settings);persist();renderAll();loadSettingsUI();alert('Importerat.');}catch(err){alert('Kunde inte läsa filen.');}};
+  rd.readAsText(f);
+};
+// Insikten-export
+document.getElementById('insikt-btn').onclick=function(){
+  var out={app:'medarbetaren',version:1,generated:new Date().toISOString(),totalSaldo:totalSaldo(todayKey()),settings:{normMin:state.settings.normMin,target:state.settings.target},days:[]};
+  Object.keys(state.days).sort().forEach(function(k){
+    var r=state.days[k];var w=workedMin(r);
+    out.days.push({date:k,type:r.type,worked:w,saldo:daySaldo(k),belagd:r.belagd||0,belaggning:w>0?Math.round((r.belagd||0)/w*100):0});
+  });
+  var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='medarbetaren-insikten-'+todayKey()+'.json';a.click();
+};
+// om
+document.getElementById('about-btn').onclick=function(){
+  document.getElementById('about-text').innerHTML='Medarbetaren håller koll på din arbetstid och ditt flexsaldo.<br><br>• <b>Stämpla in/ut</b> på Idag, eller redigera tider via kalendern.<br>• <b>Dagssaldo</b> = arbetad tid minus normtid. Ledighet, semester, sjuk och vab neutraliserar dagen (±0).<br>• <b>Beläggning</b> = andel av arbetstiden som var inbokad/uppbokad. Sätt ett mål under Mer.<br>• Allt sparas lokalt; med GitHub-synk delas data mellan dina enheter.';
+  openSheet('about-sheet');
+};
+document.getElementById('about-close').onclick=closeSheets;
+
+// ── GitHub-synk (appkollen-stil) ───────────────────────
+var SYNC_KEY='medarbetarensync_v1';
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/medarbetaren.json';};
+var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function setBadge(st,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' offline');}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function mergeDays(remote){
+  if(!remote||!remote.days)return;
+  // union per dag: behåll lokala poster, fyll på saknade från remote
+  Object.keys(remote.days).forEach(function(k){if(!state.days[k])state.days[k]=remote.days[k];});
+  if(remote.settings)state.settings=Object.assign({},remote.settings,state.settings);
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data){mergeDays(data);save();renderAll();loadSettingsUI();}
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({days:state.days,settings:state.settings,updated:new Date().toISOString()}));
+  var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json().then(function(j){if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+  });
+}
+function refreshSyncUI(){
+  document.getElementById('sync-sub').textContent=syncOn()?(sync.owner+'/'+sync.repo):'av';
+  if(syncOn())setBadge('ok','Synkad');else setBadge('off','Lokal');
+}
+document.getElementById('sync-setup').onclick=function(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  openSheet('sync-sheet');
+};
+document.getElementById('gh-save').onclick=function(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  saveSync();closeSheets();refreshSyncUI();
+  if(syncOn()){setBadge('load','Ansluter…');ghGet().then(function(data){if(data){mergeDays(data);save();renderAll();loadSettingsUI();return ghPush();}return ghPush();}).then(function(){setBadge('ok','Synkad');}).catch(function(){setBadge('err','Synkfel');});}
+};
+document.getElementById('gh-clear').onclick=function(){sync={owner:'',repo:'',token:'',sha:null};saveSync();closeSheets();refreshSyncUI();};
+document.getElementById('sync-now').onclick=function(){ghPull().then(function(){return ghPush();}).catch(function(){});};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Tema ───────────────────────────────────────────────
+function applyTheme(){
+  var m=state.theme||'auto';var h=new Date().getHours();
+  var dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#1E2424':'#EEF0F0';
+  var b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Klocka ─────────────────────────────────────────────
+function tickClock(){
+  var now=new Date();
+  document.getElementById('now-clock').textContent=fmtClock(now.getHours()*60+now.getMinutes());
+  document.getElementById('now-date').textContent=DOWS[(now.getDay()+6)%7]+' '+now.getDate()+' '+MONTHS[now.getMonth()];
+}
+
+// ── Nav ────────────────────────────────────────────────
+var navBtns=document.querySelectorAll('.nav button');
+for(var n=0;n<navBtns.length;n++){
+  navBtns[n].onclick=(function(b){return function(){
+    for(var i=0;i<navBtns.length;i++)navBtns[i].classList.remove('active');
+    b.classList.add('active');
+    var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='cal')renderCal();
+    if(b.dataset.v==='load')renderLoad();
+  };})(navBtns[n]);
+}
+
+// ── Init ───────────────────────────────────────────────
+function renderAll(){renderToday();renderCal();renderLoad();}
+loadSync();refreshSyncUI();loadSettingsUI();
+tickClock();renderAll();applyTheme();
+setInterval(function(){tickClock();applyTheme();},30000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
