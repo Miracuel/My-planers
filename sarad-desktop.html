@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Sårad">
+<meta name="theme-color" content="#F3EDEC">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Sårad","short_name":"Sårad","display":"standalone","background_color":"%23F3EDEC","theme_color":"%23F3EDEC","start_url":"."}'>
+<title>Sårad · Desktop</title>
+<style>
+:root{
+  --bg:#F3EDEC;--panel:#FBF7F6;--panel2:#EDE3E1;--line:#E0D2CF;
+  --ink:#3D3331;--muted:#8A7A77;--accent:#A8676A;--accent-soft:#EFDCDC;
+  --warm:#B96A60;--warm-soft:#F6E3DF;
+  --green:#7E957C;--yellow:#C7A86A;--red:#B96A60;
+  --navbg:rgba(243,237,236,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em}
+.section-title .mini{float:right;margin-top:-2px}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.card-panel + .card-panel{margin-top:10px}
+.btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s;width:100%}
+.btn:active{background:var(--accent-soft)}
+.btn.fill{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px;width:auto}
+.btn[disabled]{opacity:.55;cursor:default}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 4px}
+label:first-child{margin-top:0}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 11px;font-family:inherit;width:100%;outline:none;resize:vertical}
+textarea{line-height:1.5;min-height:74px}
+input[type=range]{accent-color:var(--accent);padding:0}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.lead{font-size:13px;line-height:1.6;color:var(--ink);margin-bottom:4px}
+.rng-row{display:flex;align-items:center;gap:10px}
+.rng-row input{flex:1}
+.rng-val{font-family:Georgia,serif;font-size:18px;min-width:30px;text-align:center;color:var(--accent)}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.soft{border-color:var(--accent-soft)}
+.chip.soft:active{background:var(--accent-soft)}
+
+/* AI box */
+.ai-box{border:1px solid var(--accent);background:var(--accent-soft);border-radius:14px;padding:12px 13px;font-size:13px;line-height:1.65;color:var(--ink);margin-top:10px;white-space:pre-wrap}
+.ai-box .ai-lbl{font-family:Georgia,serif;color:var(--accent);font-size:12px;display:block;margin-bottom:5px;letter-spacing:.02em}
+.plan-h{font-family:Georgia,serif;font-size:13px;color:var(--accent);margin:10px 0 3px}
+.plan-h:first-child{margin-top:0}
+.ai-box ul{margin:2px 0 2px 18px}
+.ai-box li{margin:3px 0}
+
+/* grounding */
+.ground-card{text-align:center;padding:8px 0}
+.ground-num{font-family:Georgia,serif;font-size:44px;color:var(--accent)}
+.ground-txt{font-size:15px;margin:6px 0 14px}
+.breath-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px 0}
+.breath-circle{width:118px;height:118px;border-radius:50%;background:var(--accent-soft);border:2px solid var(--accent);transition:transform 4s ease-in-out;display:flex;align-items:center;justify-content:center}
+.breath-label{font-family:Georgia,serif;font-size:16px}
+
+/* log rows / journal */
+.entry{padding:11px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:none}
+.entry-top{display:flex;align-items:center;gap:8px}
+.entry-top time{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap}
+.tag{font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.tag.acute{background:var(--warm-soft);color:#9A5A4C}
+.tag.trig{background:#EAEFE6;color:#5C7150}
+.tag.reframe{background:var(--accent-soft);color:var(--accent)}
+.entry h4{font-size:14px;font-weight:600;margin:6px 0 2px;font-family:inherit}
+.entry p{font-size:13px;line-height:1.55;color:var(--ink);margin:3px 0}
+.entry .meta{font-size:11px;color:var(--muted);margin-top:4px}
+.entry .row-del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.date-head{font-family:Georgia,serif;font-size:13px;color:var(--muted);margin:14px 0 2px}
+
+/* trap library */
+.trap{border-top:1px solid var(--line);padding:9px 0}
+.trap:first-child{border-top:none}
+.trap-h{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px}
+.trap-h .nm{flex:1;font-weight:500}
+.trap-h .ar{color:var(--muted);font-size:12px}
+.trap-body{font-size:12px;color:var(--muted);line-height:1.6;margin-top:6px;display:none}
+.trap.open .trap-body{display:block}
+.trap-body em{color:var(--ink);font-style:normal}
+
+/* follow-up qa */
+.fq{margin-top:12px}
+.fq .q{font-size:13px;line-height:1.5;color:var(--ink);margin-bottom:4px}
+.fq .q b{font-family:Georgia,serif;font-weight:400;color:var(--accent);margin-right:5px}
+
+/* stats */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.stat-row:first-child{border-top:none}
+.stat-row b{font-family:Georgia,serif;font-weight:400;font-size:16px;color:var(--accent)}
+
+/* resources */
+.res{font-size:12.5px;line-height:1.7;color:var(--ink)}
+.res b{font-weight:600}
+.res span{color:var(--muted)}
+
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10.5px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--accent);font-weight:600}
+.nav button span{display:block;font-size:16px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+/* sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(46,58,63,.4);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;margin-top:12px}
+.status-box{display:none;margin:10px 0 0;font-size:12px;padding:8px 12px;border-radius:8px}
+
+.foot{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.sync-badge{font-size:10px;padding:2px 8px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.sync-badge.ok{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.sync-badge.err{background:var(--warm-soft);color:#9A5A4C;border-color:var(--warm)}
+.top-tools{display:flex;align-items:center;justify-content:center;gap:8px;margin:-6px 0 10px}
+
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#221C1C;--panel:#2B2424;--panel2:#342B2B;--line:#43393A;
+  --ink:#E8DEDC;--muted:#A08F8D;--accent:#C98B8E;--accent-soft:#3E2E30;
+  --warm:#C98B8E;--warm-soft:#3A2826;
+  --green:#8FA487;--yellow:#C2AC6B;--red:#C98B8E;--navbg:rgba(34,28,28,.95);
+}
+html[data-theme=dark] .tag.trig{background:#2E3528;color:#A6BE97}
+html[data-theme=dark] .tag.acute{color:#E2B6AB}
+
+/* desktop */
+/* ── DESKTOP-FÖRST (denna fil är desktop-versionen) ── */
+html,body{background:var(--bg)}
+.app{max-width:880px;margin:0;margin-left:max(244px,calc(50vw - 460px));padding:34px 42px 60px}
+h1.brand{display:none}
+.top-tools{justify-content:flex-end;margin:0 0 20px}
+.theme-btn{position:fixed;top:22px;right:28px;left:auto;width:38px;height:38px}
+.nav{
+  position:fixed;top:0;left:0;bottom:0;right:auto;width:230px;height:100vh;
+  flex-direction:column;justify-content:flex-start;align-items:stretch;gap:3px;
+  background:var(--panel);border:none;border-right:1px solid var(--line);
+  padding:24px 14px;margin:0;max-width:none;backdrop-filter:none;z-index:30;overflow-y:auto;
+}
+.nav::before{content:"\2661  S\00E5rad";display:block;font-family:Georgia,serif;font-size:20px;color:var(--accent);padding:6px 12px 20px;letter-spacing:.04em}
+.nav button{flex:0 0 auto;display:flex;align-items:center;gap:12px;text-align:left;font-size:14px;padding:12px 13px;border-radius:12px;color:var(--muted)}
+.nav button span{display:inline;font-size:18px;margin:0;width:22px;text-align:center}
+.nav button.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.section-title{font-size:16px;margin-top:24px}
+.card-panel{padding:18px}
+.sheet{border-radius:18px;max-width:560px;left:0;right:0;bottom:auto;top:50%;transform:translate(0,-46%) scale(.98);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-height:86vh}
+.sheet.open{transform:translate(0,-50%);opacity:1;pointer-events:auto}
+.sheet-close{position:static}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.grid2 .card-panel + .card-panel{margin-top:0}
+
+/* ── Liten/smal skärm: fall tillbaka till mobil-layout ── */
+@media (max-width:899px){
+  .app{margin:0 auto;max-width:480px;padding:calc(14px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+  h1.brand{display:block}
+  .top-tools{justify-content:center;margin:-6px 0 10px}
+  .theme-btn{top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px))}
+  .nav{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;height:auto;flex-direction:row;border-right:none;border-top:1px solid var(--line);background:var(--navbg);backdrop-filter:blur(8px);max-width:480px;margin:0 auto;padding:0 0 env(safe-area-inset-bottom);overflow:visible}
+  .nav::before{display:none}
+  .nav button{flex:1;display:block;text-align:center;font-size:10.5px;padding:9px 2px 8px;border-radius:0;gap:0}
+  .nav button span{display:block;font-size:16px;width:auto;margin-bottom:1px}
+  .nav button.active{background:none}
+  .sheet{border-radius:20px 20px 0 0;max-width:480px;left:0;right:0;bottom:0;top:auto;transform:translateY(102%);opacity:1;pointer-events:auto;max-height:88vh}
+  .sheet.open{transform:translateY(0)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">&#9680;</button>
+<h1 class="brand">&#9825; Sårad</h1>
+<div class="top-tools">
+  <span class="sync-badge" id="sync-badge">Lokal</span>
+  <button class="btn ghost" id="open-sync">&#9881; Synk</button>
+  <button class="btn ghost" id="open-ai">&#10024; AI-nyckel</button>
+</div>
+
+<!-- NU -->
+<div class="view active" id="view-nu">
+  <div class="card-panel">
+    <div class="lead">Detta händer just nu</div>
+    <div class="soft">Skriv ner vad som sker och vad det väcker. Du behöver inte formulera det fint.</div>
+    <textarea id="nu-text" placeholder="Hen svarade kort och nu känns det som att…"></textarea>
+    <label>Hur starkt känns det? <span id="nu-int-v">6</span>/10</label>
+    <div class="rng-row"><input type="range" id="nu-int" min="0" max="10" value="6"><span class="rng-val" id="nu-int2">6</span></div>
+    <label>Vilken rädsla rörs? (valfritt)</label>
+    <div class="chips" id="nu-fears"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn fill" id="nu-ai">&#10024; Hjälp mig just nu</button>
+      <button class="btn" id="nu-save">Spara</button>
+    </div>
+    <div id="nu-ai-out"></div>
+  </div>
+
+  <div class="section-title">Tillbaka i kroppen — 5·4·3·2·1</div>
+  <div class="card-panel">
+    <div class="ground-card">
+      <div class="ground-num" id="g-num">5</div>
+      <div class="ground-txt" id="g-txt">saker du kan <b>se</b></div>
+      <button class="btn fill" id="g-next">Hittade dem — nästa</button>
+    </div>
+  </div>
+
+  <div class="section-title">Andas med hjärtat</div>
+  <div class="card-panel">
+    <div class="breath-wrap">
+      <div class="breath-circle" id="breath-circle"><span class="breath-label" id="breath-label">Redo</span></div>
+      <div class="btn-row" style="width:100%">
+        <button class="btn" id="b-box">Fyrkant 4·4·4·4</button>
+        <button class="btn" id="b-478">Lugnande 4·7·8</button>
+        <button class="btn ghost" id="b-stop">Stopp</button>
+      </div>
+    </div>
+    <div class="soft" style="text-align:center;margin-top:8px">En stark reaktion är ofta ett gammalt larm — inte alltid dagens fara. Du är i säkerhet just nu.</div>
+  </div>
+</div>
+
+<!-- BEARBETA -->
+<div class="view" id="view-bearbeta">
+  <div class="card-panel">
+    <div class="lead">Bearbeta i lugn och ro</div>
+    <div class="soft">Lägg in allt — tankar, vad som hänt, lösa trådar. Sedan hjälper AI dig vidare med följdfrågor och en mild handlingsplan.</div>
+    <label>Rubrik (valfritt)</label>
+    <input type="text" id="be-title" placeholder="T.ex. Samtalet igår">
+    <label>Skriv fritt</label>
+    <textarea id="be-body" placeholder="Allt som snurrar — så mycket eller lite du vill." style="min-height:120px"></textarea>
+    <label>Känslor / taggar (valfritt)</label>
+    <input type="text" id="be-tags" placeholder="oro, skuld, saknad">
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn fill" id="be-followup">&#10024; Få följdfrågor</button>
+      <button class="btn" id="be-save">Spara</button>
+    </div>
+    <div id="be-fq"></div>
+    <div id="be-plan-wrap" style="display:none">
+      <button class="btn fill" id="be-plan" style="margin-top:12px">&#10024; Skapa handlingsplan</button>
+    </div>
+    <div id="be-plan-out"></div>
+  </div>
+  <div class="privacy">Sårad är ett komplement till stöd — inte en ersättning för terapi eller vård.</div>
+</div>
+
+<!-- TANKAR -->
+<div class="view" id="view-tankar">
+  <div class="card-panel">
+    <div class="lead">Vänd en tanke</div>
+    <div class="soft">Skriv tanken som snurrar, märk ut tankefällan, och få hjälp att hitta en sannare och snällare version.</div>
+    <label>Tanken som snurrar</label>
+    <textarea id="tk-thought" placeholder="T.ex. Hen kommer ändå att lämna mig."></textarea>
+    <label>Känner du igen någon tankefälla?</label>
+    <div class="chips" id="tk-chips"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn" id="tk-detect">&#10024; Hjälp mig se fällan</button>
+      <button class="btn fill" id="tk-reframe">&#10024; Vänd tanken</button>
+    </div>
+    <div id="tk-out"></div>
+  </div>
+
+  <div class="section-title">Tankefällor — biblioteket</div>
+  <div class="card-panel" id="tk-lib"></div>
+
+  <div class="section-title">Vända tankar <span class="soft mini" id="tk-count"></span></div>
+  <div class="card-panel" id="tk-log"></div>
+</div>
+
+<!-- RÄDSLOR -->
+<div class="view" id="view-radslor">
+  <div class="card-panel">
+    <div class="lead">Mina kärnrädslor</div>
+    <div class="soft">Märk de rädslor som bor i dig. De färgar ofta hur du tolkar det som händer — och hjälper AI:n att förstå dig bättre.</div>
+    <div class="chips" id="fr-mine"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input type="text" id="fr-add" placeholder="Lägg till egen rädsla…">
+      <button class="btn" id="fr-add-btn" style="width:auto">Lägg till</button>
+    </div>
+  </div>
+
+  <div class="section-title">Möt en rädsla</div>
+  <div class="card-panel">
+    <div class="soft">Välj en rädsla och skriv vad som väcker den. Du får ett varmt svar om var den kan komma ifrån och vad som är sant istället.</div>
+    <label>Rädsla</label>
+    <select id="fr-pick"></select>
+    <label>Vad väcker den nu? (valfritt)</label>
+    <textarea id="fr-note" placeholder="T.ex. Hen pratade länge med någon annan…"></textarea>
+    <button class="btn fill" id="fr-meet" style="margin-top:12px">&#10024; Möt rädslan</button>
+    <div id="fr-out"></div>
+  </div>
+
+  <div class="section-title">Mötta rädslor <span class="soft mini" id="fr-count"></span></div>
+  <div class="card-panel" id="fr-log"></div>
+</div>
+
+<!-- TRIGGERS -->
+<div class="view" id="view-triggers">
+  <div class="card-panel">
+    <div class="lead">Logga en trigger</div>
+    <div class="soft">Det du fångar blir ett mönster du kan förstå — inte en dom.</div>
+    <label>Vad triggade?</label>
+    <input type="text" id="tg-name" placeholder="T.ex. Höjd röst">
+    <div class="chips" id="tg-common"></div>
+    <label>Vad hände precis innan?</label>
+    <textarea id="tg-cause" placeholder="Sammanhang, vad som sades…"></textarea>
+    <label>Styrka <span id="tg-int-v">5</span>/10</label>
+    <div class="rng-row"><input type="range" id="tg-int" min="0" max="10" value="5"><span class="rng-val" id="tg-int2">5</span></div>
+    <label>I kroppen (valfritt)</label>
+    <input type="text" id="tg-body" placeholder="Hjärtklappning, stram bröstkorg…">
+    <label>Vad gjorde du / vad hjälpte?</label>
+    <textarea id="tg-resp" placeholder="Hur du hanterade det, eller vad du önskar nästa gång."></textarea>
+    <button class="btn fill" id="tg-save" style="margin-top:12px">Logga trigger</button>
+  </div>
+
+  <div class="section-title">Kalender <span class="soft mini"><button class="btn ghost" id="tg-ics-all">&#128197; Exportera .ics</button></span></div>
+  <div class="card-panel" id="tg-cal"></div>
+  <div class="card-panel" id="tg-ai-wrap" style="margin-top:10px">
+    <button class="btn" id="tg-pattern">&#10024; Se mönster i mina triggers</button>
+    <div id="tg-ai-out"></div>
+  </div>
+</div>
+
+<!-- MÖNSTER -->
+<div class="view" id="view-monster">
+  <div class="section-title" style="margin-top:0">Översikt</div>
+  <div class="card-panel" id="ms-stats"></div>
+
+  <div class="section-title">Fråga om din historik</div>
+  <div class="card-panel">
+    <div class="soft">AI svarar utifrån det du loggat i Sårad — som ett varsamt minne.</div>
+    <textarea id="qa-in" placeholder="T.ex. Vad brukar trigga mig mest? Hur har jag hanterat det bra?"></textarea>
+    <button class="btn fill" id="qa-ask" style="margin-top:10px">&#10024; Fråga</button>
+    <div id="qa-out"></div>
+  </div>
+
+  <div class="section-title">Dagbok — allt du loggat</div>
+  <div class="card-panel">
+    <div class="chips" id="ms-filter"></div>
+    <div id="ms-journal" style="margin-top:6px"></div>
+  </div>
+
+  <div class="section-title">Stöd &amp; resurser</div>
+  <div class="card-panel res">
+    <p><b>Akut fara:</b> ring <b>112</b>. <span>Är du eller någon i fara just nu.</span></p>
+    <p><b>1177</b> <span>— vård och rådgivning dygnet runt.</span></p>
+    <p><b>Mind Självmordslinjen 90101</b> <span>— när tankarna blir för tunga.</span></p>
+    <p><b>Kvinnofridslinjen 020-50 50 50</b> <span>— vid våld, hot eller kontroll i nära relation, dygnet runt.</span></p>
+    <p><b>BRIS 116 111</b> <span>— för dig under 18.</span></p>
+    <div class="soft" style="margin-top:8px">Sårad hjälper dig sortera och förstå — men ersätter inte en terapeut eller vården. Du är värd riktigt stöd. &#9825;</div>
+  </div>
+
+  <div class="foot">
+    <button id="export-btn">Säkerhetskopiera</button>
+    <button id="import-btn">Importera</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+  <div class="privacy">Allt sparas på din enhet (och i ditt privata repo om du slår på synk). AI-nyckel och frågor till AI sparas aldrig i synk eller säkerhetskopia.<br>Sårad v1.2.0 · Desktop</div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="active" data-v="nu"><span>&#10073;&#10073;</span>Nu</button>
+  <button data-v="bearbeta"><span>&#9998;</span>Bearbeta</button>
+  <button data-v="tankar"><span>&#8635;</span>Tankar</button>
+  <button data-v="radslor"><span>&#8767;</span>Rädslor</button>
+  <button data-v="triggers"><span>&#9737;</span>Triggers</button>
+  <button data-v="monster"><span>&#9683;</span>Mönster</button>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="ai-sheet">
+  <h3>&#10024; AI-nyckel</h3>
+  <div class="soft">Klistra in din egen Anthropic-nyckel. Den sparas bara här på enheten — aldrig i synk eller säkerhetskopia.</div>
+  <label>API-nyckel</label>
+  <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="ai-key-save">Spara</button>
+    <button class="btn ghost" id="ai-key-clear">Rensa</button>
+  </div>
+  <button class="sheet-close" id="ai-close">Stäng</button>
+</div>
+
+<div class="sheet" id="sync-sheet">
+  <h3>&#9881; Synk via GitHub</h3>
+  <div class="soft">Sårad läser och sparar <code>sarad.json</code> i ett <strong>privat</strong> repo så att dina enheter ser samma sak. Den här appen innehåller känsliga uppgifter — repot måste vara privat. Token sparas bara lokalt.</div>
+  <label>GitHub-användarnamn</label>
+  <input type="text" id="gh-owner" placeholder="miracuel">
+  <label>Privat repo-namn</label>
+  <input type="text" id="gh-repo" placeholder="app-data">
+  <label>Fine-grained token (Contents: Read and write)</label>
+  <input type="password" id="gh-token" placeholder="github_pat_…">
+  <div class="status-box" id="gh-status"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="gh-save">Spara &amp; synka</button>
+    <button class="btn ghost" id="gh-pull">Hämta nu</button>
+  </div>
+  <button class="sheet-close" id="sync-close">Stäng</button>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+const KEY='sarad_v1';
+const DEF={acute:[],entries:[],reframes:[],triggers:[],fearLog:[],
+  commonTriggers:['Hen svarar inte','Höjd röst','Kritik','Att bli avbruten','Tystnad/tjurande','Känna mig kontrollerad','Plötslig planändring','Påminnelse om det förflutna'],
+  commonFears:['Rädd att inte bli vald','Rädd att bli lämnad','Rädd att inte vara nog','Rädd att inte vara älskvärd','Rädd att bli övergiven','Rädd att bli sviken','Rädd att inte bli sedd','Rädd att vara för mycket','Rädd att bli ersatt','Rädd att bli kontrollerad','Rädd att förlora mig själv','Rädd att inte räcka till'],
+  fears:[],
+  theme:'auto'};
+let state=JSON.parse(JSON.stringify(DEF));
+try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(JSON.parse(JSON.stringify(DEF)),JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const pad=n=>String(n).padStart(2,'0');
+const fmtDT=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());};
+const fmtD=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+const MND=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+const fmtNice=ts=>{const d=new Date(ts);return d.getDate()+' '+MND[d.getMonth()]+' '+d.getFullYear();};
+
+// ── Tankefällor ────────────────────────────────────────
+const TRAPS=[
+ {k:'spa',n:'Spå framtiden',d:'Du är säker på att det går illa, som om du redan visste slutet.',ex:'Det här tar ändå slut i katastrof.'},
+ {k:'tanke',n:'Tankeläsning',d:'Du tror dig veta vad andra tänker om dig — oftast det värsta.',ex:'Hen tycker säkert att jag är för mycket.'},
+ {k:'katastrof',n:'Katastroftänkande',d:'Du blåser upp det värsta tänkbara och behandlar det som troligt.',ex:'Svarar hen inte är allt över.'},
+ {k:'alltinget',n:'Allt-eller-inget',d:'Svart eller vitt, inga gråskalor — antingen perfekt eller misslyckat.',ex:'Blir det inte helt rätt är det helt fel.'},
+ {k:'over',n:'Övergeneralisering',d:'En enda händelse blir ett alltid/aldrig-mönster.',ex:'Jag blir alltid lämnad till slut.'},
+ {k:'kansla',n:'Känslomässigt resonemang',d:'Du tar känslan som bevis: jag känner det, alltså är det sant.',ex:'Jag känner mig värdelös, alltså är jag det.'},
+ {k:'borde',n:'Borde-krav',d:'Stränga regler om hur du eller andra måste vara.',ex:'Jag borde ha sett det här komma.'},
+ {k:'person',n:'Personalisering',d:'Du tar på dig skuld för sådant du inte styr över.',ex:'Det är mitt fel att hen mår dåligt.'},
+ {k:'etikett',n:'Etikettering',d:'Du sätter en hård stämpel på dig själv eller andra.',ex:'Jag är bara trasig.'},
+ {k:'filter',n:'Mentalt filter',d:'Du ser bara det negativa och silar bort allt annat.',ex:'Hela dagen var förstörd — fast mycket var okej.'},
+ {k:'diskval',n:'Diskvalificera det positiva',d:'Det goda räknas inte — det var tur eller självklart.',ex:'Hen var snäll bara av artighet.'},
+ {k:'forstora',n:'Förstora / förminska',d:'Egna fel förstoras, egna styrkor krymper.',ex:'Mitt misstag är enormt, det jag gör bra är inget.'}
+];
+const trapName=k=>{const t=TRAPS.find(x=>x.k===k);return t?t.n:k;};
+
+// ── Sheets ─────────────────────────────────────────────
+const bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+bg.onclick=closeSheets;
+
+// ── AI ─────────────────────────────────────────────────
+const AI_KEY='sarad_ai_key';
+const getAiKey=()=>localStorage.getItem(AI_KEY)||'';
+async function aiCall(prompt,maxTok){
+  const key=getAiKey();
+  if(!key){openSheet('ai-sheet');throw new Error('NOKEY');}
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||700,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Ogiltig API-nyckel':'HTTP '+r.status);
+  const j=await r.json();
+  return (j.content||[]).map(b=>b.text||'').join('').trim();
+}
+function parseJSON(t){
+  let s=String(t).replace(/\x60\x60\x60json/gi,'').replace(/\x60\x60\x60/g,'').trim();
+  const a=s.indexOf('{'),b=s.lastIndexOf('}');
+  if(a>=0&&b>a)s=s.slice(a,b+1);
+  return JSON.parse(s);
+}
+function aiBox(t){return '<div class="ai-box"><span class="ai-lbl">&#10024; Sårad</span>'+esc(t)+'</div>';}
+async function withBtn(btn,fn){
+  const orig=btn.textContent;btn.textContent='&#10024; Tänker…';btn.innerHTML='&#10024; Tänker…';btn.disabled=true;
+  try{await fn();}
+  catch(e){if(e.message!=='NOKEY')alert('Kunde inte hämta svar: '+e.message);}
+  btn.innerHTML=orig;btn.disabled=false;
+}
+function recentContext(){
+  const parts=[];
+  if(state.fears&&state.fears.length)parts.push('Personens kärnrädslor: '+state.fears.join(', '));
+  state.entries.slice(-4).forEach(e=>parts.push('Bearbetning ('+fmtD(e.ts)+'): '+(e.title?e.title+' — ':'')+(e.body||'').slice(0,260)));
+  state.reframes.slice(-4).forEach(r=>parts.push('Vänd tanke: "'+(r.thought||'').slice(0,120)+'" → '+(r.alt||'').slice(0,160)));
+  state.triggers.slice(-5).forEach(t=>parts.push('Trigger ('+fmtD(t.ts)+'): '+(t.name||'')+', styrka '+(t.intensity)+'/10'+(t.cause?' — '+t.cause.slice(0,120):'')));
+  return parts.length?parts.join('\n'):'(ingen tidigare historik ännu)';
+}
+
+// ══════════════════════════════════════════════════════
+// NU
+// ══════════════════════════════════════════════════════
+const nuInt=document.getElementById('nu-int');
+nuInt.oninput=()=>{const v=nuInt.value;document.getElementById('nu-int-v').textContent=v;document.getElementById('nu-int2').textContent=v;};
+let nuFearSel=[];
+function fearChoices(){return (state.fears&&state.fears.length)?state.fears:state.commonFears;}
+function renderNuFears(){
+  const el=document.getElementById('nu-fears');
+  el.innerHTML=fearChoices().map(f=>'<button class="chip'+(nuFearSel.includes(f)?' sel':'')+'">'+esc(f)+'</button>').join('');
+  el.querySelectorAll('.chip').forEach(c=>{c.onclick=()=>{const f=c.textContent;nuFearSel=nuFearSel.includes(f)?nuFearSel.filter(x=>x!==f):nuFearSel.concat(f);renderNuFears();};});
+}
+document.getElementById('nu-save').onclick=()=>{
+  const text=document.getElementById('nu-text').value.trim();
+  if(!text){alert('Skriv något kort om vad som händer.');return;}
+  const item={id:uid(),ts:Date.now(),m:Date.now(),text,intensity:+nuInt.value,fears:nuFearSel.slice(),ai:''};
+  state.acute.push(item);persist();
+  document.getElementById('nu-ai-out').innerHTML='<div class="soft" style="margin-top:10px">Sparat i dagboken. &#9825;</div>';
+  setTimeout(()=>{document.getElementById('nu-text').value='';nuFearSel=[];renderNuFears();document.getElementById('nu-ai-out').innerHTML='';},1600);
+};
+document.getElementById('nu-ai').onclick=e=>withBtn(e.currentTarget,async()=>{
+  const text=document.getElementById('nu-text').value.trim();
+  if(!text){alert('Skriv vad som händer först.');return;}
+  const frLine=nuFearSel.length?'\nRädsla som rörs: '+nuFearSel.join(', '):'';
+  const prompt='Du är ett varmt, lugnt och traumamedvetet stöd för någon som bearbetar relationstrauma. Personen beskriver vad som händer just nu. Svara på svenska, högst 130 ord, mjukt och validerande. Gör tre saker, men väv ihop dem till löpande text utan rubriker eller punktlistor: (1) bekräfta känslan utan att förstärka skräcken, (2) påminn varsamt om att en stark reaktion ofta är ett gammalt larm kopplat till tidigare sår snarare än dagens verkliga fara, (3) ge ETT litet konkret grundande steg att göra nu. Om en rädsla nämns, tala mjukt till just den. Avsluta lugnt. Du är ett komplement, inte en terapeut.\n\nStyrka: '+nuInt.value+'/10'+frLine+'\nDet som händer: '+text+'\n\nKänd bakgrund:\n'+recentContext();
+  const out=await aiCall(prompt,500);
+  document.getElementById('nu-ai-out').innerHTML=aiBox(out);
+  const item={id:uid(),ts:Date.now(),m:Date.now(),text,intensity:+nuInt.value,fears:nuFearSel.slice(),ai:out};
+  state.acute.push(item);persist();
+});
+
+// 5-4-3-2-1
+const GROUND=[['5','saker du kan <b>se</b>'],['4','saker du kan <b>känna</b>'],['3','saker du kan <b>höra</b>'],['2','saker du kan <b>lukta</b>'],['1','sak du kan <b>smaka</b>'],['&#10003;','du är tillbaka i rummet']];
+let gi=0;
+function renderGround(){document.getElementById('g-num').innerHTML=GROUND[gi][0];document.getElementById('g-txt').innerHTML=GROUND[gi][1];document.getElementById('g-next').style.display=gi>=GROUND.length-1?'none':'block';}
+document.getElementById('g-next').onclick=()=>{if(gi<GROUND.length-1){gi++;renderGround();}};
+document.getElementById('g-num').onclick=()=>{gi=0;renderGround();};
+renderGround();
+
+// breathing
+let breathTimer=null;
+function stopBreath(){if(breathTimer){clearTimeout(breathTimer);breathTimer=null;}const c=document.getElementById('breath-circle');c.style.transform='scale(1)';c.style.transitionDuration='0.4s';document.getElementById('breath-label').textContent='Redo';}
+function runBreath(seq){
+  stopBreath();let i=0;const c=document.getElementById('breath-circle'),l=document.getElementById('breath-label');
+  function step(){const ph=seq[i%seq.length];l.textContent=ph.t;c.style.transitionDuration=ph.s+'s';c.style.transform='scale('+ph.scale+')';i++;breathTimer=setTimeout(step,ph.s*1000);}
+  step();
+}
+document.getElementById('b-box').onclick=()=>runBreath([{t:'Andas in',s:4,scale:1.45},{t:'Håll',s:4,scale:1.45},{t:'Andas ut',s:4,scale:1},{t:'Håll',s:4,scale:1}]);
+document.getElementById('b-478').onclick=()=>runBreath([{t:'Andas in',s:4,scale:1.45},{t:'Håll',s:7,scale:1.45},{t:'Andas ut',s:8,scale:1}]);
+document.getElementById('b-stop').onclick=stopBreath;
+
+// ══════════════════════════════════════════════════════
+// BEARBETA
+// ══════════════════════════════════════════════════════
+let beFollowups=[];
+document.getElementById('be-followup').onclick=e=>withBtn(e.currentTarget,async()=>{
+  const body=document.getElementById('be-body').value.trim();
+  if(!body){alert('Skriv något att bearbeta först.');return;}
+  const title=document.getElementById('be-title').value.trim();
+  const tags=document.getElementById('be-tags').value.trim();
+  const prompt='Du är en varm, traumamedveten samtalsguide för någon som bearbetar relationstrauma. Utifrån texten nedan, ställ 3–5 öppna, milda följdfrågor på svenska som hjälper personen förstå sig själv djupare (känslor, mönster, behov) utan att pressa. Returnera ENDAST giltig JSON, ingen annan text, inga kodstaket. Format: {"questions":["...","..."]}\n\n'+(title?'Rubrik: '+title+'\n':'')+(tags?'Taggar: '+tags+'\n':'')+'Text: '+body;
+  const raw=await aiCall(prompt,500);
+  const data=parseJSON(raw);
+  beFollowups=(data.questions||[]).map(q=>({q:String(q),a:''}));
+  renderFollowups();
+  document.getElementById('be-plan-wrap').style.display=beFollowups.length?'block':'none';
+});
+function renderFollowups(){
+  const el=document.getElementById('be-fq');
+  if(!beFollowups.length){el.innerHTML='';return;}
+  el.innerHTML='<div class="section-title" style="margin-top:14px">Följdfrågor</div>'+beFollowups.map((f,i)=>
+    '<div class="fq"><div class="q"><b>'+(i+1)+'.</b>'+esc(f.q)+'</div><textarea data-i="'+i+'" placeholder="Ditt svar…">'+esc(f.a)+'</textarea></div>').join('');
+  el.querySelectorAll('textarea').forEach(t=>{t.oninput=()=>{beFollowups[+t.dataset.i].a=t.value;};});
+}
+document.getElementById('be-plan').onclick=e=>withBtn(e.currentTarget,async()=>{
+  const body=document.getElementById('be-body').value.trim();
+  const title=document.getElementById('be-title').value.trim();
+  const qa=beFollowups.map(f=>'F: '+f.q+'\nS: '+(f.a||'(inget svar)')).join('\n');
+  const prompt='Du är en varm, traumamedveten guide. Skapa en mild, konkret handlingsplan på svenska för någon som bearbetar relationstrauma. Var validerande, aldrig dömande, och håll stegen små och genomförbara. Returnera ENDAST giltig JSON, inga kodstaket. Format: {"sammanfattning":"2-3 meningar som speglar var personen är","monster":["ev. mönster eller tankefälla du ser"],"steg":["3-5 små konkreta steg"],"medkansla":"en mening av självmedkänsla"}\n\n'+(title?'Rubrik: '+title+'\n':'')+'Text: '+body+'\n\nFöljdfrågor och svar:\n'+qa;
+  const raw=await aiCall(prompt,700);
+  const d=parseJSON(raw);
+  renderPlan(d);
+  const item={id:uid(),ts:Date.now(),m:Date.now(),title,body,tags:document.getElementById('be-tags').value.trim(),followups:beFollowups.slice(),plan:d};
+  state.entries.push(item);persist();
+});
+function planHtml(d){
+  let h='<div class="ai-box"><span class="ai-lbl">&#10024; Handlingsplan</span>';
+  if(d.sammanfattning)h+='<div class="plan-h">Var du är</div>'+esc(d.sammanfattning);
+  if(d.monster&&d.monster.length)h+='<div class="plan-h">Mönster att märka</div><ul>'+d.monster.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+  if(d.steg&&d.steg.length)h+='<div class="plan-h">Små steg</div><ul>'+d.steg.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+  if(d.medkansla)h+='<div class="plan-h">Till dig själv</div>'+esc(d.medkansla);
+  return h+'</div>';
+}
+function renderPlan(d){document.getElementById('be-plan-out').innerHTML=planHtml(d);}
+document.getElementById('be-save').onclick=()=>{
+  const body=document.getElementById('be-body').value.trim();
+  if(!body){alert('Skriv något att spara först.');return;}
+  const item={id:uid(),ts:Date.now(),m:Date.now(),title:document.getElementById('be-title').value.trim(),body,tags:document.getElementById('be-tags').value.trim(),followups:beFollowups.slice(),plan:null};
+  state.entries.push(item);persist();
+  ['be-title','be-body','be-tags'].forEach(id=>document.getElementById(id).value='');
+  beFollowups=[];renderFollowups();
+  document.getElementById('be-plan-wrap').style.display='none';
+  document.getElementById('be-plan-out').innerHTML='<div class="soft" style="margin-top:10px">Sparat i dagboken. &#9825;</div>';
+  setTimeout(()=>{document.getElementById('be-plan-out').innerHTML='';},1600);
+};
+
+// ══════════════════════════════════════════════════════
+// TANKAR
+// ══════════════════════════════════════════════════════
+let tkSel=[];
+function renderTkChips(){
+  const el=document.getElementById('tk-chips');
+  el.innerHTML=TRAPS.map(t=>'<button class="chip'+(tkSel.includes(t.k)?' sel':'')+'" data-k="'+t.k+'">'+esc(t.n)+'</button>').join('');
+  el.querySelectorAll('.chip').forEach(c=>{c.onclick=()=>{const k=c.dataset.k;tkSel=tkSel.includes(k)?tkSel.filter(x=>x!==k):tkSel.concat(k);renderTkChips();};});
+}
+function renderTkLib(){
+  const el=document.getElementById('tk-lib');
+  el.innerHTML=TRAPS.map((t,i)=>'<div class="trap" data-i="'+i+'"><div class="trap-h"><span class="nm">'+esc(t.n)+'</span><span class="ar">visa</span></div><div class="trap-body">'+esc(t.d)+'<br><em>Exempel: '+esc(t.ex)+'</em></div></div>').join('');
+  el.querySelectorAll('.trap').forEach(d=>{d.querySelector('.trap-h').onclick=()=>{d.classList.toggle('open');d.querySelector('.ar').textContent=d.classList.contains('open')?'dölj':'visa';};});
+}
+document.getElementById('tk-detect').onclick=e=>withBtn(e.currentTarget,async()=>{
+  const th=document.getElementById('tk-thought').value.trim();
+  if(!th){alert('Skriv tanken först.');return;}
+  const list=TRAPS.map(t=>t.k+' = '+t.n).join(', ');
+  const prompt='Du hjälper någon känna igen tankefällor (kognitiva förvrängningar) i relationstrauma. Identifiera vilka av dessa som finns i tanken. Tillgängliga nycklar: '+list+'. Returnera ENDAST giltig JSON, inga kodstaket. Format: {"keys":["nyckel"],"forklaring":"1-2 meningar på svenska, mjukt"}\n\nTanke: '+th;
+  const raw=await aiCall(prompt,300);
+  const d=parseJSON(raw);
+  if(Array.isArray(d.keys))tkSel=Array.from(new Set(tkSel.concat(d.keys.filter(k=>TRAPS.some(t=>t.k===k)))));
+  renderTkChips();
+  if(d.forklaring)document.getElementById('tk-out').innerHTML=aiBox(d.forklaring);
+});
+document.getElementById('tk-reframe').onclick=e=>withBtn(e.currentTarget,async()=>{
+  const th=document.getElementById('tk-thought').value.trim();
+  if(!th){alert('Skriv tanken först.');return;}
+  const picked=tkSel.map(trapName).join(', ')||'(ingen vald)';
+  const prompt='Du är en varm, traumamedveten guide. Hjälp personen vända en smärtsam tanke kopplad till relationstrauma. Var snäll och balanserad — inte glättig. Returnera ENDAST giltig JSON, inga kodstaket. Format: {"trap":["tankefälla på svenska"],"reframe":"en sannare, snällare och mer balanserad version av tanken, 1-3 meningar","fraga":"en mild fråga som testar den ursprungliga tanken mot verkligheten"}\n\nTanke: '+th+'\nPersonen gissar dessa fällor: '+picked;
+  const raw=await aiCall(prompt,500);
+  const d=parseJSON(raw);
+  let h='<div class="ai-box"><span class="ai-lbl">&#10024; Vänd tanke</span>';
+  if(d.trap&&d.trap.length)h+='<div class="plan-h">Tankefälla</div>'+esc(d.trap.join(', '));
+  if(d.reframe)h+='<div class="plan-h">En sannare version</div>'+esc(d.reframe);
+  if(d.fraga)h+='<div class="plan-h">Fråga att pröva</div>'+esc(d.fraga);
+  h+='</div>';
+  document.getElementById('tk-out').innerHTML=h;
+  const item={id:uid(),ts:Date.now(),m:Date.now(),thought:th,traps:(d.trap&&d.trap.length?d.trap:tkSel.map(trapName)),alt:d.reframe||'',test:d.fraga||''};
+  state.reframes.push(item);persist();renderTkLog();
+  document.getElementById('tk-thought').value='';tkSel=[];renderTkChips();
+});
+function renderTkLog(){
+  const el=document.getElementById('tk-log');
+  document.getElementById('tk-count').textContent=state.reframes.length?state.reframes.length+' st':'';
+  if(!state.reframes.length){el.innerHTML='<div class="empty-msg">Här samlas tankarna du vänt — varje en liten seger.</div>';return;}
+  el.innerHTML=state.reframes.slice().reverse().map(r=>
+    '<div class="entry"><div class="entry-top"><span class="tag reframe">vänd</span><time>'+fmtDT(r.ts)+'</time><button class="row-del" data-id="'+r.id+'">&times;</button></div>'+
+    '<p style="color:var(--muted)"><s>'+esc(r.thought)+'</s></p>'+
+    (r.alt?'<p>&#8635; '+esc(r.alt)+'</p>':'')+
+    (r.traps&&r.traps.length?'<div class="meta">'+esc([].concat(r.traps).join(', '))+'</div>':'')+'</div>').join('');
+  el.querySelectorAll('.row-del').forEach(b=>{b.onclick=()=>{state.reframes=state.reframes.filter(x=>x.id!==b.dataset.id);persist();renderTkLog();};});
+}
+
+// ══════════════════════════════════════════════════════
+// RÄDSLOR
+// ══════════════════════════════════════════════════════
+function renderFearMine(){
+  const el=document.getElementById('fr-mine');
+  el.innerHTML=state.commonFears.map(f=>'<button class="chip'+(state.fears.includes(f)?' sel':'')+'">'+esc(f)+'</button>').join('');
+  el.querySelectorAll('.chip').forEach(c=>{c.onclick=()=>{const f=c.textContent;state.fears=state.fears.includes(f)?state.fears.filter(x=>x!==f):state.fears.concat(f);persist();renderFearMine();renderFearPick();renderNuFears();};});
+}
+document.getElementById('fr-add-btn').onclick=()=>{
+  const v=document.getElementById('fr-add').value.trim();if(!v)return;
+  if(!state.commonFears.includes(v))state.commonFears.push(v);
+  if(!state.fears.includes(v))state.fears.push(v);
+  document.getElementById('fr-add').value='';persist();renderFearMine();renderFearPick();renderNuFears();
+};
+function renderFearPick(){
+  const el=document.getElementById('fr-pick');
+  el.innerHTML=state.commonFears.map(f=>'<option>'+esc(f)+'</option>').join('');
+}
+document.getElementById('fr-meet').onclick=e=>withBtn(e.currentTarget,async()=>{
+  const fear=document.getElementById('fr-pick').value;
+  if(!fear){alert('Välj en rädsla först.');return;}
+  const note=document.getElementById('fr-note').value.trim();
+  const prompt='Du är en varm, traumamedveten guide. Personen bär en kärnrädsla i relationer och vill möta den med medkänsla. Svara på svenska, högst 150 ord, löpande text utan rubriker eller punktlistor. Gör tre saker, mjukt sammanvävda: (1) validera rädslan, (2) reflektera varsamt över var en sådan rädsla ofta kommer ifrån — tidigare sår, inte sanningen om personens värde, (3) erbjud en sannare och snällare mening att hålla i. Ingen diagnos. Du är ett komplement, inte en terapeut.\n\nRädsla: '+fear+(note?'\nVad som väcker den nu: '+note:'')+'\n\nKänd bakgrund:\n'+recentContext();
+  const out=await aiCall(prompt,550);
+  document.getElementById('fr-out').innerHTML=aiBox(out);
+  const item={id:uid(),ts:Date.now(),m:Date.now(),fear,note,ai:out};
+  state.fearLog.push(item);persist();renderFearLog();renderStats();
+  document.getElementById('fr-note').value='';
+});
+function renderFearLog(){
+  const el=document.getElementById('fr-log');
+  document.getElementById('fr-count').textContent=state.fearLog.length?state.fearLog.length+' st':'';
+  if(!state.fearLog.length){el.innerHTML='<div class="empty-msg">Här samlas rädslorna du mött med mod och mildhet.</div>';return;}
+  el.innerHTML=state.fearLog.slice().reverse().map(f=>
+    '<div class="entry"><div class="entry-top"><span class="tag">rädsla</span><time>'+fmtDT(f.ts)+'</time><button class="row-del" data-id="'+f.id+'">&times;</button></div>'+
+    '<h4>'+esc(f.fear)+'</h4>'+
+    (f.note?'<p>'+esc(f.note)+'</p>':'')+
+    (f.ai?aiBox(f.ai):'')+'</div>').join('');
+  el.querySelectorAll('.row-del').forEach(b=>{b.onclick=()=>{state.fearLog=state.fearLog.filter(x=>x.id!==b.dataset.id);persist();renderFearLog();renderStats();};});
+}
+
+// ══════════════════════════════════════════════════════
+// TRIGGERS
+// ══════════════════════════════════════════════════════
+const tgInt=document.getElementById('tg-int');
+tgInt.oninput=()=>{document.getElementById('tg-int-v').textContent=tgInt.value;document.getElementById('tg-int2').textContent=tgInt.value;};
+function renderTgCommon(){
+  const el=document.getElementById('tg-common');
+  el.innerHTML=state.commonTriggers.map(t=>'<button class="chip soft">'+esc(t)+'</button>').join('');
+  el.querySelectorAll('.chip').forEach(c=>{c.onclick=()=>{document.getElementById('tg-name').value=c.textContent;};});
+}
+document.getElementById('tg-save').onclick=()=>{
+  const name=document.getElementById('tg-name').value.trim();
+  if(!name){alert('Skriv vad som triggade.');return;}
+  const item={id:uid(),ts:Date.now(),m:Date.now(),name,cause:document.getElementById('tg-cause').value.trim(),intensity:+tgInt.value,body:document.getElementById('tg-body').value.trim(),response:document.getElementById('tg-resp').value.trim()};
+  state.triggers.push(item);persist();renderTgCal();renderStats();
+  ['tg-name','tg-cause','tg-body','tg-resp'].forEach(id=>document.getElementById(id).value='');
+  tgInt.value=5;tgInt.oninput();
+};
+function renderTgCal(){
+  const el=document.getElementById('tg-cal');
+  if(!state.triggers.length){el.innerHTML='<div class="empty-msg">Inga triggers loggade ännu.</div>';return;}
+  const byDay={};
+  state.triggers.slice().sort((a,b)=>b.ts-a.ts).forEach(t=>{const k=fmtD(t.ts);(byDay[k]=byDay[k]||[]).push(t);});
+  let h='';
+  Object.keys(byDay).forEach(k=>{
+    h+='<div class="date-head">'+fmtNice(byDay[k][0].ts)+'</div>';
+    byDay[k].forEach(t=>{
+      h+='<div class="entry"><div class="entry-top"><span class="tag trig">'+t.intensity+'/10</span><h4 style="margin:0;flex:1">'+esc(t.name)+'</h4><time>'+pad(new Date(t.ts).getHours())+':'+pad(new Date(t.ts).getMinutes())+'</time></div>'+
+        (t.cause?'<p>'+esc(t.cause)+'</p>':'')+
+        (t.body?'<div class="meta">Kropp: '+esc(t.body)+'</div>':'')+
+        (t.response?'<div class="meta">Svar: '+esc(t.response)+'</div>':'')+
+        '<div style="margin-top:6px;display:flex;gap:8px"><button class="btn ghost" data-ics="'+t.id+'">&#128197; Till kalender</button><button class="btn ghost" data-del="'+t.id+'">Ta bort</button></div></div>';
+    });
+  });
+  el.innerHTML=h;
+  el.querySelectorAll('[data-del]').forEach(b=>{b.onclick=()=>{state.triggers=state.triggers.filter(x=>x.id!==b.dataset.del);persist();renderTgCal();renderStats();};});
+  el.querySelectorAll('[data-ics]').forEach(b=>{b.onclick=()=>{const t=state.triggers.find(x=>x.id===b.dataset.ics);if(t)download('trigger-'+t.id+'.ics',icsFor(t),'text/calendar');};});
+}
+document.getElementById('tg-ics-all').onclick=()=>{
+  if(!state.triggers.length){alert('Inga triggers att exportera.');return;}
+  const evs=state.triggers.map(t=>icsEvent(t)).join('\r\n');
+  download('sarad-triggers.ics','BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sarad//SV\r\n'+evs+'\r\nEND:VCALENDAR','text/calendar');
+};
+const icsEsc=s=>String(s==null?'':s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+function icsStamp(d){return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds())+'Z';}
+function icsEvent(t){
+  const dt=new Date(t.ts),end=new Date(t.ts+30*60000);
+  const desc=[t.cause?'Innan: '+t.cause:'',t.body?'Kropp: '+t.body:'',t.response?'Svar: '+t.response:''].filter(Boolean).join(' | ');
+  return 'BEGIN:VEVENT\r\nUID:'+t.id+'@sarad\r\nDTSTAMP:'+icsStamp(new Date())+'\r\nDTSTART:'+icsStamp(dt)+'\r\nDTEND:'+icsStamp(end)+'\r\nSUMMARY:'+icsEsc('Trigger: '+t.name+' ('+t.intensity+'/10)')+'\r\nDESCRIPTION:'+icsEsc(desc)+'\r\nEND:VEVENT';
+}
+function icsFor(t){return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sarad//SV\r\n'+icsEvent(t)+'\r\nEND:VCALENDAR';}
+document.getElementById('tg-pattern').onclick=e=>withBtn(e.currentTarget,async()=>{
+  if(!state.triggers.length){alert('Logga några triggers först.');return;}
+  const lines=state.triggers.slice(-30).map(t=>'- '+fmtD(t.ts)+': '+t.name+' ('+t.intensity+'/10)'+(t.cause?' — '+t.cause:'')+(t.response?' [svar: '+t.response+']':'')).join('\n');
+  const prompt='Du är en varm, traumamedveten guide. Sammanfatta mönster i dessa loggade triggers på svenska, högst 150 ord, löpande text utan rubriker. Lyft fram återkommande utlösare, vad som verkar hjälpa, och en mild uppmuntran. Var konkret men snäll, ingen diagnos.\n\nTriggers:\n'+lines;
+  const out=await aiCall(prompt,500);
+  document.getElementById('tg-ai-out').innerHTML=aiBox(out);
+});
+
+// ══════════════════════════════════════════════════════
+// MÖNSTER
+// ══════════════════════════════════════════════════════
+function renderStats(){
+  const el=document.getElementById('ms-stats');
+  const cnt=state.acute.length+state.entries.length+state.reframes.length+state.triggers.length;
+  const tc={};state.triggers.forEach(t=>{tc[t.name]=(tc[t.name]||0)+1;});
+  const topT=Object.keys(tc).sort((a,b)=>tc[b]-tc[a])[0];
+  const rc={};state.reframes.forEach(r=>{[].concat(r.traps||[]).forEach(x=>{rc[x]=(rc[x]||0)+1;});});
+  const topTrap=Object.keys(rc).sort((a,b)=>rc[b]-rc[a])[0];
+  const fc={};state.fearLog.forEach(f=>{fc[f.fear]=(fc[f.fear]||0)+1;});
+  (state.acute||[]).forEach(a=>{[].concat(a.fears||[]).forEach(f=>{fc[f]=(fc[f]||0)+1;});});
+  const topFear=Object.keys(fc).sort((a,b)=>fc[b]-fc[a])[0];
+  el.innerHTML=
+    '<div class="stat-row"><span>Loggade ögonblick</span><b>'+(cnt+state.fearLog.length)+'</b></div>'+
+    '<div class="stat-row"><span>Vända tankar</span><b>'+state.reframes.length+'</b></div>'+
+    '<div class="stat-row"><span>Mötta rädslor</span><b>'+state.fearLog.length+'</b></div>'+
+    '<div class="stat-row"><span>Triggers loggade</span><b>'+state.triggers.length+'</b></div>'+
+    (topFear?'<div class="stat-row"><span>Rädsla som rörs mest</span><b style="font-size:13px">'+esc(topFear)+'</b></div>':'')+
+    (topT?'<div class="stat-row"><span>Vanligaste triggern</span><b style="font-size:13px">'+esc(topT)+'</b></div>':'')+
+    (topTrap?'<div class="stat-row"><span>Vanligaste tankefällan</span><b style="font-size:13px">'+esc(topTrap)+'</b></div>':'');
+}
+document.getElementById('qa-ask').onclick=e=>withBtn(e.currentTarget,async()=>{
+  const q=document.getElementById('qa-in').value.trim();
+  if(!q){alert('Skriv din fråga först.');return;}
+  const prompt='Du är ett varmt, traumamedvetet minne för någon som bearbetar relationstrauma. Svara på frågan ENBART utifrån personens loggade historik nedan. Är svaret inte i historiken, säg det ärligt och milt. Svenska, högst 160 ord, snällt och konkret, ingen diagnos.\n\nHistorik:\n'+fullContext()+'\n\nFråga: '+q;
+  const out=await aiCall(prompt,600);
+  document.getElementById('qa-out').innerHTML=aiBox(out);
+});
+function fullContext(){
+  const p=[];
+  if(state.fears&&state.fears.length)p.push('Kärnrädslor: '+state.fears.join(', '));
+  state.fearLog.slice(-8).forEach(f=>p.push('Mött rädsla ('+fmtD(f.ts)+'): '+f.fear+(f.note?' — '+f.note.slice(0,120):'')));
+  state.acute.slice(-10).forEach(a=>p.push('Akut ('+fmtD(a.ts)+', '+a.intensity+'/10'+((a.fears&&a.fears.length)?', rädsla: '+a.fears.join('/'):'')+'): '+(a.text||'').slice(0,200)));
+  state.entries.slice(-10).forEach(e=>p.push('Bearbetning ('+fmtD(e.ts)+'): '+(e.title?e.title+' — ':'')+(e.body||'').slice(0,240)));
+  state.reframes.slice(-12).forEach(r=>p.push('Vänd tanke: "'+(r.thought||'').slice(0,110)+'" → '+(r.alt||'').slice(0,150)));
+  state.triggers.slice(-15).forEach(t=>p.push('Trigger ('+fmtD(t.ts)+'): '+t.name+' '+t.intensity+'/10'+(t.cause?' — '+t.cause.slice(0,110):'')));
+  return p.length?p.join('\n'):'(ingen historik ännu)';
+}
+
+let msFilter='alla';
+function renderJournalFilter(){
+  const opts=[['alla','Allt'],['acute','Nu'],['entry','Bearbeta'],['reframe','Tankar'],['fear','Rädslor'],['trig','Triggers']];
+  const el=document.getElementById('ms-filter');
+  el.innerHTML=opts.map(o=>'<button class="chip'+(msFilter===o[0]?' sel':'')+'" data-f="'+o[0]+'">'+o[1]+'</button>').join('');
+  el.querySelectorAll('.chip').forEach(c=>{c.onclick=()=>{msFilter=c.dataset.f;renderJournalFilter();renderJournal();};});
+}
+function renderJournal(){
+  const all=[];
+  state.acute.forEach(a=>all.push({type:'acute',ts:a.ts,id:a.id,h:'Detta hände',p:a.text,meta:'Styrka '+a.intensity+'/10',ai:a.ai}));
+  state.entries.forEach(e=>all.push({type:'entry',ts:e.ts,id:e.id,h:e.title||'Bearbetning',p:e.body,meta:e.tags,plan:e.plan}));
+  state.reframes.forEach(r=>all.push({type:'reframe',ts:r.ts,id:r.id,h:'Vänd tanke',p:r.thought,meta:(r.alt?'→ '+r.alt:''),traps:r.traps}));
+  state.fearLog.forEach(f=>all.push({type:'fear',ts:f.ts,id:f.id,h:f.fear,p:f.note,meta:'',ai:f.ai}));
+  state.triggers.forEach(t=>all.push({type:'trig',ts:t.ts,id:t.id,h:'Trigger: '+t.name,p:t.cause,meta:'Styrka '+t.intensity+'/10'+(t.response?' · '+t.response:'')}));
+  let list=all.filter(x=>msFilter==='alla'||x.type===msFilter).sort((a,b)=>b.ts-a.ts);
+  const el=document.getElementById('ms-journal');
+  if(!list.length){el.innerHTML='<div class="empty-msg">Inget loggat här ännu.</div>';return;}
+  const TAGN={acute:['acute','Nu'],entry:['','Bearbeta'],reframe:['reframe','Tankar'],fear:['','Rädsla'],trig:['trig','Trigger']};
+  el.innerHTML=list.map(x=>{
+    const tg=TAGN[x.type];
+    return '<div class="entry"><div class="entry-top"><span class="tag '+tg[0]+'">'+tg[1]+'</span><time>'+fmtDT(x.ts)+'</time><button class="row-del" data-type="'+x.type+'" data-id="'+x.id+'">&times;</button></div>'+
+      '<h4>'+esc(x.h)+'</h4>'+
+      (x.p?'<p>'+esc(x.p)+'</p>':'')+
+      (x.meta?'<div class="meta">'+esc(x.meta)+'</div>':'')+
+      (x.plan?planHtml(x.plan):'')+
+      (x.ai?aiBox(x.ai):'')+'</div>';
+  }).join('');
+  el.querySelectorAll('.row-del').forEach(b=>{b.onclick=()=>{
+    const t=b.dataset.type,id=b.dataset.id;
+    const map={acute:'acute',entry:'entries',reframe:'reframes',fear:'fearLog',trig:'triggers'};
+    const arr=map[t];state[arr]=state[arr].filter(x=>x.id!==id);persist();renderJournal();renderStats();renderTkLog();renderTgCal();renderFearLog();
+  };});
+}
+
+// ── download / backup ──────────────────────────────────
+function download(name,text,type){
+  const b=new Blob([text],{type:type||'application/json'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+document.getElementById('export-btn').onclick=()=>{
+  download('sarad-backup-'+fmtD(Date.now())+'.json',JSON.stringify(syncPayload(),null,2));
+};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);mergeIn(d);persist();renderAll();alert('Importerat.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);
+};
+
+// ── GitHub-synk ────────────────────────────────────────
+const SYNC_KEY='saradsync_v1';
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/sarad.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(String(s).replace(/\s/g,''))));
+function setBadge(st,msg){const b=document.getElementById('sync-badge');b.textContent=msg;b.className='sync-badge'+(st==='ok'?' ok':st==='err'?' err':'');}
+function syncPayload(){return {acute:state.acute,entries:state.entries,reframes:state.reframes,triggers:state.triggers,fearLog:state.fearLog,commonTriggers:state.commonTriggers,commonFears:state.commonFears,fears:state.fears,updated:new Date().toISOString()};}
+function mergeArr(local,remote){
+  const map={};(local||[]).forEach(x=>{if(x&&x.id)map[x.id]=x;});
+  (remote||[]).forEach(x=>{if(!x||!x.id)return;const e=map[x.id];if(!e||(x.m||0)>(e.m||0))map[x.id]=x;});
+  return Object.keys(map).map(k=>map[k]).sort((a,b)=>(a.ts||0)-(b.ts||0));
+}
+function mergeIn(d){
+  if(!d)return;
+  state.acute=mergeArr(state.acute,d.acute);
+  state.entries=mergeArr(state.entries,d.entries);
+  state.reframes=mergeArr(state.reframes,d.reframes);
+  state.triggers=mergeArr(state.triggers,d.triggers);
+  state.fearLog=mergeArr(state.fearLog,d.fearLog);
+  if(Array.isArray(d.commonTriggers)&&d.commonTriggers.length)state.commonTriggers=d.commonTriggers;
+  if(Array.isArray(d.commonFears)&&d.commonFears.length)state.commonFears=d.commonFears;
+  if(Array.isArray(d.fears))state.fears=Array.from(new Set((state.fears||[]).concat(d.fears)));
+}
+async function ghGet(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{setBadge('load','Hämtar…');const data=await ghGet();if(data){mergeIn(data);save();renderAll();}setBadge('ok','Synkad');}
+  catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  const content=b64enc(JSON.stringify(syncPayload()));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Sårad',content},sync.sha?{sha:sync.sha}:{}))});
+  let r=await doPut();
+  if(r.status===409||r.status===422){try{const rem=await ghGet();if(rem)mergeIn(rem);}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+let pushT=null;
+function persist(){save();if(syncOn()){clearTimeout(pushT);pushT=setTimeout(()=>ghPush().catch(()=>{}),1200);}}
+
+document.getElementById('open-sync').onclick=()=>{
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('gh-status').style.display='none';
+  openSheet('sync-sheet');
+};
+function setGh(msg,type){const el=document.getElementById('gh-status');el.style.display='block';el.textContent=msg;
+  el.style.background=type==='ok'?'var(--accent-soft)':type==='err'?'var(--warm-soft)':'var(--panel2)';
+  el.style.color=type==='err'?'#9A5A4C':'var(--ink)';}
+document.getElementById('gh-save').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){setGh('Fyll i alla tre fälten.','err');return;}
+  saveSync();setGh('Testar anslutning…','info');
+  try{const data=await ghGet();if(data){setGh('✓ Ansluten! Hämtar…','ok');mergeIn(data);save();renderAll();await ghPush();}else{setGh('✓ Ansluten! Laddar upp…','ok');await ghPush();}
+    setTimeout(closeSheets,1100);}
+  catch(e){setGh('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
+};
+document.getElementById('gh-pull').onclick=()=>ghPull();
+document.getElementById('sync-close').onclick=closeSheets;
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+
+// ── AI key sheet ───────────────────────────────────────
+document.getElementById('open-ai').onclick=()=>{document.getElementById('ai-key').value=getAiKey();openSheet('ai-sheet');};
+document.getElementById('ai-key-save').onclick=()=>{const v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
+document.getElementById('ai-key-clear').onclick=()=>{localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
+document.getElementById('ai-close').onclick=closeSheets;
+
+// ── Tema ───────────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto';const h=new Date().getHours();
+  const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?'#221C1C':'#F3EDEC';
+  const b=document.getElementById('theme-btn');
+  b.innerHTML=m==='auto'?'&#9680;':(m==='dark'?'&#9790;':'&#9728;');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
+
+// ── Nav ────────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    if(b.dataset.v==='monster'){renderStats();renderJournalFilter();renderJournal();}
+    if(b.dataset.v==='triggers')renderTgCal();
+    if(b.dataset.v==='tankar')renderTkLog();
+    if(b.dataset.v==='radslor'){renderFearMine();renderFearPick();renderFearLog();}
+  };
+});
+
+// ── Init ───────────────────────────────────────────────
+function renderAll(){renderNuFears();renderTkChips();renderTkLib();renderTkLog();renderFearMine();renderFearPick();renderFearLog();renderTgCommon();renderTgCal();renderStats();renderJournalFilter();renderJournal();}
+loadSync();
+renderAll();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn())ghPull();
+</script>
+</body>
+</html>
