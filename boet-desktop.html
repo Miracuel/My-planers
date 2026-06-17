@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Boet">
+<meta name="theme-color" content="#F4EEE7">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Boet","short_name":"Boet","display":"standalone","background_color":"%23F4EEE7","theme_color":"%23F4EEE7","start_url":"."}'>
+<title>Boet · dator</title>
+<style>
+:root{
+  --bg:#F4EEE7;--panel:#FBF7F1;--panel2:#EDE4D9;--line:#E0D4C5;
+  --ink:#3F362E;--muted:#8A7D6E;--clay:#B5754F;--clay-soft:#EBD9CC;
+  --green:#7A8B6F;--green-soft:#DEE6D6;--yellow:#C7A95A;--yellow-soft:#F0E6CB;
+  --red:#C0705A;--red-soft:#F2DED7;
+  --navbg:rgba(244,238,231,.95);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom))}
+h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--ink);letter-spacing:.04em;text-align:center;margin:4px 0 14px}
+.section-title{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 0 8px;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.btn{border:1px solid var(--clay);background:var(--panel);color:var(--clay);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .3s}
+.btn:active{background:var(--clay-soft)}
+.btn.fill{background:var(--clay);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:7px 10px}
+.btn.tiny{font-size:11px;padding:5px 9px;border-radius:10px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
+.empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center;line-height:1.6}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+.hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:4px}
+
+/* Sammanfattning */
+.summary{display:flex;gap:10px;margin-bottom:4px}
+.sum-box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 10px;text-align:center}
+.sum-box .n{font-family:Georgia,serif;font-size:28px;line-height:1}
+.sum-box .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+.sum-box.over .n{color:var(--red)}
+.sum-box.today .n{color:var(--yellow)}
+.sum-box.ok .n{color:var(--green)}
+
+/* Sysslo-rad */
+.chore{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line)}
+.chore:first-child{border-top:none}
+.chore-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:var(--green)}
+.chore-dot.over{background:var(--red)}
+.chore-dot.today{background:var(--yellow)}
+.chore-main{flex:1;min-width:0}
+.chore-title{font-size:14px}
+.chore-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.chore-meta b{font-weight:600;color:var(--ink)}
+.chore-meta b.over{color:var(--red)}
+.chore-meta b.today{color:var(--yellow)}
+.chore-done{border:1.5px solid var(--clay);background:var(--panel);color:var(--clay);border-radius:11px;padding:7px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
+.chore-done:active{background:var(--clay-soft)}
+.tag{display:inline-block;background:var(--panel2);border-radius:8px;padding:1px 7px;font-size:10px;color:var(--muted);margin-right:4px}
+
+/* Rum */
+.room-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.room-name{font-family:Georgia,serif;font-size:16px;flex:1}
+.room-prog{font-size:11px;color:var(--muted)}
+.bar{height:5px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.bar span{display:block;height:100%;background:var(--clay);transition:width .35s}
+.rtask{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px}
+.rtask input[type=checkbox]{width:auto;accent-color:var(--clay);transform:scale(1.15)}
+.rtask.done span{text-decoration:line-through;color:var(--muted)}
+.rtask span{flex:1}
+.card-panel + .card-panel{margin-top:10px}
+
+/* Hemförteckning */
+.item{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.item:first-child{border-top:none}
+.item-ic{width:38px;height:38px;border-radius:11px;background:var(--clay-soft);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.item-main{flex:1;min-width:0}
+.item-name{font-size:14px}
+.item-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.warr{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--green-soft);color:#4C5A41}
+.warr.soon{background:var(--yellow-soft);color:#7A6422}
+.warr.out{background:var(--red-soft);color:#8A4234}
+.log-row{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.log-row:first-child{border-top:none}
+.log-row time{color:var(--muted);font-size:11px;flex-shrink:0;width:62px}
+.log-row span{flex:1}
+.log-row button{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer}
+
+/* Add row & edit */
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input{flex:1}
+.add-row button{border:1px solid var(--clay);background:var(--clay);color:#fff;border-radius:10px;padding:0 15px;cursor:pointer;font-size:18px}
+.edit-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.edit-item:first-child{border-top:none}
+.edit-item span{flex:1}
+.edit-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+.row2{display:flex;gap:8px}
+.row2 > div{flex:1}
+
+/* Hemtyp-val */
+.homepick{display:flex;gap:10px;margin:6px 0}
+.homepick button{flex:1;background:var(--panel2);border:2px solid var(--line);border-radius:16px;padding:18px 10px;cursor:pointer;font-family:inherit;color:var(--ink);font-size:14px;transition:all .2s}
+.homepick button .e{display:block;font-size:30px;margin-bottom:6px}
+.homepick button.sel{border-color:var(--clay);background:var(--clay-soft)}
+
+.sp-badge{font-size:11px;padding:3px 9px;border-radius:9px;background:var(--clay-soft);color:var(--clay)}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.gh-msg{display:none;margin:8px 0;font-size:12px;padding:8px 12px;border-radius:9px;line-height:1.5}
+.gh-msg.ok{background:var(--green-soft);color:#4C5A41}
+.gh-msg.err{background:var(--red-soft);color:#8A4234}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
+.nav button.active{color:var(--clay);font-weight:600}
+.nav button span{display:block;font-size:15px;margin-bottom:1px}
+.view{display:none}
+.view.active{display:block}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(63,54,46,.35);display:none;z-index:50}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:51;transform:translateY(102%);transition:transform .25s ease;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 30px rgba(0,0,0,.10)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
+.sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--clay);color:#fff;font-size:14px;cursor:pointer;margin-top:14px}
+.sheet-del{width:100%;padding:9px;border-radius:12px;border:1px solid var(--red);background:none;color:var(--red);font-size:12px;cursor:pointer;margin-top:8px;font-family:inherit}
+
+.foot{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+
+html{background:var(--bg)}
+body{transition:background .4s,color .4s}
+html[data-theme=dark]{
+  --bg:#241F1A;--panel:#2D2823;--panel2:#352F28;--line:#453D34;
+  --ink:#E8DECF;--muted:#A89A88;--clay:#CB9069;--clay-soft:#42352B;
+  --green:#8FA383;--green-soft:#33402F;--yellow:#C7A95A;--yellow-soft:#403721;
+  --red:#CB8068;--red-soft:#3F2C26;--navbg:rgba(36,31,26,.95);
+}
+html[data-theme=dark] .warr{color:#CFE0C3}
+html[data-theme=dark] .warr.soon{color:#E6D29A}
+html[data-theme=dark] .warr.out{color:#E6B0A0}
+.theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+/* ── Desktop-overrides (genererade, CSS-only) ────────── */
+@media (min-width:860px){
+  body{background:var(--bg)}
+  .app{max-width:720px;margin:0 auto 0 calc(232px + 24px);padding:28px 28px 48px}
+  h1.brand{text-align:left;font-size:24px;margin:0 0 18px}
+
+  .nav{top:0;bottom:0;left:0;right:auto;width:232px;height:100vh;max-width:232px;margin:0;
+    flex-direction:column;align-items:stretch;gap:4px;border-top:none;border-right:1px solid var(--line);
+    padding:20px 14px;backdrop-filter:none;background:var(--panel)}
+  .nav button{flex:0 0 auto;display:flex;align-items:center;gap:11px;text-align:left;font-size:14px;
+    padding:11px 14px;border-radius:12px;color:var(--ink)}
+  .nav button span{display:inline-block;font-size:18px;margin:0}
+  .nav button.active{background:var(--clay-soft);color:var(--clay)}
+
+  .theme-btn{top:24px;right:max(24px,calc(50% - 360px + 24px));left:auto}
+
+  .summary{gap:14px}
+  .sum-box{padding:16px 12px}
+
+  /* Bottom-sheets -> centrerade modaler */
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;width:460px;max-width:460px;margin:0;
+    border-radius:20px;transform:translate(-50%,-50%) scale(.96);opacity:0;
+    transition:transform .2s ease,opacity .2s ease;max-height:86vh}
+  .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1}
+  .sheet-close{position:static}
+}
+@media (min-width:1180px){
+  .app{margin-left:auto;margin-right:auto;padding-left:calc(232px + 40px)}
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+<button class="theme-btn" id="theme-btn" aria-label="Tema">◐</button>
+<h1 class="brand">🏡 Boet</h1>
+
+<!-- IDAG -->
+<div class="view active" id="view-today">
+  <div class="summary">
+    <div class="sum-box over"><div class="n" id="sum-over">0</div><div class="l">Försenade</div></div>
+    <div class="sum-box today"><div class="n" id="sum-today">0</div><div class="l">Idag</div></div>
+    <div class="sum-box ok"><div class="n" id="sum-week">0</div><div class="l">Inom 7 dgr</div></div>
+  </div>
+
+  <div class="section-title">Att ta tag i</div>
+  <div class="card-panel" id="today-list"></div>
+
+  <div class="section-title">På gång snart</div>
+  <div class="card-panel" id="today-soon"></div>
+
+  <div class="privacy">Allt sparas i din enhet (och din egen GitHub om du kopplar sync). Boet är ett vardagsstöd för hemmet — inte mer.</div>
+</div>
+
+<!-- SYSSLOR -->
+<div class="view" id="view-chores">
+  <div class="section-title">Återkommande sysslor
+    <button class="btn ghost" id="add-chore">+ Ny</button>
+  </div>
+  <div class="card-panel" id="chore-list"></div>
+  <div class="hint" style="text-align:center;margin-top:8px">Tryck på en syssla för att ändra. ”Klart” nollställer räknaren från idag.</div>
+</div>
+
+<!-- RUM -->
+<div class="view" id="view-rooms">
+  <div class="section-title">Rumsvis städ
+    <button class="btn ghost" id="add-room">+ Rum</button>
+  </div>
+  <div id="rooms-wrap"></div>
+</div>
+
+<!-- HEMMET -->
+<div class="view" id="view-home">
+  <div class="section-title">Hemförteckning
+    <button class="btn ghost" id="add-item">+ Sak</button>
+  </div>
+  <div class="card-panel" id="item-list"></div>
+  <div class="hint" style="text-align:center;margin-top:8px">Apparater, möbler, garantier och underhåll. Tryck för detaljer & logg.</div>
+</div>
+
+<!-- MER -->
+<div class="view" id="view-more">
+  <div class="section-title" style="margin-top:0">Bostadstyp</div>
+  <div class="card-panel">
+    <div class="homepick" id="home-pick">
+      <button data-h="lagenhet"><span class="e">🏢</span>Lägenhet</button>
+      <button data-h="hus"><span class="e">🏠</span>Hus</button>
+    </div>
+    <div class="soft" id="home-hint"></div>
+  </div>
+
+  <div class="section-title">Synk (GitHub)</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:6px">Synka mellan dina enheter via ett privat GitHub-repo. Token sparas bara lokalt och skickas aldrig med i datan.</div>
+    <label>GitHub-användare</label>
+    <input type="text" id="gh-owner" placeholder="t.ex. miracuel" autocapitalize="off" autocomplete="off">
+    <label>Repo (privat)</label>
+    <input type="text" id="gh-repo" placeholder="t.ex. min-data" autocapitalize="off" autocomplete="off">
+    <label>Fine-grained token</label>
+    <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+    <div class="hint">github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Ge åtkomst till ENDAST data-repot, med Contents: Read and write.</div>
+    <div class="gh-msg" id="gh-msg"></div>
+    <button class="btn fill" id="gh-connect" style="margin-top:10px;width:100%">Anslut & synka</button>
+  </div>
+
+  <div class="section-title">Säkerhetskopia</div>
+  <div class="card-panel">
+    <div class="btn-row">
+      <button class="btn" id="export-btn">Exportera</button>
+      <button class="btn" id="import-btn">Importera</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+
+  <div class="foot">
+    <button id="reset-rooms">Nollställ alla rum</button>
+    <button id="wipe-btn">Rensa allt</button>
+  </div>
+  <div class="privacy">Boet v1 · Single-file · ditt hem, dina data 🏡</div>
+</div>
+
+</div>
+
+<!-- ── Sheets ── -->
+<div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="chore-sheet">
+  <h3 id="chore-sheet-title">Ny syssla</h3>
+  <label>Vad ska göras?</label>
+  <input type="text" id="c-title" placeholder="t.ex. Dammsuga">
+  <label>Rum / område</label>
+  <select id="c-room"></select>
+  <div class="row2">
+    <div>
+      <label>Hur ofta</label>
+      <input type="number" id="c-num" min="1" value="1">
+    </div>
+    <div>
+      <label>Enhet</label>
+      <select id="c-unit">
+        <option value="1">dag</option>
+        <option value="7">vecka</option>
+        <option value="30">månad</option>
+      </select>
+    </div>
+  </div>
+  <label>Senast gjord</label>
+  <input type="date" id="c-last">
+  <div class="hint">Lämna tomt om den aldrig gjorts — då dyker den upp direkt.</div>
+  <button class="sheet-close" id="c-save">Spara</button>
+  <button class="sheet-del" id="c-del" style="display:none">Ta bort sysslan</button>
+</div>
+
+<div class="sheet" id="room-sheet">
+  <h3 id="room-sheet-title">Nytt rum</h3>
+  <label>Rummets namn</label>
+  <input type="text" id="r-name" placeholder="t.ex. Kök">
+  <label>Punkter att bocka av</label>
+  <div id="r-tasks"></div>
+  <div class="add-row"><input type="text" id="r-task-in" placeholder="Lägg till punkt…"><button id="r-task-add">+</button></div>
+  <button class="sheet-close" id="r-save">Spara</button>
+  <button class="sheet-del" id="r-del" style="display:none">Ta bort rummet</button>
+</div>
+
+<div class="sheet" id="item-sheet">
+  <h3 id="item-sheet-title">Ny sak</h3>
+  <label>Namn</label>
+  <input type="text" id="i-name" placeholder="t.ex. Tvättmaskin">
+  <label>Kategori</label>
+  <select id="i-cat">
+    <option value="🔌">🔌 Vitvara / apparat</option>
+    <option value="🛋️">🛋️ Möbel</option>
+    <option value="💡">💡 El & belysning</option>
+    <option value="🔧">🔧 Verktyg</option>
+    <option value="🪴">🪴 Växt</option>
+    <option value="📦">📦 Övrigt</option>
+  </select>
+  <div class="row2">
+    <div><label>Köpt</label><input type="date" id="i-buy"></div>
+    <div><label>Garanti t.o.m.</label><input type="date" id="i-warr"></div>
+  </div>
+  <label>Anteckning</label>
+  <textarea id="i-note" rows="2" placeholder="Modell, serienr, var kvittot finns…"></textarea>
+
+  <div id="i-log-wrap" style="display:none">
+    <label>Underhållslogg</label>
+    <div id="i-log"></div>
+    <div class="add-row"><input type="text" id="i-log-in" placeholder="t.ex. Bytte filter"><button id="i-log-add">+</button></div>
+  </div>
+
+  <button class="sheet-close" id="i-save">Spara</button>
+  <button class="sheet-del" id="i-del" style="display:none">Ta bort saken</button>
+</div>
+
+<!-- ── Nav ── -->
+<div class="nav">
+  <button class="active" data-v="today"><span>📋</span>Idag</button>
+  <button data-v="chores"><span>🔁</span>Sysslor</button>
+  <button data-v="rooms"><span>🚪</span>Rum</button>
+  <button data-v="home"><span>🔧</span>Hemmet</button>
+  <button data-v="more"><span>⚙️</span>Mer</button>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+const KEY='boet_v1';
+const SYNC_KEY='boetsync_v1';
+let state={home:null,chores:[],rooms:[],items:[],theme:'auto'};
+try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+state.chores=state.chores||[];state.rooms=state.rooms||[];state.items=state.items||[];
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function persist(){save();if(syncOn())ghPush().catch(function(){});}
+
+// ── Helpers ───────────────────────────────────────────
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const now=()=>Date.now();
+const pad=n=>String(n).padStart(2,'0');
+const toISO=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayKey=()=>toISO(new Date());
+function addDaysISO(iso,n){const p=iso.split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+n);return toISO(d);}
+function daysBetween(a,b){const pa=a.split('-'),pb=b.split('-');const da=new Date(+pa[0],+pa[1]-1,+pa[2]),db=new Date(+pb[0],+pb[1]-1,+pb[2]);return Math.round((db-da)/86400000);}
+function fmtDate(iso){if(!iso)return '';const p=iso.split('-');const m=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];return (+p[2])+' '+m[+p[1]-1]+' '+p[0];}
+
+function fmtFreq(days){
+  if(days%30===0){const n=days/30;return n===1?'varje månad':'var '+n+':e månad';}
+  if(days%7===0){const n=days/7;return n===1?'varje vecka':'var '+n+':e vecka';}
+  return days===1?'varje dag':'var '+days+':e dag';
+}
+
+// ── Sysslo-logik ──────────────────────────────────────
+function choreDue(c){return c.last?addDaysISO(c.last,c.freq):todayKey();}
+function choreState(c){const due=choreDue(c),t=todayKey();if(due<t)return 'over';if(due===t)return 'today';return 'up';}
+function choreDelta(c){return daysBetween(todayKey(),choreDue(c));}
+function dueText(c){
+  const st=choreState(c),d=choreDelta(c);
+  if(st==='over'){const n=-d;return n===1?'försenad 1 dag':'försenad '+n+' dgr';}
+  if(st==='today')return 'idag';
+  if(d===1)return 'imorgon';
+  return 'om '+d+' dgr';
+}
+const liveChores=()=>state.chores.filter(c=>!c.deleted);
+const liveRooms=()=>state.rooms.filter(r=>!r.deleted);
+const liveItems=()=>state.items.filter(i=>!i.deleted);
+
+// ── Sheets ────────────────────────────────────────────
+const bg=document.getElementById('sheet-bg');
+function openSheet(id){bg.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){bg.classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+bg.onclick=closeSheets;
+
+// ── IDAG ──────────────────────────────────────────────
+function renderToday(){
+  const all=liveChores().slice().sort((a,b)=>choreDue(a)<choreDue(b)?-1:1);
+  const over=all.filter(c=>choreState(c)==='over');
+  const today=all.filter(c=>choreState(c)==='today');
+  const soon=all.filter(c=>{const st=choreState(c);return st==='up'&&choreDelta(c)<=7;});
+  document.getElementById('sum-over').textContent=over.length;
+  document.getElementById('sum-today').textContent=today.length;
+  document.getElementById('sum-week').textContent=soon.length;
+
+  const due=over.concat(today);
+  const el=document.getElementById('today-list');
+  if(!due.length){
+    el.innerHTML='<div class="empty-msg">Inget förfaller idag. Hemmet andas — bra jobbat! 🌿</div>';
+  }else{
+    el.innerHTML=due.map(c=>choreRow(c)).join('');
+  }
+  const se=document.getElementById('today-soon');
+  if(!soon.length){se.innerHTML='<div class="empty-msg">Lugnt den närmaste veckan.</div>';}
+  else{se.innerHTML=soon.map(c=>choreRow(c)).join('');}
+}
+function choreRow(c){
+  const st=choreState(c);
+  return '<div class="chore" data-id="'+c.id+'">'
+    +'<span class="chore-dot '+st+'"></span>'
+    +'<div class="chore-main" data-act="edit">'
+      +'<div class="chore-title">'+esc(c.title)+'</div>'
+      +'<div class="chore-meta">'+(c.room?'<span class="tag">'+esc(c.room)+'</span>':'')+fmtFreq(c.freq)+' · <b class="'+(st==='over'?'over':st==='today'?'today':'')+'">'+dueText(c)+'</b></div>'
+    +'</div>'
+    +'<button class="chore-done" data-act="done">Klart</button>'
+  +'</div>';
+}
+
+// ── SYSSLOR ───────────────────────────────────────────
+function renderChores(){
+  const all=liveChores().slice().sort((a,b)=>choreDue(a)<choreDue(b)?-1:1);
+  const el=document.getElementById('chore-list');
+  if(!all.length){el.innerHTML='<div class="empty-msg">Inga sysslor än. Tryck ”+ Ny” — eller välj bostadstyp under Mer för att fylla på med vanliga rutiner.</div>';return;}
+  el.innerHTML=all.map(c=>choreRow(c)).join('');
+}
+function handleChoreClick(e){
+  const row=e.target.closest('.chore');if(!row)return;
+  const c=state.chores.find(x=>x.id===row.dataset.id);if(!c)return;
+  const act=e.target.closest('[data-act]');
+  if(act&&act.dataset.act==='done'){
+    c.last=todayKey();c.m=now();persist();renderAll();return;
+  }
+  openChoreSheet(c);
+}
+document.getElementById('today-list').addEventListener('click',handleChoreClick);
+document.getElementById('today-soon').addEventListener('click',handleChoreClick);
+document.getElementById('chore-list').addEventListener('click',handleChoreClick);
+
+let editingChore=null;
+function roomOptions(sel){
+  const names=['Hela hemmet'].concat(liveRooms().map(r=>r.name));
+  return names.map(n=>'<option'+(n===sel?' selected':'')+'>'+esc(n)+'</option>').join('');
+}
+function openChoreSheet(c){
+  editingChore=c||null;
+  document.getElementById('chore-sheet-title').textContent=c?'Ändra syssla':'Ny syssla';
+  document.getElementById('c-title').value=c?c.title:'';
+  document.getElementById('c-room').innerHTML=roomOptions(c?c.room:'Hela hemmet');
+  let num=1,unit='1';
+  if(c){if(c.freq%30===0){num=c.freq/30;unit='30';}else if(c.freq%7===0){num=c.freq/7;unit='7';}else{num=c.freq;unit='1';}}
+  document.getElementById('c-num').value=num;
+  document.getElementById('c-unit').value=unit;
+  document.getElementById('c-last').value=c?(c.last||''):todayKey();
+  document.getElementById('c-del').style.display=c?'block':'none';
+  openSheet('chore-sheet');
+}
+document.getElementById('add-chore').onclick=()=>openChoreSheet(null);
+document.getElementById('c-save').onclick=()=>{
+  const title=document.getElementById('c-title').value.trim();
+  if(!title){alert('Skriv vad som ska göras.');return;}
+  const freq=Math.max(1,(+document.getElementById('c-num').value||1)*(+document.getElementById('c-unit').value||1));
+  const room=document.getElementById('c-room').value;
+  const last=document.getElementById('c-last').value||null;
+  if(editingChore){editingChore.title=title;editingChore.room=room;editingChore.freq=freq;editingChore.last=last;editingChore.m=now();}
+  else{state.chores.push({id:uid(),title:title,room:room,freq:freq,last:last,m:now()});}
+  persist();closeSheets();renderAll();
+};
+document.getElementById('c-del').onclick=()=>{
+  if(!editingChore)return;
+  if(!confirm('Ta bort ”'+editingChore.title+'”?'))return;
+  editingChore.deleted=true;editingChore.m=now();persist();closeSheets();renderAll();
+};
+
+// ── RUM ───────────────────────────────────────────────
+function renderRooms(){
+  const wrap=document.getElementById('rooms-wrap');
+  const rooms=liveRooms();
+  if(!rooms.length){wrap.innerHTML='<div class="card-panel"><div class="empty-msg">Inga rum än. Tryck ”+ Rum” — eller välj bostadstyp under Mer.</div></div>';return;}
+  wrap.innerHTML=rooms.map(r=>{
+    const tasks=r.tasks||[];
+    const done=tasks.filter(t=>t.done).length;
+    const pct=tasks.length?Math.round(done/tasks.length*100):0;
+    return '<div class="card-panel" data-room="'+r.id+'">'
+      +'<div class="room-head"><div class="room-name">'+esc(r.name)+'</div>'
+        +'<div class="room-prog">'+done+'/'+tasks.length+'</div>'
+        +'<button class="btn tiny ghost" data-act="resetroom">Nollställ</button>'
+        +'<button class="btn tiny ghost" data-act="editroom">Ändra</button></div>'
+      +'<div class="bar"><span style="width:'+pct+'%"></span></div>'
+      +tasks.map((t,i)=>'<div class="rtask'+(t.done?' done':'')+'"><input type="checkbox" data-act="toggle" data-i="'+i+'"'+(t.done?' checked':'')+'><span>'+esc(t.text)+'</span></div>').join('')
+      +(tasks.length?'':'<div class="empty-msg">Inga punkter — tryck Ändra.</div>')
+    +'</div>';
+  }).join('');
+}
+document.getElementById('rooms-wrap').addEventListener('click',e=>{
+  const card=e.target.closest('[data-room]');if(!card)return;
+  const r=state.rooms.find(x=>x.id===card.dataset.room);if(!r)return;
+  const act=e.target.closest('[data-act]');if(!act)return;
+  const a=act.dataset.act;
+  if(a==='toggle'){const i=+act.dataset.i;r.tasks[i].done=!r.tasks[i].done;r.m=now();persist();renderRooms();}
+  else if(a==='resetroom'){(r.tasks||[]).forEach(t=>t.done=false);r.m=now();persist();renderRooms();}
+  else if(a==='editroom'){openRoomSheet(r);}
+});
+
+let editingRoom=null,roomDraft=[];
+function renderRoomDraft(){
+  const el=document.getElementById('r-tasks');
+  el.innerHTML=roomDraft.map((t,i)=>'<div class="edit-item"><span>'+esc(t.text)+'</span><button data-i="'+i+'">×</button></div>').join('')||'<div class="empty-msg">Inga punkter än.</div>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{roomDraft.splice(+b.dataset.i,1);renderRoomDraft();};});
+}
+function openRoomSheet(r){
+  editingRoom=r||null;
+  document.getElementById('room-sheet-title').textContent=r?'Ändra rum':'Nytt rum';
+  document.getElementById('r-name').value=r?r.name:'';
+  roomDraft=r?(r.tasks||[]).map(t=>({text:t.text,done:t.done})):[];
+  renderRoomDraft();
+  document.getElementById('r-del').style.display=r?'block':'none';
+  openSheet('room-sheet');
+}
+document.getElementById('add-room').onclick=()=>openRoomSheet(null);
+function addRoomTask(){
+  const inp=document.getElementById('r-task-in');const v=inp.value.trim();if(!v)return;
+  roomDraft.push({text:v,done:false});inp.value='';renderRoomDraft();
+}
+document.getElementById('r-task-add').onclick=addRoomTask;
+document.getElementById('r-task-in').addEventListener('keydown',e=>{if(e.key==='Enter')addRoomTask();});
+document.getElementById('r-save').onclick=()=>{
+  const name=document.getElementById('r-name').value.trim();
+  if(!name){alert('Ge rummet ett namn.');return;}
+  if(editingRoom){editingRoom.name=name;editingRoom.tasks=roomDraft.slice();editingRoom.m=now();}
+  else{state.rooms.push({id:uid(),name:name,tasks:roomDraft.slice(),m:now()});}
+  persist();closeSheets();renderAll();
+};
+document.getElementById('r-del').onclick=()=>{
+  if(!editingRoom)return;
+  if(!confirm('Ta bort rummet ”'+editingRoom.name+'”?'))return;
+  editingRoom.deleted=true;editingRoom.m=now();persist();closeSheets();renderAll();
+};
+
+// ── HEMFÖRTECKNING ────────────────────────────────────
+function warrBadge(iso){
+  if(!iso)return '';
+  const d=daysBetween(todayKey(),iso);
+  if(d<0)return '<span class="warr out">Garanti slut</span>';
+  if(d<=60)return '<span class="warr soon">Garanti '+fmtDate(iso)+'</span>';
+  return '<span class="warr">Garanti '+fmtDate(iso)+'</span>';
+}
+function renderItems(){
+  const el=document.getElementById('item-list');
+  const items=liveItems().slice().sort((a,b)=>a.name.localeCompare(b.name,'sv'));
+  if(!items.length){el.innerHTML='<div class="empty-msg">Inget tillagt än. Lägg in vitvaror, möbler och annat värt att hålla koll på.</div>';return;}
+  el.innerHTML=items.map(it=>'<div class="item" data-id="'+it.id+'">'
+    +'<div class="item-ic">'+(it.cat||'📦')+'</div>'
+    +'<div class="item-main"><div class="item-name">'+esc(it.name)+'</div>'
+    +'<div class="item-sub">'+warrBadge(it.warr)+(it.log&&it.log.length?' · '+it.log.length+' i logg':'')+(it.buy?' · köpt '+fmtDate(it.buy):'')+'</div></div>'
+  +'</div>').join('');
+  el.querySelectorAll('.item').forEach(row=>{row.onclick=()=>{const it=state.items.find(x=>x.id===row.dataset.id);if(it)openItemSheet(it);};});
+}
+let editingItem=null,itemLogDraft=[];
+function renderItemLog(){
+  const el=document.getElementById('i-log');
+  el.innerHTML=itemLogDraft.slice().reverse().map(l=>'<div class="log-row"><time>'+fmtDate(l.date)+'</time><span>'+esc(l.text)+'</span><button data-id="'+l.id+'">×</button></div>').join('')||'<div class="empty-msg">Ingen logg än.</div>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{itemLogDraft=itemLogDraft.filter(x=>x.id!==b.dataset.id);renderItemLog();};});
+}
+function openItemSheet(it){
+  editingItem=it||null;
+  document.getElementById('item-sheet-title').textContent=it?'Ändra sak':'Ny sak';
+  document.getElementById('i-name').value=it?it.name:'';
+  document.getElementById('i-cat').value=it?(it.cat||'🔌'):'🔌';
+  document.getElementById('i-buy').value=it?(it.buy||''):'';
+  document.getElementById('i-warr').value=it?(it.warr||''):'';
+  document.getElementById('i-note').value=it?(it.note||''):'';
+  itemLogDraft=it?(it.log||[]).map(l=>({id:l.id,date:l.date,text:l.text})):[];
+  document.getElementById('i-log-wrap').style.display=it?'block':'none';
+  renderItemLog();
+  document.getElementById('i-del').style.display=it?'block':'none';
+  openSheet('item-sheet');
+}
+document.getElementById('add-item').onclick=()=>openItemSheet(null);
+function addItemLog(){
+  const inp=document.getElementById('i-log-in');const v=inp.value.trim();if(!v)return;
+  itemLogDraft.push({id:uid(),date:todayKey(),text:v});inp.value='';renderItemLog();
+}
+document.getElementById('i-log-add').onclick=addItemLog;
+document.getElementById('i-log-in').addEventListener('keydown',e=>{if(e.key==='Enter')addItemLog();});
+document.getElementById('i-save').onclick=()=>{
+  const name=document.getElementById('i-name').value.trim();
+  if(!name){alert('Ge saken ett namn.');return;}
+  const data={name:name,cat:document.getElementById('i-cat').value,buy:document.getElementById('i-buy').value||null,warr:document.getElementById('i-warr').value||null,note:document.getElementById('i-note').value.trim(),log:itemLogDraft.slice(),m:now()};
+  if(editingItem){Object.assign(editingItem,data);}
+  else{data.id=uid();state.items.push(data);}
+  persist();closeSheets();renderAll();
+};
+document.getElementById('i-del').onclick=()=>{
+  if(!editingItem)return;
+  if(!confirm('Ta bort ”'+editingItem.name+'”?'))return;
+  editingItem.deleted=true;editingItem.m=now();persist();closeSheets();renderAll();
+};
+
+// ── BOSTADSTYP & SEED ─────────────────────────────────
+const COMMON_CHORES=[
+  ['Dammsuga','Hela hemmet',7],['Våttorka golv','Hela hemmet',14],['Damma ytor','Hela hemmet',14],
+  ['Byta sängkläder','Sovrum',14],['Tvätta','Tvätt',7],['Vattna växterna','Hela hemmet',4],
+  ['Rengöra badrummet','Badrum',7],['Putsa speglar','Badrum',14],['Rensa avloppen','Badrum',60],
+  ['Torka av köksbänkar','Kök',2],['Rengöra kylskåpet','Kök',30],['Rensa gammal mat i kylen','Kök',14],
+  ['Rengöra ugn & mikro','Kök',30],['Avkalka kaffebryggaren','Kök',60],['Rensa diskmaskinens filter','Kök',30],
+  ['Testa brandvarnaren','Hela hemmet',180],['Byta/rengöra ventilationsfilter','Hela hemmet',90],
+  ['Storstäda en yta i taget','Hela hemmet',30]
+];
+const APT_CHORES=[
+  ['Töm & rengör dammsugaren','Hela hemmet',60],['Sopsortera & ut med återvinning','Hela hemmet',7],
+  ['Rengöra balkongen','Balkong',30],['Torka av fönster invändigt','Hela hemmet',60]
+];
+const HUS_CHORES=[
+  ['Klippa gräset','Trädgård',7],['Räfsa löv','Trädgård',14],['Töm komposten','Trädgård',14],
+  ['Rensa hängrännor & stuprör','Utomhus',180],['Kontrollera tak & fasad','Utomhus',180],
+  ['Kontrollera staket & altan','Utomhus',180],['Sota/kontrollera skorsten','Utomhus',365],
+  ['Serva värmepump/panna','Källare',365],['Tvätta fönster ut & in','Hela hemmet',120],
+  ['Vinterförbered trädgården','Trädgård',365],['Kontrollera vattenlås & ventiler','Källare',180]
+];
+const COMMON_ROOMS=[
+  ['Kök',['Diska / töm diskmaskinen','Torka bänkar & spis','Sopa & dammsug golvet','Töm soporna','Torka av handtag']],
+  ['Badrum',['Skura toaletten','Torka handfat & kran','Rengör dusch/badkar','Putsa spegeln','Byt handduk','Sopa golvet']],
+  ['Sovrum',['Bädda sängen','Damma ytor','Dammsug','Vädra']],
+  ['Vardagsrum',['Damma ytor','Dammsug / sopa','Fixa kuddar & filtar','Vattna växter','Plocka undan']],
+  ['Hall',['Sopa golvet','Ställ undan skor','Torka av ytor','Häng upp ytterkläder']]
+];
+const HUS_ROOMS=[
+  ['Tvättstuga',['Rensa luddfilter','Torka av maskiner','Sopa golvet','Töm tvättkorgar']]
+];
+
+function seedFor(home){
+  const chores=COMMON_CHORES.concat(home==='hus'?HUS_CHORES:APT_CHORES);
+  const have=new Set(liveChores().map(c=>c.title.toLowerCase()));
+  let added=0;
+  chores.forEach(ch=>{if(!have.has(ch[0].toLowerCase())){state.chores.push({id:uid(),title:ch[0],room:ch[1],freq:ch[2],last:null,m:now()});added++;}});
+  const rooms=COMMON_ROOMS.concat(home==='hus'?HUS_ROOMS:[]);
+  const haveR=new Set(liveRooms().map(r=>r.name.toLowerCase()));
+  rooms.forEach(rm=>{if(!haveR.has(rm[0].toLowerCase())){state.rooms.push({id:uid(),name:rm[0],tasks:rm[1].map(t=>({text:t,done:false})),m:now()});added++;}});
+  return added;
+}
+function renderHomePick(){
+  document.querySelectorAll('#home-pick button').forEach(b=>b.classList.toggle('sel',b.dataset.h===state.home));
+  const h=document.getElementById('home-hint');
+  if(!state.home){h.textContent='Välj bostadstyp för att fylla på med vanliga sysslor och rum.';}
+  else{h.textContent=state.home==='hus'?'Hus valt — inkluderar trädgård, tak, skorsten m.m.':'Lägenhet valt — fokus på inomhus, balkong och återvinning.';}
+}
+document.getElementById('home-pick').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-h]');if(!b)return;
+  const h=b.dataset.h;
+  const empty=!liveChores().length&&!liveRooms().length;
+  const ask=empty||confirm('Lägg till '+(h==='hus'?'hus':'lägenhets')+'-sysslor och rum som inte redan finns? Befintliga rörs inte.');
+  state.home=h;
+  if(ask){const n=seedFor(h);if(n)alert('La till '+n+' nya sysslor/rum. ✨');}
+  persist();renderAll();
+});
+
+// ── SYNK (appkollen-stil) ─────────────────────────────
+let sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/boet.json';
+const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
+
+function setBadge(st,msg){
+  const b=document.getElementById('sync-badge');if(!b)return;
+  b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':' offline');
+}
+function ensureBadge(){
+  if(document.getElementById('sync-badge'))return;
+  const t=document.querySelector('#view-more .section-title:nth-of-type(2)');
+}
+
+function mergeById(local,remote){
+  const map={};
+  (local||[]).forEach(x=>{map[x.id]=x;});
+  (remote||[]).forEach(x=>{
+    const cur=map[x.id];
+    if(!cur||(x.m||0)>=(cur.m||0))map[x.id]=x;
+  });
+  return Object.keys(map).map(k=>map[k]);
+}
+
+async function ghGet(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sync.sha=null;return null;}
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  sync.sha=j.sha;
+  return JSON.parse(b64dec(j.content));
+}
+async function ghPull(){
+  if(!syncOn())return;
+  try{
+    setBadge('load','Hämtar…');
+    const data=await ghGet();
+    if(data){
+      state.chores=mergeById(state.chores,data.chores);
+      state.rooms=mergeById(state.rooms,data.rooms);
+      state.items=mergeById(state.items,data.items);
+      if(data.home&&!state.home)state.home=data.home;
+      save();renderAll();
+    }
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
+}
+async function ghPush(){
+  if(!syncOn())return;
+  setBadge('load','Sparar…');
+  const content=b64enc(JSON.stringify({home:state.home,chores:state.chores,rooms:state.rooms,items:state.items,updated:new Date().toISOString()}));
+  const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Boet-uppdatering',content:content},sync.sha?{sha:sync.sha}:{}))});
+  let r=await doPut();
+  if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+  const j=await r.json();
+  if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
+}
+
+function ghMsg(text,kind){
+  const el=document.getElementById('gh-msg');
+  el.textContent=text;el.className='gh-msg '+(kind||'');el.style.display=text?'block':'none';
+}
+document.getElementById('gh-connect').onclick=async()=>{
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){ghMsg('Fyll i användare, repo och token.','err');return;}
+  saveSync();
+  ghMsg('Ansluter…','');
+  try{
+    const data=await ghGet();
+    if(data){ghMsg('✓ Ansluten — hämtar data…','ok');await ghPull();}
+    else{ghMsg('✓ Ansluten — laddar upp din data…','ok');await ghPush();}
+    ghMsg('✓ Synkad! Boet håller dina enheter i takt.','ok');
+  }catch(e){ghMsg('Fel: '+e.message+'. Kontrollera användare, repo och att token har Contents: Read and write.','err');}
+};
+
+// ── Export / Import / Reset ───────────────────────────
+document.getElementById('export-btn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='boet-'+todayKey()+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(d.chores)state.chores=mergeById(state.chores,d.chores);
+      if(d.rooms)state.rooms=mergeById(state.rooms,d.rooms);
+      if(d.items)state.items=mergeById(state.items,d.items);
+      if(d.home)state.home=d.home;
+      persist();renderAll();alert('Importerat och sammanfogat. ✓');
+    }catch(err){alert('Kunde inte läsa filen.');}
+  };
+  rd.readAsText(f);e.target.value='';
+};
+document.getElementById('reset-rooms').onclick=()=>{
+  if(!confirm('Bocka av alla rum (sätt alla punkter som ogjorda)?'))return;
+  liveRooms().forEach(r=>{(r.tasks||[]).forEach(t=>t.done=false);r.m=now();});
+  persist();renderAll();
+};
+document.getElementById('wipe-btn').onclick=()=>{
+  if(!confirm('Rensa ALLT i Boet på den här enheten? Detta går inte att ångra.'))return;
+  state={home:null,chores:[],rooms:[],items:[],theme:state.theme};
+  persist();renderAll();renderHomePick();
+};
+
+// ── Tema ──────────────────────────────────────────────
+function applyTheme(){
+  const m=state.theme||'auto';
+  const h=new Date().getHours();
+  const dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#241F1A':'#F4EEE7';
+  const b=document.getElementById('theme-btn');
+  b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+  b.title=m==='auto'?'Tema: auto — mörkt 20–07':(m==='dark'?'Tema: mörkt':'Tema: ljust');
+}
+document.getElementById('theme-btn').onclick=()=>{
+  state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';
+  save();applyTheme();
+};
+
+// ── Nav ───────────────────────────────────────────────
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+  };
+});
+
+// ── Init ──────────────────────────────────────────────
+function renderAll(){renderToday();renderChores();renderRooms();renderItems();renderHomePick();}
+loadSync();
+document.getElementById('gh-owner').value=sync.owner;
+document.getElementById('gh-repo').value=sync.repo;
+document.getElementById('gh-token').value=sync.token;
+// synk-badge i Mer-vyn
+(function(){
+  const titles=document.querySelectorAll('#view-more .section-title');
+  titles.forEach(t=>{if(t.textContent.indexOf('Synk')===0){const b=document.createElement('span');b.id='sync-badge';b.className='sp-badge offline';b.textContent='Lokal';t.appendChild(b);}});
+})();
+renderAll();
+applyTheme();
+setInterval(applyTheme,60000);
+if(syncOn()){setBadge('ok','Synkad');ghPull();}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
+</script>
+</body>
+</html>
