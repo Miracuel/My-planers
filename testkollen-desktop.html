@@ -74,17 +74,24 @@ textarea{resize:vertical;line-height:1.5}
 .plat-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
 .plat-chip{flex:1;min-width:140px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:12px;padding:9px 10px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}
 .plat-chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
-.app-card{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;background:var(--panel)}
-.app-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
-.app-head .an{font-family:Georgia,serif;font-size:15px;margin-bottom:2px}
-.app-head .chev{color:var(--muted);font-size:18px;transition:transform .2s;flex-shrink:0}
+#apps-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.app-card{border:1px solid var(--t-line,var(--line));border-radius:16px;overflow:hidden;background:var(--t-bg,var(--panel));color:var(--t-ink,var(--ink));transition:transform .12s ease,box-shadow .12s ease}
+.app-card.open{grid-column:1/-1}
+@media (hover:hover){.app-card:not(.open):hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.10)}}
+.app-head{display:flex;align-items:flex-start;gap:11px;padding:14px 13px 13px;cursor:pointer}
+.app-head .tikon{width:38px;height:38px;border-radius:50%;background:var(--t-iconbg,var(--panel2));border:1px solid var(--t-line,var(--line));display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1;flex-shrink:0}
+.app-head .thead{flex:1;min-width:0}
+.app-head .an{font-family:Georgia,serif;font-size:16px;font-weight:400;color:var(--t-accent,var(--ink));margin-bottom:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.app-head .tdesc{font-size:11px;line-height:1.45;color:var(--t-muted,var(--muted));margin-bottom:5px}
+.app-head .chev{color:var(--t-muted,var(--muted));font-size:18px;transition:transform .2s;flex-shrink:0;align-self:center}
 .app-card.open .app-head .chev{transform:rotate(90deg)}
-.app-sum{font-size:11px;color:var(--muted)}
+.app-sum{font-size:11px;color:var(--t-muted,var(--muted))}
 .app-score{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:3px}
 .app-score .sc{font-size:11px;font-weight:600;padding:1px 8px;border-radius:8px}
 .app-score .sc.ok{background:var(--green-soft);color:var(--green)}
 .app-score .sc.bad{background:var(--red-soft);color:var(--red)}
 .app-score .sc.imp{background:var(--improve-soft);color:var(--improve)}
+.app-head .tag{border-color:var(--t-line,var(--line))}
 .statpick{flex-shrink:0;width:27px;height:27px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;margin-right:10px}
 .statpick.pass{background:var(--green-soft);color:var(--green);border-color:transparent}
 .statpick.fail{background:var(--red-soft);color:var(--red);border-color:transparent}
@@ -814,7 +821,7 @@ function parseAppChangelog(raw,fileName){
       if(catItems.length)cat.push({area:area||'Funktioner',items:catItems});
     });
   }
-  const meta={icon:raw&&(raw.icon||raw.emoji)||'',accent:raw&&raw.accent||'',file:raw&&raw.file||fileName||''};
+  const meta={icon:raw&&(raw.icon||raw.emoji)||'',accent:raw&&raw.accent||'',farger:(raw&&(raw.farger||raw.colors))||null,desc:(raw&&(raw.description||raw.beskrivning))||'',file:raw&&raw.file||fileName||''};
   return {app,meta,funcs,log,cat};
 }
 
@@ -833,12 +840,33 @@ async function clPullAll(){
       if(!parsed.funcs.length)continue;
       sources.push({path,app:parsed.app,count:parsed.funcs.length});
       state.clStruct[parsed.app]={log:parsed.log,cat:parsed.cat};
-      state.appMeta[parsed.app]={icon:parsed.meta.icon||'',accent:parsed.meta.accent||'',file:parsed.meta.file||''};
+      state.appMeta[parsed.app]={icon:parsed.meta.icon||'',accent:parsed.meta.accent||'',farger:parsed.meta.farger||null,desc:parsed.meta.desc||'',file:parsed.meta.file||''};
       parsed.funcs.forEach(cf=>{
         if(existing[cf.id]){const f=existing[cf.id];if(!f.namn)f.namn=cf.namn;if(!f.version)f.version=cf.version;if(!f.date)f.date=cf.date;if(!f.kind)f.kind=cf.kind;if(!f.app||f.app==='Allmänt')f.app=cf.app;}
         else{const nf={id:cf.id,app:cf.app,version:cf.version,namn:cf.namn,type:cf.type,kind:cf.kind,date:cf.date,source:'changelog',opened:false,isNew:true,added:nowISO(),cases:[]};state.funcs.push(nf);existing[cf.id]=nf;added++;}
       });
     }
+    // Berika med Centralens färger/ikon/beskrivning om centralen.json finns i repot
+    try{
+      const cg=await ghGetFile('centralen.json');
+      if(cg&&!cg.missing&&cg.data){
+        const list=cg.data.apps||cg.data.kort||cg.data.list||cg.data.cards||(Array.isArray(cg.data)?cg.data:[]);
+        if(Array.isArray(list)){
+          const norm=s=>String(s||'').toLowerCase().replace(/-desktop\.html$/,'').replace(/\.html$/,'').trim();
+          list.forEach(ca=>{
+            const cNamn=ca.namn||ca.name||'';const cFile=ca.mobil||ca.file||ca.desktop||'';
+            let key=Object.keys(state.appMeta).find(k=>k.toLowerCase()===String(cNamn).toLowerCase());
+            if(!key)key=Object.keys(state.appMeta).find(k=>{const m=state.appMeta[k];return m.file&&norm(m.file)===norm(cFile);});
+            if(!key&&cNamn&&state.clStruct[cNamn])key=cNamn;
+            if(!key)return;
+            const m=state.appMeta[key];
+            if((ca.farger||ca.colors)&&!m.farger)m.farger=ca.farger||ca.colors;
+            if((ca.ikon||ca.icon)&&!m.icon)m.icon=ca.ikon||ca.icon;
+            if((ca.desc||ca.description)&&!m.desc)m.desc=ca.desc||ca.description;
+          });
+        }
+      }
+    }catch(e){}
     state.cl.sources=sources;state.cl.lastPull=nowISO();
     persist();renderClSources();updateDot();
     setBadge('ok','Synkad');
@@ -997,6 +1025,15 @@ $('bulk-skip').onclick=()=>bulkVerdict('skip');
 // ── Synkade appar (changelogg + funktionslogg) ────────
 const appsExpanded=new Set();
 const appTab={};
+function hex2rgb(h){h=String(h||'').replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');if(h.length!==6)return null;const n=parseInt(h,16);if(isNaN(n))return null;return [n>>16&255,n>>8&255,n&255];}
+function rgba(h,a){const c=hex2rgb(h);return c?'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')':null;}
+function tileVars(meta){
+  const f=meta&&meta.farger;
+  if(f&&f.bg&&f.accent)return {bg:f.bg,line:f.line||'var(--line)',ink:f.ink||'var(--ink)',muted:f.muted||'var(--muted)',accent:f.accent,iconbg:f.iconbg||'var(--panel2)'};
+  const ac=meta&&meta.accent;
+  if(ac&&hex2rgb(ac))return {bg:rgba(ac,'.06'),line:rgba(ac,'.24'),ink:'var(--ink)',muted:'var(--muted)',accent:ac,iconbg:rgba(ac,'.16')};
+  return {bg:'var(--panel)',line:'var(--line)',ink:'var(--ink)',muted:'var(--muted)',accent:'var(--accent)',iconbg:'var(--panel2)'};
+}
 function clItemRow(it){
   const f=state.funcs.find(x=>x.id===it.id);
   const st=f?statusOf(f):'pending';
@@ -1013,9 +1050,13 @@ function renderApps(){
     const tot=arr.length;
     const openBugs=(state.bugs||[]).filter(b=>(b.app||'')===a&&OPEN_BUG(b)).length;
     const synced=arr.some(f=>f.source==='changelog');
-    const meta=(state.appMeta||{})[a]||{};const icon=meta.icon?(esc(meta.icon)+' '):'';
+    const meta=(state.appMeta||{})[a]||{};
+    const tv=tileVars(meta);
+    const styleVars='--t-bg:'+tv.bg+';--t-line:'+tv.line+';--t-ink:'+tv.ink+';--t-muted:'+tv.muted+';--t-accent:'+tv.accent+';--t-iconbg:'+tv.iconbg;
+    const icon=meta.icon||'📦';
+    const desc=meta.desc?esc(meta.desc):(tot+' '+(tot===1?'funktion':'funktioner'));
     const s=(n,col)=>n>0?'<i style="width:'+(n/tot*100)+'%;background:'+col+'"></i>':'';
-    const bar='<div class="bar-bg" style="margin:6px 0 4px">'+s(c.pass,'var(--green)')+s(c.fail,'var(--red)')+s(c.improve,'var(--improve)')+s(c.blocked,'var(--amber)')+s(c.progress,'var(--blue)')+s(c.skip,'var(--line)')+s(c.pending,'var(--panel2)')+'</div>';
+    const bar='<div class="bar-bg" style="margin:0 0 5px">'+s(c.pass,'var(--green)')+s(c.fail,'var(--red)')+s(c.improve,'var(--improve)')+s(c.blocked,'var(--amber)')+s(c.progress,'var(--blue)')+s(c.skip,'var(--line)')+s(c.pending,'var(--panel2)')+'</div>';
     const sc='<div class="app-score"><span class="sc ok">✓ '+c.pass+' funkar</span>'+(c.fail?'<span class="sc bad">✗ '+c.fail+' funkar inte</span>':'')+(c.improve?'<span class="sc imp">△ '+c.improve+' kan förbättras</span>':'')+'</div>';
     const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att bocka av · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
     const open=appsExpanded.has(a);
@@ -1038,9 +1079,10 @@ function renderApps(){
     }else{
       body=arr.slice().sort((x,y)=>(x.namn||'').localeCompare(y.namn||'')).map(fbRow).join('');
     }
-    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'"><div class="app-head"><div style="flex:1;min-width:0"><div class="an">'+icon+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div>'+bar+sc+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span></div><div class="app-body">'+body+'</div></div>';
+    const headInner='<span class="tikon">'+esc(icon)+'</span><div class="thead"><div class="an">'+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div><div class="tdesc">'+desc+'</div>'+bar+(open?sc:'')+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span>';
+    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'" style="'+styleVars+'"><div class="app-head">'+headInner+'</div><div class="app-body">'+body+'</div></div>';
   }).join('');
-  el.querySelectorAll('.app-head').forEach(h=>{h.onclick=()=>{const card=h.closest('.app-card');const a=card.dataset.app;if(appsExpanded.has(a))appsExpanded.delete(a);else appsExpanded.add(a);card.classList.toggle('open');};});
+  el.querySelectorAll('.app-head').forEach(h=>{h.onclick=()=>{const card=h.closest('.app-card');const a=card.dataset.app;if(appsExpanded.has(a))appsExpanded.delete(a);else appsExpanded.add(a);card.classList.toggle('open');renderApps();};});
   el.querySelectorAll('.segtabs button').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();appTab[b.dataset.app]=b.dataset.tab;renderApps();};});
   el.querySelectorAll('.statpick').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();openStatusSheet(b.dataset.pick);};});
   el.querySelectorAll('.app-body .fmain[data-open]').forEach(r=>{r.onclick=()=>openFunc(r.dataset.open);});
@@ -1648,25 +1690,30 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='2.8';
+const APP_VERSION='2.9';
 const CHANGELOG=[
-  {version:'2.8',date:'2026-06-16',title:'Massgodkänn i protokollet',items:[
+  {version:'2.9',date:'2026-06-18',title:'App-kort i Centralen-stil',items:[
+    'Apparna i Appar-vyn visas nu som kort i Centralens stil: appens ikon i en färgad cirkel, namn i accentfärg, beskrivning och appens egen färgvärld.',
+    'Färger, ikon och beskrivning hämtas från appens changelog-fil och från centralen.json när det finns; annars tonas kortet i appens accentfärg.',
+    'Korten ligger i ett tvåkolumnsrutnät och fälls ut i full bredd för changelogg/funktionslogg.'
+  ]},
+  {version:'2.8',date:'2026-06-18',title:'Massgodkänn i protokollet',items:[
     'Knappen "Välj flera" i Protokoll låter dig kryssa i flera funktioner samtidigt, med "Välj alla" för det filtrerade urvalet.',
     'Massåtgärder för de valda: "✓ Godkänn valda" och "⊘ Behöver ej testas", signerade med testare och tidsstämpel.'
   ]},
-  {version:'2.7',date:'2026-06-16',title:'Tagga ändring/funktion i protokollet',items:[
+  {version:'2.7',date:'2026-06-18',title:'Tagga ändring/funktion i protokollet',items:[
     'Varje rad i protokollet (och Att testa) taggas nu som 🔄 Ändring (från changeloggen) eller 🧩 Funktion (från funktionsloggen).',
     'Nytt filter i Protokoll för att visa bara ändringar eller bara funktioner.'
   ]},
-  {version:'2.6',date:'2026-06-16',title:'Växla changelogg/funktionslogg',items:[
+  {version:'2.6',date:'2026-06-18',title:'Växla changelogg/funktionslogg',items:[
     'Pill-flikar i varje app-kort för att växla mellan Changelogg och Funktionslogg i stället för att visa båda samtidigt.'
   ]},
-  {version:'2.5',date:'2026-06-16',title:'Changelogg & funktionslogg per app',items:[
+  {version:'2.5',date:'2026-06-18',title:'Changelogg & funktionslogg per app',items:[
     'Under Appar visas varje apps changelogg grupperad per version, med en statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte) för varje ändring.',
     'Separat funktionslogg per app, grupperad per område, med samma statussymboler — bocka av varje funktion en och en.',
     'Appens ikon visas före namnet i applistan (hämtas från changelog-filen).'
   ]},
-  {version:'2.4',date:'2026-06-16',title:'Feedback som tavla',items:[
+  {version:'2.4',date:'2026-06-18',title:'Feedback som tavla',items:[
     'Feedback-fliken är nu en tavla i Feedbackkollen-stil: kort med färgad statusrand, typikon (🐞/⚠️/💡), rubrik, beskrivning och pillar för app, status och prioritet.',
     'Filtrera tavlan på typ, status (öppna som standard) och app, med översiktsrutor överst och "+ Logga feedback".',
     'Snabb-avbockningen (✓ ○ △ ✗) en och en flyttade till Appar-fliken, så Feedback fokuserar på de loggade posterna.'
@@ -1751,7 +1798,7 @@ const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
   {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Varje rad taggas som 🔄 Ändring (changelogg) eller 🧩 Funktion (funktionslogg), med filter för att visa bara den ena.','"Välj flera" för att kryssa i flera funktioner och massgodkänna ("✓ Godkänn valda") eller markera "Behöver ej testas" på en gång, signerat med testare och tidsstämpel.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Buggregister',items:['Separat register för buggar, fel och förbättringar (typ-filter 🐞/⚠️/💡), med status Ny/Bekräftad/Påbörjad/Fixad/Omtest krävs/Stängd, kopplat till app, funktion och version, med prioritet och rapportör.','Modulomdömena "Funkar inte" och "Kan förbättras" loggar automatiskt här och skickar till Appcentralen. Poster syns i översikten och kan skickas/återsändas till Appcentralen.']},
-  {area:'Synkade appar',items:['Egen flik med appens ikon före namnet. Per app växlar du med pill-flikar mellan changeloggen (grupperad per version) och funktionsloggen (grupperad per område), var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".']},
+  {area:'Synkade appar',items:['Apparna visas som kort i Centralens stil — ikon i färgad cirkel, namn i accentfärg, beskrivning och appens egen färgvärld (hämtad från changelog-filen och centralen.json, annars tonad i accentfärgen). Korten ligger i ett tvåkolumnsrutnät. Fäll ut ett kort i full bredd för att växla med pill-flikar mellan changeloggen (per version) och funktionsloggen (per område), var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".']},
   {area:'Feedback',items:['Tavla i Feedbackkollen-stil över alla loggade poster (bugg/fel/förbättring): kort med färgad statusrand, typikon, rubrik, beskrivning och pillar för app, status och prioritet. Filtrera på typ, status och app, med översiktsrutor och "+ Logga feedback". Tryck på ett kort för att redigera.']},
   {area:'Kalender',items:['Kalendervy som visar när varje funktion lades till (antal per dag). Tryck på ett datum för att se och testa bara de funktionerna, plus buggar rapporterade samma dag.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},

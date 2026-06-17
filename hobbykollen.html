@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="HobbyKollen">
 <meta name="theme-color" content="#F4F0E9">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23B0613F'/><text x='50' y='53' font-size='58' text-anchor='middle' dominant-baseline='central'>🎨</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23B0613F'/><text x='50' y='53' font-size='58' text-anchor='middle' dominant-baseline='central'>🎨</text></svg>">
 <link rel="manifest" href='data:application/manifest+json,{"name":"HobbyKollen","short_name":"Hobby","display":"standalone","background_color":"%23F4F0E9","theme_color":"%23F4F0E9","start_url":"."}'>
 <title>HobbyKollen</title>
 <style>
@@ -245,12 +247,27 @@ html[data-theme=dark]{
   <div class="card-panel"><div id="st-when"></div></div>
 </div>
 
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <div class="section-title" style="margin-top:0">Nyheter & funktioner</div>
+  <div class="card-panel" style="margin-bottom:10px">
+    <div class="stat-big" id="news-tagline"></div>
+    <div class="soft" id="news-audience" style="margin-top:6px"></div>
+    <div class="soft" id="news-version" style="margin-top:8px"></div>
+  </div>
+  <div class="section-title">Det här kan appen</div>
+  <div class="card-panel"><div id="news-functions"></div></div>
+  <div class="section-title">Förändringslogg</div>
+  <div id="news-changelog"></div>
+</div>
+
 <div class="nav">
   <button class="active" data-v="home"><span>🏠</span>Hem</button>
   <button data-v="hobbies"><span>📇</span>Hobbys</button>
   <button data-v="inv"><span>📦</span>Förråd</button>
   <button data-v="budget"><span>💰</span>Budget</button>
   <button data-v="stats"><span>📊</span>Statistik</button>
+  <button data-v="news"><span>✨</span>Nyheter</button>
 </div>
 
 <!-- Sheets -->
@@ -422,6 +439,47 @@ var MOODS=['mysigt','socialt','fokuserat','äventyrligt'];
 var TIMES=[['<30 min',30],['30–60 min',60],['1–2 h',120],['en hel dag',999]];
 var INVTYPES=['material','verktyg','bok','kurs','påbörjat'];
 var JOY=['😐','🙂','😊','😄','🤩'];
+
+// ── APPINFO / changelog (visas i vyn "Nyheter & funktioner") ──
+var APPINFO={
+  version:'1.1.0',
+  tagline:'Alla dina hobbys, projekt och idéer på ett ställe.',
+  audience:'För dig med många hobbys — håll koll på material, projekt, budget och var glädjen finns.',
+  functions:[
+    'Hobbykort med kategori, energinivå, humör, tid och kostnad',
+    'Projekt med delsteg, materiallista, inspiration och deadline (eller ingen press)',
+    'Förråd: material, verktyg, böcker, kurser och påbörjade saker',
+    'Månadsbudget, kostnad per hobby, önskelista med "du har redan liknande"-varning',
+    'Statistik: mest använda, glädje per krona, hobbys du saknar, avslutade projekt, kreativa veckodagar',
+    'Hobbyrotatorn — slumpar fram en hobby utifrån tid, energi, humör och material hemma',
+    'AI-hjälp baserad på dina hobbys, projekt och förråd',
+    'GitHub-synk mellan enheter och JSON-export/import'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-17',items:[
+      'GitHub-synk uppgraderad till union-merge per id (tappar inte poster mellan enheter)',
+      'Tema utesluts nu ur synk-payloaden (varje enhet behåller sitt eget tema)',
+      'Ny vy: Nyheter & funktioner med inbäddad changelog',
+      'Genererad favicon (🎨) och apple-touch-icon',
+      'Centralen-metadata inbäddad så hubben kan synka in kortet automatiskt',
+      'Separat desktop- och mobilversion enligt svit-standard'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Första versionen: hobbykort, projekt, förråd, budget, statistik, hobbyrotator och AI-hjälp'
+    ]}
+  ]
+};
+
+// ── Centralen-metadata (sektion sätts i Centralen, inte här) ──
+var CENTRALEN={
+  id:'hobbykollen',
+  namn:'HobbyKollen',
+  ikon:'🎨',
+  desc:'Håll koll på dina hobbys, projekt, förråd och budget — med hobbyrotator och AI-hjälp.',
+  mobil:'hobbykollen.html',
+  desktop:'hobbykollen-desktop.html',
+  farger:{bg:'#F4F0E9',line:'#DED6C8',ink:'#3A3530',muted:'#857B6D',accent:'#B0613F',iconbg:'#EFDACC'}
+};
 
 function catInfo(name){for(var i=0;i<CATS.length;i++){if(CATS[i][0]===name)return CATS[i];}return CATS[CATS.length-1];}
 function energyVal(e){var i=ENERGY.indexOf(e);return i<0?2:i+1;}
@@ -872,13 +930,22 @@ async function ghGet(){
   if(!r.ok)throw new Error('HTTP '+r.status);
   var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));
 }
+function mergeById(local,remote){
+  // union per id: behåll alla poster från båda, fjärr vinner vid samma id
+  var map={};var order=[];
+  (local||[]).forEach(function(it){var id=it&&it.id!=null?it.id:JSON.stringify(it);if(!(id in map))order.push(id);map[id]=it;});
+  (remote||[]).forEach(function(it){var id=it&&it.id!=null?it.id:JSON.stringify(it);if(!(id in map))order.push(id);map[id]=it;});
+  return order.map(function(id){return map[id];});
+}
 function mergeIn(data){
   if(data&&typeof data==='object'){
-    ['hobbies','inventory','wishlist','want','sessions'].forEach(function(k){if(Array.isArray(data[k]))state[k]=data[k];});
+    ['hobbies','inventory','wishlist','want','sessions'].forEach(function(k){if(Array.isArray(data[k]))state[k]=mergeById(state[k],data[k]);});
     if(typeof data.budget==='number')state.budget=data.budget;
     save();
   }
 }
+// Synk-payload: tema (och API-nyckel, som aldrig ligger i state) utesluts.
+function syncPayload(){return {hobbies:state.hobbies,inventory:state.inventory,wishlist:state.wishlist,want:state.want,sessions:state.sessions,budget:state.budget};}
 async function ghPull(){
   if(!syncOn())return;
   try{setBadge('load','Hämtar…');var data=await ghGet();if(data){mergeIn(data);renderAll();}setBadge('ok','Synkad ✓');}
@@ -887,7 +954,7 @@ async function ghPull(){
 async function ghPush(){
   if(!syncOn())return;
   setBadge('load','Sparar…');
-  var payload=Object.assign(stripState(),{updated:new Date().toISOString()});
+  var payload=Object.assign(syncPayload(),{updated:new Date().toISOString()});
   var content=b64enc(JSON.stringify(payload));
   var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via HobbyKollen',content:content},sync.sha?{sha:sync.sha}:{}))});};
   var r=await doPut();
@@ -957,7 +1024,24 @@ for(var i=0;i<navBtns.length;i++){(function(b){b.onclick=function(){
   renderAll();
 };})(navBtns[i]);}
 
-function renderAll(){renderHome();renderHobbies();renderInv();renderBudget();renderStats();}
+function renderNews(){
+  document.getElementById('news-tagline').textContent=APPINFO.tagline;
+  document.getElementById('news-audience').textContent=APPINFO.audience;
+  document.getElementById('news-version').textContent='Version '+APPINFO.version;
+  var fe=document.getElementById('news-functions');fe.innerHTML='';
+  APPINFO.functions.forEach(function(f){var r=document.createElement('div');r.className='row';r.innerHTML='<div class="grow">'+esc(f)+'</div>';fe.appendChild(r);});
+  var ce=document.getElementById('news-changelog');ce.innerHTML='';
+  APPINFO.changelog.forEach(function(c){
+    var box=document.createElement('div');box.className='proj';
+    var html='<div class="proj-head"><span class="proj-name">Version '+esc(c.v)+'</span><span class="proj-deadline">'+esc(c.d)+'</span></div>';
+    html+='<div class="steps">';
+    c.items.forEach(function(it){html+='<div class="step"><span>'+esc(it)+'</span></div>';});
+    html+='</div>';
+    box.innerHTML=html;ce.appendChild(box);
+  });
+}
+
+function renderAll(){renderHome();renderHobbies();renderInv();renderBudget();renderStats();renderNews();}
 
 // ── Init ──────────────────────────────────────────────
 loadSync();applyTheme();renderAll();
