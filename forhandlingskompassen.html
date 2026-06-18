@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Förhandling">
 <meta name="theme-color" content="#EBEEF3">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231C3F66'/><text x='50' y='53' font-size='56' text-anchor='middle' dominant-baseline='central'>%F0%9F%A7%AD</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231C3F66'/><text x='50' y='53' font-size='56' text-anchor='middle' dominant-baseline='central'>%F0%9F%A7%AD</text></svg>">
 <link rel="manifest" href='data:application/manifest+json,{"name":"F%C3%B6rhandlingsKompassen","short_name":"F%C3%B6rhandling","display":"standalone","background_color":"%23EBEEF3","theme_color":"%23EBEEF3","start_url":"."}'>
 <title>FörhandlingsKompassen</title>
 <style>
@@ -220,6 +222,7 @@ html[data-theme=dark]{
   </div>
   <div class="section-title">Verktyg</div>
   <div class="card-panel">
+    <button class="btn wide" id="me-changelog" style="margin-bottom:8px">✨ Nyheter &amp; funktioner</button>
     <button class="btn wide" id="me-guide" style="margin-bottom:8px">📋 Förhandlingsguide (referens)</button>
     <button class="btn wide" id="me-lou" style="margin-bottom:8px">⚖️ LOU-principer (referens)</button>
     <div class="btn-row">
@@ -349,6 +352,12 @@ html[data-theme=dark]{
   <button class="sheet-close" id="lou-close">Stäng</button>
 </div>
 
+<div class="sheet" id="changelog-sheet">
+  <h3>Nyheter &amp; funktioner</h3>
+  <div id="cl-body"></div>
+  <button class="sheet-close" id="cl-close">Stäng</button>
+</div>
+
 <div class="sheet" id="sync-sheet">
   <h3>⚙️ Synk via GitHub</h3>
   <div class="soft">Appen läser och sparar <code>forhandlingskompassen.json</code> i ett <strong>privat</strong> GitHub-repo så att teamet ser samma data. Token sparas bara lokalt på enheten — aldrig i koden.</div>
@@ -410,6 +419,50 @@ var GUIDE=[
   ['5 · Vad får inte ändras?','Minimikrav, obligatoriska skall-krav och tilldelningskriterier får inte förhandlas bort. Inget får ändras på ett sätt som snedvrider konkurrensen eller gynnar en enskild leverantör.']
 ];
 
+// ── App-info / changelog (inbäddad) ───────────────────
+var APPINFO={
+  id:'forhandlingskompassen',
+  version:'1.1.0',
+  tagline:'Planera, genomför och dokumentera förhandlingar i offentlig upphandling – med LOU, likabehandling och spårbarhet i fokus.',
+  audience:'Upphandlare, chefer och projektgrupper inom offentlig sektor.',
+  functions:[
+    'Översikt med risknivå, kommande förhandlingar, brister och AI-varningar',
+    'Upphandlingscase: grunddata, förfarande, krav, leverantörer, mandat och utvärderingsmodell',
+    'Förhandlingsläge per leverantör: agenda, frågebank, logg, protokollgenerator och nästa steg',
+    'Compliance: LOU-check, risker, likabehandlingskontroll och sekretesspåminnelser',
+    'Förhandlingsguide och LOU-referens',
+    'AI-stöd: frågeförslag, riskbedömning, neutralt protokoll och likabehandlingsgranskning',
+    'Spårbar logg per upphandling',
+    'Inbyggd GitHub-synk med union-merge samt JSON-export/import',
+    'Auto/ljust/mörkt tema'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Inbyggd teamsynk uppgraderad till union-merge per id så inga rader tappas vid samtidig redigering på flera enheter',
+      'Ny vy "Nyheter & funktioner" med inbäddad changelog',
+      'Genererad favicon (kompass) samt apple-touch-icon och webmanifest med matchande tema',
+      'Förinställd Centralen-metadata så kortet kan synkas in automatiskt',
+      'Separat desktop-version med fast vänstersidebar (rent CSS-lager, oförändrad JS)'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Första versionen: översikt, case, förhandlingsläge och compliance',
+      'LOU-check, förhandlingsguide och spårbar logg',
+      'AI-stöd (frågor, riskbedömning, protokoll, likabehandling) och GitHub-synk',
+      'Mobil- och desktopversion'
+    ]}
+  ]
+};
+// ── Centralen-metadata (för automatisk kortimport; sektion sätts i Centralen) ──
+var CENTRALEN={
+  id:'forhandlingskompassen',
+  namn:'FörhandlingsKompassen',
+  ikon:'🧭',
+  desc:'Planera, genomför och dokumentera förhandlingar i offentlig upphandling – LOU, likabehandling och spårbarhet.',
+  mobil:'forhandlingskompassen.html',
+  desktop:'forhandlingskompassen-desktop.html',
+  farger:{bg:'#EBEEF3',line:'#D7DEE7',ink:'#1E2A38',muted:'#6A7686',accent:'#1C3F66',iconbg:'#DBE6F2'}
+};
+
 // ── State ─────────────────────────────────────────────
 var KEY='forhandlingskompassen_v1';
 var state={cases:[],me:'',theme:'auto'};
@@ -430,8 +483,8 @@ var fSupId=null;
 function getCase(id){for(var i=0;i<state.cases.length;i++)if(state.cases[i].id===id)return state.cases[i];return null;}
 function getSup(c,id){if(!c)return null;for(var i=0;i<c.suppliers.length;i++)if(c.suppliers[i].id===id)return c.suppliers[i];return null;}
 
-function logEvent(c,what){if(!c.log)c.log=[];c.log.unshift({id:uid(),t:nowStamp(),who:state.me||'Användare',what:what});if(c.log.length>200)c.log=c.log.slice(0,200);}
-function addWarning(c,text){if(!c.warnings)c.warnings=[];c.warnings.unshift({id:uid(),t:nowStamp(),text:text});}
+function logEvent(c,what){if(!c.log)c.log=[];c.log.unshift({id:uid(),t:nowStamp(),who:state.me||'Användare',what:what});if(c.log.length>200)c.log=c.log.slice(0,200);c.updatedAt=new Date().toISOString();}
+function addWarning(c,text){if(!c.warnings)c.warnings=[];c.warnings.unshift({id:uid(),t:nowStamp(),text:text});c.updatedAt=new Date().toISOString();}
 
 // ── Risknivå / compliance ─────────────────────────────
 function louCount(c){var n=0;for(var i=0;i<LOU_ITEMS.length;i++)if(c.lou&&c.lou[LOU_ITEMS[i][0]])n++;return n;}
@@ -457,7 +510,13 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setBadge(stt,msg){var b=document.getElementById('me-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(stt==='ok'?' on':stt==='err'?' err':'');}
 async function ghGet(){var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null;}if(!r.ok)throw new Error('HTTP '+r.status);var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));}
-async function ghPull(){if(!syncOn())return;try{setBadge('load','Hämtar…');var data=await ghGet();if(data&&Array.isArray(data.cases)){state.cases=data.cases;if(typeof data.me==='string'&&!state.me)state.me=data.me;saveLocal();if(!getCase(activeCaseId))activeCaseId=state.cases.length?state.cases[0].id:null;renderAll();}setBadge('ok','Synkad');}catch(e){setBadge('err','Synkfel');}}
+// Union-merge per id (tappar inga rader vid samtidig redigering)
+function mergeArrById(a,b){var m={},out=[],i;a=a||[];b=b||[];for(i=0;i<a.length;i++){if(!m[a[i].id]){m[a[i].id]=1;out.push(a[i]);}}for(i=0;i<b.length;i++){if(!m[b[i].id]){m[b[i].id]=1;out.push(b[i]);}}return out;}
+function mergeSuppliers(la,ra){la=la||[];ra=ra||[];var lm={},rm={},ids=[];la.forEach(function(s){lm[s.id]=s;ids.push(s.id);});ra.forEach(function(s){rm[s.id]=s;if(ids.indexOf(s.id)<0)ids.push(s.id);});return ids.map(function(id){var l=lm[id],r=rm[id];if(l&&r){var s=Object.assign({},l,r);s.nextStep=r.nextStep||l.nextStep;s.agenda=mergeArrById(l.agenda,r.agenda);s.questions=mergeArrById(l.questions,r.questions);s.entries=mergeArrById(l.entries,r.entries);s.sessions=mergeArrById(l.sessions,r.sessions);s.protocols=mergeArrById(l.protocols,r.protocols);return s;}return l||r;});}
+function mergeCase(l,r){var lU=l.updatedAt||'',rU=r.updatedAt||'';var base=rU>lU?Object.assign({},l,r):Object.assign({},r,l);base.requirements=mergeArrById(l.requirements,r.requirements);base.warnings=mergeArrById(l.warnings,r.warnings);base.log=mergeArrById(l.log,r.log).sort(function(a,b){return a.t<b.t?1:-1;}).slice(0,200);base.suppliers=mergeSuppliers(l.suppliers,r.suppliers);base.lou=Object.assign({},l.lou||{},r.lou||{});return base;}
+function mergeCases(la,ra){la=la||[];ra=ra||[];var lm={},rm={},ids=[];la.forEach(function(c){lm[c.id]=c;ids.push(c.id);});ra.forEach(function(c){rm[c.id]=c;if(ids.indexOf(c.id)<0)ids.push(c.id);});return ids.map(function(id){var l=lm[id],r=rm[id];return (l&&r)?mergeCase(l,r):(l||r);});}
+
+async function ghPull(){if(!syncOn())return;try{setBadge('load','Hämtar…');var data=await ghGet();if(data&&Array.isArray(data.cases)){state.cases=mergeCases(state.cases,data.cases);if(typeof data.me==='string'&&!state.me)state.me=data.me;saveLocal();if(!getCase(activeCaseId))activeCaseId=state.cases.length?state.cases[0].id:null;renderAll();}setBadge('ok','Synkad');}catch(e){setBadge('err','Synkfel');}}
 async function ghPush(){if(!syncOn())return;setBadge('load','Sparar…');var content=b64enc(JSON.stringify({cases:state.cases,me:state.me,updated:new Date().toISOString()}));var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};var r=await doPut();if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');}
 
 // ── AI (Anthropic) ────────────────────────────────────
@@ -801,7 +860,21 @@ document.getElementById('c-case').onchange=function(){activeCaseId=this.value;re
 // ════════════════ MER ════════════════
 document.getElementById('me-name').value=state.me||'';
 document.getElementById('me-name-save').onclick=function(){state.me=document.getElementById('me-name').value.trim();save();};
-document.getElementById('me-foot').innerHTML='FörhandlingsKompassen är ett planerings- och dokumentationsstöd för förhandling i offentlig upphandling. Det utgör inte juridisk rådgivning. Verifiera alltid mot LOU (2016:1145) och Upphandlingsmyndighetens vägledning.';
+document.getElementById('me-foot').innerHTML='FörhandlingsKompassen v'+APPINFO.version+' · ett planerings- och dokumentationsstöd för förhandling i offentlig upphandling. Det utgör inte juridisk rådgivning. Verifiera alltid mot LOU (2016:1145) och Upphandlingsmyndighetens vägledning.';
+
+// Nyheter & funktioner
+function renderChangelog(){
+  var fns=APPINFO.functions.map(function(f){return '<div class="li"><span style="flex-shrink:0;color:var(--blue)">•</span><div class="li-main"><div class="li-t" style="font-weight:400;font-size:13px">'+esc(f)+'</div></div></div>';}).join('');
+  var logs=APPINFO.changelog.map(function(c){
+    var items=c.items.map(function(it){return '<div class="entry-txt" style="margin-top:4px">• '+esc(it)+'</div>';}).join('');
+    return '<div class="guide-step"><div class="gh">v'+esc(c.v)+' · '+esc(c.d)+'</div><div class="gd">'+items+'</div></div>';
+  }).join('');
+  document.getElementById('cl-body').innerHTML=
+    '<div class="callout co-blue"><span class="ic">🧭</span><div><strong>'+esc(APPINFO.tagline)+'</strong><div class="soft" style="margin-top:4px">'+esc(APPINFO.audience)+'</div></div></div>'+
+    '<div class="section-title">Funktioner</div><div class="card-panel">'+fns+'</div>'+
+    '<div class="section-title">Versionshistorik</div><div class="card-panel">'+logs+'</div>';
+}
+document.getElementById('me-changelog').onclick=function(){renderChangelog();openSheet('changelog-sheet');};
 
 // Synk
 document.getElementById('me-sync').onclick=function(){document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;document.getElementById('gh-status').style.display='none';openSheet('sync-sheet');};

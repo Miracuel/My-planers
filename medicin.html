@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Medicinkollen">
 <meta name="theme-color" content="#EEF1EB">
-<link rel="manifest" href='data:application/manifest+json,{"name":"Medicinkollen","short_name":"Medicin","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Medicinkollen","short_name":"Medicin","display":"standalone","background_color":"%23EEF1EB","theme_color":"%236E84A3","start_url":"."}'>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%236E84A3'/><text x='32' y='45' font-size='36' text-anchor='middle'>💊</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%236E84A3'/><text x='32' y='45' font-size='36' text-anchor='middle'>💊</text></svg>">
 <title>Medicinkollen</title>
 <style>
 :root{
@@ -1098,6 +1100,13 @@ var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'
 var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setBadge(st,msg){var b=document.getElementById('sync-badge');b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' offline');}
+function mergeById(localArr,remoteArr){
+  localArr=localArr||[];remoteArr=remoteArr||[];
+  var map={},order=[];
+  for(var i=0;i<localArr.length;i++){var it=localArr[i];if(it&&it.id!=null){if(!(it.id in map))order.push(it.id);map[it.id]=it;}}
+  for(var j=0;j<remoteArr.length;j++){var rt=remoteArr[j];if(rt&&rt.id!=null){if(!(rt.id in map))order.push(rt.id);map[rt.id]=rt;}}
+  return order.map(function(id){return map[id];});
+}
 
 async function ghGet(){
   var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
@@ -1112,11 +1121,11 @@ async function ghPull(){
     setBadge('load','Hämtar…');
     var data=await ghGet();
     if(data){
-      if(Array.isArray(data.meds))state.meds=data.meds;
-      if(Array.isArray(data.doses))state.doses=data.doses;
-      if(Array.isArray(data.effects))state.effects=data.effects;
-      if(Array.isArray(data.factors))state.factors=data.factors;
-      save();renderNow();renderMeds();renderLog();
+      state.meds=mergeById(state.meds,data.meds);
+      state.doses=mergeById(state.doses,data.doses);
+      state.effects=mergeById(state.effects,data.effects);
+      state.factors=mergeById(state.factors,data.factors);
+      save();renderNow();renderMeds();renderLog();renderStats();
     }
     setBadge('ok','Synkad');
   }catch(e){setBadge('err','Synkfel');}
@@ -1124,7 +1133,7 @@ async function ghPull(){
 async function ghPush(){
   if(!syncOn())return;
   setBadge('load','Sparar…');
-  var content=b64enc(JSON.stringify({meds:state.meds,doses:state.doses,updated:new Date().toISOString()}));
+  var content=b64enc(JSON.stringify({meds:state.meds,doses:state.doses,effects:state.effects,factors:state.factors,updated:new Date().toISOString()}));
   var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};
   var r=await doPut();
   if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
@@ -1288,7 +1297,7 @@ document.getElementById('ai-key-clear').onclick=function(){
 
 // ── Nyheter & funktioner ──────────────────────────────
 var CHANGELOG={
-  appId:'medicin',version:'2.1.0',updated:'2026-06-17',
+  appId:'medicin',version:'2.2.0',updated:'2026-06-18',
   tagline:'Se hur medicinen verkar, om den hjälper, och håll koll på lager och mönster.',
   description:'Medicinkollen är ett minnesstöd som visar i realtid hur din medicin verkar, låter dig skatta om och hur mycket den hjälpte, följa symtom före och efter dos, hålla koll på medicinlagret och se mönster över tid. Allt sparas på din enhet och kan synkas mellan telefon och dator via ditt eget privata GitHub-repo. Medicinkollen ersätter inte ordination eller bipacksedel.',
   audience:'Dig som tar medicin med bestämda tidsintervall och vill ha ett enkelt, privat verktyg för dos, effekt och uppföljning — inte minst inför ett vårdbesök.',
@@ -1307,12 +1316,23 @@ var CHANGELOG={
     'AI-sammanställning (Claude eller ChatGPT), GitHub-synk och desktop-version'
   ],
   changelog:[
+    {v:'2.2.0',d:'2026-06-18',items:['Synken slår nu ihop data per id (union-merge) i stället för att skriva över, och tar med biverkningar och faktorer','Egen app-ikon (favicon/apple-touch-icon) och manifest med matchande färg','Förinställd Centralen-kortmetadata så appen kan synkas in automatiskt']},
     {v:'2.1.0',d:'2026-06-17',items:['Snabbknappar "Känns som den verkar nu" och "Känns som den gått ur" som loggar tiden på dosen','Effektskattningen "Har medicinen hjälpt än?" är nu kollapsbar och visas först vid klick','Statistik visar upplevd anslagstid och verkningstid jämfört med inställd tid','Känns-tider syns i historiken och ingår i AI-sammanställningen']},
     {v:'2.0.0',d:'2026-06-17',items:['Omdesignad Nu-sida med stort aktivt kort och kompakta kort','Effektskattning ("Har medicinen hjälpt än?") och statistik per medicin','Symtom före/efter dos med genomsnittlig förändring','Medicinlager med dagar kvar och receptpåminnelse','Faktorlogg (alkohol/koffein/nikotin/sömnbrist) och mönsteranalys','Ny Statistik-flik']},
     {v:'1.2.0',d:'2026-06-17',items:['Kalender med dos- och biverkningshistorik','Registrera doser i efterhand','Logga biverkningar med allvarlighetsgrad','Max antal doser per dygn med räknare och varning']},
     {v:'1.1.0',d:'2026-06-17',items:['Flera färgteman','Klockslag för ny dos och när medicinen gått ur','AI-sammanställning med val av Claude eller ChatGPT','Ny Mer-flik med Nyheter & funktioner']},
     {v:'1.0.0',d:'2026-06-17',items:['Första versionen: Nu-vy med live-ring, mediciner, historik','GitHub-synk i appkollen-stil och separat desktop-version']}
   ]
+};
+// Centralen-kortmetadata (sektion sätts i Centralen, inte här)
+var CENTRALEN={
+  id:'medicin',
+  namn:'Medicinkollen',
+  ikon:'💊',
+  desc:'Se hur medicinen verkar, om den hjälper, och håll koll på lager och mönster.',
+  mobil:'medicin.html',
+  desktop:'medicin-desktop.html',
+  farger:{bg:'#EEF1EB',line:'#D8DECF',ink:'#3C4237',muted:'#7E8676',accent:'#6E84A3',iconbg:'#DCE3EC'}
 };
 function renderChangelog(){
   var c=CHANGELOG;var h='';

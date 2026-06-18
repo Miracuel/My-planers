@@ -187,8 +187,13 @@ html[data-palette=dis][data-theme=dark]{--accent:#B3A795;--accent-soft:#3A352D;-
 .theme-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
 .theme-chip{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
 .theme-chip.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ink)}
+/* ── v3.1: synk-badge ── */
+.sp-badge{font-size:11px;padding:3px 9px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:#F4DAD9;color:#A2685B}
+.section-title .right,h3 .right{float:right;margin-top:2px;font-family:-apple-system,sans-serif;font-weight:400}
 
-/* ── Desktop-override (CSS-only, JS byte-identisk med mobil) ── */
+/* ── DESKTOP-LAGER, JS oförändrad ── */
 @media (min-width:820px){
   body{padding-left:212px}
   .app{max-width:600px;margin:0 auto;padding:28px 22px 48px}
@@ -425,6 +430,14 @@ html[data-palette=dis][data-theme=dark]{--accent:#B3A795;--accent-soft:#3A352D;-
   <label>Snabbval för längd (min)</label>
   <div id="dur-edit"></div>
   <div class="add-row"><input type="number" id="de-in" placeholder="T.ex. 25" style="max-width:120px"><button id="de-add">+</button></div>
+  <h3 style="margin-top:18px">Synk mellan enheter <span class="right"><span id="sync-badge" class="sp-badge offline">Lokal</span></span></h3>
+  <div class="soft">Privat GitHub-repo (appkollen-stil). Token sparas bara på den här enheten och ingår aldrig i synken. Fil: <b>pausen.json</b>.</div>
+  <label>GitHub-användare</label><input type="text" id="sy-owner" placeholder="t.ex. miracuel" autocomplete="off">
+  <label>Repo (privat)</label><input type="text" id="sy-repo" placeholder="t.ex. min-data" autocomplete="off">
+  <label>Fine-grained token (Contents: read/write)</label><input type="password" id="sy-token" placeholder="github_pat_…" autocomplete="off">
+  <div class="btn-row" style="margin-top:12px"><button class="btn fill" id="sy-connect">Anslut &amp; hämta</button><button class="btn" id="sy-push">Spara upp</button></div>
+  <div class="soft" id="sy-status" style="margin-top:8px"></div>
+
   <h3 style="margin-top:18px">Tema</h3>
   <div class="soft">Välj färgton. Ljust/mörkt styrs av knappen uppe i hörnet.</div>
   <div class="theme-chips" id="theme-chips"></div>
@@ -1380,6 +1393,128 @@ var _applyTheme=applyTheme;applyTheme=function(){_applyTheme();document.document
   if(this.dataset.v==='pattern')renderPattern();
   if(this.dataset.v==='insikter')renderInsikter();
 };})();
+
+
+// ── v3.1: APPINFO + Centralen-metadata ────────────────
+VER='3.1.0';
+var APPINFO={
+  version:'3.1.0',
+  tagline:'Mjuk paustimer som frågar vad du pausar från, guidar dig genom pausen och hjälper dig tillbaka.',
+  audience:'Personligt vardagsstöd, särskilt vänligt för ADHD och utmattning, för dig som lätt glömmer pausen, fastnar i den, eller känner att du måste förtjäna den. Inte vård.',
+  functions:[
+    'Starta paus med energi, behov, paustyp, aktivitet, plats och längd',
+    'Behovsanpassade meddelanden + guidade mikroövningar',
+    'Återgångshjälp med konkret nästa steg',
+    'Favoritpauser för snabbstart',
+    'Logg, mönster och insikter (vecka, kalender, energi per aktivitet)',
+    'Egna mål, pausstreak och mjuka påminnelser',
+    'ADHD-läge och automatisk pausrekommendation',
+    'AI-reflektion via egen nyckel (Claude eller ChatGPT)',
+    'Inbyggd synk mellan enheter (privat GitHub-repo)',
+    'Flera teman, auto/mörkt/ljust, export/import (nyckel exkluderas)'
+  ],
+  changelog:[
+    {v:'3.1.0',d:'2026-06-17',items:[
+      'Inbyggd synk mellan enheter via privat GitHub-repo (appkollen-stil): union-merge per id, auto-hämtning vid start och flikbyte, statusbadge Hämtar/Sparar/Synkad/Synkfel. Token och tema/AI-nyckel ingår aldrig i synken.',
+      'Nyheter & funktioner drivs nu av en APPINFO-konstant (version, tagline, målgrupp, funktioner, ändringslogg).',
+      'Förinställd Centralen-metadata så appen kan synkas in i Centralen automatiskt.',
+      'Versionsmärkning rättad och i linje med sviten-standard.'
+    ]},
+    {v:'3.0.0',d:'2026-06-17',items:[
+      'Favoritpauser, guidade mikroövningar och ny Insikter-vy (veckosammanfattning, pauskalender, energi per aktivitet, veckans AI-insikt).',
+      'Egna mål, "var snäll mot dig själv"-budskap, flera teman och egen favicon.'
+    ]},
+    {v:'2.0.0',d:'2026-06-17',items:[
+      'Paustyp, behovsval och behovsanpassade meddelanden.',
+      'Återgångshjälp med konkret nästa steg, energi före/efter och plats.',
+      'ADHD-läge, pausstreak, automatisk pausrekommendation och AI-reflektion (Claude/ChatGPT).'
+    ]},
+    {v:'1.0.0',d:'2026-06-17',items:[
+      'Första släppet: paustimer med aktivitetsfråga, snälla meddelanden, logg, mönster, snabbval och inställningar.'
+    ]}
+  ]
+};
+var CENTRALEN_META={
+  id:'pausen',
+  namn:'Pausen',
+  ikon:'🍃',
+  desc:'Mjuk paustimer som hjälper dig stanna upp, återhämta och hitta tillbaka.',
+  mobil:'pausen.html',
+  desktop:'pausen-desktop.html',
+  farger:{bg:'#F2EEE8',line:'#E0D6C8',ink:'#403930',muted:'#8A8175',accent:'#B5836A',iconbg:'#EDDBCF'}
+};
+
+// Nyheter & funktioner -> drivs av APPINFO
+renderNews=function(){
+  var h='<div class="soft" style="margin-bottom:10px">'+esc(APPINFO.tagline)+'<br><b>Målgrupp:</b> '+esc(APPINFO.audience)+'</div>';
+  h+='<div class="section-title" style="font-size:14px">Funktioner</div><div class="fav-row" style="margin-top:0">';
+  for(var f=0;f<APPINFO.functions.length;f++)h+='<span class="tag">'+esc(APPINFO.functions[f])+'</span>';
+  h+='</div>';
+  h+='<div class="section-title" style="font-size:14px">Ändringslogg</div>';
+  for(var i=0;i<APPINFO.changelog.length;i++){var c=APPINFO.changelog[i];
+    h+='<div class="card-panel" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between"><b>v'+esc(c.v)+'</b><span class="soft">'+esc(c.d)+'</span></div><ul style="margin:8px 0 0 18px;font-size:13px;line-height:1.6">';
+    for(var j=0;j<c.items.length;j++)h+='<li>'+esc(c.items[j])+'</li>';
+    h+='</ul></div>';
+  }
+  document.getElementById('news-body').innerHTML=h;
+};
+
+// ── v3.1: Synk (appkollen-stil) ───────────────────────
+var sync={owner:'',repo:'',token:'',sha:null};
+var SYNC_KEY='pausensync_v1';
+var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/pausen.json';};
+var ghHeaders=function(){return{'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
+var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
+var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' offline');}
+function _byIdUnion(a,b){var m={};(a||[]).forEach(function(x){if(x&&x.id)m[x.id]=x;});(b||[]).forEach(function(x){if(x&&x.id&&!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
+function _union(a,b){var out=(a||[]).slice();(b||[]).forEach(function(v){if(out.indexOf(v)<0)out.push(v);});return out;}
+function mergeLog(local,remote){
+  var byId={};
+  function take(o){if(!o)return;for(var k in o){var arr=o[k]||[];for(var i=0;i<arr.length;i++){var e=arr[i];if(e&&e.id&&!byId[e.id])byId[e.id]=e;}}}
+  take(local);take(remote);
+  var out={};
+  for(var id in byId){var e=byId[id];var k=e.ts?toISO(new Date(e.ts)):todayKey();if(!out[k])out[k]=[];out[k].push(e);}
+  for(var d in out)out[d].sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+  return out;
+}
+function syncPayload(){return {log:state.log,favorites:state.favorites,reflections:state.reflections,activities:state.activities,presets:state.presets,goals:state.goals,updated:new Date().toISOString()};}
+function refreshAfterSync(){
+  refreshIdle();
+  if(document.getElementById('view-log').classList.contains('active'))renderLog();
+  if(document.getElementById('view-pattern').classList.contains('active'))renderPattern();
+  if(document.getElementById('view-insikter').classList.contains('active'))renderInsikter();
+}
+async function ghGet(){var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null;}if(!r.ok)throw new Error('HTTP '+r.status);var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));}
+async function ghPull(){if(!syncOn())return;try{setBadge('load','Hämtar…');var data=await ghGet();if(data){
+  if(data.log)state.log=mergeLog(state.log,data.log);
+  if(Array.isArray(data.favorites))state.favorites=_byIdUnion(state.favorites,data.favorites);
+  if(Array.isArray(data.reflections))state.reflections=_byIdUnion(state.reflections,data.reflections);
+  if(Array.isArray(data.activities))state.activities=_union(state.activities,data.activities);
+  if(Array.isArray(data.presets))state.presets=_union(state.presets,data.presets).sort(function(a,b){return a-b;});
+  if(data.goals&&(!state.goals||(!state.goals.pauses&&!state.goals.minutes)))state.goals=data.goals;
+  syncPulling=true;save();syncPulling=false;refreshAfterSync();
+}setBadge('ok','Synkad');}catch(e){setBadge('err','Synkfel');}}
+async function ghPush(){if(!syncOn())return;setBadge('load','Sparar…');var content=b64enc(JSON.stringify(syncPayload()));var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Pausen',content:content},sync.sha?{sha:sync.sha}:{}))});};var r=await doPut();if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');}
+
+// save -> debouncad push (1.2s) när synk är på
+var syncPulling=false,pushTimer=null,_save=save;
+save=function(){_save();if(syncOn()&&!syncPulling){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1200);}};
+
+// ── Wiring ────────────────────────────────────────────
+loadSync();
+(function(){var o=document.getElementById('sy-owner'),re=document.getElementById('sy-repo'),t=document.getElementById('sy-token');if(o)o.value=sync.owner;if(re)re.value=sync.repo;if(t)t.value=sync.token;})();
+if(syncOn())setBadge('ok','Synkad');
+document.getElementById('sy-connect').onclick=async function(){sync.owner=document.getElementById('sy-owner').value.trim();sync.repo=document.getElementById('sy-repo').value.trim();sync.token=document.getElementById('sy-token').value.trim();if(!syncOn()){document.getElementById('sy-status').textContent='Fyll i alla tre fält.';return;}saveSync();sync.sha=null;document.getElementById('sy-status').textContent='Ansluter…';try{await ghPull();await ghPush();document.getElementById('sy-status').textContent='✓ Ansluten och synkad.';}catch(e){document.getElementById('sy-status').textContent='Fel: '+e.message;}};
+document.getElementById('sy-push').onclick=async function(){if(!syncOn()){document.getElementById('sy-status').textContent='Anslut först.';return;}try{await ghPush();document.getElementById('sy-status').textContent='✓ Sparat upp.';}catch(e){document.getElementById('sy-status').textContent='Fel: '+e.message;}};
+// utöka inställnings-öppningen så synk-fälten fylls
+document.getElementById('open-settings').onclick=function(){renderSettings();renderThemeChips();renderGoals();document.getElementById('sy-owner').value=sync.owner;document.getElementById('sy-repo').value=sync.repo;document.getElementById('sy-token').value=sync.token;openSheet('settings-sheet');};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+if(syncOn())ghPull();
+document.getElementById('ver-line').textContent='Pausen v'+APPINFO.version;
 
 
 // ── Init / återuppta ──────────────────────────────────

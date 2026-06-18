@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Boet">
 <meta name="theme-color" content="#F4EEE7">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B5754F'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle'%3E%F0%9F%8F%A1%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B5754F'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle'%3E%F0%9F%8F%A1%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href='data:application/manifest+json,{"name":"Boet","short_name":"Boet","display":"standalone","background_color":"%23F4EEE7","theme_color":"%23F4EEE7","start_url":"."}'>
 <title>Boet</title>
 <style>
@@ -228,17 +230,32 @@ html[data-theme=dark] .warr.out{color:#E6B0A0}
     <input type="file" id="import-file" accept=".json" style="display:none">
   </div>
 
+  <div class="section-title">Om appen</div>
+  <div class="card-panel">
+    <button class="btn" id="open-news" style="width:100%">📰 Nyheter & funktioner</button>
+  </div>
+
   <div class="foot">
     <button id="reset-rooms">Nollställ alla rum</button>
     <button id="wipe-btn">Rensa allt</button>
   </div>
-  <div class="privacy">Boet v1 · Single-file · ditt hem, dina data 🏡</div>
+  <div class="privacy" id="ver-line">Boet · Single-file · ditt hem, dina data 🏡</div>
 </div>
 
 </div>
 
 <!-- ── Sheets ── -->
 <div class="sheet-bg" id="sheet-bg"></div>
+
+<div class="sheet" id="news-sheet">
+  <h3>Nyheter &amp; funktioner</h3>
+  <div class="soft" id="news-tagline"></div>
+  <div class="section-title" style="margin-top:14px">Funktioner</div>
+  <div class="card-panel" id="news-functions"></div>
+  <div class="section-title">Versionshistorik</div>
+  <div id="news-changelog"></div>
+  <button class="sheet-close" id="news-close">Stäng</button>
+</div>
 
 <div class="sheet" id="chore-sheet">
   <h3 id="chore-sheet-title">Ny syssla</h3>
@@ -318,6 +335,47 @@ html[data-theme=dark] .warr.out{color:#E6B0A0}
 </div>
 
 <script>
+// ── App-info & changelog ──────────────────────────────
+var APPINFO={
+  id:'boet',
+  version:'1.1.0',
+  tagline:'Ditt hem, samlat på ett ställe.',
+  audience:'För den som vill hålla ordning på hemmets rutiner och underhåll utan separata listor och påminnelser.',
+  functions:[
+    'Idag-vy: försenade, dagens och kommande veckans sysslor i överblick',
+    'Återkommande sysslor med frekvens (dag/vecka/månad) och ett klick för ”klart”',
+    'Rumsvis städ med avbockning, progress-stapel och nollställning',
+    'Hemförteckning: apparater, garantibevakning och underhållslogg per sak',
+    'Bostadstyp lägenhet/hus som fyller på relevanta sysslor och rum',
+    'GitHub-synk mellan enheter (token endast lokalt)',
+    'Export/import med sammanfogning · auto/mörkt/ljust tema'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Inbyggd ”Nyheter & funktioner” med versionshistorik (under Mer → Om appen).',
+      'Genererad favicon (🏡) och apple-touch-icon i terrakotta som matchar accentfärgen.',
+      'Centralen-metadata inbäddad så hubben kan synka in appkortet automatiskt.',
+      'Desktop-lagret omarbetat: dold brand, app-namn i sidofältet via .nav::before, fast 212px sidebar.'
+    ]},
+    {v:'1.0.0',d:'2026-06-17',items:[
+      'Första utgåvan: Idag, Sysslor, Rum, Hemmet och Mer.',
+      'GitHub-synk i appkollen-stil med union-by-id-sammanfogning.',
+      'Bostadstypsstyrd seedning för lägenhet och hus.'
+    ]}
+  ]
+};
+
+// ── Centralen-metadata (för automatisk synk till hubben; sektion sätts i Centralen) ──
+var CENTRALEN={
+  id:'boet',
+  namn:'Boet',
+  ikon:'🏡',
+  desc:'Samlat hemnav: sysslor, rumsstäd, hemförteckning och underhåll.',
+  mobil:'boet.html',
+  desktop:'boet-desktop.html',
+  farger:{bg:'#F4EEE7',line:'#E0D4C5',ink:'#3F362E',muted:'#8A7D6E',accent:'#B5754F',iconbg:'#EBD9CC'}
+};
+
 // ── State ─────────────────────────────────────────────
 const KEY='boet_v1';
 const SYNC_KEY='boetsync_v1';
@@ -755,6 +813,15 @@ document.getElementById('wipe-btn').onclick=()=>{
   persist();renderAll();renderHomePick();
 };
 
+// ── Nyheter & funktioner ──────────────────────────────
+function renderNews(){
+  document.getElementById('news-tagline').textContent=APPINFO.tagline+' — '+APPINFO.audience;
+  document.getElementById('news-functions').innerHTML=APPINFO.functions.map(f=>'<div class="rtask"><span>✓ '+esc(f)+'</span></div>').join('');
+  document.getElementById('news-changelog').innerHTML=APPINFO.changelog.map(c=>'<div class="card-panel" style="margin-bottom:10px"><div class="chore-meta"><b>v'+esc(c.v)+'</b> · '+esc(c.d)+'</div>'+c.items.map(it=>'<div class="rtask"><span>'+esc(it)+'</span></div>').join('')+'</div>').join('');
+}
+document.getElementById('open-news').onclick=()=>{renderNews();openSheet('news-sheet');};
+document.getElementById('news-close').onclick=closeSheets;
+
 // ── Tema ──────────────────────────────────────────────
 function applyTheme(){
   const m=state.theme||'auto';
@@ -794,6 +861,7 @@ document.getElementById('gh-token').value=sync.token;
   titles.forEach(t=>{if(t.textContent.indexOf('Synk')===0){const b=document.createElement('span');b.id='sync-badge';b.className='sp-badge offline';b.textContent='Lokal';t.appendChild(b);}});
 })();
 renderAll();
+document.getElementById('ver-line').textContent='Boet v'+APPINFO.version+' · Single-file · ditt hem, dina data 🏡';
 applyTheme();
 setInterval(applyTheme,60000);
 if(syncOn()){setBadge('ok','Synkad');ghPull();}

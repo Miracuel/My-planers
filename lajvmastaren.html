@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="LajvMästaren">
 <meta name="theme-color" content="#F2ECE1">
-<link rel="manifest" href='data:application/manifest+json,{"name":"LajvMästaren","short_name":"Lajv","display":"standalone","background_color":"%23F2ECE1","theme_color":"%23F2ECE1","start_url":"."}'>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237C2B3B'/%3E%3Ctext x='50' y='54' font-size='58' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%8E%AD%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237C2B3B'/%3E%3Ctext x='50' y='54' font-size='58' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%8E%AD%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href='data:application/manifest+json,{"name":"LajvMästaren","short_name":"Lajv","display":"standalone","background_color":"%23F2ECE1","theme_color":"%237C2B3B","start_url":"."}'>
 <title>LajvMästaren</title>
 <style>
 :root{
@@ -309,12 +311,13 @@ html[data-theme=dark]{
     <div class="menu-item" data-open="kunskap"><span class="mi-ico">📚</span>Kunskapsbank<span class="mi-arr">›</span></div>
   </div>
   <div class="card-panel" style="margin-top:12px">
+    <div class="menu-item" data-open="changelog"><span class="mi-ico">📰</span>Nyheter &amp; funktioner<span class="mi-arr">›</span></div>
     <div class="menu-item" data-open="synk"><span class="mi-ico">☁️</span>Synk &amp; säkerhetskopiering<span class="mi-arr">›</span></div>
     <div class="menu-item" id="more-export"><span class="mi-ico">💾</span>Exportera backup (JSON)<span class="mi-arr">›</span></div>
     <div class="menu-item" id="more-import"><span class="mi-ico">📥</span>Importera backup<span class="mi-arr">›</span></div>
     <input type="file" id="import-file" accept=".json" style="display:none">
   </div>
-  <div class="privacy soft" style="text-align:center;margin-top:14px">LajvMästaren v1 · vanilla HTML · data lokalt + valfri GitHub-synk</div>
+  <div class="privacy soft" style="text-align:center;margin-top:14px" id="more-version">LajvMästaren · vanilla HTML · data lokalt + valfri GitHub-synk</div>
 </div>
 
 <!-- NAV -->
@@ -357,7 +360,50 @@ function $(id){return document.getElementById(id);}
 function todayMid(){var d=new Date();d.setHours(0,0,0,0);return d;}
 function fmtKr(n){return (Math.round(n)||0).toLocaleString('sv-SE')+' kr';}
 
-// ── Data model ───────────────────────────────────────────────────
+// ── App-info & changelog (svit-standard) ─────────────────────────
+var APPINFO={
+  id:'lajvmastaren',
+  version:'1.1.0',
+  tagline:'Allt-i-ett för lajvarrangörer — från första idé till sista städpass.',
+  audience:'Lajvarrangörer och arrangörsstaber',
+  functions:[
+    'Översikt med nedräkning, statuskort och AI-förslag',
+    'Deltagarregister med status, betalning, allergier och boende',
+    'Karaktärsbank med relationsträd, fraktioner och världsbygge',
+    'Intrigverktyg med AI-baserad plot-hole-detektering',
+    'Budget, biljettsystem och ekonomisk prognos',
+    'Mat & logistik, områdeskarta, säkerhetscenter med akut-knapp',
+    'Funktionärsportal, kommunikation och efteranalys',
+    'AI-arrangör (Anthropic) och LajvKontrollrummet',
+    'Inbyggd GitHub-synk samt JSON-export/import'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Synk uppgraderad: per-app-fil lajvmastaren.json och union-merge per id (tappar inte poster mellan enheter)',
+      'Ny vy "Nyheter & funktioner" med inbäddad changelog',
+      'Egen favicon (🎭) och apple-touch-icon som matchar accentfärgen',
+      'Förinställd Centralen-metadata för automatisk kortinläsning',
+      'Desktopversion som rent CSS-lager med oförändrad JS'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Första version: översikt, deltagare, berättelse (karaktärer/fraktioner/värld/intrig), ekonomi',
+      'LajvKontrollrummet, säkerhetscenter, funktionärsportal, kommunikation',
+      'AI-arrangör, statistik, kunskapsbank, flera lajv, GitHub-synk och backup'
+    ]}
+  ]
+};
+// Centralen-kortmetadata (sektion sätts i Centralen, inte här)
+var CENTRALEN_META={
+  id:'lajvmastaren',
+  namn:'LajvMästaren',
+  ikon:'🎭',
+  desc:'Allt-i-ett-app för lajvarrangörer: planering, deltagare, intriger, ekonomi och kontrollrum.',
+  mobil:'lajvmastaren.html',
+  desktop:'lajvmastaren-desktop.html',
+  farger:{bg:'#F2ECE1',line:'#D9CDB8',ink:'#2E2622',muted:'#857A68',accent:'#7C2B3B',iconbg:'#EADBDE'}
+};
+
+
 var DB={events:[],participants:[],characters:[],factions:[],lore:[],plots:[],
   budget:[],tickets:[],meals:[],inventory:[],areas:[],incidents:[],crew:[],messages:[],activeEvent:null};
 var settings={theme:'auto'};
@@ -406,7 +452,7 @@ function scoped(arr){var id=DB.activeEvent;return DB[arr].filter(function(x){ret
 
 // ── GitHub sync (mönster från jobb.html) ─────────────────────────
 function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
-function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/lajv-data.json';}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/lajvmastaren.json';}
 function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
 function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
@@ -419,10 +465,18 @@ function ghGet(){
     return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
   });
 }
+function mergeById(local,remote){
+  // Union per id: behåll allt, fjärrposter vinner vid samma id (ingen ren last-write-wins som tappar lokala poster)
+  var map={},out=[];
+  (local||[]).forEach(function(x){if(x&&x.id){map[x.id]=x;}else out.push(x);});
+  (remote||[]).forEach(function(x){if(x&&x.id){map[x.id]=x;}else out.push(x);});
+  for(var k in map)out.push(map[k]);
+  return out;
+}
 function applyRemote(data){
   var keys=['events','participants','characters','factions','lore','plots','budget','tickets','meals','inventory','areas','incidents','crew','messages'];
-  keys.forEach(function(k){if(Array.isArray(data[k]))DB[k]=data[k];});
-  if(data.activeEvent)DB.activeEvent=data.activeEvent;
+  keys.forEach(function(k){if(Array.isArray(data[k]))DB[k]=mergeById(DB[k],data[k]);});
+  if(data.activeEvent&&DB.events.some(function(e){return e.id===data.activeEvent;}))DB.activeEvent=data.activeEvent;
 }
 function ghPull(){
   if(!syncOn())return Promise.resolve();
@@ -705,6 +759,7 @@ function renderEcon(){
 // ── More-sections via sheets ─────────────────────────────────────
 function openMore(key){
   if(key==='planering')return sheetPlanering();
+  if(key==='changelog')return sheetChangelog();
   if(key==='logistik')return sheetLogistik();
   if(key==='omrade')return sheetOmrade();
   if(key==='sakerhet')return sheetSakerhet();
@@ -949,6 +1004,21 @@ function sheetKunskap(){
   $('kb-close').onclick=closeSheet;
 }
 
+// Nyheter & funktioner (changelog)
+function sheetChangelog(){
+  var fn=APPINFO.functions.map(function(f){return '<div class="ck"><span>•</span><span>'+esc(f)+'</span></div>';}).join('');
+  var cl=APPINFO.changelog.map(function(c){
+    return '<div class="kb-article"><h4>v'+esc(c.v)+' · '+esc(c.d)+'</h4>'+
+      c.items.map(function(i){return '<p>– '+esc(i)+'</p>';}).join('')+'</div>';
+  }).join('');
+  openSheet('<h3>📰 Nyheter &amp; funktioner</h3>'+
+    '<div class="soft" style="margin-bottom:8px">LajvMästaren v'+esc(APPINFO.version)+' · '+esc(APPINFO.tagline)+'</div>'+
+    '<label>Funktioner</label><div class="card-panel" style="margin-bottom:4px">'+fn+'</div>'+
+    '<label style="margin-top:10px">Versionshistorik</label>'+cl+
+    '<button class="sheet-close" id="cl-close">Stäng</button>');
+  $('cl-close').onclick=closeSheet;
+}
+
 // Synk
 function sheetSynk(){
   openSheet('<h3>☁️ Synk via GitHub</h3>'+
@@ -1089,6 +1159,7 @@ function renderAll(){
 
 // ── Init ─────────────────────────────────────────────────────────
 loadAll();
+var _ver=$('more-version');if(_ver)_ver.textContent='LajvMästaren v'+APPINFO.version+' · vanilla HTML · data lokalt + valfri GitHub-synk';
 applyTheme();setInterval(applyTheme,60000);
 if(!syncOn())setPill('','Lokal');
 renderAll();

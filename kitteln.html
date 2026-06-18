@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Kitteln">
 <meta name="theme-color" content="#1A1410">
 <link rel="manifest" href='data:application/manifest+json,{"name":"Kitteln","short_name":"Kitteln","display":"standalone","background_color":"%231A1410","theme_color":"%231A1410","start_url":"."}'>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231A1410'/><text x='32' y='46' font-size='40' text-anchor='middle'>🍯</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231A1410'/><text x='32' y='46' font-size='40' text-anchor='middle'>🍯</text></svg>">
 <title>Kitteln</title>
 <style>
 :root{
@@ -150,6 +152,19 @@ textarea{resize:vertical}
 .sync-status.ok{display:block;background:#26301C;color:var(--sage)}
 .sync-status.err{display:block;background:#2E2018;color:var(--warn)}
 .sync-status.info{display:block;background:#2A2418;color:var(--amber)}
+/* Nyheter & funktioner */
+.cl-ver{font-size:11px;color:var(--copper);background:var(--panel2);border:1px solid var(--copper-dim);border-radius:10px;padding:3px 9px}
+.cl-entry{padding:11px 0;border-top:1px solid var(--line)}
+.cl-entry:first-child{border-top:none}
+.cl-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.cl-head .v{font-family:Georgia,serif;font-size:14px;color:var(--copper)}
+.cl-head time{font-size:11px;color:var(--muted);margin-left:auto}
+.cl-item{font-size:13px;color:var(--ink);line-height:1.55;padding:3px 0 3px 16px;position:relative}
+.cl-item::before{content:'✦';position:absolute;left:0;color:var(--sage);font-size:10px;top:5px}
+.fn-area{font-family:Georgia,serif;font-size:14px;color:var(--amber);margin:12px 0 4px}
+.fn-area:first-child{margin-top:0}
+.ver-line{text-align:center;font-size:11px;color:var(--muted);margin-top:10px}
+.ver-line button{background:none;border:none;color:var(--copper);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
 </style>
 </head>
 <body>
@@ -284,7 +299,16 @@ textarea{resize:vertical}
   <div class="btn-row"><button class="btn ghost" id="export-btn">Exportera</button><button class="btn ghost" id="import-btn">Importera</button><input type="file" id="import-file" accept=".json" style="display:none"></div>
 
   <div class="privacy" style="margin-top:14px">Kitteln är ett mysigt vardagsverktyg — inte medicinsk rådgivning. Var försiktig med örter och eteriska oljor, särskilt vid graviditet, amning, allergier eller medicinering. Vid tveksamhet: fråga vården. 🌿</div>
+  <div class="ver-line" id="ver-line"></div>
   <button class="sheet-close" id="settings-close">Stäng</button>
+</div>
+
+<div class="sheet" id="news-sheet">
+  <h3>Nyheter & funktioner</h3>
+  <div id="news-ver" style="margin-bottom:10px"></div>
+  <div class="mode-row" id="news-tabs"><button data-t="changelog" class="sel">Nyheter</button><button data-t="functions">Funktioner</button></div>
+  <div id="news-body"></div>
+  <button class="sheet-close" id="news-close">Stäng</button>
 </div>
 
 <script>
@@ -350,6 +374,48 @@ var SEED=[
 
 var EXAMPLES=['Vad kan jag göra för bättre sömn?','Ge mig ett recept för fullmåne','Skapa en lugnande te-blandning med det jag har hemma','Byt ut en ingrediens jag saknar'];
 
+// ── App-info & changelog (visas i "Nyheter & funktioner") ──
+var APPINFO={
+  id:'kitteln',
+  namn:'Kitteln',
+  version:'1.1.0',
+  updated:'2026-06-18',
+  tagline:'Magiska recept, brygder & ritualer för köksbänken',
+  description:'Kitteln är en mysig recept- och ritualapp för magiska teer, måltider, örtblandningar, oljor, bad och små vardagsbesvärjelser — med ingrediens-symbolik, ett skafferi som föreslår vad du kan laga, månkalender och en AI-hjälp som brygger fram recept ur det du har hemma.',
+  audience:'För dig som gillar köks-magi och vill ha en varm, reklamfri samling recept och ritualer med dina data i din egen telefon. Ett mysigt vardagsverktyg — inte medicinsk rådgivning.',
+  latest:['Inbyggd GitHub-synk (kitteln.json) med union-merge per id','Nyheter & funktioner-vy med changelog','Egen favicon, separat desktopversion och Centralen-metadata'],
+  functions:[
+    'Receptbok med kategorier (teer, måltider, örtblandningar, oljor & salvor, badritualer, säsong) och intentionsfilter',
+    'Varje recept: ingredienser med symbolik, steg, magisk intention, svårighet, tid och säkerhetsnotiser',
+    'Egna recept och favoritmärkning',
+    'Skafferi för örter, kryddor, oljor och kristaller med status finns/snart slut/slut',
+    '"Vad kan jag laga nu?" matchar recept mot det du har hemma',
+    'Brygd-hjälpen: AI som skapar recept eller svarar på frågor via egen Anthropic-nyckel',
+    'Dagbok med intention, känsla och resultat + sparade favoritritualer',
+    'Månkalender med fas, rekommendation och kommande ny-/fullmåne',
+    'GitHub-synk mellan enheter (union-merge per id) + export/import som säkerhetskopia',
+    'Auto/mörkt tema-känsla och inbäddad changelog'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Inbyggd GitHub-synk i appkollen-stil mot kitteln.json med union-merge per id (förlorar aldrig recept, skafferi eller dagboksrader vid synk mellan enheter).',
+      'Synkbadge visar Hämtar/Sparar/Synkad/Synkfel; auto-hämtning vid start och när fliken blir aktiv. API-nyckel utesluts ur synk.',
+      'Ny "Nyheter & funktioner"-vy med changelog och funktionslista.',
+      'Egen favicon (🍯) i flik, bokmärke och hemskärm, plus apple-touch-icon.',
+      'Separat desktopversion (kitteln-desktop.html) med vänstersidebar — samma data och synk som mobilen.',
+      'Förinställd Centralen-metadata så hubben kan rita appkortet automatiskt.'
+    ]},
+    {v:'1.0.0',d:'2026-06-18',items:[
+      'Kitteln lanseras: receptbok, skafferi, AI-brygd, dagbok och månkalender.',
+      'Tio startrecept med ingrediens-symbolik och säkerhetsnotiser.',
+      'Mörkt koppar/salvia-tema, mobil-först med bottennav och bottom-sheets.'
+    ]}
+  ]
+};
+// Centralen-kortdata (sektion sätts i Centralen, inte här)
+var KMETA={id:'kitteln',namn:'Kitteln',ikon:'🍯',desc:'Magiska recept, brygder & ritualer',mobil:'kitteln.html',desktop:'kitteln-desktop.html',farger:{bg:'#1A1410',line:'#3D3127',ink:'#F0E6D6',muted:'#A89377',accent:'#C8884E',iconbg:'#2E251D'}};
+
+
 // ── State ─────────────────────────────────────────────
 var KEY='kitteln_v1';
 var state={recipes:[],pantry:[],journal:[],favs:[]};
@@ -369,6 +435,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function persist(){save();if(syncOn())ghPush().catch(function(){});}
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
 var uid=function(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+var nowISO=function(){return new Date().toISOString();};
 function allRecipes(){return SEED.concat(state.recipes);}
 
 // ── GitHub-synk (samma mönster som jobb.html) ─────────
@@ -383,6 +450,11 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 
 function setPill(st,msg){var p=document.getElementById('sync-pill');p.textContent=msg;p.className='sync-pill'+(st==='ok'?' ok':st==='err'?' err':'');}
+// union-merge per id (förlorar aldrig poster vid synk); nyaste updated/ts vinner vid krock
+var stampOf=function(o){return ''+((o&&(o.updated||o.ts))||'');};
+function mergeById(a,b){var m={};(a||[]).forEach(function(x){if(x&&x.id!=null)m[x.id]=x;});(b||[]).forEach(function(x){if(!x||x.id==null)return;var e=m[x.id];if(!e){m[x.id]=x;return;}if(stampOf(x)>stampOf(e))m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
+function mergeIds(a,b){var s={};(a||[]).concat(b||[]).forEach(function(x){if(x!=null)s[x]=1;});return Object.keys(s);}
+// används vid import (explicit återställning) — ersätter lokalt
 function applyData(d){if(!d)return;if(Array.isArray(d.recipes))state.recipes=d.recipes;if(Array.isArray(d.pantry))state.pantry=d.pantry;if(Array.isArray(d.journal))state.journal=d.journal;if(Array.isArray(d.favs))state.favs=d.favs;}
 
 async function ghGet(){
@@ -393,19 +465,29 @@ async function ghGet(){
 }
 async function ghPull(){
   if(!syncOn())return;
-  try{setPill('load','Synk: hämtar…');var d=await ghGet();if(d){applyData(d);save();renderAll();}setPill('ok','Synk: synkad');}
-  catch(e){setPill('err','Synk: fel');}
+  try{
+    setPill('load','Hämtar…');
+    var d=await ghGet();
+    if(d){
+      if(Array.isArray(d.recipes))state.recipes=mergeById(state.recipes,d.recipes);
+      if(Array.isArray(d.pantry))state.pantry=mergeById(state.pantry,d.pantry);
+      if(Array.isArray(d.journal))state.journal=mergeById(state.journal,d.journal);
+      if(Array.isArray(d.favs))state.favs=mergeIds(state.favs,d.favs);
+      save();renderAll();
+    }
+    setPill('ok','Synkad');
+  }catch(e){setPill('err','Synkfel');}
 }
 async function ghPush(){
   if(!syncOn())return;
-  setPill('load','Synk: sparar…');
-  var content=b64enc(JSON.stringify({recipes:state.recipes,pantry:state.pantry,journal:state.journal,favs:state.favs,updated:new Date().toISOString()}));
+  setPill('load','Sparar…');
+  var content=b64enc(JSON.stringify({recipes:state.recipes,pantry:state.pantry,journal:state.journal,favs:state.favs,updated:nowISO()}));
   var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Kitteln',content:content},sync.sha?{sha:sync.sha}:{}))});};
   var r=await doPut();
   if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
-  if(!r.ok){setPill('err','Synk: fel');throw new Error('HTTP '+r.status);}
+  if(!r.ok){setPill('err','Synkfel');throw new Error('HTTP '+r.status);}
   var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
-  setPill('ok','Synk: synkad');
+  setPill('ok','Synkad');
 }
 
 // ── Astronomi: sol & måne (Schlyter, från Månen) ──────
@@ -564,7 +646,7 @@ function renderPantry(){
     var dots=['ok','low','out'].map(function(s){return '<button class="sdot'+(p.status===s?' sel-'+s:'')+'" data-id="'+esc(p.id)+'" data-s="'+s+'" title="'+STATUS_LABEL[s]+'">'+(s==='ok'?'✓':s==='low'?'½':'✕')+'</button>';}).join('');
     return '<div class="pantry-row"><div style="flex:1"><div class="pname">'+esc(p.name)+'</div><div class="ptype">'+esc((PTYPES.filter(function(t){return t[0]===p.type;})[0]||['','Övrigt'])[1])+'</div></div><div class="status-dots">'+dots+'</div><button class="pdel" data-id="'+esc(p.id)+'">×</button></div>';
   }).join('');
-  Array.prototype.forEach.call(el.querySelectorAll('.sdot'),function(b){b.onclick=function(){var p=state.pantry.filter(function(x){return x.id===b.dataset.id;})[0];if(p){p.status=b.dataset.s;persist();renderPantry();}};});
+  Array.prototype.forEach.call(el.querySelectorAll('.sdot'),function(b){b.onclick=function(){var p=state.pantry.filter(function(x){return x.id===b.dataset.id;})[0];if(p){p.status=b.dataset.s;p.updated=nowISO();persist();renderPantry();}};});
   Array.prototype.forEach.call(el.querySelectorAll('.pdel'),function(b){b.onclick=function(){state.pantry=state.pantry.filter(function(x){return x.id!==b.dataset.id;});persist();renderPantry();};});
 }
 function inStockNames(){return state.pantry.filter(function(p){return p.status==='ok'||p.status==='low';}).map(function(p){return p.name.toLowerCase();});}
@@ -671,7 +753,7 @@ function renderSuggest(){
 }
 function pantryLine(){var n=inStockNames();return n.length?'Hemma i skafferiet: '+n.join(', ')+'.':'Skafferiet är tomt eller okänt.';}
 function parseAiRecipe(txt){
-  var t=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+  var t=txt.replace(/(?:\x60){3}json/gi,'').replace(/(?:\x60){3}/g,'').trim();
   var a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<0)return null;
   try{var o=JSON.parse(t.slice(a,b+1));if(o&&o.name&&o.ing)return o;}catch(e){}
   return null;
@@ -705,7 +787,7 @@ async function runAi(){
         +'Håll det säkert och vardagligt — inga giftiga örter eller medicinska påståenden.';
       var t=await aiCall(prompt);
       var o=parseAiRecipe(t);
-      if(o){out.innerHTML=aiRecipePreview(o);document.getElementById('ai-savebtn').onclick=function(){var r=window._aiRecipe;r.id=uid();state.recipes.push({id:r.id,name:r.name,cat:r.cat,int:r.int,diff:r.diff,time:r.time,intention:r.intention,ing:r.ing,steps:r.steps,safety:r.safety});persist();document.getElementById('ai-savebtn').textContent='✓ Sparat i receptboken';document.getElementById('ai-savebtn').disabled=true;renderRecipes();};}
+      if(o){out.innerHTML=aiRecipePreview(o);document.getElementById('ai-savebtn').onclick=function(){var r=window._aiRecipe;r.id=uid();state.recipes.push({id:r.id,name:r.name,cat:r.cat,int:r.int,diff:r.diff,time:r.time,intention:r.intention,ing:r.ing,steps:r.steps,safety:r.safety,updated:nowISO()});persist();document.getElementById('ai-savebtn').textContent='✓ Sparat i receptboken';document.getElementById('ai-savebtn').disabled=true;renderRecipes();};}
       else{out.innerHTML='<div class="ai-box"><span class="ai-lbl">✨ Svar</span>'+esc(t)+'</div>';}
     }else{
       prompt='Du är en varm, jordnära köks-häxa. '+pantryLine()+' Svara på svenska, kort och mysigt (högst ca 160 ord), utan rubriker. Ge gärna ett konkret förslag och en mjuk säkerhetspåminnelse om det behövs (eteriska oljor, allergier, graviditet). Fråga: '+q;
@@ -724,6 +806,8 @@ function openSettings(focus){
   document.getElementById('gh-token').value=sync.token;
   document.getElementById('ai-key').value=getAiKey();
   document.getElementById('gh-status').className='sync-status';
+  document.getElementById('ver-line').innerHTML='Kitteln v'+esc(APPINFO.version)+' · <button id="news-open">Nyheter & funktioner</button>';
+  document.getElementById('news-open').onclick=openNews;
   openSheet('settings-sheet');
   if(focus==='ai')setTimeout(function(){document.getElementById('ai-key').focus();},250);
 }
@@ -734,6 +818,22 @@ function exportData(){
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
   var d=new Date();a.download='kitteln-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';a.click();
 }
+
+// ── Nyheter & funktioner ──────────────────────────────
+var newsTab='changelog';
+function renderNews(){
+  document.getElementById('news-ver').innerHTML='<span class="cl-ver">Version '+esc(APPINFO.version)+'</span> <span class="soft" style="margin-left:6px">'+esc(APPINFO.tagline)+'</span>';
+  Array.prototype.forEach.call(document.querySelectorAll('#news-tabs button'),function(b){b.classList.toggle('sel',b.dataset.t===newsTab);});
+  var el=document.getElementById('news-body');
+  if(newsTab==='changelog'){
+    el.innerHTML=APPINFO.changelog.map(function(e){return '<div class="cl-entry"><div class="cl-head"><span class="v">v'+esc(e.v)+'</span><time>'+esc(e.d)+'</time></div>'+e.items.map(function(it){return '<div class="cl-item">'+esc(it)+'</div>';}).join('')+'</div>';}).join('');
+  }else{
+    el.innerHTML='<div class="fn-area">Funktioner</div>'+APPINFO.functions.map(function(it){return '<div class="cl-item">'+esc(it)+'</div>';}).join('');
+  }
+}
+function openNews(){newsTab='changelog';renderNews();openSheet('news-sheet');}
+Array.prototype.forEach.call(document.querySelectorAll('#news-tabs button'),function(b){b.onclick=function(){newsTab=b.dataset.t;renderNews();};});
+document.getElementById('news-close').onclick=closeSheets;
 
 // ── Add recipe sheet ──────────────────────────────────
 function fillCatSelect(){var sel=document.getElementById('ar-cat');sel.innerHTML='';Object.keys(CAT_LABEL).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=CAT_LABEL[k];sel.appendChild(o);});}
@@ -764,14 +864,14 @@ document.getElementById('detail-close').onclick=closeSheets;
 
 document.getElementById('add-fab').onclick=function(){if(curView==='skafferi'){document.getElementById('ap-name').value='';openSheet('addpantry-sheet');}else openAddRecipe();};
 
-document.getElementById('ap-save').onclick=function(){var n=document.getElementById('ap-name').value.trim();if(!n)return;state.pantry.push({id:uid(),name:n,type:document.getElementById('ap-type').value,status:'ok'});persist();closeSheets();renderPantry();renderMatches();};
+document.getElementById('ap-save').onclick=function(){var n=document.getElementById('ap-name').value.trim();if(!n)return;state.pantry.push({id:uid(),name:n,type:document.getElementById('ap-type').value,status:'ok',updated:nowISO()});persist();closeSheets();renderPantry();renderMatches();};
 
 document.getElementById('ar-save').onclick=function(){
   var n=document.getElementById('ar-name').value.trim();if(!n){alert('Receptet behöver ett namn.');return;}
   var ing=document.getElementById('ar-ing').value.split('\n').map(function(l){return l.trim();}).filter(Boolean).map(function(l){var p=l.split('|').map(function(x){return x.trim();});return [p[0]||'',p[1]||'',p[2]||''];});
   var steps=document.getElementById('ar-steps').value.split('\n').map(function(l){return l.trim();}).filter(Boolean);
   var ints=document.getElementById('ar-int').value.split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean);
-  state.recipes.push({id:uid(),name:n,cat:document.getElementById('ar-cat').value,int:ints,diff:document.getElementById('ar-diff').value,time:document.getElementById('ar-time').value.trim(),intention:document.getElementById('ar-intent').value.trim(),ing:ing,steps:steps,safety:document.getElementById('ar-safety').value.trim(),moon:document.getElementById('ar-moon').value||undefined});
+  state.recipes.push({id:uid(),name:n,cat:document.getElementById('ar-cat').value,int:ints,diff:document.getElementById('ar-diff').value,time:document.getElementById('ar-time').value.trim(),intention:document.getElementById('ar-intent').value.trim(),ing:ing,steps:steps,safety:document.getElementById('ar-safety').value.trim(),moon:document.getElementById('ar-moon').value||undefined,updated:nowISO()});
   persist();closeSheets();fCat='alla';fInt=null;renderFilters();renderRecipes();
 };
 
@@ -781,7 +881,7 @@ document.getElementById('js-save').onclick=function(){
   var entry={id:uid(),ts:Date.now(),name:n,intent:document.getElementById('js-intent').value.trim(),feel:document.getElementById('js-feel').value.trim(),result:''};
   state.journal.push(entry);
   if(document.getElementById('js-fav').checked&&n){
-    var fr={id:uid(),name:n,cat:'sasong',int:[],diff:'Lätt',time:'',intention:document.getElementById('js-feel').value.trim(),ing:[],steps:[],safety:''};
+    var fr={id:uid(),name:n,cat:'sasong',int:[],diff:'Lätt',time:'',intention:document.getElementById('js-feel').value.trim(),ing:[],steps:[],safety:'',updated:nowISO()};
     state.recipes.push(fr);state.favs.push(fr.id);
   }
   persist();closeSheets();renderJournal();renderFavs();renderRecipes();
@@ -801,7 +901,7 @@ document.getElementById('gh-save').onclick=async function(){
   try{var d=await ghGet();if(d){setGhStatus('✓ Ansluten! Hämtar din data…','ok');await ghPull();}else{setGhStatus('✓ Ansluten! Repot saknar fil — laddar upp…','ok');await ghPush();}setTimeout(closeSheets,1100);}
   catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
 };
-document.getElementById('gh-clear').onclick=function(){sync={owner:'',repo:'',token:'',sha:null};localStorage.removeItem(SYNC_KEY);document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';setPill('','Synk: av');setGhStatus('Bortkopplad.','info');};
+document.getElementById('gh-clear').onclick=function(){sync={owner:'',repo:'',token:'',sha:null};localStorage.removeItem(SYNC_KEY);document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';setPill('','Lokal');setGhStatus('Bortkopplad.','info');};
 document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();try{if(v)localStorage.setItem(AI_KEY,v);}catch(e){}setGhStatus('AI-nyckel sparad.','ok');};
 document.getElementById('ai-key-clear').onclick=function(){try{localStorage.removeItem(AI_KEY);}catch(e){}document.getElementById('ai-key').value='';setGhStatus('AI-nyckel rensad.','info');};
 
@@ -817,7 +917,7 @@ document.getElementById('import-file').onchange=function(e){
 function renderAll(){renderFilters();renderRecipes();renderPantryFilter();renderPantry();renderMatches();renderJournal();renderFavs();renderMoonLine();if(curView==='manen')renderMoonView();}
 fillCatSelect();renderSuggest();
 loadSync();
-if(syncOn())setPill('','Synk: …');else setPill('','Synk: av');
+if(syncOn())setPill('load','Hämtar…');else setPill('','Lokal');
 renderAll();
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
 if(syncOn())ghPull();

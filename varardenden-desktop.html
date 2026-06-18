@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Var är den?">
 <meta name="theme-color" content="#EEF1EB">
-<link rel="manifest" href='data:application/manifest+json,{"name":"Var är den?","short_name":"Var är den?","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%238A6FA0'/><text x='32' y='46' font-size='38' text-anchor='middle'>📍</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%238A6FA0'/><text x='32' y='46' font-size='38' text-anchor='middle'>📍</text></svg>">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Var är den?","short_name":"Var är den?","display":"standalone","background_color":"%23EEF1EB","theme_color":"%238A6FA0","start_url":".","icons":[{"src":"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27><rect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%238A6FA0%27/><text x=%2732%27 y=%2746%27 font-size=%2738%27 text-anchor=%27middle%27>📍</text></svg>","sizes":"any","type":"image/svg+xml"}]}'>
 <title>Var är den?</title>
 <style>
 :root{
@@ -157,17 +159,19 @@ html[data-theme=dark]{
 .switch.on::after{left:25px}
 .foot{display:flex;gap:14px;justify-content:center;margin-top:14px;flex-wrap:wrap}
 .foot button,.mode-link{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
+.mode-mobile{display:none}
 .hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:4px}
 .toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-40px);background:var(--accent);color:#fff;font-weight:700;font-size:14px;border-radius:14px;padding:11px 18px;opacity:0;transition:all .25s;z-index:97;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.18);max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
-/* === DESKTOP-OVERRIDES (genererad fran mobilkalla) === */
+/* === DESKTOP-LAGER, JS oforandrad === */
 @media(min-width:760px){
   body{background:var(--bg)}
-  .app{max-width:720px;margin:0 0 0 232px;padding:30px 30px 48px}
-  .topbar{margin-bottom:18px}
-  h1.brand{font-size:22px}
-  .nav{flex-direction:column;top:0;bottom:auto;left:0;right:auto;width:212px;height:100vh;max-width:none;margin:0;border-top:none;border-right:1px solid var(--line);padding:20px 12px;gap:4px;align-items:stretch;background:var(--panel);backdrop-filter:none}
+  .app{max-width:760px;margin:0 0 0 232px;padding:30px 30px 60px}
+  h1.brand{display:none}
+  .topbar{justify-content:flex-end;margin-bottom:18px}
+  .nav{flex-direction:column;top:0;bottom:auto;left:0;right:auto;width:212px;height:100vh;max-width:none;margin:0;border-top:none;border-right:1px solid var(--line);padding:18px 12px;gap:4px;align-items:stretch;background:var(--panel);backdrop-filter:none;overflow-y:auto}
+  .nav::before{content:'\1F4CD  Var ar den?';display:block;font-family:Georgia,serif;font-size:17px;color:var(--ink);padding:6px 12px 14px;letter-spacing:.03em}
   .nav button{flex:0 0 auto;text-align:left;font-size:14px;font-weight:600;padding:12px 14px;border-radius:12px;display:flex;align-items:center;gap:11px}
   .nav button span{display:inline;font-size:19px;margin:0}
   .nav button.active{background:var(--accent-soft)}
@@ -177,6 +181,8 @@ html[data-theme=dark]{
   .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
   .sheet-close{position:static}
   .sheet-bg{background:rgba(20,22,18,.45)}
+  .mode-desktop{display:none}
+  .mode-mobile{display:inline}
 }
 </style>
 </head>
@@ -246,6 +252,20 @@ html[data-theme=dark]{
   <div class="card" id="stat-list"></div>
   <div class="info-txt">Skatten är inte en pekpinne — den hjälper dig se mönster. Det du letar mest efter förtjänar oftast en fast plats.</div>
 </div>
+
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <div class="card">
+    <div style="font-family:Georgia,serif;font-size:20px">📍 Var är den?</div>
+    <div style="color:var(--muted);font-size:13px;margin-top:2px" id="ni-tag"></div>
+    <div class="loc-pill" style="margin-top:8px" id="ni-ver"></div>
+  </div>
+  <div class="section-title">🆕 Nyheter</div>
+  <div id="news-log"></div>
+  <div class="section-title">🧩 Funktioner</div>
+  <div id="news-fns"></div>
+  <div class="info-txt">Den här appen är en del av din svit — Centralen kan läsa in den automatiskt.</div>
+</div>
 </div>
 
 <div class="nav">
@@ -254,6 +274,7 @@ html[data-theme=dark]{
   <button data-act="nav" data-v="places"><span>📍</span>Platser</button>
   <button data-act="nav" data-v="lists"><span>✅</span>Listor</button>
   <button data-act="nav" data-v="tax"><span>💸</span>Skatt</button>
+  <button data-act="nav" data-v="news"><span>🆕</span>Nytt</button>
   <div class="nav-foot" id="nav-foot"></div>
 </div>
 
@@ -357,14 +378,54 @@ html[data-theme=dark]{
   <div class="foot">
     <button id="export-btn">Säkerhetskopiera</button>
     <button id="import-btn">Importera</button>
-    <a class="mode-link" id="mode-link" href="varardenden-desktop.html">🖥 Datorvy</a>
+    <a class="mode-link mode-desktop" href="varardenden-desktop.html">🖥 Datorvy</a>
+    <a class="mode-link mode-mobile" href="varardenden.html">📱 Mobilvy</a>
     <input type="file" id="import-file" accept=".json" style="display:none">
   </div>
   <button class="sheet-close" id="set-done">Klar</button>
 </div>
 
 <script>
-var ARDESKTOPFIL=true;
+// ── App-info, changelog & Centralen-metadata ──────────
+var APPINFO={
+  id:'varardenden',
+  version:'1.1.0',
+  tagline:'Mindre letande. Mindre stress. Färre ADHD-skatter.',
+  audience:'För dig med ADHD, autism, hög stress eller bara mycket prylar — som ofta tappar bort nycklar, pass, mediciner, hörlurar och laddare.',
+  functions:[
+    {area:'Sök & hitta',items:['Skriv vad du letar efter och få senast registrerad plats med tidsstämpel.','Mönsterförslag: letar du ofta efter samma sak föreslår appen en fast plats.']},
+    {area:'Saker',items:['Lägg till saker med symbol och valfri fast plats.','Flytta en sak till en plats med valfritt exakt ställe, med ett tryck.','Favoritmarkering som lyfter saken i checklistan.']},
+    {area:'Platser & väskor',items:['Egna platser, samt väskor som kan bäras med.','Innehållsvy: se vad som ligger på en plats eller i en väska.']},
+    {area:'Listor',items:['"Innan du går"-checklista med nollställning.','Packlista som flyttar saken automatiskt till vald väska när du bockar av.']},
+    {area:'ADHD-skatt',items:['Registrera dubbelköp med kostnad och orsak.','Månadssumma och statistik över mest letade saker — utan pekpinne.']},
+    {area:'Synk & data',items:['GitHub-synk (privat repo, fine-grained token enbart lokalt, union-merge per id).','Mörkt/ljust/auto-tema (mörkt 20–07), säkerhetskopiering och import.','Separat datorvy med samma data och synk som mobilen.']}
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Ny vy "Nyheter & funktioner" med inbyggd changelog och funktionslista.',
+      'App-ikon (favicon + hemskärmsikon) i plommonfärg.',
+      'Förinställd Centralen-metadata så hubben kan läsa in appen automatiskt.',
+      'Datorvyn byggs nu som ett rent CSS-lager ovanpå mobilen — exakt samma logik, localStorage-nyckel och synk-fil.'
+    ]},
+    {v:'1.0',d:'2026-06-17',items:[
+      'Sök efter en sak och se senast registrerad plats med tidsstämpel.',
+      'Saker, platser och väskor med snabbflytt och exakt ställe.',
+      'Checklistor och packlistor (packlista flyttar saker automatiskt).',
+      'ADHD-skattelogg med månadssumma och statistik.',
+      'GitHub-synk med union-merge, mörkt/ljust/auto-tema, export/import.'
+    ]}
+  ]
+};
+// Förinställd metadata för Centralen (sektion sätts i Centralen, inte här)
+var CENTRALEN_META={
+  id:'varardenden',
+  namn:'Var är den?',
+  ikon:'📍',
+  desc:'Håll koll på var dina saker ligger — sök, flytta och sluta leta.',
+  mobil:'varardenden.html',
+  desktop:'varardenden-desktop.html',
+  farger:{bg:'#EEF1EB',line:'#D8DECF',ink:'#3C4237',muted:'#7E8676',accent:'#8A6FA0',iconbg:'#E6DEED'}
+};
 
 // ── State ─────────────────────────────────────────────
 var KEY='varardenden_v1';
@@ -646,6 +707,19 @@ function renderTax(){
 
 function renderAll(){renderSearch();renderItems();renderPlaces();renderLists();renderTax();}
 
+function renderNews(){
+  document.getElementById('ni-tag').textContent=APPINFO.tagline;
+  document.getElementById('ni-ver').textContent='Version '+APPINFO.version;
+  document.getElementById('news-log').innerHTML=APPINFO.changelog.map(function(c){
+    return '<div class="card" style="margin-bottom:8px"><div style="font-weight:700">'+esc(c.v)+' <span style="color:var(--muted);font-weight:400;font-size:12px">· '+esc(c.d)+'</span></div>'+
+      c.items.map(function(it){return '<div style="font-size:13px;margin-top:6px;line-height:1.5">• '+esc(it)+'</div>';}).join('')+'</div>';
+  }).join('');
+  document.getElementById('news-fns').innerHTML=APPINFO.functions.map(function(f){
+    return '<div class="card" style="margin-bottom:8px"><div style="font-weight:700">'+esc(f.area)+'</div>'+
+      f.items.map(function(it){return '<div style="font-size:13px;margin-top:6px;line-height:1.5">• '+esc(it)+'</div>';}).join('')+'</div>';
+  }).join('');
+}
+
 // ── Sak-sheet ─────────────────────────────────────────
 var editItemId=null;var isEmojiSel={v:'📦'};
 function fillPermSelect(selId,cur){
@@ -833,6 +907,7 @@ document.addEventListener('click',function(e){
     if(t.dataset.v==='places')renderPlaces();
     if(t.dataset.v==='lists')renderLists();
     if(t.dataset.v==='tax')renderTax();
+    if(t.dataset.v==='news')renderNews();
     return;
   }
   if(act==='move'){openMove(t.dataset.id);return;}
@@ -977,14 +1052,6 @@ document.getElementById('gh-clear').onclick=function(){
   sync={owner:'',repo:'',token:'',sha:null};saveSync();setBadge('','Lokal');toast('Synk bortkopplad');
 };
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
-
-// ── Mode-länk (mobil/dator) ───────────────────────────
-(function(){
-  var link=document.getElementById('mode-link');
-  if(!link)return;
-  if(ARDESKTOPFIL){link.href='varardenden.html';link.textContent='📱 Mobilvy';}
-  else{link.href='varardenden-desktop.html';link.textContent='🖥 Datorvy';}
-})();
 
 // ── Init ──────────────────────────────────────────────
 loadSync();

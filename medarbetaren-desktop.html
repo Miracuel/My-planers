@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Medarbetaren">
 <meta name="theme-color" content="#EEF0F0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%232C6E73'/%3E%3Ctext%20x='50'%20y='55'%20font-size='56'%20text-anchor='middle'%20dominant-baseline='central'%3E%E2%8F%B1%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%232C6E73'/%3E%3Ctext%20x='50'%20y='55'%20font-size='56'%20text-anchor='middle'%20dominant-baseline='central'%3E%E2%8F%B1%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href='data:application/manifest+json,{"name":"Medarbetaren","short_name":"Medarbetaren","display":"standalone","background_color":"%23EEF0F0","theme_color":"%23EEF0F0","start_url":"."}'>
 <title>Medarbetaren</title>
 <style>
@@ -160,6 +162,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 .foot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
 .foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
+.news-ver{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:11px;background:var(--accent-soft);color:var(--accent)}
+.news-fn{padding:7px 0;border-top:1px solid var(--line);font-size:13px;display:flex;gap:8px}
+.news-fn:first-child{border-top:none}
+.news-fn::before{content:'•';color:var(--accent)}
+.news-log-item{padding:11px 0;border-top:1px solid var(--line)}
+.news-log-item:first-child{border-top:none}
+.news-log-h{font-family:Georgia,serif;font-size:14px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.news-log-h .nl-d{font-size:11px;color:var(--muted);font-family:-apple-system,sans-serif}
+.news-log-item ul{list-style:none;margin-top:6px}
+.news-log-item li{font-size:12.5px;color:var(--ink);padding:3px 0 3px 14px;position:relative;line-height:1.5}
+.news-log-item li::before{content:'–';position:absolute;left:0;color:var(--muted)}
 
 .nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
 .nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
@@ -404,12 +417,23 @@ html[data-theme=dark] .risk.mid{color:#E4CF9E}
   <div class="privacy">Allt sparas i din enhet. Med GitHub-synk ligger din data i ett privat repo som du själv styr. API-nyckel och tema synkas aldrig.</div>
 </div>
 
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <div class="section-title" style="margin-top:0">Nyheter &amp; funktioner</div>
+  <div class="card-panel" id="news-head"></div>
+  <div class="section-title">Funktioner</div>
+  <div class="card-panel" id="news-funcs"></div>
+  <div class="section-title">Versionshistorik</div>
+  <div class="card-panel" id="news-log"></div>
+</div>
+
 <!-- NAV -->
 <nav class="nav">
   <button class="active" data-v="today"><span>⏱</span>Idag</button>
   <button data-v="cal"><span>📅</span>Kalender</button>
   <button data-v="load"><span>📊</span>Belastning</button>
   <button data-v="more"><span>⚙️</span>Mer</button>
+  <button data-v="news"><span>✨</span>Nyheter</button>
 </nav>
 
 <!-- SHEETS -->
@@ -486,6 +510,62 @@ var SE_HOL={
 };
 
 // ── State ──────────────────────────────────────────────
+// ── APPINFO / changelog (inbäddad) ─────────────────────
+var APPINFO={
+  version:'1.2.0',
+  tagline:'Timsaldo, planering och belastning i fickformat',
+  audience:'Dig som vill ha enkel egen koll på arbetstid, flexsaldo, dagsplanering och beläggning — utan molntjänst eller konto.',
+  functions:[
+    'Stämpla in/ut med ett tryck eller manuell tidsredigering',
+    'Dagsplanering: aktivitetsbudget mot tillgänglig tid (Tillgänglig/Planerad/Kvar)',
+    'Aktivitetsklocka: start/stopp-pass med förval eller eget namn',
+    'Prognos: normtid, planerat, arbetat, kvar och risk för övertid',
+    'Arbetsdagens tidslinje över loggade aktiviteter',
+    'Flexsaldo: dags-, månads- och totalsaldo inkl. ingående saldo',
+    'Dagtyper: arbete, semester, sjuk, vab, ledig och förälder',
+    'Beläggningsgrad med automatisk eller manuell belagd tid',
+    'Månadskalender med färgkodat saldo och svenska helgdagar',
+    'Belastning: denna vecka, beläggningstrend och tidigare veckor',
+    'GitHub-synk mellan enheter samt JSON-export/import och Insikten-export',
+    'Auto/mörkt/ljust tema (mörkt 20:00–07:00)'
+  ],
+  changelog:[
+    {v:'1.2.0',d:'2026-06-17',items:[
+      'Ny vy "Nyheter & funktioner" med inbäddad versionshistorik',
+      'Inbäddad SVG-favicon i accentfärg samt apple-touch-icon',
+      'Förinställd Centralen-metadata så hubben kan synka in appkortet automatiskt',
+      'GitHub-synk gör nu union-merge per id (sammanfogar planerade och loggade aktiviteter mellan enheter utan att tappa poster)'
+    ]},
+    {v:'1.1.0',d:'2026-06-17',items:[
+      'Dagsplanering med aktivitetsbudget och summering',
+      'Aktivitetsklocka: starta/stoppa/spara pass till dagens aktiviteter',
+      'Belagd tid räknas automatiskt från loggade aktiviteter',
+      'Prognos på startsidan med risk för övertid',
+      'Arbetsdagens tidslinje',
+      'Denna vecka-kort i Belastning',
+      'Insikten-exporten utökad med planerat och antal aktiviteter'
+    ]},
+    {v:'1.0.0',d:'2026-06-17',items:[
+      'Stämpling, dagssaldo och dagtyper',
+      'Beläggning per dag med mål',
+      'Kalender med saldo, röda dagar och totalsaldo',
+      'Belastningsvy med trend och veckosaldon',
+      'GitHub-synk, JSON-export/import och Insikten-export',
+      'Auto/mörkt/ljust tema och desktop-version'
+    ]}
+  ]
+};
+// ── Centralen-metadata (förinställd; sektion sätts i Centralen) ──
+var CENTRALEN_META={
+  id:'medarbetaren',
+  namn:'Medarbetaren',
+  ikon:'⏱',
+  desc:'Timsaldo, planering och belastning i fickformat.',
+  mobil:'medarbetaren.html',
+  desktop:'medarbetaren-desktop.html',
+  farger:{bg:'#EEF0F0',line:'#D5DCDC',ink:'#2A3535',muted:'#76817F',accent:'#2C6E73',iconbg:'#D2E2E0'}
+};
+
 var KEY='medarbetaren_v1';
 var state={
   days:{},
@@ -890,6 +970,20 @@ document.getElementById('about-btn').onclick=function(){
 };
 document.getElementById('about-close').onclick=closeSheets;
 
+// ── Nyheter & funktioner ───────────────────────────────
+function renderNews(){
+  var head=document.getElementById('news-head');
+  head.innerHTML='<span class="news-ver">v'+esc(APPINFO.version)+'</span><div style="font-family:Georgia,serif;font-size:16px;margin:8px 0 6px">'+esc(APPINFO.tagline)+'</div><div class="soft">'+esc(APPINFO.audience)+'</div>';
+  var fh='';for(var i=0;i<APPINFO.functions.length;i++)fh+='<div class="news-fn"><span>'+esc(APPINFO.functions[i])+'</span></div>';
+  document.getElementById('news-funcs').innerHTML=fh;
+  var lh='';for(var j=0;j<APPINFO.changelog.length;j++){var c=APPINFO.changelog[j];
+    lh+='<div class="news-log-item"><div class="news-log-h"><span>v'+esc(c.v)+'</span><span class="nl-d">'+esc(c.d)+'</span></div><ul>';
+    for(var k2=0;k2<c.items.length;k2++)lh+='<li>'+esc(c.items[k2])+'</li>';
+    lh+='</ul></div>';
+  }
+  document.getElementById('news-log').innerHTML=lh;
+}
+
 // ── GitHub-synk (appkollen-stil) ───────────────────────
 var SYNC_KEY='medarbetarensync_v1';
 var sync={owner:'',repo:'',token:'',sha:null};
@@ -908,9 +1002,27 @@ function ghGet(){
     return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
   });
 }
+function unionArrById(a,b){
+  var out=a?a.slice():[];var seen={};
+  for(var i=0;i<out.length;i++){if(out[i]&&out[i].id)seen[out[i].id]=true;}
+  if(b){for(var j=0;j<b.length;j++){var x=b[j];if(x&&x.id&&!seen[x.id]){out.push(x);seen[x.id]=true;}}}
+  return out;
+}
 function mergeRemote(remote){
   if(!remote||!remote.days)return;
-  Object.keys(remote.days).forEach(function(k){if(!state.days[k])state.days[k]=remote.days[k];});
+  Object.keys(remote.days).forEach(function(k){
+    var r=remote.days[k];if(!r)return;migrate(r);
+    if(!state.days[k]){state.days[k]=r;return;}
+    var l=migrate(state.days[k]);
+    l.plan=unionArrById(l.plan,r.plan);
+    l.sessions=unionArrById(l.sessions,r.sessions);
+    if(!l.start&&r.start)l.start=r.start;
+    if(!l.end&&r.end)l.end=r.end;
+    if(!l.note&&r.note)l.note=r.note;
+    if((!l.lunch||l.lunch===0)&&r.lunch)l.lunch=r.lunch;
+    if((!l.belagd||l.belagd===0)&&r.belagd)l.belagd=r.belagd;
+    if((!l.type||l.type==='work')&&r.type&&r.type!=='work')l.type=r.type;
+  });
   if(remote.settings)state.settings=Object.assign({},remote.settings,state.settings);
 }
 function ghPull(){
@@ -957,7 +1069,7 @@ for(var nb=0;nb<navBtns.length;nb++){
     for(var i=0;i<navBtns.length;i++)navBtns[i].classList.remove('active');b.classList.add('active');
     var vs=document.querySelectorAll('.view');for(var j=0;j<vs.length;j++)vs[j].classList.remove('active');
     document.getElementById('view-'+b.dataset.v).classList.add('active');
-    if(b.dataset.v==='cal')renderCal();if(b.dataset.v==='load')renderLoad();if(b.dataset.v==='today')renderToday();
+    if(b.dataset.v==='cal')renderCal();if(b.dataset.v==='load')renderLoad();if(b.dataset.v==='today')renderToday();if(b.dataset.v==='news')renderNews();
   };})(navBtns[nb]);
 }
 

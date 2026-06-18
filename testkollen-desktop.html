@@ -878,8 +878,12 @@ async function clPullAll(){
 // ── Publicera Testkollens EGEN changelog till repot ───
 function ownChangelogPayload(){
   return {
-    app:'Testkollen',id:'testkollen',name:'Testkollen',file:'testkollen.html',desktop:'testkollen-desktop.html',
-    accent:'#127C7C',icon:'✔',category:'Verktyg',ai:true,sync:true,
+    app:'Testkollen',id:'testkollen',name:'Testkollen',namn:CENTRALEN_META.namn,file:'testkollen.html',mobil:CENTRALEN_META.mobil,desktop:CENTRALEN_META.desktop,
+    accent:CENTRALEN_META.farger.accent,icon:CENTRALEN_META.ikon,ikon:CENTRALEN_META.ikon,desc:CENTRALEN_META.desc,farger:CENTRALEN_META.farger,
+    category:'Verktyg',ai:true,sync:true,
+    tagline:'Testprotokoll & feedback för hela sviten',
+    audience:'Du som bygger och testar apparna i sviten',
+    centralen:CENTRALEN_META,
     version:APP_VERSION,updated:fmtDate(nowISO()),
     description:'Testprotokoll och testare för hela appsviten. Synkar mot funktionslistan i changeloggen och pingar när det finns nya funktioner att testa.',
     latest:(CHANGELOG[0]?CHANGELOG[0].items.slice(0,3):[]),
@@ -1690,8 +1694,13 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='2.9';
+const APP_VERSION='3.0';
 const CHANGELOG=[
+  {version:'3.0',date:'2026-06-18',title:'Förinställd Centralen-metadata',items:[
+    'Appen bär nu ett förinställt Centralen-kort (id, namn, ikon, beskrivning, mobil/desktop-filnamn och en komplett färgvärld) som Centralen kan synka in automatiskt — kategorin sätts fortfarande i Centralen.',
+    'Metadatan följer med i den publicerade testkollen-changelog.json, tillsammans med tagline och målgrupp.',
+    'Övrigt i svit-standarden fanns redan: inbyggd GitHub-synk, changelog på två sätt, separat desktop/mobil och inbäddad favicon.'
+  ]},
   {version:'2.9',date:'2026-06-18',title:'App-kort i Centralen-stil',items:[
     'Apparna i Appar-vyn visas nu som kort i Centralens stil: appens ikon i en färgad cirkel, namn i accentfärg, beskrivning och appens egen färgvärld.',
     'Färger, ikon och beskrivning hämtas från appens changelog-fil och från centralen.json när det finns; annars tonas kortet i appens accentfärg.',
@@ -1803,12 +1812,23 @@ const FUNCTIONS=[
   {area:'Kalender',items:['Kalendervy som visar när varje funktion lades till (antal per dag). Tryck på ett datum för att se och testa bara de funktionerna, plus buggar rapporterade samma dag.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},
   {area:'Översikt',items:['Status totalt, per app och insats per testare, testtäckning samt logg över senaste resultat.']},
-  {area:'Changelog-synk',items:['Hittar och läser ALLA changelog-filer i repot automatiskt (Git Trees API med fallback till rotlistning), tolerant parser för flera format, stabila id:n per app och ping vid nya funktioner.','Publicerar sin egen testkollen-changelog.json till repot vid access så Centralen och Appkollen kan läsa den.']},
+  {area:'Changelog-synk',items:['Hittar och läser ALLA changelog-filer i repot automatiskt (Git Trees API med fallback till rotlistning), tolerant parser för flera format, stabila id:n per app och ping vid nya funktioner.','Publicerar sin egen testkollen-changelog.json till repot vid access så Centralen och Appkollen kan läsa den.','Bär ett förinställt Centralen-kort (id, namn, ikon, beskrivning, mobil/desktop, färgvärld) som följer med i den publicerade JSON-filen så Centralen kan synka in kortet automatiskt — kategorin sätts i Centralen.']},
   {area:'Synk & data',items:['GitHub Contents API-synk (privat repo, egen fil testkollen.json), status-badge, auto-pull vid start och synlighet, debouncad push, export/import som JSON.']},
   {area:'Skrivbord & tema',items:['Separat skrivbordsversion med sidomeny och paneler, auto mörkt/ljust 20–07.','Egen app-ikon (favicon) i teal med vit bock — på flik, bokmärke och hemskärm.']},
   {area:'Feedback till Appcentralen',items:['Skicka bugg/idé/förbättring/beröm med app, rubrik, beskrivning och prioritet. Poppar vid rapportering av ett testfall och automatiskt vid underkänt.','Skrivs till appkollen-inbox.json och landar i rätt apps backlogg i Appkollen (App-ID/filnamn-matchning). Köas lokalt utan synk och skickas vid koppling.']},
   {area:'Testar-avatarer',items:['Genererad avatar per testare (initialer + färg ur namnet) i listan, "Jag"-raden, insatslistan och resultatloggen.']}
 ];
+// ── Centralen-metadata (förinställt kort för Centralen) ─
+// Centralen kan synka in detta automatiskt. sektion (kategori) sätts i Centralen.
+const CENTRALEN_META={
+  id:'testkollen',
+  namn:'Testkollen',
+  ikon:'✔',
+  desc:'Testprotokoll, buggregister och feedback för hela appsviten',
+  mobil:'testkollen.html',
+  desktop:'testkollen-desktop.html',
+  farger:{bg:'#F2F7F6',line:'#D3E1DF',ink:'#1F2B2A',muted:'#6E807E',accent:'#127C7C',iconbg:'#DBEBE9'}
+};
 let newsTab='changelog';
 function renderNews(){
   $('news-ver').innerHTML='<span class="tag">Version '+esc(APP_VERSION)+'</span>';
