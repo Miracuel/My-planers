@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sufflören — IT-stöd för Kungliga Operan</title>
+<meta name="theme-color" content="#7C1D2E">
+<link rel="icon" id="favicon" type="image/png" href="">
+<link rel="apple-touch-icon" id="atouch" href="">
+<link rel="manifest" id="manifest" href="">
+<style>
+:root{
+  --bg:#F1F0EC; --panel:#FFFFFF; --panel2:#F7F6F2; --card:#FFFFFF;
+  --line:#E3E1DA; --ink:#1A1A22; --muted:#6B6A73;
+  --accent:#7C1D2E; --accent-soft:#F1DDE0; --accent-ink:#F6EEE6;
+  --green-soft:#E3EFE0; --green-ink:#3F6B45; --red-soft:#F6E0E3; --red-ink:#9A2230;
+}
+html[data-theme=dark]{
+  --bg:#16141A; --panel:#201D26; --panel2:#262430; --card:#201D26;
+  --line:#332F3C; --ink:#ECE9F0; --muted:#9A95A6;
+  --accent:#D08896; --accent-soft:#3A2630; --accent-ink:#1A1A22;
+  --green-soft:#22302A; --green-ink:#8FCF9A; --red-soft:#3A2026; --red-ink:#E6A0A8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+.app{max-width:480px;margin:0 auto;padding:22px 18px 96px;position:relative;min-height:100vh}
+.theme-btn{position:absolute;top:20px;right:16px;width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:17px;cursor:pointer}
+.brand{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:27px;letter-spacing:-.2px}
+.brand-sub{font-size:13px;color:var(--muted);margin-top:2px;margin-bottom:14px}
+.sync-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.sp-badge{font-size:11px;padding:4px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;border:none;cursor:pointer}
+.sp-badge.offline{background:var(--panel2);color:var(--muted)}
+.sp-badge.err{background:var(--red-soft);color:var(--red-ink)}
+.gear-btn{margin-left:auto;font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer}
+.chips{display:flex;gap:6px;margin-bottom:14px}
+.chips button{flex:1;font:inherit;font-size:13px;padding:9px 10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:11px;cursor:pointer}
+.chips button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.section-title{font-family:Georgia,serif;font-size:16px;color:var(--ink);margin:18px 2px 9px}
+.searchwrap{position:relative;margin-bottom:14px}
+.searchwrap input{width:100%;padding:11px 12px 11px 34px;border:1px solid var(--line);border-radius:11px;font:inherit;font-size:14px;background:var(--panel);color:var(--ink);outline:none}
+.searchwrap::before{content:'⌕';position:absolute;left:12px;top:9px;font-size:17px;color:var(--muted)}
+.kbcard{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 15px;margin-bottom:10px;cursor:pointer;font:inherit;color:var(--ink)}
+.kbcard .h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.kbcard .t{font-family:Georgia,serif;font-size:16px;line-height:1.3}
+.kbcard .c{font-size:12px;color:var(--muted);margin-top:5px}
+.pill{font-size:10px;letter-spacing:.3px;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:13px;padding:26px 20px;text-align:center}
+.empty .t{font-family:Georgia,serif;font-size:17px;margin-bottom:4px}
+.empty .d{color:var(--muted);font-size:13px;margin-bottom:14px}
+.body h3{font-family:Georgia,serif;font-size:16px;margin:18px 0 6px}
+.body p{margin:0 0 11px;color:var(--ink)}
+.body ul{margin:7px 0 13px;padding-left:20px}
+.body li{margin-bottom:6px}
+.body code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.btn{font:inherit;font-size:14px;border:none;border-radius:11px;padding:11px 16px;cursor:pointer}
+.btn.fill{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.btn.block{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.set-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.set-card label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 5px}
+.set-card label:first-child{margin-top:0}
+.set-card input,.set-card textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:var(--panel2);color:var(--ink);outline:none}
+.soft{font-size:12px;color:var(--muted);line-height:1.6}
+#gh-status,#ai-status{display:none;font-size:12.5px;border-radius:10px;padding:9px 11px;margin-top:10px}
+.cl-block{margin-bottom:16px}
+.cl-ver{font-family:Georgia,serif;font-size:15px}
+.cl-date{font-size:11px;color:var(--muted)}
+.cl-block ul{margin:6px 0 0;padding-left:18px}
+.cl-block li{font-size:13px;margin-bottom:4px}
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;
+  background:var(--panel);border-top:1px solid var(--line);padding:8px 6px;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(8px);z-index:30}
+.nav button{flex:1;background:none;border:none;cursor:pointer;color:var(--muted);font:inherit;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px}
+.nav button span.ico{font-size:19px}
+.nav button.active{color:var(--accent)}
+/* Views */
+.view{display:none}
+.view.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* FAB */
+.fab{position:fixed;left:50%;transform:translateX(140px);bottom:74px;width:52px;height:52px;border-radius:50%;
+  background:var(--accent);color:var(--accent-ink);border:none;font-size:26px;line-height:1;cursor:pointer;
+  box-shadow:0 6px 18px rgba(124,29,46,.35);z-index:31;display:none}
+.fab.show{display:block}
+/* Chat */
+.chat-scroll{min-height:40vh}
+.welcome{text-align:center;padding:14px 4px 18px}
+.welcome .t{font-family:Georgia,serif;font-size:19px;margin-bottom:5px}
+.welcome .d{color:var(--muted);font-size:13px;margin-bottom:16px}
+.sugg{display:grid;gap:8px}
+.sugg button{text-align:left;cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font:inherit;font-size:13.5px;color:var(--ink)}
+.brow{display:flex;margin-bottom:11px}
+.brow.user{justify-content:flex-end}
+.bubble{max-width:86%;border-radius:14px;padding:10px 13px;font-size:14px;line-height:1.6;white-space:pre-wrap}
+.bubble.assistant{background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bubble.user{background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px}
+.bubble.typing{font-style:italic;color:var(--muted)}
+.composer{display:flex;gap:8px;align-items:flex-end;margin-top:8px}
+.composer textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;font-size:14px;background:var(--panel);color:var(--ink);outline:none;max-height:120px}
+.composer .btn{padding:11px 15px}
+.notice{background:var(--accent-soft);border:1px solid var(--accent);border-radius:11px;padding:11px 13px;font-size:13px;margin-bottom:12px}
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.sheet-bg.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--panel);
+  border-radius:20px 20px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .25s ease;z-index:41;max-height:88vh;overflow-y:auto}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-family:Georgia,serif;font-weight:400;font-size:20px;margin-bottom:4px}
+.sheet-close{width:100%;margin-top:14px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px;font:inherit;color:var(--ink);cursor:pointer}
+.meta-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.actions{display:flex;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.actions .btn{flex:1}
+.foot{display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.privacy{text-align:center;font-size:10.5px;color:var(--muted);margin-top:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="app">
+  <button class="theme-btn" id="theme-btn" onclick="cycleTheme()" aria-label="Tema">◐</button>
+  <h1 class="brand">🎭 Sufflören</h1>
+  <div class="brand-sub">IT-stöd för Kungliga Operan</div>
+
+  <!-- KUNSKAPSBAS -->
+  <div class="view active" id="view-kb">
+    <div class="sync-bar">
+      <span id="sync-badge" class="sp-badge offline" onclick="badgeClick()">Lokal</span>
+      <button class="gear-btn" onclick="nav('settings')">⚙ Synk &amp; inställningar</button>
+    </div>
+    <div class="chips" id="mode-chips-kb">
+      <button data-m="user" onclick="setMode('user')">Användare</button>
+      <button data-m="it" onclick="setMode('it')">IT-personal</button>
+    </div>
+    <div class="searchwrap"><input id="kb-search" placeholder="Sök efter problem eller nyckelord…" oninput="renderKB()"></div>
+    <div id="kb-list"></div>
+  </div>
+
+  <!-- FRÅGA SUFFLÖREN -->
+  <div class="view" id="view-ai">
+    <div class="chips" id="mode-chips-ai">
+      <button data-m="user" onclick="setMode('user')">Användare</button>
+      <button data-m="it" onclick="setMode('it')">IT-personal</button>
+    </div>
+    <div id="ai-notice"></div>
+    <div class="chat-scroll" id="chat"></div>
+    <div class="composer">
+      <textarea id="chat-in" rows="1" placeholder="Beskriv problemet…" onkeydown="chatKey(event)"></textarea>
+      <button class="btn fill" onclick="aiSend()">➤</button>
+    </div>
+    <div class="privacy">Sufflören kan ha fel — verifiera känsliga åtgärder. Enter skickar · Shift+Enter ny rad.</div>
+  </div>
+
+  <!-- NYHETER & FUNKTIONER -->
+  <div class="view" id="view-news">
+    <div class="section-title" style="margin-top:0">Nyheter &amp; funktioner</div>
+    <div id="news-body"></div>
+  </div>
+
+  <!-- INSTÄLLNINGAR -->
+  <div class="view" id="view-settings">
+    <div class="section-title" style="margin-top:0">Läge</div>
+    <div class="chips" id="mode-chips-set">
+      <button data-m="user" onclick="setMode('user')">Användare</button>
+      <button data-m="it" onclick="setMode('it')">IT-personal</button>
+    </div>
+
+    <div class="section-title">Synk mellan enheter <span id="sync-badge2" class="sp-badge offline" style="float:right">Lokal</span></div>
+    <div class="set-card">
+      <p class="soft">Sparar <b>sufflören.json</b> i ett <b>privat</b> GitHub-repo så att mobil och dator ser samma kunskapsbas. Token sparas bara lokalt på den här enheten — aldrig i koden eller i filen.</p>
+      <label>GitHub-användarnamn (ägare av repot)</label>
+      <input type="text" id="gh-owner" placeholder="t.ex. miracuel" autocomplete="off">
+      <label>Reponamn (privat)</label>
+      <input type="text" id="gh-repo" placeholder="t.ex. app-data" autocomplete="off">
+      <label>Fine-grained token</label>
+      <input type="password" id="gh-token" placeholder="github_pat_…" autocomplete="off">
+      <p class="soft" style="margin-top:8px">Skapas på github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Ge <b style="color:var(--ink)">Contents: Read and write</b> på just det repot.</p>
+      <div id="gh-status"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn fill" onclick="ghSaveConnect()">Spara &amp; synka</button>
+        <button class="btn ghost" onclick="ghOff()">Koppla från</button>
+      </div>
+      <button class="btn ghost block" style="margin-top:8px" onclick="ghPull()">Synka nu</button>
+    </div>
+
+    <div class="section-title">AI-assistent</div>
+    <div class="set-card">
+      <p class="soft">Svaren görs av Claude via din egen API-nyckel från Anthropic (<b style="color:var(--ink)">console.anthropic.com</b> → API keys). Nyckeln sparas bara lokalt på enheten och synkas aldrig.</p>
+      <label>Anthropic API-nyckel</label>
+      <input type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off">
+      <div id="ai-status"></div>
+      <button class="btn fill block" style="margin-top:12px" onclick="aiSaveKey()">Spara nyckel</button>
+    </div>
+
+    <div class="section-title">Säkerhetskopia</div>
+    <div class="set-card">
+      <div class="btn-row">
+        <button class="btn ghost" onclick="exportData()">Exportera</button>
+        <button class="btn ghost" onclick="document.getElementById('import-file').click()">Importera</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <div class="privacy">Sufflören v<span id="ver-tag"></span> · all data lokalt om du inte kopplar ett privat repo.</div>
+  </div>
+
+  <button class="fab" id="fab" onclick="openEditor(null)">+</button>
+
+  <div class="nav">
+    <button class="active" data-v="kb" onclick="nav('kb')"><span class="ico">📖</span>Kunskap</button>
+    <button data-v="ai" onclick="nav('ai')"><span class="ico">✨</span>Fråga</button>
+    <button data-v="news" onclick="nav('news')"><span class="ico">📣</span>Nyheter</button>
+    <button data-v="settings" onclick="nav('settings')"><span class="ico">⚙</span>Inställn.</button>
+  </div>
+</div>
+
+<!-- Bottom-sheets -->
+<div class="sheet-bg" id="sheet-bg" onclick="closeSheets()"></div>
+
+<div class="sheet" id="article-sheet">
+  <div class="meta-row" id="art-meta"></div>
+  <h3 id="art-title"></h3>
+  <div class="body" id="art-body" style="margin-top:12px"></div>
+  <div class="actions" id="art-actions"></div>
+  <button class="sheet-close" onclick="closeSheets()">Stäng</button>
+</div>
+
+<div class="sheet" id="editor-sheet">
+  <h3 id="ed-head">Ny artikel</h3>
+  <div class="set-card" style="border:none;padding:0;margin-top:10px">
+    <label>Titel</label>
+    <input type="text" id="ed-title" placeholder="t.ex. Skrivaren skriver inte ut">
+    <label>Kategori</label>
+    <select id="ed-cat" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);font:inherit"></select>
+    <label>Synlig för</label>
+    <select id="ed-aud" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);font:inherit">
+      <option value="both">Alla</option>
+      <option value="user">Främst användare</option>
+      <option value="it">Endast IT-personal</option>
+    </select>
+    <label>Nyckelord (kommaseparerade)</label>
+    <input type="text" id="ed-tags" placeholder="vpn, distans, mfa">
+    <label>Innehåll</label>
+    <textarea id="ed-body" rows="9" placeholder="## Rubrik&#10;- listpunkt&#10;&#10;**fetstil** och kod inom backticks."></textarea>
+    <p class="soft" style="margin-top:6px">Format: ## rubrik, - listpunkt, **fetstil**, kod inom backticks.</p>
+  </div>
+  <div class="actions">
+    <button class="btn ghost" id="ed-del" onclick="deleteCurrent()" style="display:none">Ta bort</button>
+    <button class="btn fill" onclick="saveEditor()">Spara artikel</button>
+  </div>
+  <button class="sheet-close" onclick="closeSheets()">Avbryt</button>
+</div>
+
+<script>
+var ICON='data:image/png;base64,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';
+
+/* ── Centralen-metadata (sektion sätts av Centralen) ── */
+var META={
+  id:'suffloren',
+  namn:'Sufflören', ikon:'🎭',
+  desc:'IT-support: kunskapsbas & assistent',
+  mobil:'sufflören.html',
+  desktop:'sufflören-desktop.html',
+  farger:{bg:'#FBFAF7', line:'#E3E1DA', ink:'#1A1A22', muted:'#6B6A73', accent:'#7C1D2E', iconbg:'#F1DDE0'}
+};
+
+/* ── Inbäddad changelog ── */
+var APPINFO={
+  version:'1.1.0',
+  tagline:'IT-stöd som viskar rätt svar',
+  audience:'För medarbetare på Kungliga Operan som behöver snabb självhjälp, och för IT-teamet som vårdar kunskapsbasen och löser ärenden.',
+  functions:[
+    'Kunskapsbas med sökbara artiklar, delad mellan alla enheter',
+    'AI-assistent (Claude) som kan kunskapsbasen och svarar på svenska',
+    'Två lägen: Användare (enkelt) och IT-personal (tekniskt, kan redigera)',
+    'IT-personal skapar, redigerar och tar bort artiklar',
+    'Artiklar märks Alla / Främst användare / Endast IT',
+    'GitHub-synk (privat repo, sufflören.json) mellan mobil och dator',
+    'Säkerhetskopiera och importera kunskapsbasen som JSON',
+    'Ljust, mörkt och auto-tema (mörkt 20–07)'
+  ],
+  changelog:[
+    {v:'1.1.0', d:'2026-06-18', items:[
+      'Byggd på svit-standarden: bottennav, vyer och bottom-sheets.',
+      'Inbyggd GitHub-synk (appkollen-stil) mot privat repo — sufflören.json union-mergeas per artikel-id mellan enheter.',
+      'AI-assistenten använder nu din egen Anthropic-nyckel (sparas bara lokalt, synkas aldrig).',
+      'Den här vyn "Nyheter & funktioner" samt separat skrivbordsversion (sufflören-desktop.html).',
+      'Säkerhetskopiera/importera som JSON, auto/ljust/mörkt tema och egen favicon.',
+      'Changelog-filer (sufflören-changelog.json + changelog-sufflören.md) i svitens format.'
+    ]},
+    {v:'1.0.0', d:'2026-06-14', items:[
+      'Sufflören lanseras: kunskapsbas + AI-felsökningsassistent för Kungliga Operan.',
+      'Sju startartiklar (Authenticator-byte, lösenord, Dell-blåskärm, extern disk, VPN, skrivare, onboarding).',
+      'Lägena Användare och IT-personal styr djup och vilka artiklar som visas.'
+    ]}
+  ]
+};
+
+/* ── State & lagring ── */
+var KEY='suffloren_v1';
+var SYNC_KEY='suffloren_sync_v1';
+var AI_KEY='suffloren_ai_v1';
+var SYNC_FILE='sufflören.json';
+var CATS=['Konto & inloggning','Enheter','Nätverk','Programvara','Onboarding'];
+
+function seed(){
+  var base=2000000;
+  var arr=[
+    {id:'kb-auth',title:'Flytta Microsoft Authenticator till ny telefon',category:'Konto & inloggning',audience:'both',tags:['authenticator','mfa','iphone','byte av telefon'],body:'När du byter telefon följer inte Authenticator-kontona med automatiskt. Gör så här innan du lämnar den gamla telefonen:\n\n## På den gamla telefonen\n- Öppna Authenticator och slå på molnsäkerhetskopiering under Inställningar.\n- Logga in med ditt personliga Microsoft-konto så att kopian sparas.\n\n## På den nya telefonen\n- Installera Authenticator och välj Återställ från säkerhetskopia.\n- Logga in med samma konto som du säkerhetskopierade till.\n\n## Om jobbkontot inte följer med\nVerksamhetskonton flyttas inte alltid via säkerhetskopian. Då behöver kontot registreras på nytt — kontakta IT-teamet så nollställer vi MFA och skickar en ny registreringslänk.'},
+    {id:'kb-pwd',title:'Återställ lösenord eller lås upp konto',category:'Konto & inloggning',audience:'both',tags:['lösenord','kontolåsning','inloggning'],body:'Är kontot låst efter för många försök släpper låsningen oftast av sig själv inom 30 minuter.\n\n## Återställ själv\n- Gå till lösenordsportalen och välj Glömt lösenord.\n- Bekräfta med din MFA-metod.\n\n## Kommer du inte vidare\nSaknar du fungerande MFA kan du inte återställa själv. Kontakta IT-teamet med ditt användarnamn så hjälper vi dig på plats.'},
+    {id:'kb-bsod',title:'Blåskärm på Dell: CRITICAL_PROCESS_DIED',category:'Enheter',audience:'it',tags:['bsod','dell','blåskärm','windows'],body:'Felet betyder att en process som Windows förlitar sig på avslutades oväntat. Vanliga orsaker är trasiga systemfiler eller en dålig drivrutin.\n\n## Snabb åtgärd\n- Starta i felsäkert läge.\n- Kör sfc /scannow och därefter DISM /Online /Cleanup-Image /RestoreHealth.\n- Rulla tillbaka senast installerade drivrutin om felet började efter en uppdatering.\n\n## Återkommer felet\nLogga felkoden i Tillförlitlighetsövervakaren och kontrollera lagringens hälsa innan du överväger ominstallation.'},
+    {id:'kb-wd',title:'Extern hårddisk syns inte eller nekar åtkomst',category:'Enheter',audience:'it',tags:['extern disk','wd','behörighet','chkdsk','icacls'],body:'Två problem brukar dölja sig bakom samma symptom: ett skadat filsystem eller fel ägarskap på enheten.\n\n## Reparera filsystemet\n- Kör chkdsk X: /f där X är diskens enhetsbokstav.\n\n## Återställ behörigheter\n- Ta ägarskap och återställ behörigheter med icacls X:\\ /reset /T /C.\n\nSäkerhetskopiera viktigt innehåll först om disken alls går att läsa.'},
+    {id:'kb-vpn',title:'Anslut till nätverk och VPN',category:'Nätverk',audience:'both',tags:['vpn','nätverk','wifi','distans'],body:'## På plats\n- Anslut till det interna nätverket med ditt vanliga konto.\n\n## På distans\n- Starta VPN-klienten och logga in med MFA.\n- Får du upprepade tidsutgångar, byt till ett stabilare nät och försök igen.\n\nNår du inte interna tjänster trots aktiv VPN — kontakta IT-teamet, det kan vara en behörighet som behöver läggas till.'},
+    {id:'kb-print',title:'Skrivaren skriver inte ut',category:'Enheter',audience:'user',tags:['skrivare','utskrift'],body:'## Gå igenom i tur och ordning\n- Kontrollera att rätt skrivare är vald, inte en gammal som inte finns kvar.\n- Se efter om kön har fastnat och rensa i så fall väntande utskrifter.\n- Stäng av och slå på skrivaren igen.\n\nSaknas skrivaren helt i listan, hör av dig till IT-teamet så lägger vi till den åt dig.'},
+    {id:'kb-onboarding',title:'Ny dator: så kommer du igång',category:'Onboarding',audience:'both',tags:['ny dator','onboarding','autopilot','intune'],body:'Din dator registreras automatiskt när du loggar in första gången.\n\n## Första inloggningen\n- Anslut till nätverket och logga in med ditt jobbkonto.\n- Datorn konfigureras i bakgrunden — det kan ta en stund, låt den vara ansluten.\n- Registrera MFA när du blir ombedd.\n\nNär installationen är klar finns dina program på plats. Saknas något kontaktar du IT-teamet.'}
+  ];
+  arr.forEach(function(a,i){a.mod=base-i;});
+  return arr;
+}
+
+var state={articles:seed(),mode:'user',theme:'auto'};
+try{var raw=localStorage.getItem(KEY);if(raw){var d=JSON.parse(raw);if(Array.isArray(d.articles))state.articles=d.articles;if(d.mode)state.mode=d.mode;if(d.theme)state.theme=d.theme;}}catch(e){}
+
+var pushTimer=null;
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify({articles:state.articles,mode:state.mode,theme:state.theme}));}catch(e){}
+  if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush();},1200);}
+}
+function saveLocalOnly(){try{localStorage.setItem(KEY,JSON.stringify({articles:state.articles,mode:state.mode,theme:state.theme}));}catch(e){}}
+
+/* ── Hjälpare ── */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function uid(){return 'kb-'+Math.random().toString(36).slice(2,9);}
+function inlineMd(t){return t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\x60([^\x60]+)\x60/g,'<code>$1</code>');}
+function mdToHtml(text){
+  var lines=esc(text).split('\n'),out='',list=[];
+  function flush(){if(list.length){out+='<ul>';for(var i=0;i<list.length;i++)out+='<li>'+inlineMd(list[i])+'</li>';out+='</ul>';list=[];}}
+  for(var k=0;k<lines.length;k++){
+    var line=lines[k].replace(/\s+$/,'');
+    if(line.indexOf('## ')===0){flush();out+='<h3>'+inlineMd(line.slice(3))+'</h3>';}
+    else if(line.indexOf('- ')===0){list.push(line.slice(2));}
+    else if(line===''){flush();}
+    else {flush();out+='<p>'+inlineMd(line)+'</p>';}
+  }
+  flush();return out;
+}
+function visibleArticles(){return state.articles.filter(function(a){return state.mode==='it'?true:a.audience!=='it';});}
+
+/* ── Navigation ── */
+function nav(v){
+  var views=document.querySelectorAll('.view');
+  for(var i=0;i<views.length;i++)views[i].classList.remove('active');
+  document.getElementById('view-'+v).classList.add('active');
+  var btns=document.querySelectorAll('.nav button');
+  for(var j=0;j<btns.length;j++)btns[j].classList.toggle('active',btns[j].getAttribute('data-v')===v);
+  updateFab();
+  if(v==='news')renderNews();
+  if(v==='settings')fillSettings();
+  if(v==='ai')renderChat();
+  window.scrollTo(0,0);
+}
+function updateFab(){
+  var kbActive=document.getElementById('view-kb').classList.contains('active');
+  document.getElementById('fab').classList.toggle('show',kbActive&&state.mode==='it');
+}
+
+/* ── Läge ── */
+function setMode(m){
+  state.mode=m;saveLocalOnly();
+  syncModeChips();renderKB();renderChat();updateFab();
+}
+function syncModeChips(){
+  ['mode-chips-kb','mode-chips-ai','mode-chips-set'].forEach(function(id){
+    var box=document.getElementById(id);if(!box)return;
+    var bs=box.querySelectorAll('button');
+    for(var i=0;i<bs.length;i++)bs[i].classList.toggle('on',bs[i].getAttribute('data-m')===state.mode);
+  });
+}
+
+/* ── Kunskapsbas ── */
+function renderKB(){
+  var q=(document.getElementById('kb-search').value||'').trim().toLowerCase();
+  var arts=visibleArticles().filter(function(a){
+    return !q||a.title.toLowerCase().indexOf(q)>=0||a.body.toLowerCase().indexOf(q)>=0||a.category.toLowerCase().indexOf(q)>=0||(a.tags||[]).some(function(t){return t.toLowerCase().indexOf(q)>=0;});
+  });
+  arts.sort(function(a,b){return (b.mod||0)-(a.mod||0);});
+  var box=document.getElementById('kb-list'),html='';
+  if(arts.length===0){
+    html='<div class="empty"><div class="t">'+(q?'Inget träffar '+esc(q):'Inga artiklar ännu')+'</div><div class="d">Prova ett annat ord, eller låt Sufflören hjälpa dig direkt.</div><button class="btn fill" onclick="nav(\'ai\')">Fråga Sufflören</button></div>';
+  } else {
+    for(var i=0;i<arts.length;i++){
+      var a=arts[i];
+      html+='<button class="kbcard" onclick="openArticle(\''+a.id+'\')"><div class="h"><span class="t">'+esc(a.title)+'</span>'+(a.audience==='it'?'<span class="pill">Endast IT</span>':'')+'</div><div class="c">'+esc(a.category)+'</div></button>';
+    }
+  }
+  box.innerHTML=html;
+  updateFab();
+}
+
+var currentId=null;
+function openArticle(id){
+  var a=state.articles.find(function(x){return x.id===id;});if(!a)return;
+  currentId=id;
+  var meta='<span class="pill">'+esc(a.category)+'</span>'+(a.audience==='it'?'<span class="pill">Endast IT</span>':'');
+  document.getElementById('art-meta').innerHTML=meta;
+  document.getElementById('art-title').textContent=a.title;
+  document.getElementById('art-body').innerHTML=mdToHtml(a.body);
+  var act='';
+  if(state.mode==='it')act='<button class="btn ghost" onclick="openEditor(\''+a.id+'\')">Redigera</button><button class="btn ghost" onclick="deleteArticle(\''+a.id+'\')">Ta bort</button>';
+  document.getElementById('art-actions').innerHTML=act;
+  document.getElementById('art-actions').style.display=act?'flex':'none';
+  openSheet('article-sheet');
+}
+
+function openEditor(id){
+  closeSheets();
+  var sel=document.getElementById('ed-cat');
+  if(!sel.options.length){var o='';for(var i=0;i<CATS.length;i++)o+='<option>'+esc(CATS[i])+'</option>';sel.innerHTML=o;}
+  if(id){
+    var a=state.articles.find(function(x){return x.id===id;});
+    currentId=id;
+    document.getElementById('ed-head').textContent='Redigera artikel';
+    document.getElementById('ed-title').value=a.title;
+    document.getElementById('ed-cat').value=a.category;
+    document.getElementById('ed-aud').value=a.audience;
+    document.getElementById('ed-tags').value=(a.tags||[]).join(', ');
+    document.getElementById('ed-body').value=a.body;
+    document.getElementById('ed-del').style.display='block';
+  } else {
+    currentId=null;
+    document.getElementById('ed-head').textContent='Ny artikel';
+    document.getElementById('ed-title').value='';
+    document.getElementById('ed-cat').value=CATS[0];
+    document.getElementById('ed-aud').value='both';
+    document.getElementById('ed-tags').value='';
+    document.getElementById('ed-body').value='';
+    document.getElementById('ed-del').style.display='none';
+  }
+  setTimeout(function(){openSheet('editor-sheet');},120);
+}
+function saveEditor(){
+  var title=document.getElementById('ed-title').value.trim();
+  var body=document.getElementById('ed-body').value.trim();
+  if(!title||!body){alert('Fyll i titel och innehåll.');return;}
+  var art={id:currentId||uid(),title:title,category:document.getElementById('ed-cat').value,audience:document.getElementById('ed-aud').value,
+    tags:document.getElementById('ed-tags').value.split(',').map(function(t){return t.trim();}).filter(Boolean),body:body,mod:Date.now()};
+  var idx=-1;for(var i=0;i<state.articles.length;i++)if(state.articles[i].id===art.id)idx=i;
+  if(idx>=0)state.articles[idx]=art;else state.articles.unshift(art);
+  save();closeSheets();renderKB();
+}
+function deleteCurrent(){if(currentId)deleteArticle(currentId);}
+function deleteArticle(id){
+  if(!confirm('Ta bort artikeln?'))return;
+  state.articles=state.articles.filter(function(a){return a.id!==id;});
+  save();closeSheets();renderKB();
+}
+
+/* ── Sheets ── */
+function openSheet(id){document.getElementById('sheet-bg').classList.add('open');document.getElementById(id).classList.add('open');}
+function closeSheets(){
+  document.getElementById('sheet-bg').classList.remove('open');
+  var sh=document.querySelectorAll('.sheet');for(var i=0;i<sh.length;i++)sh[i].classList.remove('open');
+}
+
+/* ── Nyheter & funktioner ── */
+function renderNews(){
+  var h='<div class="set-card"><div class="cl-ver">'+esc(APPINFO.tagline)+'</div><div class="soft" style="margin-top:6px">'+esc(APPINFO.audience)+'</div></div>';
+  h+='<div class="section-title">Funktioner</div><div class="set-card"><ul style="padding-left:18px;margin:0">';
+  for(var i=0;i<APPINFO.functions.length;i++)h+='<li style="margin-bottom:5px;font-size:13.5px">'+esc(APPINFO.functions[i])+'</li>';
+  h+='</ul></div>';
+  h+='<div class="section-title">Uppdateringar</div>';
+  for(var j=0;j<APPINFO.changelog.length;j++){
+    var c=APPINFO.changelog[j];
+    h+='<div class="set-card cl-block"><div class="cl-ver">v'+esc(c.v)+' <span class="cl-date">'+esc(c.d)+'</span></div><ul>';
+    for(var k=0;k<c.items.length;k++)h+='<li>'+esc(c.items[k])+'</li>';
+    h+='</ul></div>';
+  }
+  document.getElementById('news-body').innerHTML=h;
+}
+
+/* ── GitHub-synk (appkollen-stil) ── */
+var sync={owner:'',repo:'',token:'',sha:null};
+function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
+function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
+function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/'+encodeURIComponent(SYNC_FILE);}
+function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(String(s).replace(/\s/g,''))));}
+function setBadge(kind,msg){
+  ['sync-badge','sync-badge2'].forEach(function(id){
+    var b=document.getElementById(id);if(!b)return;
+    b.textContent=msg;
+    b.className='sp-badge'+(kind==='ok'?'':kind==='err'?' err':kind==='load'?'':' offline');
+  });
+}
+function mergeArticles(local,remote){
+  var map={};
+  local.forEach(function(a){map[a.id]=a;});
+  remote.forEach(function(a){var ex=map[a.id];if(!ex||(a.mod||0)>(ex.mod||0))map[a.id]=a;});
+  return Object.keys(map).map(function(k){return map[k];});
+}
+function ghGet(){
+  return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404){sync.sha=null;return null;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
+  });
+}
+function ghPull(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Hämtar…');
+  return ghGet().then(function(data){
+    if(data&&Array.isArray(data.articles)){
+      state.articles=mergeArticles(state.articles,data.articles);
+      saveLocalOnly();renderKB();
+    }
+    setBadge('ok','Synkad');
+  }).catch(function(){setBadge('err','Synkfel');});
+}
+function ghPush(){
+  if(!syncOn())return Promise.resolve();
+  setBadge('load','Sparar…');
+  var content=b64enc(JSON.stringify({articles:state.articles,updated:new Date().toISOString()}));
+  function doPut(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via Sufflören',content:content},sync.sha?{sha:sync.sha}:{}))});}
+  return doPut().then(function(r){
+    if(r.status===409||r.status===422){return ghGet().catch(function(){}).then(doPut);}
+    return r;
+  }).then(function(r){
+    if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
+    return r.json();
+  }).then(function(j){if(j&&j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad');});
+}
+function ghStatus(msg,type){
+  var el=document.getElementById('gh-status');el.style.display='block';
+  el.style.background=type==='ok'?'var(--green-soft)':type==='err'?'var(--red-soft)':'var(--panel2)';
+  el.style.color=type==='ok'?'var(--green-ink)':type==='err'?'var(--red-ink)':'var(--muted)';
+  el.textContent=msg;
+}
+function ghSaveConnect(){
+  sync.owner=document.getElementById('gh-owner').value.trim();
+  sync.repo=document.getElementById('gh-repo').value.trim();
+  sync.token=document.getElementById('gh-token').value.trim();
+  if(!syncOn()){ghStatus('Fyll i alla tre fälten.','err');return;}
+  saveSync();sync.sha=null;ghStatus('Testar anslutning…','info');
+  ghGet().then(function(data){
+    if(data){ghStatus('Ansluten! Hämtar kunskapsbasen…','ok');return ghPull();}
+    ghStatus('Ansluten! Repot saknar sufflören.json — laddar upp din lokala data…','ok');return ghPush();
+  }).then(function(){setBadge('ok','Synkad');}).catch(function(e){ghStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');setBadge('err','Synkfel');});
+}
+function ghOff(){
+  if(!confirm('Koppla från synk på den här enheten? Din lokala data ligger kvar.'))return;
+  sync={owner:'',repo:'',token:'',sha:null};
+  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  document.getElementById('gh-owner').value='';document.getElementById('gh-repo').value='';document.getElementById('gh-token').value='';
+  setBadge('off','Lokal');ghStatus('Frånkopplad. Datan finns kvar lokalt.','ok');
+}
+function badgeClick(){if(syncOn())ghPull();else nav('settings');}
+
+/* ── AI-assistent ── */
+var messages=[],aiBusy=false;
+function getAiKey(){try{var s=localStorage.getItem(AI_KEY);if(s)return JSON.parse(s).key||'';}catch(e){}return '';}
+function aiSaveKey(){
+  var k=document.getElementById('ai-key').value.trim();
+  try{localStorage.setItem(AI_KEY,JSON.stringify({key:k}));}catch(e){}
+  var el=document.getElementById('ai-status');el.style.display='block';
+  el.style.background='var(--green-soft)';el.style.color='var(--green-ink)';
+  el.textContent=k?'Nyckel sparad lokalt.':'Nyckel rensad.';
+  renderChat();
+}
+function buildSystem(){
+  var kb=visibleArticles().map(function(a){return '• '+a.title+' ['+a.category+']: '+a.body.replace(/\n+/g,' ').slice(0,260);}).join('\n');
+  var depth=state.mode==='it'?'Du talar med IT-personal. Var teknisk och konkret, kommandon och felkoder är välkomna.':'Du talar med en medarbetare utan IT-bakgrund. Håll det enkelt, undvik jargong och förklara steg för steg.';
+  return 'Du är Sufflören, en IT-supportassistent för Kungliga Operan i Stockholm. Svara alltid på svenska, vänligt och rakt på sak. '+depth+' Använd kunskapsbasen nedan när den är relevant och nämn artikelns titel om du stödjer dig på den. Hittar du inte svaret, eller kräver åtgärden behörigheter, fysisk hjälp eller kontonollställning — föreslå att kontakta IT-teamet. Hitta aldrig på rutiner du är osäker på.\n\nKUNSKAPSBAS:\n'+(kb||'(tom)');
+}
+function renderChat(){
+  var notice=document.getElementById('ai-notice');
+  if(!getAiKey()){notice.innerHTML='<div class="notice">Lägg in din Anthropic-nyckel under <b>Inställningar → AI-assistent</b> för att Sufflören ska kunna svara. Kunskapsbasen fungerar ändå.</div>';}
+  else notice.innerHTML='';
+  var box=document.getElementById('chat'),h='';
+  if(messages.length===0&&!aiBusy){
+    var sugg=state.mode==='it'?['Dator får CRITICAL_PROCESS_DIED efter uppdatering','Extern WD-disk nekar åtkomst','Användare saknar VPN-åtkomst trots aktiv tunnel']:['Jag har bytt telefon och kommer inte in','Skrivaren skriver inte ut','Hur ansluter jag VPN hemifrån?'];
+    h='<div class="welcome"><div class="t">Vad har kört fast?</div><div class="d">Beskriv problemet med egna ord. Sufflören känner till kunskapsbasen.</div><div class="sugg">';
+    for(var i=0;i<sugg.length;i++)h+='<button onclick="aiSend(this.textContent)">'+esc(sugg[i])+'</button>';
+    h+='</div></div>';
+  } else {
+    for(var j=0;j<messages.length;j++)h+='<div class="brow '+messages[j].role+'"><div class="bubble '+messages[j].role+'">'+esc(messages[j].content)+'</div></div>';
+    if(aiBusy)h+='<div class="brow assistant"><div class="bubble assistant typing">Sufflören skriver…</div></div>';
+  }
+  box.innerHTML=h;box.scrollTop=box.scrollHeight;
+}
+function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend();}}
+function aiSend(text){
+  var ta=document.getElementById('chat-in');
+  var q=(text!==undefined?text:ta.value).trim();
+  if(!q||aiBusy)return;
+  var key=getAiKey();
+  if(!key){nav('settings');return;}
+  ta.value='';messages.push({role:'user',content:q});aiBusy=true;renderChat();
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1024,system:buildSystem(),messages:messages.slice(-10).map(function(m){return {role:m.role,content:m.content};})})
+  }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(data){
+    var reply=(data.content||[]).map(function(b){return b.type==='text'?b.text:'';}).filter(Boolean).join('\n').trim();
+    messages.push({role:'assistant',content:reply||'Jag fick inget svar den här gången. Försök igen.'});
+  }).catch(function(){messages.push({role:'assistant',content:'Kunde inte nå Sufflören just nu — kontrollera din API-nyckel och anslutning.'});}).then(function(){aiBusy=false;renderChat();});
+}
+
+/* ── Export / import ── */
+function exportData(){
+  var blob=new Blob([JSON.stringify({app:'suffloren',version:APPINFO.version,exported:new Date().toISOString(),articles:state.articles},null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='sufflören-export.json';a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
+}
+function importData(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(Array.isArray(d.articles)){state.articles=mergeArticles(state.articles,d.articles);save();renderKB();alert('Importerade '+d.articles.length+' artiklar.');}else alert('Filen saknar artiklar.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.readAsText(f);e.target.value='';
+}
+
+/* ── Tema ── */
+function applyTheme(){
+  var m=state.theme||'auto',h=new Date().getHours(),dark=m==='dark'||(m==='auto'&&(h>=20||h<7));
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  var meta=document.querySelector('meta[name=theme-color]');if(meta)meta.setAttribute('content',dark?'#16141A':'#7C1D2E');
+  var b=document.getElementById('theme-btn');b.textContent=m==='auto'?'◐':(m==='dark'?'☾':'☀');
+}
+function cycleTheme(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';saveLocalOnly();applyTheme();}
+
+/* ── Inställningar ── */
+function fillSettings(){
+  document.getElementById('gh-owner').value=sync.owner;
+  document.getElementById('gh-repo').value=sync.repo;
+  document.getElementById('gh-token').value=sync.token;
+  document.getElementById('ai-key').value=getAiKey();
+  document.getElementById('gh-status').style.display='none';
+  document.getElementById('ai-status').style.display='none';
+}
+
+/* ── Favicon + manifest ── */
+function wireIcons(){
+  document.getElementById('favicon').href=ICON;
+  document.getElementById('atouch').href=ICON;
+  var man={name:'Sufflören',short_name:'Sufflören',start_url:'.',display:'standalone',background_color:'#F1F0EC',theme_color:'#7C1D2E',icons:[{src:ICON,sizes:'512x512',type:'image/png'}]};
+  try{document.getElementById('manifest').href='data:application/manifest+json;base64,'+b64enc(JSON.stringify(man));}catch(e){}
+}
+
+/* ── Start ── */
+function init(){
+  wireIcons();
+  document.getElementById('ver-tag').textContent=APPINFO.version;
+  loadSync();
+  applyTheme();
+  syncModeChips();
+  setBadge(syncOn()?'ok':'off',syncOn()?'Synkad':'Lokal');
+  renderKB();
+  updateFab();
+  if(syncOn())ghPull();
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+  setInterval(function(){applyTheme();},300000);
+}
+init();
+</script>
+</body>
+</html>

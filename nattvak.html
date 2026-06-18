@@ -156,6 +156,19 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
 .privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:10px;line-height:1.6}
 
+/* Nyheter / changelog */
+.news-tag{font-family:Georgia,serif;font-size:17px;color:var(--ink);line-height:1.4}
+.feat-list{list-style:none;margin:0;padding:0}
+.feat-list li{font-size:13px;color:var(--ink);padding:7px 0 7px 22px;position:relative;border-top:1px solid var(--line);line-height:1.5}
+.feat-list li:first-child{border-top:none}
+.feat-list li::before{content:'🌙';position:absolute;left:0;top:7px;font-size:11px}
+.cl-entry{padding:10px 0;border-top:1px solid var(--line)}
+.cl-entry:first-child{border-top:none}
+.cl-ver{font-family:Georgia,serif;font-size:15px;color:var(--accent)}
+.cl-date{font-size:11px;color:var(--muted);font-family:-apple-system,sans-serif}
+.cl-items{margin:6px 0 0;padding-left:18px}
+.cl-items li{font-size:12.5px;color:var(--ink);line-height:1.55;margin-bottom:3px}
+
 html{background:var(--bg)}
 body{transition:background .4s,color .4s}
 html[data-theme=dark]{
@@ -241,10 +254,18 @@ html[data-theme=dark]{
   <input type="file" id="restore-file" accept="application/json" style="display:none">
 </div>
 
+<!-- NYHETER -->
+<div class="view" id="view-news">
+  <div class="section-title">Nyheter &amp; funktioner</div>
+  <div id="news-body"></div>
+  <div class="privacy" id="news-ver"></div>
+</div>
+
 <div class="nav">
   <button class="active" data-v="now"><span>🌙</span>Inatt</button>
   <button data-v="history"><span>📋</span>Historik</button>
   <button data-v="pattern"><span>〰</span>Mönster</button>
+  <button data-v="news"><span>✨</span>Nyheter</button>
 </div>
 
 <!-- Sheets -->
@@ -290,6 +311,47 @@ html[data-theme=dark]{
 </div>
 
 <script>
+// ── Appinfo & changelog (visas i vyn "Nyheter") ───────
+var APPINFO={
+  id:'nattvak',
+  namn:'Nattvak',
+  version:'1.1.0',
+  tagline:'Logga sömnbrist och nattvak — snabbt, även halvsovande.',
+  audience:'För dig som vaknar mycket på nätterna och vill se mönster utan krångel.',
+  functions:[
+    'Ett tryck för "Jag vaknade" som registrerar tiden direkt',
+    'Snabbknappar för åtgärder (drack, åt, toa, tankar snurrar …)',
+    'Somnade om / Uppe nu / Tupplur — hela natten i en tidslinje',
+    'Historik per natt och mönster över de senaste 14 nätterna',
+    'Auto mörkt tema 20–07 så skärmen inte bländar på natten',
+    'Frivillig GitHub-synk mellan enheter samt JSON-export/import'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-14',items:[
+      'Synk uppgraderad till union-merge per id — uppvaknanden, åtgärder och tupplurar slås ihop mellan enheter utan att något tappas',
+      'Ny vy "Nyheter & funktioner" med inbyggd changelog',
+      'Förinställd Centralen-metadata så appen kan synkas in automatiskt i hubben',
+      'Desktopversion enligt sviten: fast vänstersidebar via ett rent CSS-lager'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Första versionen: snabb nattloggning, tidslinje, historik och mönster',
+      'Bottennav, bottom-sheets och auto/ljust/mörkt tema',
+      'GitHub-synk och JSON-säkerhetskopiering'
+    ]}
+  ]
+};
+// Centralen-kortmetadata (sektion sätts i Centralen, inte här)
+var CENTRALEN={
+  id:'nattvak',
+  namn:'Nattvak',
+  ikon:'🌙',
+  desc:'Logga sömnbrist och nattvak — snabbt och enkelt, mitt i natten.',
+  mobil:'nattvak.html',
+  desktop:'nattvak-desktop.html',
+  farger:{bg:'#EDEDF2',line:'#D6D7E2',ink:'#37384A',muted:'#7C7E92',accent:'#5E6699',iconbg:'#DCDDEC'}
+};
+try{window.APPINFO=APPINFO;window.CENTRALEN=CENTRALEN;}catch(e){}
+
 // ── State ─────────────────────────────────────────────
 var KEY='nattvak_v1';
 var state={
@@ -348,14 +410,34 @@ async function ghGet(){
   sync.sha=j.sha;
   return JSON.parse(b64dec(j.content));
 }
+// Union-merge per id — slår ihop lokalt och fjärran utan att tappa poster
+function mergeArrById(local,remote,mergeItem){
+  var map={},order=[];
+  var add=function(arr){if(!Array.isArray(arr))return;arr.forEach(function(it){var k=it&&it.id!=null?it.id:'_'+order.length;if(map[k]){map[k]=mergeItem(map[k],it);}else{map[k]=it;order.push(k);}});};
+  add(local);add(remote);
+  return order.map(function(k){return map[k];});
+}
+function dedupeActions(arr){var seen={},out=[];arr.forEach(function(x){var k=(x&&x.label)+'|'+(x&&x.t);if(!seen[k]){seen[k]=1;out.push(x);}});return out;}
+function mergeWake(a,b){return{id:a.id,woke:a.woke||b.woke,actions:dedupeActions((a.actions||[]).concat(b.actions||[])),result:a.result||b.result,endT:a.endT||b.endT};}
+function mergeNap(a,b){return{id:a.id,start:a.start||b.start,end:a.end||b.end};}
+function mergeNight(a,b){return{bed:a.bed||b.bed,up:a.up||b.up,wakes:mergeArrById(a.wakes,b.wakes,mergeWake),naps:mergeArrById(a.naps,b.naps,mergeNap)};}
+function mergeNights(local,remote){
+  var out={},keys={};
+  Object.keys(local||{}).forEach(function(k){keys[k]=1;});
+  Object.keys(remote||{}).forEach(function(k){keys[k]=1;});
+  Object.keys(keys).forEach(function(k){var l=local&&local[k],r=remote&&remote[k];out[k]=(l&&r)?mergeNight(l,r):(l||r);});
+  return out;
+}
+function mergeActions(local,remote){var out=(local||[]).slice();(remote||[]).forEach(function(a){if(out.indexOf(a)<0)out.push(a);});return out;}
+
 async function ghPull(){
   if(!syncOn())return;
   try{
     setBadge('load','Hämtar…');
     var data=await ghGet();
     if(data){
-      if(data.nights&&typeof data.nights==='object')state.nights=data.nights;
-      if(Array.isArray(data.actions))state.actions=data.actions;
+      if(data.nights&&typeof data.nights==='object')state.nights=mergeNights(state.nights,data.nights);
+      if(Array.isArray(data.actions))state.actions=mergeActions(state.actions,data.actions);
       save();renderAll();
     }
     setBadge('ok','Synkad');
@@ -719,6 +801,20 @@ document.getElementById('gh-save').onclick=async function(){
   }catch(e){setGhStatus('Fel: '+e.message+'. Kontrollera namn, repo och att token har Contents-behörighet.','err');}
 };
 
+// ── Nyheter / changelog ───────────────────────────────
+function renderNews(){
+  var fns=APPINFO.functions.map(function(f){return '<li>'+esc(f)+'</li>';}).join('');
+  var cl=APPINFO.changelog.map(function(c){
+    var items=c.items.map(function(it){return '<li>'+esc(it)+'</li>';}).join('');
+    return '<div class="cl-entry"><div class="cl-ver">v'+esc(c.v)+' <span class="cl-date">'+esc(c.d)+'</span></div><ul class="cl-items">'+items+'</ul></div>';
+  }).join('');
+  document.getElementById('news-body').innerHTML=
+    '<div class="card-panel"><div class="news-tag">'+esc(APPINFO.tagline)+'</div><div class="soft" style="margin-top:8px">'+esc(APPINFO.audience)+'</div></div>'+
+    '<div class="section-title">Funktioner</div><div class="card-panel"><ul class="feat-list">'+fns+'</ul></div>'+
+    '<div class="section-title">Versionshistorik</div><div class="card-panel">'+cl+'</div>';
+  document.getElementById('news-ver').textContent='Nattvak v'+APPINFO.version;
+}
+
 // ── Tema ──────────────────────────────────────────────
 function applyTheme(){
   var m=state.theme||'auto';
@@ -745,6 +841,7 @@ for(var nb=0;nb<navBtns.length;nb++){navBtns[nb].onclick=function(){
   document.getElementById('view-'+this.dataset.v).classList.add('active');
   if(this.dataset.v==='history')renderHistory();
   if(this.dataset.v==='pattern')renderPattern();
+  if(this.dataset.v==='news')renderNews();
 };}
 
 // ── Live-uppdatering ──────────────────────────────────

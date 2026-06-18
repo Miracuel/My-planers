@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Läslätt">
 <meta name="theme-color" content="#F4F1EA">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C8C84'/%3E%3Ctext x='50' y='70' font-size='58' text-anchor='middle' fill='%23F4F1EA' font-family='Georgia,serif'%3EÅ%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C8C84'/%3E%3Ctext x='50' y='70' font-size='58' text-anchor='middle' fill='%23F4F1EA' font-family='Georgia,serif'%3EÅ%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C8C84'/%3E%3Ctext x='50' y='72' font-size='54' text-anchor='middle'%3E📖%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C8C84'/%3E%3Ctext x='50' y='72' font-size='54' text-anchor='middle'%3E📖%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href='data:application/manifest+json,{"name":"Läslätt","short_name":"Läslätt","display":"standalone","background_color":"%23F4F1EA","theme_color":"%23F4F1EA","start_url":"."}'>
 <title>Läslätt</title>
 <style>
@@ -134,6 +134,16 @@ input[type=range]{accent-color:var(--accent);padding:0;background:transparent}
 .topbar{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:2px}
 .theme-btn,.sync-mini{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit}
 
+.func-item{display:flex;gap:9px;font-size:13px;padding:7px 0;border-top:1px solid var(--line);line-height:1.5}
+.func-item:first-child{border-top:none}
+.func-item .dot{color:var(--accent);flex-shrink:0}
+.cl-entry{padding:10px 0;border-top:1px solid var(--line)}
+.cl-entry:first-child{border-top:none}
+.cl-head{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
+.cl-head b{font-size:14px;color:var(--accent)}
+.cl-head time{font-size:11px;color:var(--muted)}
+.cl-entry ul{margin:0;padding-left:18px}
+.cl-entry li{font-size:13px;line-height:1.6;margin:2px 0}
 html{background:var(--bg)}
 body{transition:background .4s,color .4s}
 html[data-theme=dark]{
@@ -263,6 +273,23 @@ html[data-theme=dark]{
     <input type="file" id="import-file" accept=".json" style="display:none">
   </div>
 </div>
+
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <div class="section-title" style="margin-top:0">Nyheter &amp; funktioner</div>
+  <div class="card-panel">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <b style="font-family:Georgia,serif;font-size:17px">📖 Läslätt</b>
+      <span class="sp-badge" id="news-ver"></span>
+    </div>
+    <div class="soft" id="news-tagline" style="margin-top:6px"></div>
+    <div class="soft" id="news-audience" style="margin-top:4px;font-style:italic"></div>
+  </div>
+  <div class="section-title">Det här kan appen</div>
+  <div class="card-panel"><div id="news-functions"></div></div>
+  <div class="section-title">Förändringar</div>
+  <div class="card-panel"><div id="news-log"></div></div>
+</div>
 </div>
 
 <!-- Nav -->
@@ -271,6 +298,7 @@ html[data-theme=dark]{
   <button data-v="write"><span>✍️</span>Skriva</button>
   <button data-v="words"><span>🔤</span>Ord</button>
   <button data-v="style"><span>🎚️</span>Stil</button>
+  <button data-v="news"><span>✨</span>Nytt</button>
 </div>
 
 <!-- Sheets -->
@@ -324,11 +352,65 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
+// ── App-info & changelog (visas i vyn "Nyheter & funktioner") ──
+var APPINFO={
+  id:'laslatt',
+  version:'1.1.0',
+  tagline:'Lässtöd vid dyslexi – få text uppläst med ordmarkering, skriv med rösten och öva kluriga ord.',
+  audience:'För dig som vill ha texter upplästa och lättläst formaterade, och ett eget ordförråd att träna på – i fickan och på datorn.',
+  functions:[
+    'Uppläsning av text med ordmarkering och justerbar hastighet',
+    'Fokusläge som visar en mening i taget',
+    'Lättläst formatering: typsnitt, storlek, rad-/bokstavs-/ordavstånd, radbredd, färgöverlägg, bionisk läsning och stavelser',
+    'Skrivyta med diktering (tal-till-text) och uppläsning av det du skrivit',
+    'Egen ordbank med stavelsedelning och bokstavering',
+    'Synk mellan dina enheter via ett privat GitHub-repo',
+    'Mörkt, ljust och automatiskt tema',
+    'Säkerhetskopiering med export/import (JSON)'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Synken uppgraderad till svitstandard: union-merge per id så inget tappas mellan enheter, och egen synkfil laslatt.json',
+      'Ny vy: Nyheter & funktioner med inbyggd changelog',
+      'Centralen-metadata inbäddad så appen kan synkas in automatiskt',
+      'Bok-ikon (📖) som favicon, apple-touch-icon och i webbmanifestet',
+      'Desktopversionen genereras nu enligt svitens desktop-lager (byte-identisk JS)'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Första versionen: uppläsning, fokusläge, lättläst formatering, skrivyta med diktering, ordbank, tema och säkerhetskopiering'
+    ]}
+  ]
+};
+// Centralen-kortets fält (sektion/kategori sätts i Centralen, inte här)
+var CENTRALEN={
+  id:'laslatt',
+  namn:'Läslätt',
+  ikon:'📖',
+  desc:'Lässtöd vid dyslexi: uppläsning med ordmarkering, lättläst formatering, diktering och egen ordbank.',
+  mobil:'laslatt.html',
+  desktop:'laslatt-desktop.html',
+  farger:{bg:'#F4F1EA',line:'#DAD3C5',ink:'#353029',muted:'#837B6C',accent:'#2C8C84',iconbg:'#D2E7E3'}
+};
+
 // ── Synk-innehåll (det som följer mellan enheter) ─────
+// API-nyckel och tema/stil ingår ALDRIG i payloaden – bara innehållet.
 function syncPayload(){return {notes:state.notes,words:state.words};}
+function mergeById(localArr,remoteArr){
+  var map={},order=[];
+  function take(it){if(!it||!it.id)return;if(!map[it.id])order.push(it.id);
+    var ex=map[it.id];
+    if(!ex){map[it.id]=it;return;}
+    var a=ex.upd||0,b=it.upd||0;
+    if(b>=a)map[it.id]=it;
+  }
+  (localArr||[]).forEach(take);
+  (remoteArr||[]).forEach(take);
+  return order.map(function(k){return map[k];});
+}
 function applyPayload(d){
-  if(d&&Array.isArray(d.notes))state.notes=d.notes;
-  if(d&&Array.isArray(d.words))state.words=d.words;
+  if(!d)return;
+  if(Array.isArray(d.notes))state.notes=mergeById(state.notes,d.notes);
+  if(Array.isArray(d.words))state.words=mergeById(state.words,d.words);
 }
 
 // ── GitHub-synk (samma motor som övriga appar) ────────
@@ -337,7 +419,7 @@ var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
-function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/laslatt.json';}
 function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
 function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
@@ -676,7 +758,7 @@ function renderWords(){
         var a=this.dataset.a;
         if(a==='hear')speak(w.text,null);
         else if(a==='spell')speak(w.text.split('').join(', '),null);
-        else if(a==='learn'){w.learned=!w.learned;persist();renderWords();}
+        else if(a==='learn'){w.learned=!w.learned;w.upd=Date.now();persist();renderWords();}
         else if(a==='del'){state.words=state.words.filter(function(x){return x.id!==id;});persist();renderWords();}
       };
     });
@@ -684,7 +766,7 @@ function renderWords(){
 }
 function addWord(){
   var inp=document.getElementById('word-in');var t=inp.value.trim();if(!t)return;
-  state.words.unshift({id:uid(),text:t,learned:false});inp.value='';persist();renderWords();
+  state.words.unshift({id:uid(),text:t,learned:false,upd:Date.now()});inp.value='';persist();renderWords();
 }
 document.getElementById('word-add').onclick=addWord;
 document.getElementById('word-in').onkeydown=function(e){if(e.key==='Enter')addWord();};
@@ -768,7 +850,22 @@ for(var n=0;n<navBtns.length;n++){
     if(this.dataset.v==='style'){renderStyleControls();renderPreview();}
     if(this.dataset.v==='words')renderWords();
     if(this.dataset.v==='write'&&!curNote)renderNotes();
+    if(this.dataset.v==='news')renderNews();
   };
+}
+
+// ── Nyheter & funktioner ──────────────────────────────
+function renderNews(){
+  document.getElementById('news-ver').textContent='v'+APPINFO.version;
+  document.getElementById('news-tagline').textContent=APPINFO.tagline;
+  document.getElementById('news-audience').textContent=APPINFO.audience;
+  document.getElementById('news-functions').innerHTML=APPINFO.functions.map(function(f){
+    return '<div class="func-item"><span class="dot">›</span><span>'+esc(f)+'</span></div>';
+  }).join('');
+  document.getElementById('news-log').innerHTML=APPINFO.changelog.map(function(e){
+    return '<div class="cl-entry"><div class="cl-head"><b>v'+esc(e.v)+'</b><time>'+esc(e.d)+'</time></div><ul>'
+      +e.items.map(function(it){return '<li>'+esc(it)+'</li>';}).join('')+'</ul></div>';
+  }).join('');
 }
 
 // ── Säkerhetskopiering ────────────────────────────────

@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Autistkompassen">
 <meta name="theme-color" content="#EEF1EB">
-<link rel="manifest" href='data:application/manifest+json,{"name":"Autistkompassen","short_name":"Kompassen","display":"standalone","background_color":"%23EEF1EB","theme_color":"%23EEF1EB","start_url":"."}'>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%236E7CA0'/><text x='50' y='50' font-size='58' text-anchor='middle' dominant-baseline='central'>🧭</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%236E7CA0'/><text x='50' y='50' font-size='58' text-anchor='middle' dominant-baseline='central'>🧭</text></svg>">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Autistkompassen","short_name":"Kompassen","display":"standalone","background_color":"%23EEF1EB","theme_color":"%236E7CA0","start_url":"."}'>
 <title>Autistkompassen</title>
 <style>
 :root{
@@ -278,6 +280,11 @@ textarea{min-height:84px;resize:vertical;line-height:1.5}
   <button class="btn ghost btn-full" style="margin-top:8px" data-act="open-need-mgr">Hantera korten</button>
 </div>
 
+<!-- NYTT -->
+<div class="view" id="view-nytt">
+  <div id="nytt-body"></div>
+</div>
+
 </div><!-- /app -->
 
 <!-- NAV -->
@@ -287,6 +294,7 @@ textarea{min-height:84px;resize:vertical;line-height:1.5}
   <button data-v="maende"><span class="ic">📊</span>Mående</button>
   <button data-v="forbered"><span class="ic">🧭</span>Förbered</button>
   <button data-v="verktyg"><span class="ic">🚨</span>Verktyg</button>
+  <button data-v="nytt"><span class="ic">✨</span>Nytt</button>
 </div>
 
 <!-- SHEETS -->
@@ -479,9 +487,55 @@ textarea{min-height:84px;resize:vertical;line-height:1.5}
   </div>
 </div>
 
+<!-- Centralen-metadata: läses automatiskt in i Centralen (sektion sätts i Centralen) -->
+<script type="application/json" id="centralen-meta">
+{"id":"autistkompassen","namn":"Autistkompassen","ikon":"🧭","desc":"Lugn, tydlig och förutsägbar vardagsapp för personer med autism.","mobil":"autistkompassen.html","desktop":"autistkompassen-desktop.html","farger":{"bg":"#EEF1EB","line":"#CDD4C5","ink":"#2F342A","muted":"#6E766A","accent":"#6E7CA0","iconbg":"#DCE1EC"}}
+</script>
+
 <script>
 var STORE='autistkompassen_v1';
 var AI_KEY='autistkompassen_ai_key';
+
+// ── Appinfo / changelog (visas i vyn "Nyheter & funktioner") ──
+var APPINFO={
+  id:'autistkompassen',
+  namn:'Autistkompassen',
+  ikon:'🧭',
+  version:'1.1.0',
+  tagline:'En lugn, tydlig och förutsägbar vardagsapp för personer med autism.',
+  audience:'För autistiska personer och de som stöttar dem.',
+  functions:[
+    'Visuell dagstavla med ikoner, tider, steg-för-steg och "vad händer sen"',
+    'Rutiner & checklistor med "ett steg i taget" och färdiga mallar',
+    'Mående: energi, stress, sömn, ljudkänslighet, social ork, återhämtning',
+    'Sensorisk karta över triggers (ljud, ljus, lukt, beröring, mat, miljö, plats)',
+    'Social förberedelse och AI-coach (bryt ner uppgift, skriv meddelande, planera energisnål dag)',
+    'Platsförberedelse med plan, sensoriska risker och plan B',
+    'Överbelastningsläge: andning, 5·4·3·2·1, minska intryck, paus, trygg kontakt, exit-plan',
+    'Kommunikationskort att visa stort för andra',
+    'Mönster & insikter över tid'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Inbyggd GitHub-synk i svit-standard: per-app-fil autistkompassen.json och union-merge per id (förlorar inga poster mellan enheter)',
+      'Changelog på två sätt: den här vyn (Nyheter & funktioner) samt separata filer autistkompassen-changelog.json och changelog-autistkompassen.md',
+      'Separat desktop- och mobilversion (desktop = rent CSS-lager, oförändrad JS)',
+      'Genererad favicon (kompass på accentfärg) i mobil och desktop',
+      'Centralen-metadata förinställd så Centralen kan läsa in kortet automatiskt'
+    ]},
+    {v:'1.0.0',d:'2026-06-17',items:[
+      'Första versionen: dagstavla, rutiner, mående, sensorisk karta, social förberedelse, AI-coach, platsförberedelse, överbelastningsläge och kommunikationskort'
+    ]}
+  ]
+};
+
+// ── Centralen-metadata (sektion sätts i Centralen, inte här) ──
+var CENTRALEN_META={
+  id:'autistkompassen',namn:'Autistkompassen',ikon:'🧭',
+  desc:APPINFO.tagline,
+  mobil:'autistkompassen.html',desktop:'autistkompassen-desktop.html',
+  farger:{bg:'#EEF1EB',line:'#CDD4C5',ink:'#2F342A',muted:'#6E766A',accent:'#6E7CA0',iconbg:'#DCE1EC'}
+};
 var DAY_NAMES=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
 var EVENT_ICONS=['🍽️','🛏️','🚌','🏫','💼','🏥','🛒','🚿','🧹','🎧','🌳','📞','👥','💊','📚','⭐'];
 var METRICS=[['energy','Energi','låg','hög'],['stress','Stress','lugn','hög'],['sleep','Sömn','dålig','bra'],['sound','Ljudkänslighet','låg','hög'],['social','Social ork','tom','full'],['recovery','Återhämtningsbehov','litet','stort']];
@@ -548,7 +602,7 @@ var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
-function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/autistkompassen.json';}
 function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
 function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
@@ -562,12 +616,30 @@ function applyData(d){
   if(Array.isArray(d.places))places=d.places;
   if(d.settings&&typeof d.settings==='object')settings=Object.assign(settings,d.settings);
 }
+// Union-merge per id: behåll fjärrposter, lägg till lokala poster som saknas i fjärren (förlorar inga entries)
+function mergeById(local,remote){
+  if(!Array.isArray(remote))return local;
+  if(!Array.isArray(local))return remote;
+  var out=remote.slice();var seen={};var i;
+  for(i=0;i<remote.length;i++)if(remote[i]&&remote[i].id)seen[remote[i].id]=true;
+  for(i=0;i<local.length;i++)if(local[i]&&local[i].id&&!seen[local[i].id])out.push(local[i]);
+  return out;
+}
+function mergeData(d){
+  if(Array.isArray(d.events))events=mergeById(events,d.events);
+  if(Array.isArray(d.routines))routines=mergeById(routines,d.routines);
+  if(Array.isArray(d.needs))needs=mergeById(needs,d.needs);
+  if(Array.isArray(d.energyLog))energyLog=mergeById(energyLog,d.energyLog);
+  if(Array.isArray(d.triggers))triggers=mergeById(triggers,d.triggers);
+  if(Array.isArray(d.places))places=mergeById(places,d.places);
+  if(d.settings&&typeof d.settings==='object')settings=Object.assign(settings,d.settings);
+}
 function ghGet(){return fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'}).then(function(r){
   if(r.status===404){sync.sha=null;return null;}
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});});}
 function ghPull(){if(!syncOn())return Promise.resolve();setBadge('load','Hämtar…');
-  return ghGet().then(function(d){if(d){applyData(d);saveData();renderAll();}setBadge('ok','Synkad');}).catch(function(){setBadge('err','Synkfel');});}
+  return ghGet().then(function(d){if(d){mergeData(d);if(doneToday.date!==todayISO())doneToday={date:todayISO(),ids:[]};saveData();renderAll();}setBadge('ok','Synkad');}).catch(function(){setBadge('err','Synkfel');});}
 function ghPush(){if(!syncOn())return Promise.resolve();setBadge('load','Sparar…');
   var content=b64enc(JSON.stringify({events:events,routines:routines,needs:needs,energyLog:energyLog,triggers:triggers,places:places,settings:settings,updated:new Date().toISOString()}));
   function doPut(){var body={message:'Uppdatering via Autistkompassen',content:content};if(sync.sha)body.sha=sync.sha;var h=ghHeaders();h['Content-Type']='application/json';return fetch(ghUrl(),{method:'PUT',headers:h,body:JSON.stringify(body)});}
@@ -689,7 +761,21 @@ function renderPlaces(){var c=document.getElementById('place-list');if(!places.l
 function renderNeeds(){var g=document.getElementById('need-grid');var h='';for(var i=0;i<needs.length;i++)h+='<button class="need-card" data-act="show-need:'+needs[i].id+'">'+esc(needs[i].text)+'</button>';g.innerHTML=h;}
 function renderNeedMgr(){var l=document.getElementById('need-mgr-list');if(!needs.length){l.innerHTML='<div class="empty">Inga kort än.</div>';return;}var h='';for(var i=0;i<needs.length;i++)h+='<div class="day-row"><span class="lbl">'+esc(needs[i].text)+'</span><button class="row-ic" data-act="del-need:'+needs[i].id+'">&times;</button></div>';l.innerHTML=h;}
 
-function renderAll(){renderDag();renderRoutines();renderEnergyForm();renderTriggerMap();renderInsights();renderSocialKinds();renderPlaces();renderNeeds();}
+function renderNytt(){
+  var b=document.getElementById('nytt-body');
+  var h='<div class="card"><div class="now-label">'+APPINFO.ikon+' Version '+esc(APPINFO.version)+'</div><div class="now-title" style="font-size:22px">'+esc(APPINFO.namn)+'</div><div class="soft" style="margin-top:4px">'+esc(APPINFO.tagline)+'</div><div class="soft" style="margin-top:6px">'+esc(APPINFO.audience)+'</div></div>';
+  h+='<div class="section-title">Funktioner</div><div class="card"><div class="help-list">';
+  for(var i=0;i<APPINFO.functions.length;i++)h+='<div class="h">'+esc(APPINFO.functions[i])+'</div>';
+  h+='</div></div>';
+  h+='<div class="section-title">Nyheter</div>';
+  for(var c=0;c<APPINFO.changelog.length;c++){var cl=APPINFO.changelog[c];
+    h+='<div class="card"><div class="routine-head"><span class="nm" style="font-size:16px">Version '+esc(cl.v)+'</span><span class="pill">'+esc(cl.d)+'</span></div><ol class="ev-steps" style="margin-left:0">';
+    for(var j=0;j<cl.items.length;j++)h+='<li>'+esc(cl.items[j])+'</li>';
+    h+='</ol></div>';}
+  b.innerHTML=h;
+}
+
+function renderAll(){renderDag();renderRoutines();renderEnergyForm();renderTriggerMap();renderInsights();renderSocialKinds();renderPlaces();renderNeeds();renderNytt();}
 
 // ── Sheets ──────────────────────────────────────────────
 var openSheetId=null;

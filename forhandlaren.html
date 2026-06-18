@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Förhandlaren">
 <meta name="theme-color" content="#0C1320">
 <link rel="manifest" href='data:application/manifest+json,{"name":"Förhandlaren","short_name":"Förhandla","display":"standalone","background_color":"%230C1320","theme_color":"%230C1320","start_url":"."}'>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='%230C1320'/><rect x='4' y='4' width='56' height='56' rx='11' fill='none' stroke='%23C68A4E' stroke-width='2.5'/><text x='32' y='45' font-size='34' text-anchor='middle'>🤝</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><rect width='180' height='180' rx='40' fill='%230C1320'/><text x='90' y='126' font-size='100' text-anchor='middle'>🤝</text></svg>">
 <title>Förhandlaren</title>
 <style>
 :root{
@@ -167,11 +169,13 @@ textarea{resize:vertical;line-height:1.5;min-height:64px}
   <div class="section-title">Pågående</div>
   <div class="card-panel"><div id="home-list"></div></div>
 
+  <div style="text-align:center;margin-top:14px"><span class="sync-badge" id="sync-state">Lokal</span></div>
   <div class="foot">
     <button id="export-btn">Säkerhetskopiera</button>
     <button id="import-btn">Importera</button>
     <button id="sync-btn">Synk</button>
     <button id="ai-set-btn">AI-nyckel</button>
+    <button id="news-btn">Nyheter</button>
     <input type="file" id="import-file" accept=".json" style="display:none">
   </div>
   <div class="privacy">Förhandlingar synkas via ditt privata GitHub-repo. AI-nyckeln och allt annat sparas lokalt på den här enheten.</div>
@@ -340,6 +344,20 @@ textarea{resize:vertical;line-height:1.5;min-height:64px}
   </div>
 </div>
 
+<!-- ════════ NYHETER & FUNKTIONER ════════ -->
+<div class="view" id="view-news">
+  <div class="section-title">Nyheter &amp; funktioner</div>
+  <div class="card-panel">
+    <div style="font-family:Georgia,serif;font-size:16px;color:var(--ink)" id="news-tagline"></div>
+    <div class="hint" style="margin-top:6px" id="news-audience"></div>
+    <div style="font-size:11px;color:var(--copper);margin-top:8px" id="news-version"></div>
+  </div>
+  <div class="section-title">Det här kan appen</div>
+  <div class="card-panel"><div id="news-functions"></div></div>
+  <div class="section-title">Ändringar</div>
+  <div class="card-panel"><div id="news-changelog"></div></div>
+</div>
+
 <!-- Bottom nav -->
 <div class="nav">
   <button class="active" data-v="home"><span>&#9670;</span>Hem</button>
@@ -437,6 +455,46 @@ function daysTo(iso){
   return Math.round((d-t)/86400000);
 }
 
+// ── App-info, changelog & Centralen-metadata ──────────
+var APPINFO={
+  id:'forhandlaren',
+  version:'1.1.0',
+  tagline:'Förbered, genomför och följ upp förhandlingar med ro.',
+  audience:'För dig som vill gå in i förhandlingar lugn, förberedd och självsäker.',
+  functions:[
+    'Förhandlingskort: motpart, ämne, mål, lägsta gräns, erbjudanden, risker, deadline och status',
+    'Förberedelseguide med AI-genererad förberedelseplan',
+    'AI-förhandlingscoach för formuleringar, strategi, motargument och varningsflaggor',
+    'Scenarioträning som rollspel med feedback',
+    'Mötesläge – lugnt fokusläge med dina tre punkter och lägsta gräns',
+    'Efteråt: AI-sammanfattning och uppföljningsmail',
+    'Mina principer & gränser som coachen tar hänsyn till',
+    'GitHub-synk och JSON-säkerhetskopiering'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Synk uppgraderad till svit-standard: per-app-fil forhandlaren.json och union-merge per id så inga rader tappas mellan enheter.',
+      'Synkstatus visas nu som badge: Lokal / Hämtar / Sparar / Synkad / Synkfel.',
+      'Ny vy "Nyheter & funktioner" med inbyggd changelog.',
+      'Egen favicon (🤝 i kopparram) i både mobil och desktop.',
+      'Centralen-metadata inbäddad så hubben kan synka in kortet automatiskt.'
+    ]},
+    {v:'1.0.0',d:'2026-06-18',items:[
+      'Första version: förhandlingskort, förberedelseguide, AI-coach, scenarioträning, mötesläge, efteråt-vy, principer, GitHub-synk och AI via egen Anthropic-nyckel.'
+    ]}
+  ]
+};
+// Centralen-kortmetadata (sektion/kategori sätts i Centralen, inte här)
+var CENTRALEN={
+  id:'forhandlaren',
+  namn:'Förhandlaren',
+  ikon:'🤝',
+  desc:'Förbered, genomför och följ upp förhandlingar – med kort, coach, träning och mötesläge.',
+  mobil:'forhandlaren.html',
+  desktop:'forhandlaren-desktop.html',
+  farger:{bg:'#0C1320',line:'#2A3A5C',ink:'#E8E0CE',muted:'#8896AE',accent:'#C68A4E',iconbg:'#14203A'}
+};
+
 // ── Data ───────────────────────────────────────────────
 var STORE='forhandlaren_v1';
 var state={negs:[],principles:[],coach:[]};
@@ -464,10 +522,22 @@ var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 var syncOn=function(){return !!(sync.owner&&sync.repo&&sync.token);};
-var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';};
+var ghUrl=function(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/forhandlaren.json';};
 var ghHeaders=function(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};};
 var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
+function mergeById(local,remote){
+  var map={},out=[],i;
+  for(i=0;i<(local||[]).length;i++){if(local[i]&&local[i].id)map[local[i].id]=local[i];}
+  for(i=0;i<(remote||[]).length;i++){if(remote[i]&&remote[i].id)map[remote[i].id]=remote[i];}
+  for(var k in map)if(map.hasOwnProperty(k))out.push(map[k]);
+  return out;
+}
+function mergeStrings(local,remote){
+  var seen={},out=[],all=(local||[]).concat(remote||[]),i;
+  for(i=0;i<all.length;i++){if(!seen[all[i]]){seen[all[i]]=1;out.push(all[i]);}}
+  return out;
+}
 function setBadge(s,msg){var b=document.getElementById('sync-state');if(!b)return;b.textContent=msg;b.className='sync-badge'+(s==='ok'?' ok':s==='err'?' err':'');}
 function setSyncBtn(){var el=document.getElementById('sync-btn');el.textContent=syncOn()?'Synkad ✓':'Synk';}
 async function ghGet(){
@@ -480,23 +550,27 @@ async function ghGet(){
 async function ghPull(){
   if(!syncOn())return;
   try{
+    setBadge('load','Hämtar…');
     var data=await ghGet();
     if(data){
-      if(Array.isArray(data.negs))state.negs=data.negs;
-      if(Array.isArray(data.principles))state.principles=data.principles;
-      if(Array.isArray(data.coach))state.coach=data.coach;
+      if(Array.isArray(data.negs))state.negs=mergeById(state.negs,data.negs);
+      if(Array.isArray(data.coach))state.coach=mergeById(state.coach,data.coach);
+      if(Array.isArray(data.principles))state.principles=mergeStrings(state.principles,data.principles);
       save();renderAll();
     }
-  }catch(e){}
+    setBadge('ok','Synkad');
+  }catch(e){setBadge('err','Synkfel');}
 }
 async function ghPush(){
   if(!syncOn())return;
+  setBadge('load','Sparar…');
   var content=b64enc(JSON.stringify({negs:state.negs,principles:state.principles,coach:state.coach,updated:new Date().toISOString()}));
   var doPut=function(){return fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Uppdatering via appen',content:content},sync.sha?{sha:sync.sha}:{}))});};
   var r=await doPut();
   if(r.status===409||r.status===422){try{await ghGet();}catch(e){}r=await doPut();}
-  if(!r.ok)throw new Error('HTTP '+r.status);
+  if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status);}
   var j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;
+  setBadge('ok','Synkad');
 }
 
 // ── AI ─────────────────────────────────────────────────
@@ -537,6 +611,7 @@ function showView(v){
   if(v==='list')renderList();
   if(v==='coach')renderCoachLog();
   if(v==='principles')renderPrinciples();
+  if(v==='news')renderNews();
   window.scrollTo(0,0);
 }
 for(var i=0;i<navBtns.length;i++){(function(b){b.onclick=function(){showView(b.dataset.v);};})(navBtns[i]);}
@@ -853,6 +928,19 @@ document.getElementById('btn-train-fb').onclick=async function(){
   }catch(err){if(err.message!=='NOKEY')alert('Fel: '+err.message);}
 };
 
+// ── Nyheter & funktioner ───────────────────────────────
+function renderNews(){
+  document.getElementById('news-tagline').textContent=APPINFO.tagline;
+  document.getElementById('news-audience').textContent=APPINFO.audience;
+  document.getElementById('news-version').textContent='Version '+APPINFO.version;
+  document.getElementById('news-functions').innerHTML=APPINFO.functions.map(function(f){return '<div class="up-item"><div>'+esc(f)+'</div></div>';}).join('');
+  document.getElementById('news-changelog').innerHTML=APPINFO.changelog.map(function(c){
+    return '<div style="padding:10px 0;border-top:1px solid var(--line)">'+
+      '<div style="font-family:Georgia,serif;color:var(--copper);font-size:14px">'+esc(c.v)+' <span style="color:var(--muted);font-size:11px">'+esc(fmtDate(c.d))+'</span></div>'+
+      '<div style="font-size:12.5px;color:var(--ink);line-height:1.6;margin-top:4px">'+c.items.map(function(it){return '&middot; '+esc(it);}).join('<br>')+'</div></div>';
+  }).join('').replace('border-top:1px solid var(--line)','border-top:none');
+}
+
 // ── Principer ──────────────────────────────────────────
 function renderPrinciples(){
   var el=document.getElementById('prin-list');
@@ -881,6 +969,7 @@ document.getElementById('ai-set-btn').onclick=function(){document.getElementById
 document.getElementById('ai-key-save').onclick=function(){var v=document.getElementById('ai-key').value.trim();if(v)localStorage.setItem(AI_KEY,v);closeSheets();};
 document.getElementById('ai-key-clear').onclick=function(){localStorage.removeItem(AI_KEY);document.getElementById('ai-key').value='';};
 document.getElementById('ai-close').onclick=closeSheets;
+document.getElementById('news-btn').onclick=function(){showView('news');};
 
 // ── Synk-UI ────────────────────────────────────────────
 function setGhStatus(msg,type){var el=document.getElementById('gh-status');el.style.display='block';el.style.background=type==='ok'?'rgba(111,166,122,.15)':type==='err'?'rgba(217,138,122,.15)':'rgba(95,163,201,.15)';el.style.color=type==='ok'?'var(--done)':type==='err'?'var(--warn)':'var(--active)';el.textContent=msg;}

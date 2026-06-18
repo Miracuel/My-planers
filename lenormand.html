@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lenormand">
 <meta name="theme-color" content="#0E1411">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='4' y='4' width='92' height='92' rx='20' fill='%231F2A22' stroke='%23CF8A52' stroke-width='5'/><text x='50' y='55' font-size='52' text-anchor='middle' dominant-baseline='central'>&#128273;</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231F2A22'/><rect x='6' y='6' width='88' height='88' rx='18' fill='none' stroke='%23CF8A52' stroke-width='5'/><text x='50' y='55' font-size='52' text-anchor='middle' dominant-baseline='central'>&#128273;</text></svg>">
 <link rel="manifest" href='data:application/manifest+json,{"name":"LenormandGuiden","short_name":"Lenormand","display":"standalone","background_color":"%230E1411","theme_color":"%230E1411","start_url":"."}'>
 <title>LenormandGuiden</title>
 <style>
@@ -284,6 +286,7 @@ label.fld{display:block;font-size:11px;color:var(--gold);margin:10px 0 3px}
     <button class="active" data-m="utv">&#128200; Utveckling</button>
     <button data-m="akad">&#128218; Akademin</button>
     <button data-m="andl">&#127769; Andligt</button>
+    <button data-m="nyh">&#10024; Nyheter</button>
     <button data-m="inst">&#9881; Inst.</button>
   </div>
   <div id="mer-utv">
@@ -302,6 +305,10 @@ label.fld{display:block;font-size:11px;color:var(--gold);margin:10px 0 3px}
     <div class="section-title">Spirituell dagbok</div>
     <div class="card-panel"><button class="btn" style="width:100%" onclick="openSheet('spirit-sheet')">+ Ny anteckning</button></div>
     <div class="card-panel" id="spirit-list"></div>
+  </div>
+  <div id="mer-news" style="display:none">
+    <div class="section-title">Nyheter &amp; funktioner</div>
+    <div id="news-body"></div>
   </div>
   <div id="mer-inst" style="display:none">
     <div class="section-title">Inst&auml;llningar</div>
@@ -470,6 +477,50 @@ label.fld{display:block;font-size:11px;color:var(--gold);margin:10px 0 3px}
 
 <script>
 /* ===== LenormandGuiden ===== */
+
+/* App-info & changelog (visas i vyn "Nyheter & funktioner"; speglas i lenormand-changelog.json + changelog-lenormand.md) */
+var APPINFO={
+  id:'lenormand',
+  namn:'LenormandGuiden',
+  version:'1.1.0',
+  tagline:'Studera, dra och tolka Lenormandkort \u2013 med dagbok, Grand Tableau och AI-st\u00f6d.',
+  audience:'F\u00f6r dig som l\u00e4r dig och \u00f6var Lenormand och vill f\u00f6lja din egen utveckling \u00f6ver tid.',
+  functions:[
+    'Dagens kort med nyckelord, budskap och egna anteckningar',
+    'Kortbibliotek \u2013 alla 36 kort med k\u00e4rlek, arbete, h\u00e4lsa, andlighet och omv\u00e4nd betydelse',
+    'Kombinationslexikon som byggs upp av dina egna tolkningar',
+    'Tolkningsdagbok med fr\u00e5ga, l\u00e4ggning, analys och uppf\u00f6ljning',
+    'L\u00e4ggningar: 1/3/5/9 kort samt Grand Tableau med hus och signifikatorer',
+    'Lenormandakademin (niv\u00e5 1\u20135) och spirituell dagbok med m\u00e5nfaser',
+    'Utvecklingssp\u00e5rning \u2013 statistik \u00f6ver dina dragningar',
+    'AI-tolkare som studiehj\u00e4lp (Anthropic, egen nyckel lokalt)',
+    'Inbyggd GitHub-synk (union-merge per id) och JSON-export/import'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-14',items:[
+      'Ny vy "Nyheter & funktioner" med inbyggd changelog.',
+      'Synk-filen heter nu lenormand.json (appkollen-style, per-app-filnamn).',
+      'Tillagd genererad favicon (data-URI) i koppar-accent, samt apple-touch-icon.',
+      'F\u00f6rinst\u00e4lld Centralen-metadata s\u00e5 appen kan synkas in automatiskt.',
+      'Separat desktop-version genereras via rent CSS-lager (JS byte-identisk).'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'F\u00f6rsta version: dagens kort, kortbibliotek, dagbok, l\u00e4ggningar, Grand Tableau, akademi, spirituell dagbok, statistik, AI-tolkare, GitHub-synk och backup.'
+    ]}
+  ]
+};
+
+/* Centralen-kort-metadata (sektion s\u00e4tts i Centralen, inte h\u00e4r) */
+var CENTRALEN_META={
+  id:'lenormand',
+  namn:'LenormandGuiden',
+  ikon:'\uD83D\uDD11',
+  desc:'Studera, dra och tolka Lenormandkort med dagbok, Grand Tableau och AI-st\u00f6d.',
+  mobil:'lenormand.html',
+  desktop:'lenormand-desktop.html',
+  farger:{bg:'#0E1411',line:'#2C3A30',ink:'#ECE6D5',muted:'#8FA08E',accent:'#CF8A52',iconbg:'#1F2A22'}
+};
+
 /* Kortdata: n=namn, e=emoji, pc=spelkort, k=nyckelord, kar=kärlek, arb=arbete, hal=hälsa, and=andlighet, om=omvänt, hus=hus i Grand Tableau */
 var LC=[
 {n:'Ryttaren',e:'\uD83C\uDFC7',pc:'9\u2665',k:'Nyheter, r\u00f6relse, bes\u00f6k, kommunikation',kar:'Ett nytt m\u00f6te eller besked n\u00e4rmar sig; r\u00f6relse i relationen.',arb:'Nyheter, en ny kontakt eller ett snabbt projekt.',hal:'Energi och aktivitet, n\u00e5got \u00e4r i r\u00f6relse.',and:'Ett budskap \u00e4r p\u00e5 v\u00e4g till dig.',om:'F\u00f6rsenade nyheter eller falska f\u00f6rhoppningar.',hus:'Nyheter & ankomster'},
@@ -582,7 +633,7 @@ var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
-function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/lenormand-data.json';}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/lenormand.json';}
 function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
 function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
@@ -690,6 +741,7 @@ function wireSeg(segId,dataAttr,panels){
       if(sel==='komb')renderCombo();
       if(sel==='utv')renderStats();
       if(sel==='akad')renderAcademy();
+      if(sel==='nyh')renderNews();
       if(sel==='andl')renderSpirit();
       if(sel==='gt')renderGT();
       if(sel==='guide')renderGuide();
@@ -967,6 +1019,26 @@ function renderAcademy(){
   $('academy-list').innerHTML=ACADEMY.map(function(a){return '<div class="acc"><div class="acc-head" onclick="this.parentNode.classList.toggle(\'open\')"><span class="lvl">'+esc(a[0])+'</span><span class="ti">'+esc(a[1])+'</span><span class="ar">\u203a</span></div><div class="acc-body">'+esc(a[2])+'</div></div>';}).join('');
 }
 
+/* ===== Nyheter & funktioner ===== */
+function renderNews(){
+  var el=$('news-body');if(!el)return;
+  var h='<div class="card-panel">';
+  h+='<div style="font-family:Georgia,serif;font-size:18px;color:var(--gold)">'+esc(APPINFO.namn)+'</div>';
+  h+='<div class="sub" style="margin-top:2px">Version '+esc(APPINFO.version)+'</div>';
+  h+='<div style="margin-top:8px">'+esc(APPINFO.tagline)+'</div>';
+  h+='<div class="sub" style="margin-top:8px">'+esc(APPINFO.audience)+'</div>';
+  h+='</div>';
+  h+='<div class="section-title">Funktioner</div><div class="card-panel"><ul style="margin:0;padding-left:18px">';
+  h+=APPINFO.functions.map(function(f){return '<li style="margin:3px 0">'+esc(f)+'</li>';}).join('');
+  h+='</ul></div>';
+  h+='<div class="section-title">Versionshistorik</div>';
+  h+=APPINFO.changelog.map(function(c){
+    var items=c.items.map(function(i){return '<li style="margin:3px 0">'+esc(i)+'</li>';}).join('');
+    return '<div class="card-panel"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="color:var(--gold)">'+esc(c.v)+'</b><span class="sub">'+esc(c.d)+'</span></div><ul style="margin:6px 0 0;padding-left:18px">'+items+'</ul></div>';
+  }).join('');
+  el.innerHTML=h;
+}
+
 /* ===== Spirituell dagbok ===== */
 $('sp-save').onclick=function(){
   var entry={id:uid(),date:$('sp-date').value||todayKey,moon:$('sp-moon').value.trim(),lenormand:$('sp-lenormand').value.trim(),tarot:$('sp-tarot').value.trim(),dream:$('sp-dream').value.trim(),synch:$('sp-synch').value.trim()};
@@ -1036,7 +1108,7 @@ function confirmOrient(rev){
 /* ===== Segments ===== */
 wireSeg('kort-seg','k',[{key:'bib',id:'kort-bib'},{key:'komb',id:'kort-komb'}]);
 wireSeg('lagg-seg','l',[{key:'dra',id:'lagg-dra'},{key:'gt',id:'lagg-gt'},{key:'guide',id:'lagg-guide'}]);
-wireSeg('mer-seg','m',[{key:'utv',id:'mer-utv'},{key:'akad',id:'mer-akad'},{key:'andl',id:'mer-andl'},{key:'inst',id:'mer-inst'}]);
+wireSeg('mer-seg','m',[{key:'utv',id:'mer-utv'},{key:'akad',id:'mer-akad'},{key:'andl',id:'mer-andl'},{key:'nyh',id:'mer-news'},{key:'inst',id:'mer-inst'}]);
 
 /* Spirit-sheet defaults */
 $('spirit-sheet').addEventListener('transitionend',function(){});

@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="FOMO-Fri">
 <meta name="theme-color" content="#EEF0F4">
-<link rel="manifest" href='data:application/manifest+json,{"name":"FOMO-Fri","short_name":"FOMO-Fri","display":"standalone","background_color":"%23EEF0F4","theme_color":"%23EEF0F4","start_url":"."}'>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%238C84B8'/><text x='50' y='53' font-size='60' text-anchor='middle' dominant-baseline='central'>%F0%9F%8C%99</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%238C84B8'/><text x='50' y='53' font-size='60' text-anchor='middle' dominant-baseline='central'>%F0%9F%8C%99</text></svg>">
+<link rel="manifest" href='data:application/manifest+json,{"name":"FOMO-Fri","short_name":"FOMO-Fri","display":"standalone","background_color":"%23EEF0F4","theme_color":"%238C84B8","start_url":"."}'>
 <title>FOMO-Fri</title>
 <style>
 :root{
@@ -135,6 +137,19 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 /* Trygghetskort */
 .trygg{background:var(--calm-soft);border:1px solid var(--calm);border-radius:14px;padding:14px;font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#3D3858;text-align:center;min-height:80px;display:flex;align-items:center;justify-content:center}
 
+.func-area{padding:8px 0;border-top:1px solid var(--line)}
+.func-area:first-child{border-top:none}
+.func-area b{font-family:Georgia,serif;font-weight:400;font-size:14px}
+.func-area ul{margin:5px 0 0 0;padding-left:18px}
+.func-area li{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:3px}
+.cl-entry{padding:9px 0;border-top:1px solid var(--line)}
+.cl-entry:first-child{border-top:none}
+.cl-head{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.cl-ver{font-weight:600;font-size:13px;background:var(--calm-soft);color:#3D3858;padding:1px 9px;border-radius:9px}
+.cl-date{font-size:11px;color:var(--muted)}
+.cl-entry ul{margin:0;padding-left:18px}
+.cl-entry li{font-size:12px;color:var(--ink);line-height:1.6;margin-bottom:3px}
+html[data-theme=dark] .cl-ver{color:#D7D3EC}
 .foot{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
 .foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.8;margin-top:8px;line-height:1.6}
@@ -361,6 +376,20 @@ html[data-theme=dark] .verdict,html[data-theme=dark] .trygg{color:#D7D3EC}
     <button class="btn fill" id="api-save" style="width:100%;margin-top:12px">Spara nyckel</button>
   </div>
 </div>
+
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <div class="section-title" style="margin-top:0">Nyheter &amp; funktioner</div>
+  <div class="card-panel">
+    <div style="font-family:Georgia,serif;font-size:18px" id="news-title">FOMO-Fri</div>
+    <div class="soft" id="news-tagline" style="margin-top:2px"></div>
+    <div class="soft" id="news-audience" style="margin-top:8px"></div>
+  </div>
+  <div class="section-title">Funktioner</div>
+  <div class="card-panel" id="news-funcs"></div>
+  <div class="section-title">Uppdateringar</div>
+  <div class="card-panel" id="news-log"></div>
+</div>
 </div>
 
 <div class="nav">
@@ -369,6 +398,7 @@ html[data-theme=dark] .verdict,html[data-theme=dark] .trygg{color:#D7D3EC}
   <button data-v="cal"><span>🗓</span>Kalender</button>
   <button data-v="pattern"><span>〰</span>Mönster</button>
   <button data-v="me"><span>🧡</span>Mig</button>
+  <button data-v="news"><span>🎉</span>Nytt</button>
 </div>
 
 <!-- Sync overlay -->
@@ -531,6 +561,50 @@ const clamp=v=>Math.max(0,Math.min(100,v));
 const nowTime=()=>new Date().toTimeString().slice(0,5);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
+// ── APPINFO: version, changelog, funktioner (visas i vyn "Nyheter & funktioner") ──
+const APPINFO={
+  id:'fomofri',
+  version:'1.2.0',
+  tagline:'Välj medvetet. Släpp måstet.',
+  audience:'För dig som vill hantera FOMO, välja medvetet, säga nej utan skuld och minska social jämförelse — ett vardagsstöd, inte vård.',
+  functions:[
+    {area:'Idag',items:['Energi-ring du sätter själv, med zon-råd','FOMO-risk för dagen och en rekommenderad gräns','Senaste trigger, veckans JOMO-vinst och dina värden','AI-råd för dagen utifrån energi, triggers och planer']},
+    {area:'Check',items:['FOMO-check: känsla, trigger, app, person och vill/borde/osäker','"Vill jag egentligen?"-beslutsstöd med slutsats och fyra utfall','JOMO-läge med egenvårdsförslag när du väljer återhämtning','AI-stöd: perspektiv, verklighetscheck och snällt svarsförslag']},
+    {area:'Kalender',items:['Planer med grön/gul/röd-markering och måste/vill/borde','Energikostnad, glädjenivå och återhämtningsbehov per plan','Veckans energibudget med förbrukning','Efter-event-reflektion på passerade planer']},
+    {area:'Mönster',items:['Triggerkarta: känslor, personer och appar (30 dagar)','När på dygnet du triggas','Statistik: hur ofta bortval kändes rätt','Jämförelse-dagbok och "jag missade inget viktigt"-logg']},
+    {area:'Mig',items:['Mina värden, trygghetskort och scroll-gräns-timer','Social media-regler och säg nej-mallar','Egen Anthropic-nyckel (sparas bara lokalt)']},
+    {area:'Synk & data',items:['GitHub-synk (privat repo, egen fil fomo-fri.json), union-merge per id','Statusbadge, auto-pull vid start och synlighet, debouncad push','JSON-export/import som säkerhetskopia','Separat mobil- och desktopversion mot samma data']}
+  ],
+  changelog:[
+    {v:'1.2.0',d:'2026-06-18',items:[
+      'Synken slår nu ihop data per id (union-merge) i stället för att skriva över — två enheter kan logga samtidigt utan att tappa poster.',
+      'Ny vy "Nyheter & funktioner" med version, funktionslista och changelog.',
+      'Egen app-ikon (favicon) i lavendel med 🌙 — på flik, bokmärke och hemskärm.',
+      'Förinställd Centralen-metadata så hubben kan synka in kortet automatiskt.',
+      'Changelog levereras även som fomo-fri-changelog.json + changelog-fomo-fri.md.'
+    ]},
+    {v:'1.1.0',d:'2026-06-14',items:[
+      'Inbyggd GitHub-synk (appkollen-style) mot privat repo med fine-grained token lokalt.',
+      'Debouncad auto-push och auto-pull vid start och återbesök.',
+      'Separat desktopversion som synkar mot samma fomo-fri.json.'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Första versionen: Idag, Check, Kalender, Mönster och Mig.',
+      'FOMO-check, beslutsstöd, JOMO-läge, energibudget och AI-stöd.'
+    ]}
+  ]
+};
+
+// ── Centralen-metadata (förinställd så Centralen kan synka in kortet; sektion sätts i Centralen) ──
+const CENTRALEN_META={
+  id:'fomofri',
+  namn:'FOMO-Fri', ikon:'🌙',
+  desc:'Välj medvetet, släpp måstet — lugnare kring FOMO',
+  mobil:'fomo-fri.html',
+  desktop:'fomo-fri-desktop.html',
+  farger:{bg:'#EEF0F4',line:'#D6DAE6',ink:'#36384A',muted:'#797E92',accent:'#8C84B8',iconbg:'#E2DFF0'}
+};
+
 const VALUES=['Vila','Nära relationer','Hälsa','Ekonomi','Kreativitet','Studier','Familj','Egen tid'];
 const FEELINGS=['Rädd att missa något','Stressad av sociala medier','Avundsjuk','Utanför','Pressad att tacka ja','Ångrar att jag sa nej'];
 const APPS=['Instagram','TikTok','Snapchat','LinkedIn','Messenger','Discord'];
@@ -573,14 +647,30 @@ const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
 const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
 // Fält som synkas (allt utom enhetslokalt: apiKey, model, theme)
 const SYNC_FIELDS=['energy','checks','decisions','jomo','compares','reflections','plans','values','rules','nejmallar','trygghet','weekBudget'];
+// Poster-arrayer mergas per id (union); övriga fält avgörs av nyaste snapshot
+const ARRAY_FIELDS=['checks','decisions','jomo','compares','reflections','plans'];
+const CONFIG_FIELDS=['values','rules','nejmallar','trygghet','weekBudget'];
 
 function setBadge(st,msg){
   const b=document.getElementById('sync-badge');
   b.textContent=msg;
   b.className='sp-badge'+(st==='ok'?'':' offline');
 }
-function syncSnapshot(){const o={};SYNC_FIELDS.forEach(f=>o[f]=state[f]);o.updated=new Date().toISOString();return o;}
-function applySnapshot(d){SYNC_FIELDS.forEach(f=>{if(d[f]!==undefined)state[f]=d[f];});}
+// Union-merge två arrayer per id (id eller ts som nyckel); nyaste vinner vid krock
+const keyOf=x=>(x&&(x.id||x.ts))||JSON.stringify(x);
+function unionMerge(local,remote){
+  const m={};
+  (local||[]).forEach(x=>{m[keyOf(x)]=x;});
+  (remote||[]).forEach(x=>{const k=keyOf(x),e=m[k];if(!e){m[k]=x;}else{const et=e.updated||e.ts||0,xt=x.updated||x.ts||0;if(xt>et)m[k]=x;}});
+  return Object.values(m);
+}
+function syncSnapshot(){const o={};SYNC_FIELDS.forEach(f=>o[f]=state[f]);o.updated=state.updated||new Date().toISOString();return o;}
+function mergeRemote(d){
+  ARRAY_FIELDS.forEach(f=>{state[f]=unionMerge(state[f],d[f]);});
+  const remoteNewer=(d.updated||'')>(state.updated||'');
+  if(d.energy)state.energy=remoteNewer?Object.assign({},state.energy,d.energy):Object.assign({},d.energy,state.energy);
+  if(remoteNewer)CONFIG_FIELDS.forEach(f=>{if(d[f]!==undefined)state[f]=d[f];});
+}
 
 async function ghGet(){
   const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
@@ -595,7 +685,7 @@ async function ghPull(){
   try{
     setBadge('load','Hämtar…');
     const data=await ghGet();
-    if(data){applySnapshot(data);save();renderAll();}
+    if(data){mergeRemote(data);save();renderAll();}
     setBadge('ok','Synkad');
   }catch(e){setBadge('err','Synkfel');}
 }
@@ -612,7 +702,7 @@ async function ghPush(){
   setBadge('ok','Synkad');
 }
 let pushTimer=null;
-function persist(){save();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(()=>ghPush().catch(()=>{}),1200);}}
+function persist(){state.updated=new Date().toISOString();save();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(()=>ghPush().catch(()=>{}),1200);}}
 
 document.getElementById('sync-settings').onclick=()=>{
   document.getElementById('gh-owner').value=sync.owner;
@@ -633,7 +723,7 @@ document.getElementById('gh-save').onclick=async()=>{
   try{
     setGhStatus('Synkar…','ok');
     const data=await ghGet();
-    if(data){applySnapshot(data);save();renderAll();}
+    if(data){mergeRemote(data);save();renderAll();await ghPush();}
     else{await ghPush();}
     setGhStatus('Klart — synkad ✓','ok');
     setTimeout(()=>document.getElementById('sync-overlay').classList.add('hidden'),1100);
@@ -1116,8 +1206,18 @@ document.querySelectorAll('.nav button').forEach(b=>{
     if(b.dataset.v==='pattern')renderPattern();
     if(b.dataset.v==='cal')renderCal();
     if(b.dataset.v==='me'){renderValues();renderTrygg();renderRules();renderNej();}
+    if(b.dataset.v==='news')renderNews();
   };
 });
+
+// ── Nyheter & funktioner ──────────────────────────────
+function renderNews(){
+  document.getElementById('news-title').textContent='FOMO-Fri  ·  v'+APPINFO.version;
+  document.getElementById('news-tagline').textContent=APPINFO.tagline;
+  document.getElementById('news-audience').textContent=APPINFO.audience;
+  document.getElementById('news-funcs').innerHTML=APPINFO.functions.map(g=>'<div class="func-area"><b>'+esc(g.area)+'</b><ul>'+g.items.map(it=>'<li>'+esc(it)+'</li>').join('')+'</ul></div>').join('');
+  document.getElementById('news-log').innerHTML=APPINFO.changelog.map(e=>'<div class="cl-entry"><div class="cl-head"><span class="cl-ver">v'+esc(e.v)+'</span><span class="cl-date">'+esc(e.d)+'</span></div><ul>'+e.items.map(it=>'<li>'+esc(it)+'</li>').join('')+'</ul></div>').join('');
+}
 
 // ── Init ──────────────────────────────────────────────
 function renderToday(){renderEnergy();renderDash();renderDashPlans();}

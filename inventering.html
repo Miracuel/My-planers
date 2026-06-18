@@ -160,6 +160,22 @@ html[data-theme=dark]{
   --red:#C98A79;--red-soft:#432E27;--navbg:rgba(31,37,35,.95);
 }
 .theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
+
+/* Nyheter & funktioner */
+.cl-head{font-family:Georgia,serif;font-size:16px;margin:0 0 4px}
+.cl-tag{font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:6px}
+.cl-ver{display:flex;align-items:center;gap:8px;margin:14px 0 4px}
+.cl-ver:first-child{margin-top:0}
+.cl-ver b{font-size:14px}
+.cl-ver .v{font-size:11px;color:#fff;background:var(--accent);border-radius:8px;padding:1px 8px;font-variant-numeric:tabular-nums}
+.cl-ver .v.old{background:var(--panel2);color:var(--muted)}
+.cl-ver time{font-size:11px;color:var(--muted);margin-left:auto}
+.cl-list{list-style:none;margin:0;padding:0}
+.cl-list li{position:relative;padding:6px 0 6px 18px;font-size:13px;line-height:1.5;border-top:1px solid var(--line)}
+.cl-list li:first-child{border-top:none}
+.cl-list li::before{content:'›';position:absolute;left:2px;top:6px;color:var(--accent)}
+.fn-area{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 4px}
+.fn-area:first-child{margin-top:0}
 </style>
 </head>
 <body>
@@ -268,6 +284,19 @@ html[data-theme=dark]{
     <div class="soft" style="margin-top:8px">Nollställer alla antal men behåller avdelningar och artiklar.</div>
   </div>
 </div>
+
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <div class="card-panel">
+    <div class="cl-head" id="news-head">📦 Inventeringen</div>
+    <div class="cl-tag" id="news-tag"></div>
+    <div class="soft" id="news-aud"></div>
+  </div>
+  <div class="section-title">Funktioner</div>
+  <div class="card-panel" id="news-fn"></div>
+  <div class="section-title">Uppdateringar</div>
+  <div class="card-panel" id="news-log"></div>
+</div>
 </div>
 
 <div class="nav">
@@ -275,6 +304,7 @@ html[data-theme=dark]{
   <button data-v="count"><span>📋</span>Inventera</button>
   <button data-v="var"><span>⚖️</span>Avvikelser</button>
   <button data-v="manage"><span>⚙️</span>Hantera</button>
+  <button data-v="news"><span>✨</span>Nytt</button>
 </div>
 
 <!-- Sheets -->
@@ -336,7 +366,72 @@ var FILE='inventering.json';
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function nowts(){return Date.now();}
 
-var state={depts:[],threshold:3,theme:'auto'};
+// ── Changelog / nyheter (inbäddad konstant) ───────────
+var APPINFO={
+  id:'inventering',
+  version:'1.1.0',
+  updated:'2026-06-18',
+  tagline:'Håll koll på vad som är inventerat – och vad som är kvar – i butiken.',
+  audience:'För dig som inventerar en butik och vill se vad som är räknat, vad som är kvar och var antalen avviker.',
+  functions:[
+    {area:'Översikt',items:[
+      'Ring och stapel för andelen räknade artiklar.',
+      'Antal klara avdelningar och kvarvarande artiklar.',
+      'Lista per avdelning – tryck för att hoppa rakt in och räkna.'
+    ]},
+    {area:'Inventera',items:[
+      'Välj avdelning via chips och sök artikel.',
+      'Bocka av, ange antal med +/− eller fyll i räknat antal + anteckning.',
+      '"Markera alla räknade" för en hel avdelning.',
+      'Lägg till artiklar direkt i listan.'
+    ]},
+    {area:'Avvikelser',items:[
+      'Alla artiklar där räknat skiljer sig från förväntat, störst avvikelse först.',
+      'Antal avvikelser, över-/underskott och nettosiffra.',
+      'Tröskel för liten (gul) vs stor (röd) avvikelse.',
+      'Antalsbadge i navet.'
+    ]},
+    {area:'Inventering & data',items:[
+      'Påbörja ny inventering – nollställ antalen men behåll listorna.',
+      'Hantera avdelningar: lägg till, byt namn, ta bort.',
+      'Säkerhetskopiera och importera som JSON.'
+    ]},
+    {area:'Synk (GitHub)',items:[
+      'Sparar inventering.json i ditt privata repo.',
+      'Fine-grained token lagras bara lokalt på enheten.',
+      'Union-merge per artikel så flera kan räkna samtidigt utan att skriva över varandra.',
+      'Auto-hämtning vid start och när appen blir aktiv.'
+    ]}
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Ny vy "Nyheter & funktioner" med changelog och funktionslista.',
+      'Changelog-filer (inventering-changelog.json + changelog-inventering.md) i Centralens format.',
+      'Förinställd Centralen-metadata så hubben kan rita appkortet automatiskt.',
+      'Desktopversionen genereras nu som ett rent CSS-lager (DESKTOP-LAGER) ovanpå mobilfilen med byte-identisk JS.',
+      'Nytt-märke i navet när det finns en uppdatering du inte sett.'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Inventeringen lanseras: avdelningar med artiklar, räkna antal och jämför mot förväntat.',
+      'Avvikelsevy som listar allt som inte stämmer, med över-/underskott och justerbar tröskel.',
+      'Översikt med andel räknat, klara avdelningar och avvikelsebadge i navet.',
+      'GitHub-synk (privat repo, inventering.json) med union-merge per artikel.',
+      'Backup/import som JSON, ljust/mörkt auto-tema (mörkt 20–07) och egen app-ikon.'
+    ]}
+  ]
+};
+// Centralen-kortets metadata (sektion sätts i Centralen, inte här)
+var CENTRALEN_META={
+  id:'inventering',
+  namn:'Inventeringen',
+  ikon:'📦',
+  desc:'Inventera butiken avdelning för avdelning – räkna, jämför mot förväntat och se vad som är kvar.',
+  mobil:'inventering.html',
+  desktop:'inventering-desktop.html',
+  farger:{bg:'#ECF0EF',line:'#D2DCD9',ink:'#2E3A38',muted:'#74817E',accent:'#2F7E7B',iconbg:'#D2E5E2'}
+};
+
+var state={depts:[],threshold:3,theme:'auto',seenVersion:''};
 function seed(){
   var names=['Frukt & grönt','Mejeri & kyl','Torrvaror','Frys','Dryck','Kassa & övrigt'];
   state.depts=names.map(function(n){return {id:uid(),name:n,ts:nowts(),articles:[]};});
@@ -739,19 +834,38 @@ function switchView(v){
   Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.toggle('active',x.dataset.v===v);});
   Array.prototype.forEach.call(document.querySelectorAll('.view'),function(el){el.classList.remove('active');});
   document.getElementById('view-'+v).classList.add('active');
+  if(v==='news'&&state.seenVersion!==APPINFO.version){state.seenVersion=APPINFO.version;save();}
   renderAll();
 }
 Array.prototype.forEach.call(document.querySelectorAll('.nav button'),function(b){b.onclick=function(){switchView(b.dataset.v);};});
 
-function updatePip(){
-  var nav=document.querySelector('.nav button[data-v="var"]');
+function navPip(viewName,count){
+  var nav=document.querySelector('.nav button[data-v="'+viewName+'"]');if(!nav)return;
   var old=nav.querySelector('.pip');if(old)old.remove();
+  if(count>0){var s=document.createElement('span');s.className='pip';s.textContent=count>99?'99+':count;nav.appendChild(s);}
+}
+function updatePip(){
   var n=0;liveDepts().forEach(function(d){liveArts(d).forEach(function(a){var v=variance(a);if(v!=null&&v!==0)n++;});});
-  if(n>0){var s=document.createElement('span');s.className='pip';s.textContent=n>99?'99+':n;nav.appendChild(s);}
+  navPip('var',n);
+  navPip('news',state.seenVersion!==APPINFO.version?1:0);
+}
+
+// ── Nyheter & funktioner ──────────────────────────────
+function renderNews(){
+  document.getElementById('news-head').textContent=CENTRALEN_META.ikon+'  '+CENTRALEN_META.namn+'  v'+APPINFO.version;
+  document.getElementById('news-tag').textContent=APPINFO.tagline;
+  document.getElementById('news-aud').textContent='För: '+APPINFO.audience;
+  document.getElementById('news-fn').innerHTML=APPINFO.functions.map(function(f){
+    return '<div class="fn-area">'+esc(f.area)+'</div><ul class="cl-list">'+f.items.map(function(it){return '<li>'+esc(it)+'</li>';}).join('')+'</ul>';
+  }).join('');
+  document.getElementById('news-log').innerHTML=APPINFO.changelog.map(function(c,i){
+    return '<div class="cl-ver"><span class="v'+(i===0?'':' old')+'">v'+esc(c.v)+'</span><time>'+esc(c.d)+'</time></div>'+
+      '<ul class="cl-list">'+c.items.map(function(it){return '<li>'+esc(it)+'</li>';}).join('')+'</ul>';
+  }).join('');
 }
 
 // ── Render ────────────────────────────────────────────
-function renderAll(){renderOverview();renderCount();renderVar();renderManage();updatePip();}
+function renderAll(){renderOverview();renderCount();renderVar();renderManage();renderNews();updatePip();}
 
 loadSync();
 setBadge(syncOn()?'ok':'','Lokal');

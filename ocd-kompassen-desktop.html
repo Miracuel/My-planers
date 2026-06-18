@@ -148,6 +148,14 @@ input[type=range]{accent-color:var(--accent);padding:0}
 .foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
 .privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.65}
 
+/* Nyheter & funktioner */
+.news-ul{margin:6px 0 0 18px;font-size:13px;line-height:1.7;color:var(--ink)}
+.cl-post{padding:11px 0;border-top:1px solid var(--line)}
+.cl-post:first-child{border-top:none}
+.cl-head{display:flex;justify-content:space-between;align-items:baseline}
+.cl-head b{font-family:Georgia,serif;font-weight:400;font-size:15px;color:var(--accent)}
+.cl-head time{font-size:11px;color:var(--muted)}
+
 html{background:var(--bg)}
 body{transition:background .4s,color .4s}
 html[data-theme=dark]{
@@ -156,20 +164,22 @@ html[data-theme=dark]{
   --calm:#8FB3C2;--mid:#C2B488;--high:#C7A1AC;--navbg:rgba(33,35,46,.95);
 }
 .theme-btn{position:fixed;top:calc(12px + env(safe-area-inset-top));right:max(14px,calc(50vw - 226px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
-</style>
 
-<style id="desktop-overrides">
-/* ── Desktop-overrides: sidofältsnav, centrerade modaler, bredare layout ── */
+/* ====================== DESKTOP-LAGER, JS oförändrad ====================== */
 @media(min-width:760px){
-  .app{margin-left:max(216px,calc(50% - 384px));margin-right:auto;max-width:768px;
+  /* Innehållsyta med plats för vänstersidebaren */
+  .app{margin-left:max(212px,calc(50% - 384px));margin-right:auto;max-width:768px;
        padding:32px 32px 60px 32px}
-  h1.brand{text-align:left;margin:0 0 6px;font-size:26px}
+  /* Appnamnet visas i sidebaren istället för som centrerad rubrik */
+  h1.brand{display:none}
   .topbar{justify-content:flex-end;padding-right:48px;margin-bottom:18px}
+  .theme-btn{right:28px;top:26px}
 
-  .nav{position:fixed;left:0;top:0;bottom:0;right:auto;width:216px;max-width:none;margin:0;
+  /* Bottennav -> fast vänstersidebar 212px */
+  .nav{position:fixed;left:0;top:0;bottom:0;right:auto;width:212px;max-width:none;margin:0;
        flex-direction:column;justify-content:flex-start;align-items:stretch;gap:4px;
        border-top:none;border-right:1px solid var(--line);background:var(--panel);
-       backdrop-filter:none;padding:28px 14px}
+       backdrop-filter:none;padding:28px 14px;overflow-y:auto}
   .nav::before{content:"🧭 OCD-kompassen";font-family:Georgia,serif;font-size:17px;color:var(--ink);
        padding:0 10px 20px;letter-spacing:.03em;line-height:1.3}
   .nav button{flex:none;display:flex;align-items:center;gap:12px;text-align:left;
@@ -177,8 +187,10 @@ html[data-theme=dark]{
   .nav button span{display:inline-block;margin:0;font-size:18px}
   .nav button.active{background:var(--accent-soft)}
 
-  .theme-btn{right:28px;top:26px}
+  /* Ev. flytande knapp in i innehållet (om sådan finns) */
+  .fab{position:static}
 
+  /* Bottom-sheets -> centrerade modaler */
   .sheet-bg{align-items:center;justify-content:center}
   .sheet-bg.open{display:flex}
   .sheet{position:fixed;left:50%;top:50%;right:auto;bottom:auto;margin:0;
@@ -189,12 +201,10 @@ html[data-theme=dark]{
   .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
   .sheet-close{position:static}
 
-  .stat-row{gap:14px}
   .foot{justify-content:flex-start}
   .privacy{text-align:left}
 }
 </style>
-
 </head>
 <body>
 <div class="app">
@@ -301,6 +311,22 @@ html[data-theme=dark]{
   </div>
 </div>
 
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <div class="card-panel">
+    <div class="lede" id="news-tagline"></div>
+    <div class="soft" id="news-meta" style="margin-top:8px"></div>
+  </div>
+  <div class="card-panel">
+    <div class="section-title" style="margin-top:0">Funktioner</div>
+    <ul class="news-ul" id="news-functions"></ul>
+  </div>
+  <div class="card-panel">
+    <div class="section-title" style="margin-top:0">Ändringslogg</div>
+    <div id="news-changelog"></div>
+  </div>
+</div>
+
 <div class="foot">
   <button id="settings-btn">⚙ Inställningar</button>
   <button id="export-btn">Säkerhetskopiera</button>
@@ -316,6 +342,7 @@ html[data-theme=dark]{
   <button data-v="ladder"><span>🧩</span>Trappan</button>
   <button data-v="wait"><span>⏳</span>Vänta</button>
   <button data-v="diary"><span>📝</span>Dagbok</button>
+  <button data-v="news"><span>✨</span>Nytt</button>
 </div>
 
 <!-- SHEETS -->
@@ -405,6 +432,45 @@ html[data-theme=dark]{
 // ── State ─────────────────────────────────────────────
 var KEY='ocdkompassen_v1';
 var LEVELS=[['latt','Lätt','var(--calm)'],['mellan','Mellan','var(--mid)'],['svart','Svårt','var(--high)'],['boss','Boss','var(--accent)']];
+
+// ── Changelog / appinfo (visas i vyn "Nyheter & funktioner") ──
+var APPINFO={
+  id:'ocd-kompassen',
+  version:'1.1.0',
+  tagline:'Ett lugnt stöd för att möta tvångstankar, stå ut med ovisshet och ta små steg bort från tvånget.',
+  audience:'För dig som lever med OCD — som komplement till KBT/ERP, inte ersättning för vård.',
+  functions:[
+    'Tvångsvåg: logga tanke, ångest 1–10, impuls och vad du väljer att göra istället',
+    'Återförsäkringsfilter som uppmärksammar säkerhetssökande frågor',
+    'Exponeringstrappa i nivåer (lätt/mellan/svårt/boss) med ångestkurva i realtid',
+    'Vänta-ut-timer (2/5/10 min) som visar att impulsen avtar av sig själv',
+    'Dagbok för triggers, ritualer, undvikanden och framsteg',
+    'AI-stöd som aldrig ger återförsäkring (egen API-nyckel, sparas lokalt)',
+    'Inbyggd GitHub-synk samt säkerhetskopiering via JSON-export/import'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Synken uppgraderad till union-merge per id — inget försvinner längre mellan enheter',
+      'Ny vy "Nyheter & funktioner" med inbäddad ändringslogg',
+      'Centralen-metadata inbäddad så appen kan synkas in automatiskt',
+      'Standardiserad separat desktop-version (rent CSS-lager, oförändrad JS)'
+    ]},
+    {v:'1.0.0',d:'2026-06-14',items:[
+      'Första versionen: Hem, Tvångsvåg, Trappan, Vänta-ut och Dagbok',
+      'AI-stöd via Anthropic API och inbyggd GitHub-synk'
+    ]}
+  ]
+};
+// ── Centralen-metadata (sektion sätts i Centralen, inte här) ──
+var CENTRALEN={
+  id:'ocd-kompassen',
+  namn:'OCD-kompassen',
+  ikon:'🧭',
+  desc:'Lugnt stöd för att hantera tvångstankar, stå ut med ovisshet och ta små steg bort från tvånget.',
+  mobil:'ocd-kompassen.html',
+  desktop:'ocd-kompassen-desktop.html',
+  farger:{bg:'#EEF0F6',line:'#D6DAE8',ink:'#33384A',muted:'#737A92',accent:'#6E78B8',iconbg:'#DFE2F2'}
+};
 var state={
   waves:[],
   ladder:[],
@@ -443,7 +509,25 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setBadge(stt,msg){var p=document.getElementById('sync-pill');p.className='sync-pill'+(stt==='ok'?' ok':stt==='err'?' err':stt==='load'?' load':'');document.getElementById('sync-txt').textContent=msg;}
 var SYNC_FIELDS=['waves','ladder','sessions','waits','diary','reminders'];
-function applyRemote(data){SYNC_FIELDS.forEach(function(f){if(Array.isArray(data[f]))state[f]=data[f];});}
+function mergeById(localArr,remoteArr){
+  var map={},order=[];
+  function add(it){if(it&&it.id){if(map[it.id]===undefined){order.push(it.id);map[it.id]=it;}else if((it.ts||0)>(map[it.id].ts||0))map[it.id]=it;}}
+  (remoteArr||[]).forEach(add);(localArr||[]).forEach(add);
+  var out=order.map(function(id){return map[id];});
+  out.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  return out;
+}
+function mergeValues(localArr,remoteArr){
+  var seen={},out=[];
+  (remoteArr||[]).concat(localArr||[]).forEach(function(v){var k=String(v);if(!seen[k]){seen[k]=1;out.push(v);}});
+  return out;
+}
+function applyRemote(data){
+  SYNC_FIELDS.forEach(function(f){
+    if(!Array.isArray(data[f]))return;
+    state[f]=(f==='reminders')?mergeValues(state[f],data[f]):mergeById(state[f],data[f]);
+  });
+}
 async function ghGet(){
   var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
   if(r.status===404){sync.sha=null;return null;}
@@ -879,8 +963,23 @@ function gotoView(v){
   if(v==='ladder'){renderLvlTabs();renderLadder();}
   if(v==='wait'){renderPresets();}
   if(v==='diary'){renderDiaryTabs();renderDiary();renderReminders();}
+  if(v==='news')renderNews();
 }
 document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){gotoView(b.dataset.v);};});
+
+function renderNews(){
+  document.getElementById('news-tagline').textContent=APPINFO.tagline;
+  document.getElementById('news-meta').textContent='Version '+APPINFO.version+' · '+APPINFO.audience;
+  var fu=document.getElementById('news-functions');fu.innerHTML='';
+  APPINFO.functions.forEach(function(f){var li=document.createElement('li');li.textContent=f;fu.appendChild(li);});
+  var cl=document.getElementById('news-changelog');cl.innerHTML='';
+  APPINFO.changelog.forEach(function(p){
+    var html='<div class="cl-head"><b>'+esc(p.v)+'</b><time>'+esc(p.d)+'</time></div><ul class="news-ul">';
+    p.items.forEach(function(it){html+='<li>'+esc(it)+'</li>';});
+    html+='</ul>';
+    var post=document.createElement('div');post.className='cl-post';post.innerHTML=html;cl.appendChild(post);
+  });
+}
 
 function renderAll(){renderHome();renderWaves();renderLvlTabs();renderLadder();renderPresets();renderDiaryTabs();renderDiary();renderReminders();}
 

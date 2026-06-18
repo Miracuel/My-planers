@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Mötet">
 <meta name="theme-color" content="#F1EFE8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C7A78'/%3E%3Ccircle cx='38' cy='42' r='11' fill='%23F1EFE8'/%3E%3Ccircle cx='66' cy='42' r='9' fill='%23D6E5E2'/%3E%3Cpath d='M20 74c0-12 8-19 18-19s18 7 18 19z' fill='%23F1EFE8'/%3E%3Cpath d='M52 74c0-10 6-16 14-16s14 6 14 16z' fill='%23D6E5E2'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C7A78'/%3E%3Ccircle cx='38' cy='42' r='11' fill='%23F1EFE8'/%3E%3Ccircle cx='66' cy='42' r='9' fill='%23D6E5E2'/%3E%3Cpath d='M20 74c0-12 8-19 18-19s18 7 18 19z' fill='%23F1EFE8'/%3E%3Cpath d='M52 74c0-10 6-16 14-16s14 6 14 16z' fill='%23D6E5E2'/%3E%3C/svg%3E">
 <link rel="manifest" href='data:application/manifest+json,{"name":"Mötet","short_name":"Mötet","display":"standalone","background_color":"%23F1EFE8","theme_color":"%23F1EFE8","start_url":"."}'>
 <title>Mötet</title>
 <style>
@@ -131,6 +132,23 @@ textarea{resize:vertical;line-height:1.55}
 .privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.85;margin-top:10px;line-height:1.6}
 .theme-btn{position:fixed;top:calc(9px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
 
+/* Nyheter & funktioner */
+.news-h{font-family:Georgia,serif;font-weight:400;font-size:20px;color:var(--accent-dim);margin-top:4px}
+.news-tag{font-size:13px;color:var(--muted);line-height:1.5;margin:4px 0 4px}
+.cl-entry{padding:10px 0;border-top:1px solid var(--line)}
+.cl-entry:first-child{border-top:none}
+.cl-ver{font-size:13px;font-weight:700;color:var(--accent)}
+.cl-date{font-size:11px;color:var(--muted);margin-left:8px;font-weight:400}
+.cl-list{margin:6px 0 0 4px;list-style:none}
+.cl-list li{font-size:13px;line-height:1.5;padding:3px 0 3px 16px;position:relative;color:var(--ink)}
+.cl-list li::before{content:'›';position:absolute;left:0;color:var(--accent)}
+.fn-area{padding:10px 0;border-top:1px solid var(--line)}
+.fn-area:first-child{border-top:none}
+.fn-area .fn-h{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:4px}
+.fn-area ul{margin:0 0 0 4px;list-style:none}
+.fn-area li{font-size:13px;line-height:1.5;padding:2px 0 2px 16px;position:relative;color:var(--muted)}
+.fn-area li::before{content:'•';position:absolute;left:2px;color:var(--accent)}
+
 html{background:var(--bg)}
 body{transition:background .4s,color .4s}
 html[data-theme=dark]{
@@ -246,6 +264,16 @@ html[data-theme=dark] .m-cal .d,html[data-theme=dark] .agenda-num{color:var(--ac
     <div class="soft" style="text-align:center;margin-top:8px" id="done-hint"></div>
   </div>
 </div>
+
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-news">
+  <h2 class="news-h" id="news-version"></h2>
+  <div class="news-tag" id="news-tag"></div>
+  <div class="section-title">Nyheter</div>
+  <div class="card-panel" id="news-changelog"></div>
+  <div class="section-title">Funktioner</div>
+  <div class="card-panel" id="news-functions"></div>
+</div>
 </div>
 
 <div class="nav">
@@ -254,6 +282,7 @@ html[data-theme=dark] .m-cal .d,html[data-theme=dark] .agenda-num{color:var(--ac
   <button data-v="notes"><span>✎</span>Anteckna</button>
   <button data-v="map"><span>🕸</span>Tankekarta</button>
   <button data-v="done"><span>✨</span>Klart</button>
+  <button data-v="news"><span>📰</span>Nyheter</button>
 </div>
 
 <!-- Sheets -->
@@ -322,13 +351,47 @@ html[data-theme=dark] .m-cal .d,html[data-theme=dark] .agenda-num{color:var(--ac
 var KEY='motet_v1';
 var DEFAULT_PREP=['Sätt mål och agenda','Bjud in rätt personer','Boka rum eller videolänk','Skicka underlag i förväg','Tidsplan per punkt'];
 var DEFAULT_POST=['Skicka mötesanteckningar','Boka eventuell uppföljning'];
+// ── App-info, changelog & Centralen-metadata ───────────
+var APPINFO={
+  appId:'motet',
+  namn:'Mötet', ikon:'📋',
+  version:'1.1.0',
+  updated:'2026-06-18',
+  latest:'1.1.0',
+  tagline:'Möten med anteckningar, tankekarta, AI och automatisk att-göra-lista.',
+  description:'Planera, anteckna och följ upp dina möten — med agenda och checklista innan, anteckningar och tankekarta under, samt en automatisk att-göra-lista och AI-stöd efter.',
+  audience:'Dig som vill ha ordning före, under och efter mötet.',
+  functions:[
+    {area:'Möten', items:['Lista över kommande och tidigare möten','Skapa och redigera med titel, datum, tid, deltagare och mål','Aktivt möte väljs och följer med genom alla vyer']},
+    {area:'Förbered', items:['Agenda per möte','Checklista inför mötet som ärvs från din standardmall','AI föreslår agenda utifrån titel och mål']},
+    {area:'Anteckna', items:['Fritextanteckningar som sparas automatiskt','Snabb fångst av åtgärder','AI sammanfattar och hittar åtgärder i anteckningarna']},
+    {area:'Tankekarta', items:['Dra-och-släpp-noder med panorering','Grenar kan göras om till åtgärder','Mittnoden speglar mötets titel']},
+    {area:'Klart & uppföljning', items:['Automatisk att-göra-lista efter mötet med ansvarig och datum','AI-sammanfattning och utkast till uppföljningsmail','Markera mötet som klart — standardpunkter läggs till']},
+    {area:'Synk (GitHub)', items:['Speglar mötena till motet.json i ditt privata repo','Union-merge per möte så inget tappas mellan enheter','Fine-grained token lagras bara lokalt; auto-hämtning vid start och fönsterfokus']},
+    {area:'Övrigt', items:['Auto/ljust/mörkt tema (mörkt 20–07)','Säkerhetskopiering med export/import som JSON','Egen Anthropic-nyckel för AI, lagras bara lokalt']}
+  ],
+  changelog:[
+    {v:'1.1.0', d:'2026-06-18', items:['Inbyggd GitHub-synk med union-merge per möte (samma mönster som övriga appar)','Synkfilen heter nu motet.json (per-app-filnamn)','Ny vy: Nyheter & funktioner med inbäddad changelog','Centralen-metadata förinställd så hubben kan rita kortet automatiskt','Egen favicon + apple-touch-icon i petrolgrönt','Separat desktopversion med fast vänstersidebar']},
+    {v:'1.0.0', d:'2026-06-18', items:['Första versionen','Möteslista, agenda och checklista inför mötet','Anteckningar och snabb åtgärdsfångst','Tankekarta med dra-och-släpp','Automatisk att-göra-lista efter mötet','AI: sammanfattning, åtgärder, agendaförslag och uppföljningsmail']}
+  ]
+};
+// Förinställd kortdata för Centralen (sektion sätts i Centralen, inte här)
+var CENTRALEN_META={
+  id:'motet',
+  namn:'Mötet', ikon:'📋',
+  desc:'Möten: anteckningar, tankekarta, AI & att-göra',
+  mobil:'motet.html',
+  desktop:'motet-desktop.html',
+  farger:{bg:'#F1EFE8', line:'#DAD6C8', ink:'#2B2E2C', muted:'#7C8079', accent:'#2C7A78', iconbg:'#D6E5E2'}
+};
+
 var state={meetings:{},order:[],activeId:null,prepTemplate:DEFAULT_PREP.slice(),theme:'auto'};
 try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
 if(!state.prepTemplate||!state.prepTemplate.length)state.prepTemplate=DEFAULT_PREP.slice();
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify({meetings:state.meetings,order:state.order,activeId:state.activeId,prepTemplate:state.prepTemplate,theme:state.theme}));}catch(e){}}
 var pushTimer=null;
-function persist(){save();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1400);}}
+function persist(){var m=activeM();if(m)m.updated=new Date().toISOString();save();if(syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){ghPush().catch(function(){});},1400);}}
 
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
 var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
@@ -346,12 +409,12 @@ function newMeeting(o){
     agenda:[],prep:state.prepTemplate.map(function(x){return {t:x,done:false};}),
     notes:'',actions:[],
     map:{nodes:[{id:1,text:t,x:1500,y:1380,pid:null}],nextId:2,pan:null},
-    aiSummary:'',aiFollowup:'',done:false,created:new Date().toISOString()};
+    aiSummary:'',aiFollowup:'',done:false,created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 
 // ── GitHub-synk (samma motor som övriga appar) ─────────
 var SYNC_KEY='motetsync_v1';
-var DATA_FILE='moten.json';
+var DATA_FILE='motet.json';
 var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
@@ -370,17 +433,29 @@ function ghGet(){
     return r.json().then(function(j){sync.sha=j.sha;return JSON.parse(b64dec(j.content));});
   });
 }
+function mergeMeetings(data){
+  var rm=(data.meetings&&typeof data.meetings==='object')?data.meetings:{};
+  var ro=Array.isArray(data.order)?data.order:[];
+  // Union per id: behåll lokala möten som ännu inte pushats, ta nyaste vid krock
+  Object.keys(rm).forEach(function(id){
+    var r=rm[id];var l=state.meetings[id];
+    if(!l){state.meetings[id]=r;return;}
+    var lu=l.updated||l.created||'';var ru=r.updated||r.created||'';
+    if(ru>=lu)state.meetings[id]=r;
+  });
+  // Ordning: lokal ordning först, fyll på med fjärr-id och eventuella lösa id
+  var seen={};var merged=[];
+  state.order.concat(ro).forEach(function(id){if(!seen[id]&&state.meetings[id]){seen[id]=true;merged.push(id);}});
+  Object.keys(state.meetings).forEach(function(id){if(!seen[id]){seen[id]=true;merged.push(id);}});
+  state.order=merged;
+  if(Array.isArray(data.prepTemplate)&&data.prepTemplate.length)state.prepTemplate=data.prepTemplate;
+  if(state.activeId&&!state.meetings[state.activeId])state.activeId=state.order.length?state.order[0]:null;
+}
 function ghPull(){
   if(!syncOn())return Promise.resolve();
   setBadge('load','Hämtar…');
   return ghGet().then(function(data){
-    if(data){
-      if(data.meetings&&typeof data.meetings==='object')state.meetings=data.meetings;
-      if(Array.isArray(data.order))state.order=data.order;
-      if(Array.isArray(data.prepTemplate)&&data.prepTemplate.length)state.prepTemplate=data.prepTemplate;
-      if(state.activeId&&!state.meetings[state.activeId])state.activeId=state.order.length?state.order[0]:null;
-      save();renderAll();
-    }
+    if(data){mergeMeetings(data);save();renderAll();}
     setBadge('ok','Synkad');
   }).catch(function(){setBadge('err','Synkfel');});
 }
@@ -504,7 +579,7 @@ document.getElementById('ms-save').onclick=function(){
   var goal=document.getElementById('ms-goal').value.trim();
   if(editingId&&state.meetings[editingId]){
     var m=state.meetings[editingId];
-    var oldT=m.title;m.title=name;m.date=date;m.time=time;m.participants=parts;m.goal=goal;
+    var oldT=m.title;m.title=name;m.date=date;m.time=time;m.participants=parts;m.goal=goal;m.updated=new Date().toISOString();
     if(m.map&&m.map.nodes&&m.map.nodes[0]&&m.map.nodes[0].text===oldT)m.map.nodes[0].text=name;
   }else{
     var nm=newMeeting({title:name,date:date,time:time,parts:parts,goal:goal});
@@ -583,7 +658,7 @@ document.getElementById('ai-actions').onclick=function(e){
   var btn=e.target;var o=btn.textContent;btn.textContent='✨ Letar…';btn.disabled=true;
   var p='Läs anteckningarna och plocka ut konkreta åtgärdspunkter (to-dos). Svara ENDAST med en giltig JSON-array, inga andra tecken och ingen markdown. Varje element: {"text":"vad som ska göras","owner":"ansvarig om nämnd annars tom sträng"}. Max 12 punkter.\n\n'+meetingContext(m);
   aiCall(p,800).then(function(t){
-    var clean=t.replace(/```json|```/g,'').trim();
+    var clean=t.replace(/\u0060{3}(?:json)?/g,'').trim();
     var arr;try{arr=JSON.parse(clean);}catch(err){arr=null;}
     if(!Array.isArray(arr)||!arr.length){alert('Hittade inga tydliga åtgärder.');return;}
     openSuggest(arr);
@@ -822,6 +897,18 @@ function applyTheme(){
 }
 document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
+// ── Nyheter & funktioner ───────────────────────────────
+function renderNews(){
+  document.getElementById('news-version').textContent='Mötet '+APPINFO.version;
+  document.getElementById('news-tag').textContent=APPINFO.tagline;
+  document.getElementById('news-changelog').innerHTML=APPINFO.changelog.map(function(c){
+    return '<div class="cl-entry"><span class="cl-ver">'+esc(c.v)+'</span><span class="cl-date">'+esc(c.d)+'</span><ul class="cl-list">'+c.items.map(function(it){return '<li>'+esc(it)+'</li>';}).join('')+'</ul></div>';
+  }).join('');
+  document.getElementById('news-functions').innerHTML=APPINFO.functions.map(function(f){
+    return '<div class="fn-area"><div class="fn-h">'+esc(f.area)+'</div><ul>'+f.items.map(function(it){return '<li>'+esc(it)+'</li>';}).join('')+'</ul></div>';
+  }).join('');
+}
+
 // ── Nav ────────────────────────────────────────────────
 function go(v){
   var btns=document.querySelectorAll('.nav button');for(var i=0;i<btns.length;i++)btns[i].classList.toggle('active',btns[i].getAttribute('data-v')===v);
@@ -831,11 +918,12 @@ function go(v){
   if(v==='notes')renderNotes();
   if(v==='map')renderMap();
   if(v==='done')renderDone();
+  if(v==='news')renderNews();
 }
 var navBtns=document.querySelectorAll('.nav button');
 for(var i=0;i<navBtns.length;i++){(function(b){b.onclick=function(){go(b.getAttribute('data-v'));};})(navBtns[i]);}
 
-function renderAll(){renderActiveBars();renderMeetings();var cur=document.querySelector('.nav button.active');var v=cur?cur.getAttribute('data-v'):'meetings';if(v==='prep')renderPrep();else if(v==='notes')renderNotes();else if(v==='map')renderMap();else if(v==='done')renderDone();}
+function renderAll(){renderActiveBars();renderMeetings();var cur=document.querySelector('.nav button.active');var v=cur?cur.getAttribute('data-v'):'meetings';if(v==='prep')renderPrep();else if(v==='notes')renderNotes();else if(v==='map')renderMap();else if(v==='done')renderDone();else if(v==='news')renderNews();}
 
 // ── Init ───────────────────────────────────────────────
 loadSync();

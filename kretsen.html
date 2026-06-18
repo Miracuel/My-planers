@@ -127,6 +127,14 @@ input[type=range]{width:100%;accent-color:var(--lav)}
 .foot{display:flex;gap:14px;justify-content:center;margin-top:20px}
 .foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit}
 .privacy{text-align:center;font-size:10px;color:var(--muted);opacity:.7;margin-top:10px;line-height:1.6}
+.ni-list{list-style:none;margin:0;padding:0}
+.ni-list li{font-size:13px;line-height:1.55;padding:7px 0 7px 18px;position:relative;border-top:1px solid var(--line)}
+.ni-list li:first-child{border-top:none}
+.ni-list li::before{content:"\2022";color:var(--lav);position:absolute;left:3px;top:7px}
+.cl-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;font-family:Georgia,serif}
+.cl-head b{color:var(--lav);font-weight:400;font-size:15px}
+.cl-head span{font-size:11px;color:var(--muted)}
+.ni-ver{font-family:Georgia,serif;color:var(--lav);font-size:18px}
 </style>
 </head>
 <body>
@@ -180,8 +188,12 @@ input[type=range]{width:100%;accent-color:var(--lav)}
       <button class="btn full ghost" style="margin-top:10px;border-color:#5a2b3a;color:#c98aa0" data-act="clear">Rensa all data</button>
     </div>
     <div class="privacy">Kretsen är en lokal prototyp. Allt lever bara i den här webbläsaren — inget skickas någonstans. Exportera regelbundet om du vill behålla din data eller flytta den till en annan enhet.</div>
-    <div class="foot"><button data-act="about">Om Kretsen</button></div>
+    <div class="foot"><button data-act="view" data-view="nyheter">Nyheter &amp; funktioner</button><button data-act="about">Om Kretsen</button></div>
+    <div class="privacy" id="verline"></div>
   </div>
+
+  <!-- NYHETER -->
+  <div class="view" id="view-nyheter"></div>
 </div>
 
 <input type="file" id="fileInput" accept="application/json" style="display:none">
@@ -214,6 +226,51 @@ var CATS=[
 ];
 var GLYPHS=['\uD83C\uDF19','\u2726','\uD83D\uDD2E','\uD83C\uDF3F','\uD83D\uDD6F','\uD83E\uDD89','\uD83C\uDF11','\u263E','\uD83C\uDF12','\u2697','\uD83C\uDF38','\uD83D\uDD77'];
 
+/* ---------- APPINFO (changelog + funktioner) ---------- */
+var APPINFO={
+  version:'1.2.0',
+  tagline:'Din privata häxcirkel — flöde, ritualer och månfaser delade i en sluten krets.',
+  audience:'Häxor som vill hålla kontakten i en privat community.',
+  functions:[
+    'Flöde med kategorier: Tanke, Fråga, Ritual, Måne, Örter och Drömmar',
+    'Reaktioner och kommentarer på varje inlägg',
+    'Cirkeln: profiler för alla häxor, med egen symbol och färgton',
+    'Växla aktiv häxa för att posta som olika medlemmar',
+    'Aktuell månfas beräknad lokalt i sidhuvudet',
+    'GitHub-synk med union-merge så att samtidiga inlägg aldrig skrivs över',
+    'JSON-export och import för säkerhetskopia och flytt mellan enheter'
+  ],
+  changelog:[
+    {v:'1.2.0',d:'2026-06-18',items:[
+      'Ny vy "Nyheter & funktioner" med inbäddad ändringslogg',
+      'Genererad PNG-favicon, apple-touch-icon och webmanifest',
+      'Centralen-metadata inbäddad för automatisk registrering',
+      'Separat desktop-version med fast vänstersidebar',
+      'Synk läser och sparar nu kretsen.json (per-app-fil i delat repo)'
+    ]},
+    {v:'1.1.0',d:'2026-06-18',items:[
+      'Inbyggd GitHub-synk via Contents API med statusbadge',
+      'Union-merge per id: inlägg, reaktioner och kommentarer slås ihop',
+      'Auto-hämtning vid start och när fliken blir aktiv igen'
+    ]},
+    {v:'1.0.0',d:'2026-06-18',items:[
+      'Första versionen: flöde, cirkeln, profiler, reaktioner och kommentarer',
+      'Månfas i sidhuvudet, tema i lavendel',
+      'Lokal lagring med JSON-export och import'
+    ]}
+  ]
+};
+/* ---------- Centralen-metadata (sektion sätts av Centralen) ---------- */
+var CENTRALEN={
+  id:'kretsen',
+  namn:'Kretsen',
+  ikon:'\uD83C\uDF19',
+  desc:'Privat social häxcirkel: flöde, ritualer, månfaser, reaktioner och profiler.',
+  mobil:'kretsen.html',
+  desktop:'kretsen-desktop.html',
+  farger:{bg:'#120D1F',line:'#382B5A',ink:'#EBE4F4',muted:'#9C90B8',accent:'#C3A6E8',iconbg:'#261C42'}
+};
+
 var state=load();
 
 /* ---------- data ---------- */
@@ -234,7 +291,7 @@ var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
-function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/data.json';}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/kretsen.json';}
 function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
 function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
@@ -344,7 +401,7 @@ function ghSave(){
 }
 function syncSettingsSheet(){
   var h='<h3>&#9881; Synk via GitHub</h3>';
-  h+='<div class="muted" style="font-size:12px;line-height:1.6">Kretsen läser och sparar <b>data.json</b> i ett privat GitHub-repo så att alla häxor delar samma flöde. Inlägg slås ihop per id, så att samtidiga inlägg aldrig skriver över varandra. Token sparas bara lokalt på den här enheten.</div>';
+  h+='<div class="muted" style="font-size:12px;line-height:1.6">Kretsen läser och sparar <b>kretsen.json</b> i ett privat GitHub-repo så att alla häxor delar samma flöde. Inlägg slås ihop per id, så att samtidiga inlägg aldrig skriver över varandra. Token sparas bara lokalt på den här enheten.</div>';
   h+='<label class="f">GitHub-användarnamn (ägare av repot)</label><input class="t" id="gh-owner" placeholder="t.ex. selene" value="'+esc(sync.owner)+'">';
   h+='<label class="f">Namn på data-repot (privat)</label><input class="t" id="gh-repo" placeholder="kretsen-data" value="'+esc(sync.repo)+'">';
   h+='<label class="f">Fine-grained token</label><input class="t" type="password" id="gh-token" placeholder="github_pat_…" value="'+esc(sync.token)+'">';
@@ -416,7 +473,26 @@ function moonPhase(date){
 }
 
 /* ---------- render ---------- */
-function renderAll(){renderMoon();renderFeed();renderCircle();renderProfile();renderMore();syncComposeBar();}
+function renderAll(){renderMoon();renderFeed();renderCircle();renderProfile();renderMore();renderNews();syncComposeBar();}
+
+function renderNews(){
+  var a=APPINFO,h='',i,j,k;
+  h+='<div class="section-title">Nyheter &amp; funktioner</div>';
+  h+='<div class="card-panel"><div class="ni-ver">Kretsen v'+esc(a.version)+'</div>';
+  h+='<div class="muted" style="font-size:12px;line-height:1.6;margin-top:6px">'+esc(a.tagline)+'</div>';
+  h+='<div class="muted" style="font-size:11px;margin-top:8px">'+esc(a.audience)+'</div></div>';
+  h+='<div class="section-title">Funktioner</div><div class="card-panel"><ul class="ni-list">';
+  for(i=0;i<a.functions.length;i++)h+='<li>'+esc(a.functions[i])+'</li>';
+  h+='</ul></div>';
+  h+='<div class="section-title">Ändringslogg</div>';
+  for(j=0;j<a.changelog.length;j++){var c=a.changelog[j];
+    h+='<div class="card-panel" style="margin-bottom:10px"><div class="cl-head"><b>v'+esc(c.v)+'</b><span>'+esc(c.d)+'</span></div><ul class="ni-list">';
+    for(k=0;k<c.items.length;k++)h+='<li>'+esc(c.items[k])+'</li>';
+    h+='</ul></div>';
+  }
+  h+='<button class="btn full ghost" style="margin-top:6px" data-act="view" data-view="mer">Tillbaka</button>';
+  document.getElementById('view-nyheter').innerHTML=h;
+}
 
 function renderMoon(){
   var ph=moonPhase(new Date());
@@ -487,6 +563,7 @@ function renderMore(){
   var sel=document.getElementById('activeSelect'), h='';
   for(var i=0;i<state.members.length;i++){var m=state.members[i];h+='<option value="'+m.id+'"'+(m.id===state.activeId?' selected':'')+'>'+esc(m.name)+' ('+esc(m.handle)+')</option>';}
   sel.innerHTML=h;
+  var vl=document.getElementById('verline'); if(vl)vl.textContent='Kretsen v'+APPINFO.version;
 }
 
 /* ---------- sheets ---------- */

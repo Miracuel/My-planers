@@ -154,6 +154,18 @@ html[data-theme=dark] .care-banner{color:#EAD2D9}
 .settings-row{display:flex;gap:8px;margin-top:6px}
 .settings-row .btn{flex:1}
 #trend{width:100%;height:auto;display:block}
+/* Nyheter & funktioner */
+.news-tabs{display:flex;gap:7px;margin:8px 0 4px}
+.ntab{border:1.5px solid var(--line);background:var(--panel2);border-radius:12px;padding:7px 12px;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit}
+.ntab.sel{background:var(--rose);border-color:var(--rose);color:#fff}
+.cl-entry{border-top:1px solid var(--line);padding:10px 0}
+.cl-entry:first-child{border-top:none}
+.cl-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.cl-head .v{font-size:11px;font-weight:600;color:var(--rose)}
+.cl-head time{font-size:11px;color:var(--muted);margin-left:auto}
+.cl-item{font-size:13px;color:var(--ink);line-height:1.5;padding:3px 0 3px 14px;position:relative}
+.cl-item::before{content:'·';position:absolute;left:4px;color:var(--muted)}
+.fn-area{font-family:Georgia,serif;font-size:13px;color:var(--ink);margin:10px 0 2px}
 </style>
 </head>
 <body>
@@ -188,6 +200,7 @@ html[data-theme=dark] .care-banner{color:#EAD2D9}
 
   <div class="foot">
     <button id="open-custom">Anpassa stunder</button>
+    <button id="news-btn">Nyheter &amp; funktioner</button>
     <button id="export-btn">Säkerhetskopiera</button>
     <button id="import-btn">Importera</button>
     <input type="file" id="import-file" accept=".json" style="display:none">
@@ -345,6 +358,17 @@ html[data-theme=dark] .care-banner{color:#EAD2D9}
   <button class="sheet-close" id="nej-save">Spara övning</button>
 </div>
 
+<div class="sheet" id="news-sheet">
+  <h3>🪷 Gott nog</h3>
+  <div class="soft" id="news-ver"></div>
+  <div class="news-tabs" id="news-tabs">
+    <button class="ntab sel" data-t="changelog">Nyheter</button>
+    <button class="ntab" data-t="functions">Funktioner</button>
+  </div>
+  <div id="news-body"></div>
+  <button class="sheet-close" id="news-close">Stäng</button>
+</div>
+
 <script>
 // ── State ─────────────────────────────────────────────
 const KEY='gottnog_v1';
@@ -400,7 +424,7 @@ function day(){
 
 // ── GitHub-synk (kanon från jobb.html) ────────────────
 const SYNC_KEY='gottnogsync_v1';
-const DATA_FILE='gottnog.json';
+const DATA_FILE='gott-nog.json';
 let sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
@@ -779,6 +803,102 @@ document.querySelectorAll('.nav button').forEach(b=>{
 
 function renderToday(){renderBalance();renderPermit();renderChips();renderLog();}
 function renderAll(){renderToday();renderPhrases();renderNej();renderVoiceTypes();renderKept();renderDeck();renderStats();}
+// ── Changelog / Nyheter & funktioner ─────────────────
+const APPINFO={
+  appId:'gott-nog',
+  name:'Gott nog', namn:'Gott nog',
+  icon:'🪷', ikon:'🪷',
+  version:'1.2.0',
+  updated:'2026-06-18',
+  tagline:'Var snäll mot dig själv — gränser och gott nog.',
+  description:'Gott nog är ett varsamt stöd för dig som känner igen duktig flicka-syndromet. Märk när du sätter andra främst, öva på att säga nej, vänd den hårda inre rösten till något snällare och se din balans växa över tid — helt privat, med dina data i din egen telefon.',
+  audience:'För dig som ofta säger ja fast du vill säga nej, ber om ursäkt i onödan eller jagar att vara perfekt och vill öva på gränser och självmedkänsla. Ett vardagsstöd — inte vård. Mår du dåligt en längre tid: prata med någon du litar på, vården eller företagshälsan.',
+  latest:[
+    'Inbyggd changelog: den här "Nyheter & funktioner"-vyn.',
+    'Centralen-metadata inbäddad så hubben kan visa appen automatiskt.',
+    'Genererad PNG-favicon i appens rosa accent.'
+  ],
+  functions:[
+    {area:'Idag',items:[
+      'Balansmätare mellan "för andra" och "plats för mig", justerbar för hand',
+      'Märk dagens stunder med chips, utan dom',
+      'Dagskoll: inre kritiker, plats för egna behov och rädsla att svika',
+      'Dagens tillåtelse som roterar varje dag'
+    ]},
+    {area:'Gränser',items:[
+      'Bibliotek med vänliga nej-fraser att kopiera',
+      'Nej-övningar: situation, rädsla, vad du gjorde och vad som faktiskt hände',
+      'Bygger bevis på att ett nej är tryggt'
+    ]},
+    {area:'Snäll mot dig',items:[
+      'Vänd den hårda rösten: möt kritikern med en snällare sanning per typ',
+      'Spara dina snälla tankar',
+      'Tillåtelse-kortlek att dra ur'
+    ]},
+    {area:'Mönster',items:[
+      'Balanskurva senaste 14 dagarna',
+      'Snitt för balans, inre kritiker, plats och rädsla',
+      'Vad triggar duktig-flickan mest och vad ger dig mest plats',
+      'Räknare för nej-övningar och snälla tankar',
+      'Omsorgsbanner när många dagar varit hårda'
+    ]},
+    {area:'Synk & data',items:[
+      'GitHub-synk (privat repo, gott-nog.json) — token bara lokalt',
+      'Union-merge per id så två enheter aldrig skriver över varandra',
+      'Auto-hämtning vid start och när fliken blir aktiv',
+      'Export och import som JSON-säkerhetskopia'
+    ]},
+    {area:'Utseende',items:[
+      'Auto/ljust/mörkt tema (mörkt 20–07)',
+      'Separat mobil- och desktopversion med samma data och synk'
+    ]}
+  ],
+  changelog:[
+    {v:'1.2.0',d:'2026-06-18',version:'1.2.0',date:'2026-06-18',items:[
+      'Inbyggd changelog: den här "Nyheter & funktioner"-vyn med Nyheter och Funktioner.',
+      'Centralen-metadata inbäddad så hubben kan visa appen automatiskt.',
+      'Changelog-filer (gott-nog-changelog.json + changelog-gott-nog.md) i Centralens format.',
+      'Genererad PNG-favicon i appens rosa accent (flik, bokmärke, hemskärm).',
+      'Synkfilen heter nu gott-nog.json så ett privat repo kan rymma alla appars data.'
+    ]},
+    {v:'1.1.0',d:'2026-06-18',version:'1.1.0',date:'2026-06-18',items:[
+      'GitHub-synk (appkollen-stil): ghGet/ghPull/ghPush med statusbadge, auto-hämtning och 409/422-retry.',
+      'Union-merge per id för nej-övningar och snälla tankar.',
+      'Separat desktopversion (gott-nog-desktop.html) med vänstersidebar — samma data och synk som mobilen.'
+    ]},
+    {v:'1.0.0',d:'2026-06-18',version:'1.0.0',date:'2026-06-18',items:[
+      'Gott nog lanseras: Idag, Gränser, Snäll mot dig och Mönster.',
+      'Balansmätare, dagskoll och dagens tillåtelse.',
+      'Vänliga nej-fraser, nej-övningar och "vänd den hårda rösten".',
+      'localStorage med export/import och auto-tema (mörkt 20–07).'
+    ]}
+  ]
+};
+// Centralen-kort (sektion sätts av Centralen, ej här). Accent matchar favicon-emojin 🪷.
+const CENTRALEN_META={
+  id:'gott-nog',
+  namn:'Gott nog',
+  ikon:'🪷',
+  desc:'Gränser & självmedkänsla vid duktig flicka-syndrom',
+  mobil:'gott-nog.html',
+  desktop:'gott-nog-desktop.html',
+  farger:{bg:'#F4EFEC',line:'#E4D7CE',ink:'#463C39',muted:'#8E7E78',accent:'#B0768C',iconbg:'#EBD9DE'}
+};
+let newsTab='changelog';
+function renderNews(){
+  document.getElementById('news-ver').textContent='Version '+APPINFO.version+' · '+APPINFO.tagline;
+  document.querySelectorAll('#news-tabs .ntab').forEach(c=>c.classList.toggle('sel',c.dataset.t===newsTab));
+  const el=document.getElementById('news-body');
+  if(newsTab==='changelog'){
+    el.innerHTML=APPINFO.changelog.map(e=>'<div class="cl-entry"><div class="cl-head"><span class="v">v'+esc(e.version||e.v)+'</span><time>'+esc(e.date||e.d)+'</time></div>'+(e.items||[]).map(it=>'<div class="cl-item">'+esc(it)+'</div>').join('')+'</div>').join('');
+  }else{
+    el.innerHTML=APPINFO.functions.map(f=>'<div class="fn-area">'+esc(f.area)+'</div>'+(f.items||[]).map(it=>'<div class="cl-item">'+esc(it)+'</div>').join('')).join('');
+  }
+}
+document.getElementById('news-btn').onclick=()=>{newsTab='changelog';renderNews();openSheet('news-sheet');};
+document.getElementById('news-close').onclick=closeSheets;
+document.querySelectorAll('#news-tabs .ntab').forEach(c=>{c.onclick=()=>{newsTab=c.dataset.t;renderNews();};});
+
 // ── Synk-inställningar ────────────────────────────────
 function setGhStatus(msg,type){const el=document.getElementById('gh-status');el.style.display='block';el.style.background=type==='ok'?'var(--rose-soft)':type==='err'?'#FEF0F0':'var(--panel2)';el.style.color=type==='ok'?'var(--rose)':type==='err'?'#A32D2D':'var(--ink)';el.textContent=msg;}
 document.getElementById('sync-settings').onclick=()=>{document.getElementById('gh-owner').value=sync.owner;document.getElementById('gh-repo').value=sync.repo;document.getElementById('gh-token').value=sync.token;document.getElementById('gh-status').style.display='none';document.getElementById('sync-overlay').classList.remove('hidden');};
