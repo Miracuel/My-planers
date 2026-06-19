@@ -139,6 +139,16 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .sheet h3{font-family:Georgia,serif;font-size:17px;margin-bottom:8px}
 .sheet-close{width:100%;padding:11px;border-radius:12px;border:none;background:var(--sun);color:#fff;font-size:14px;cursor:pointer;margin-top:12px;font-family:inherit}
 .sheet code{background:var(--panel2);border-radius:6px;padding:1px 5px;font-size:11px}
+.ver-tag{display:inline-block;font-size:11px;padding:3px 10px;border-radius:11px;background:var(--sun-soft);color:var(--sun);border:1px solid var(--sun);margin-bottom:8px}
+.news-tagline{font-family:Georgia,serif;font-size:15px;margin:2px 0 4px}
+.fn-area{font-family:Georgia,serif;font-size:14px;color:var(--sun);margin:14px 0 4px}
+.cl-item{font-size:13px;color:var(--ink);padding:5px 0 5px 14px;position:relative;line-height:1.5}
+.cl-item::before{content:'·';position:absolute;left:2px;color:var(--muted)}
+.cl-entry{border-top:1px solid var(--line);padding:10px 0 4px}
+.cl-entry:first-of-type{border-top:none}
+.cl-head{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
+.cl-head .v{font-weight:600;color:var(--sun);font-size:13px}
+.cl-head time{margin-left:auto;color:var(--muted);font-size:11px}
 
 .foot{display:flex;gap:8px;justify-content:center;margin-top:16px}
 .foot button{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
@@ -196,11 +206,12 @@ html[data-theme=dark]{
   </div>
 
   <div class="foot">
+    <button id="news-btn">Nyheter &amp; funktioner</button>
     <button id="export-btn">Säkerhetskopiera</button>
     <button id="import-btn">Importera</button>
     <input type="file" id="import-file" accept=".json" style="display:none">
   </div>
-  <div class="privacy">Allt sparas bara i din telefon. En morgonrutin är ett mjukt stöd — inget krav.<br>Klarar du bara ett steg är det också en hel morgon. 🌿</div>
+  <div class="privacy">Allt sparas bara i din telefon. En morgonrutin är ett mjukt stöd — inget krav.<br>Klarar du bara ett steg är det också en hel morgon. 🌿<br><span id="ver-line"></span></div>
 </div>
 
 <!-- RUTIN -->
@@ -295,6 +306,16 @@ html[data-theme=dark]{
   <button class="sheet-close" id="gh-save">Spara &amp; synka</button>
 </div>
 
+<!-- Nyheter & funktioner -->
+<div class="sheet" id="news-sheet">
+  <h3>Nyheter &amp; funktioner</h3>
+  <span class="ver-tag" id="news-ver"></span>
+  <div class="news-tagline" id="news-tagline"></div>
+  <div class="soft" id="news-audience"></div>
+  <div id="news-body"></div>
+  <button class="sheet-close" id="news-close">Stäng</button>
+</div>
+
 <!-- Nav -->
 <div class="nav">
   <button class="active" data-v="today"><span>🌅</span>Idag</button>
@@ -336,6 +357,52 @@ if(!state.routines)state.routines={vardag:[],helg:[]};
 if(!state.routines.vardag)state.routines.vardag=[];
 if(!state.routines.helg)state.routines.helg=[];
 if(!state.days)state.days={};
+
+// ── App-info / changelog (svit-standard) ──────────────
+var APPINFO={
+  version:'1.2.0',
+  tagline:'Din morgon, ett lugnt steg i taget.',
+  audience:'För dig som vill komma igång på morgonen med en mjuk, valfri rutin — guidad ett steg i taget, utan krav och utan reklam. Allt sparas i din egen telefon och kan synkas privat mellan dina enheter.',
+  functions:[
+    'Dagens rutin som checklista med progress — auto vardag/helg, men du kan byta',
+    'Guidat morgonläge ett steg i taget, med valfri timer per steg',
+    'Streak — antal morgnar i rad, klistrig även om du byter rutinläge',
+    'Morgonkänsla (tungt/okej/fint) som loggas per dag',
+    'Redigera vardags- och helgrutin: namn, valfria minuter, ordna och ta bort',
+    'Idébibliotek i fyra kategorier (kropp, sinne, praktiskt, lugn) att bygga rutinen av',
+    'Mönster: streak, totalt antal morgnar, längsta svit och 30-dagars översikt',
+    'GitHub-synk mellan mobil och dator (privat repo, morgonrutin.json)',
+    'Export/import som säkerhetskopia',
+    'Auto/ljust/mörkt tema (mörkt 20–07)'
+  ],
+  changelog:[
+    {v:'1.2.0',d:'2026-06-19',items:[
+      'Inbyggd "Nyheter & funktioner"-vy med version, funktioner och ändringslogg.',
+      'Centralen-metadata inbäddad så hubben kan visa och synka in appen automatiskt.',
+      'Skrivbordsversion via ett rent CSS-lager (morgonrutin-desktop.html) — byte-identisk JS, samma synk och localStorage som mobilen.',
+      'Synkfilen heter nu morgonrutin.json (per-app), och rutiner slås ihop union-by-id så steg från flera enheter bevaras.',
+      'Genererad PNG-favicon, apple-touch-icon och webmanifest med matchande tema.'
+    ]},
+    {v:'1.1.0',d:'2026-06-19',items:[
+      'Inbyggd GitHub-synk (appkollen-stil): hämtar och sparar i en privat repo-fil, med statusbadge, debouncad push, sha-konflikthantering och auto-hämtning vid fokus.',
+      'Första separata skrivbordsversionen.'
+    ]},
+    {v:'1.0.0',d:'2026-06-19',items:[
+      'Morgonrutin lanseras: Idag med checklista och streak, guidat morgonläge, Rutin-redigering, Idébibliotek och Mönster.'
+    ]}
+  ]
+};
+// Centralen-kort (sektion sätts av Centralen, inte här)
+var CENTRALEN={
+  id:'morgonrutin',
+  namn:'Morgonrutin',
+  ikon:'🌅',
+  desc:'Bygg och följ din morgonrutin — guidat läge ett steg i taget, vardag/helg, streak och mönster.',
+  mobil:'morgonrutin.html',
+  desktop:'morgonrutin-desktop.html',
+  farger:{bg:'#F3EDE3',line:'#E0D5C3',ink:'#3F3A33',muted:'#867C6E',accent:'#C68A4E',iconbg:'#F0E2CF'}
+};
+
 function save_local(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 var pushTimer=null;
 function maybePush(){if(typeof syncOn==='function'&&syncOn()){clearTimeout(pushTimer);pushTimer=setTimeout(function(){if(typeof ghPush==='function')ghPush().catch(function(){});},900);}}
@@ -681,7 +748,7 @@ var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 function syncOn(){return !!(sync.owner&&sync.repo&&sync.token);}
-function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/morgon.json';}
+function ghUrl(){return 'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/morgonrutin.json';}
 function ghHeaders(){return {'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'};}
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
 function b64dec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
@@ -694,7 +761,16 @@ async function ghGet(){
   return JSON.parse(b64dec(j.content));
 }
 function mergeRemote(data){
-  if(data.routines&&data.routines.vardag&&data.routines.helg)state.routines=data.routines;
+  if(data.routines){
+    ['vardag','helg'].forEach(function(r){
+      var rem=data.routines[r];if(!rem)return;
+      var loc=state.routines[r]||[];
+      var seen={};rem.forEach(function(s){seen[s.id]=1;});
+      var merged=rem.slice();
+      loc.forEach(function(s){if(!seen[s.id])merged.push(s);});
+      state.routines[r]=merged;
+    });
+  }
   if(data.days){
     Object.keys(data.days).forEach(function(k){
       var rem=data.days[k],loc=state.days[k];
@@ -750,6 +826,24 @@ document.getElementById('gh-save').onclick=async function(){
 document.getElementById('gh-sync-now').onclick=function(){ghPull();};
 document.getElementById('gh-disconnect').onclick=function(){sync={owner:'',repo:'',token:'',sha:null};saveSync();setBadge('','Lokal');syncStatus('Frånkopplad. Datan finns kvar lokalt.','info');};
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
+
+// ── Nyheter & funktioner ──────────────────────────────
+function renderNews(){
+  setText('news-ver','Version '+APPINFO.version);
+  setText('news-tagline',APPINFO.tagline);
+  setText('news-audience',APPINFO.audience);
+  var html='<div class="fn-area">Funktioner</div>';
+  html+=APPINFO.functions.map(function(f){return '<div class="cl-item">'+esc(f)+'</div>';}).join('');
+  html+='<div class="fn-area">Uppdateringar</div>';
+  html+=APPINFO.changelog.map(function(e){
+    return '<div class="cl-entry"><div class="cl-head"><span class="v">v'+esc(e.v)+'</span><time>'+esc(e.d)+'</time></div>'+
+      e.items.map(function(it){return '<div class="cl-item">'+esc(it)+'</div>';}).join('')+'</div>';
+  }).join('');
+  document.getElementById('news-body').innerHTML=html;
+}
+document.getElementById('news-btn').onclick=function(){renderNews();openSheet('news-sheet');};
+document.getElementById('news-close').onclick=closeSheets;
+setText('ver-line','Morgonrutin v'+APPINFO.version);
 
 function renderAll(){renderToday();renderRutin();renderIdeer();applyTheme();}
 loadSync();

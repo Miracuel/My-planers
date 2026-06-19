@@ -107,6 +107,21 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 html[data-theme=dark] .syncbadge.err{background:#3A2926;color:#E0A99C}
 html[data-theme=dark] .syncbadge.load{background:#3D3526;color:#D8BE84}
 
+.news-head{margin-bottom:4px}
+.news-ver{font-family:Georgia,serif;font-size:20px}
+.news-tag{font-size:12px;color:var(--muted);margin-top:2px}
+.news-entry{padding:10px 0;border-top:1px solid var(--line)}
+.news-entry:first-child{border-top:none}
+.news-entry .v{font-family:Georgia,serif;font-size:14px}
+.news-entry .d{font-size:11px;color:var(--muted);margin-left:6px}
+.news-entry ul{list-style:none;margin-top:6px}
+.news-entry li{position:relative;padding:4px 0 4px 18px;font-size:13px;line-height:1.5}
+.news-entry li::before{content:'·';position:absolute;left:4px;color:var(--rose)}
+.func-list{list-style:none}
+.func-list li{position:relative;padding:5px 0 5px 20px;font-size:13px;line-height:1.5;border-top:1px solid var(--line)}
+.func-list li:first-child{border-top:none}
+.func-list li::before{content:'♡';position:absolute;left:0;color:var(--rose);font-size:12px;top:6px}
+
 .nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);z-index:40}
 .nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:9px 2px 8px;cursor:pointer;font-family:inherit}
 .nav button.active{color:var(--rose);font-weight:600}
@@ -158,6 +173,7 @@ html[data-theme=dark] .badge.soon{background:#3D3526;color:#D8BE84}
   </div>
 
   <div class="foot">
+    <button id="news-btn">Nyheter &amp; funktioner</button>
     <button id="sync-open">⚙ Synk</button>
     <button id="sync-now">↻ Hämta</button>
     <button id="export-btn">Säkerhetskopiera</button>
@@ -234,6 +250,20 @@ html[data-theme=dark] .badge.soon{background:#3D3526;color:#D8BE84}
   </div>
 </div>
 
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-nytt">
+  <div class="news-head">
+    <div class="news-ver" id="news-ver"></div>
+    <div class="news-tag" id="news-tag"></div>
+  </div>
+  <div class="section-title">Ändringslogg</div>
+  <div class="card-panel"><div id="news-log"></div></div>
+  <div class="section-title">Funktioner</div>
+  <div class="card-panel"><div id="news-funcs"></div></div>
+  <div class="section-title">Vem den är för</div>
+  <div class="card-panel"><div class="soft" id="news-aud"></div></div>
+</div>
+
 <div class="nav">
   <button class="active" data-v="today"><span>⌂</span>Idag</button>
   <button data-v="people"><span>◍</span>Personer</button>
@@ -294,6 +324,52 @@ html[data-theme=dark] .badge.soon{background:#3D3526;color:#D8BE84}
 </div>
 
 <script>
+// ── App-info, changelog & Centralen-metadata ─────────
+var APPINFO={
+  version:'1.1.0',
+  tagline:'Mjukt stöd för dina relationer',
+  audience:'För dig som vill hålla kontakten med människor du bryr dig om — påminna dig mjukt om att höra av dig, samla uppskattningar och hitta orden för både vardag och svåra samtal. Inget krav, ingen reklam.',
+  functions:[
+    'Dagens relationstanke som roterar per dag',
+    '"Hör av dig" — mjuk påminnelse om vem det är dags att kontakta, utifrån ditt eget intervall',
+    '"På gång" — kommande viktiga datum som födelsedagar och årsdagar',
+    'Personer: relation, kontaktintervall, vad som får dem att känna sig sedda, anteckningar och viktiga datum',
+    '"Hörde av mig"-loggning som nollställer intervallet',
+    'Uppskattningar kopplade till en person, med månadsräknare och historik',
+    'Jag-budskap: bygg en mening utan att skylla, redo att kopiera',
+    'Frågekort i fyra kategorier (Vardag, Närhet, Drömmar, Svåra)',
+    'Reparationsguide efter gräl och en paus-påminnelse mitt i hettan',
+    'Auto/ljust/mörkt tema (mörkt 20–07)',
+    'GitHub-synk mellan mobil och dator (union-merge per id)',
+    'Export/import som säkerhetskopia'
+  ],
+  changelog:[
+    {v:'1.1.0',d:'2026-06-19',items:[
+      'Inbyggd GitHub-synk mellan mobil och dator med union-merge per id, så inget skrivs över mellan enheter.',
+      'Ny vy "Nyheter & funktioner" med ändringslogg (nyast överst) och hela funktionslistan.',
+      'Separat desktopversion (banden-desktop.html) med vänstersidebar — samma data, samma synkfil och byte-identisk JavaScript.',
+      'Egen app-ikon (favicon + hemskärm) och inbäddad Centralen-metadata så hubben kan visa och synka in appen automatiskt.',
+      'Synkstatus i badge: Hämtar / Sparar / Synkad / Synkfel.'
+    ]},
+    {v:'1.0.0',d:'2026-06-19',items:[
+      'Banden lanseras med vyerna Idag, Personer, Uppskattning och Samtal.',
+      'Påminnelser om att höra av dig och en lista över kommande viktiga datum.',
+      'Jag-budskap-byggare, frågekort och reparationsguide för svåra samtal.',
+      'Allt sparas lokalt med export och import som säkerhetskopia.'
+    ]}
+  ]
+};
+// Centralen-kortfält (sektion sätts av Centralen). Accent matchar favicon-hjärtat.
+var META={
+  id:'banden',
+  namn:'Banden',
+  ikon:'🤍',
+  desc:'Mjukt stöd för dina relationer — påminnelser, uppskattningar & samtal',
+  mobil:'banden.html',
+  desktop:'banden-desktop.html',
+  farger:{bg:'#F4EFEA',line:'#E1D4CA',ink:'#43382F',muted:'#8C7A6D',accent:'#BC7A6E',iconbg:'#EFDDD6'}
+};
+
 // ── State ─────────────────────────────────────────────
 var KEY='banden_v1';
 var state={ people:[], appreciations:[], theme:'auto', talkCat:'Vardag' };
@@ -423,7 +499,7 @@ function renderDue(){
   for(var k=0;k<btns.length;k++){btns[k].onclick=function(){logContact(this.getAttribute('data-log'));};}
 }
 function logContact(id){
-  for(var i=0;i<state.people.length;i++){if(state.people[i].id===id){state.people[i].lastContact=todayKey();break;}}
+  for(var i=0;i<state.people.length;i++){if(state.people[i].id===id){state.people[i].lastContact=todayKey();state.people[i].updated=new Date().toISOString();break;}}
   save();renderDue();renderPeople();
 }
 function renderUpcoming(){
@@ -522,7 +598,8 @@ document.getElementById('ps-save').onclick=function(){
     cadence: (cad&&cad>0)? cad:0,
     love:document.getElementById('ps-love').value.trim(),
     notes:document.getElementById('ps-notes').value.trim(),
-    dates:draftDates.slice()
+    dates:draftDates.slice(),
+    updated:new Date().toISOString()
   };
   if(editingId){
     for(var i=0;i<state.people.length;i++)if(state.people[i].id===editingId){
@@ -646,6 +723,35 @@ function renderRepair(){
   el.innerHTML=html;
 }
 
+// ── Nyheter & funktioner ──────────────────────────────
+function renderNews(){
+  document.getElementById('news-ver').textContent='Banden '+APPINFO.version;
+  document.getElementById('news-tag').textContent=APPINFO.tagline;
+  document.getElementById('news-aud').textContent=APPINFO.audience;
+  var log='';
+  for(var i=0;i<APPINFO.changelog.length;i++){
+    var c=APPINFO.changelog[i];
+    log+='<div class="news-entry"><div><span class="v">'+esc(c.v)+'</span><span class="d">'+esc(c.d)+'</span></div><ul>';
+    for(var j=0;j<c.items.length;j++)log+='<li>'+esc(c.items[j])+'</li>';
+    log+='</ul></div>';
+  }
+  document.getElementById('news-log').innerHTML=log;
+  var fn='<ul class="func-list">';
+  for(var k=0;k<APPINFO.functions.length;k++)fn+='<li>'+esc(APPINFO.functions[k])+'</li>';
+  fn+='</ul>';
+  document.getElementById('news-funcs').innerHTML=fn;
+}
+function showNews(){
+  var vs=document.querySelectorAll('.view');
+  for(var i=0;i<vs.length;i++)vs[i].classList.remove('active');
+  var nb=document.querySelectorAll('.nav button');
+  for(var j=0;j<nb.length;j++)nb[j].classList.remove('active');
+  renderNews();
+  document.getElementById('view-nytt').classList.add('active');
+  window.scrollTo(0,0);
+}
+document.getElementById('news-btn').onclick=showNews;
+
 // ── Tema ──────────────────────────────────────────────
 function applyTheme(){
   var m=state.theme||'auto';
@@ -682,14 +788,29 @@ async function ghGet(){
   var j=await r.json();sync.sha=j.sha;
   return JSON.parse(b64dec(j.content));
 }
+function mergeDates(a,b){var m={};(a||[]).forEach(function(d){m[d.label+'|'+d.md]=d;});(b||[]).forEach(function(d){var k=d.label+'|'+d.md;if(!m[k])m[k]=d;});return Object.keys(m).map(function(k){return m[k];});}
+function laterISO(a,b){if(!a)return b||null;if(!b)return a;return a>b?a:b;}
+function mergePeople(local,remote){
+  var m={};(local||[]).forEach(function(p){m[p.id]=p;});
+  (remote||[]).forEach(function(rp){
+    var lp=m[rp.id];
+    if(!lp){m[rp.id]=rp;return;}
+    var merged=((rp.updated||'')>(lp.updated||''))?Object.assign({},lp,rp):Object.assign({},rp,lp);
+    merged.dates=mergeDates(lp.dates,rp.dates);
+    merged.lastContact=laterISO(lp.lastContact,rp.lastContact);
+    m[rp.id]=merged;
+  });
+  return Object.keys(m).map(function(k){return m[k];});
+}
+function mergeAppr(local,remote){var m={};(local||[]).forEach(function(a){m[a.id]=a;});(remote||[]).forEach(function(a){if(!m[a.id])m[a.id]=a;});return Object.keys(m).map(function(k){return m[k];});}
 async function ghPull(){
   if(!syncOn())return;
   try{
-    setBadge('load','Synkar…');
+    setBadge('load','Hämtar…');
     var data=await ghGet();
     if(data){
-      if(Array.isArray(data.people))state.people=data.people;
-      if(Array.isArray(data.appreciations))state.appreciations=data.appreciations;
+      if(Array.isArray(data.people))state.people=mergePeople(state.people,data.people);
+      if(Array.isArray(data.appreciations))state.appreciations=mergeAppr(state.appreciations,data.appreciations);
       saveLocal();renderAll();
     }
     setBadge('ok','Synkad');

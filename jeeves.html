@@ -244,6 +244,19 @@ textarea{min-height:62px;resize:vertical}
   <div class="card" id="log-history"></div>
 </div>
 
+<!-- ── NYHETER & FUNKTIONER ── -->
+<div class="view" id="v-news">
+  <div class="card day-head">
+    <div class="greet-big">&#127913; Jeeves</div>
+    <div class="dateline">Version <span id="news-version"></span></div>
+    <div class="pill" id="news-tagline"></div>
+  </div>
+  <div class="section-title">Det här kan Jeeves</div>
+  <div class="card" id="news-functions"></div>
+  <div class="section-title">Nyheter</div>
+  <div id="news-changelog"></div>
+</div>
+
 </div>
 
 <!-- Bottennav -->
@@ -253,6 +266,7 @@ textarea{min-height:62px;resize:vertical}
   <button data-v="jobs"><span>&#128188;</span>Jobb</button>
   <button data-v="goals"><span>&#129517;</span>M&aring;l</button>
   <button data-v="log"><span>&#128211;</span>Logg</button>
+  <button data-v="news"><span>&#10024;</span>Nytt</button>
 </div>
 
 <!-- Sheets -->
@@ -343,6 +357,52 @@ const fmtShort=k=>{const p=k.split('-');return (+p[2])+'/'+(+p[1])};
 const fmtLong=k=>{const p=k.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]).toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'})};
 const TODAY=dkey();
 
+// ── APPINFO + changelog (svit-standard) ─────────────────
+const APPINFO={
+  version:'2.0.0',
+  tagline:'Din diskret kompetenta jobbcoach och assistent.',
+  audience:'För dig som vill strukturera arbetsdagen, hålla koll på jobbsök och växa i karriären.',
+  functions:[
+    'Dagens fokus, fokus/paus-timer och dagens plan på ett ställe',
+    'Att göra-lista med prioritet och deadline',
+    'Jobbsök med statusflöde från Att söka till Erbjudande',
+    'Karriärmål med delsteg och framstegsmätare',
+    'Daglig reflektion med energinivå och streak',
+    'Inbyggd GitHub-synk mellan dina enheter',
+    'Separat mobil- och skrivbordsversion'
+  ],
+  changelog:[
+    {v:'2.0.0',d:'2026-06-12',items:[
+      'Synk uppgraderad till union-merge per post – inga ändringar skrivs över mellan enheter',
+      'Automatisk hämtning när appen återaktiveras',
+      'Ny vy: Nyheter & funktioner',
+      'Förbereder upptäckt i Centralen'
+    ]},
+    {v:'1.2.0',d:'2026-06-12',items:[
+      'Inbyggd GitHub-synk i Appkollen-stil',
+      'Separat skrivbordsversion'
+    ]},
+    {v:'1.1.0',d:'2026-06-12',items:[
+      'Omdesignad i samma stil som Dagstavlan och Batteriet, i varm orange',
+      'Ring-timer med helskärmssignal vid passbyte',
+      'Energi loggas med emoji'
+    ]},
+    {v:'1.0.0',d:'2026-06-12',items:[
+      'Första versionen av Jeeves'
+    ]}
+  ],
+  // Centralen-kort (sektion sätts av Centralen själv)
+  centralen:{
+    id:'jeeves',
+    namn:'Jeeves',
+    ikon:'\uD83C\uDFA9',
+    desc:'Jobbcoach och assistent: fokus, att göra, jobbsök, mål och daglig reflektion.',
+    mobil:'jeeves.html',
+    desktop:'jeeves-desktop.html',
+    farger:{bg:'#F7EEE2',line:'#E6D5BC',ink:'#443A2D',muted:'#998A75',accent:'#C9803F',iconbg:'#F5E2C8'}
+  }
+};
+
 // ── Data (samma lagring som tidigare version) ─────────────────────
 const STORE='jeeves_v1';
 const DEFAULTS=()=>({focus:{},plan:{},todos:[],jobs:[],goals:[],logs:{},settings:{workMin:50,breakMin:10,sound:true}});
@@ -363,9 +423,50 @@ const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
 const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
 function setBadge(state,msg){const b=$('sync-badge');if(!b)return;b.textContent=msg||'Lokal';b.className='sync-badge'+(state?' '+state:'')}
 async function ghGet(){const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null}if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content))}
-function applyRemote(d){data=Object.assign(DEFAULTS(),d);data.settings=Object.assign({workMin:50,breakMin:10,sound:true},d.settings||{});try{localStorage.setItem(STORE,JSON.stringify(data))}catch(e){}refreshUI()}
+// Union-merge per id (bevarar poster från flera enheter)
+function stampTodo(t){return Math.max(t&&t.doneAt||0,t&&t.created||0)}
+function stampJob(j){return j&&j.date?Date.parse(j.date)||0:0}
+function stampLog(l){return l&&l.ts||0}
+function mergeArr(loc,rem,stampFn){
+  loc=Array.isArray(loc)?loc:[];rem=Array.isArray(rem)?rem:[];
+  const map={};const order=[];
+  rem.concat(loc).forEach(function(it){
+    if(!it||!it.id)return;
+    if(!(it.id in map)){map[it.id]=it;order.push(it.id)}
+    else{const cur=map[it.id];if(stampFn(it)>=stampFn(cur))map[it.id]=it}
+  });
+  return order.map(function(id){return map[id]})
+}
+function mergePlan(loc,rem){
+  loc=loc||{};rem=rem||{};const out={};
+  const keys={};Object.keys(loc).forEach(k=>keys[k]=1);Object.keys(rem).forEach(k=>keys[k]=1);
+  Object.keys(keys).forEach(function(k){out[k]=mergeArr(loc[k],rem[k],function(x){return 0})});
+  return out
+}
+function mergeKeyed(loc,rem,stampFn){
+  loc=loc||{};rem=rem||{};const out={};
+  const keys={};Object.keys(rem).forEach(k=>keys[k]=1);Object.keys(loc).forEach(k=>keys[k]=1);
+  Object.keys(keys).forEach(function(k){
+    const a=loc[k],b=rem[k];
+    if(a===undefined)out[k]=b;else if(b===undefined)out[k]=a;
+    else out[k]=stampFn(a)>=stampFn(b)?a:b;
+  });
+  return out
+}
+function mergeData(loc,rem){
+  const out=Object.assign(DEFAULTS(),loc);
+  out.todos=mergeArr(loc.todos,rem.todos,stampTodo);
+  out.jobs=mergeArr(loc.jobs,rem.jobs,stampJob);
+  out.goals=mergeArr(loc.goals,rem.goals,function(x){return 0});
+  out.plan=mergePlan(loc.plan,rem.plan);
+  out.focus=mergeKeyed(loc.focus,rem.focus,function(x){return 0});
+  out.logs=mergeKeyed(loc.logs,rem.logs,stampLog);
+  out.settings=Object.assign({workMin:50,breakMin:10,sound:true},loc.settings||{},rem.settings||{});
+  return out
+}
+function applyRemote(d){data=mergeData(data,d||{});try{localStorage.setItem(STORE,JSON.stringify(data))}catch(e){}refreshUI()}
 async function ghPull(){if(!syncOn())return;try{setBadge('load','H\u00e4mtar\u2026');const d=await ghGet();if(d&&typeof d==='object')applyRemote(d);setBadge('ok','Synkad')}catch(e){setBadge('err','Synkfel')}}
-async function ghPush(){if(!syncOn())return;setBadge('load','Sparar\u2026');const content=b64enc(JSON.stringify(Object.assign({},data,{updated:new Date().toISOString()})));const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Jeeves-uppdatering',content:content},sync.sha?{sha:sync.sha}:{}))});let r=await doPut();if(r.status===409||r.status===422){try{await ghGet()}catch(e){}r=await doPut()}if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status)}const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad')}
+async function ghPush(){if(!syncOn())return;setBadge('load','Sparar\u2026');const payload=Object.assign({},data,{updated:new Date().toISOString()});delete payload.theme;delete payload.apiKey;const content=b64enc(JSON.stringify(payload));const doPut=()=>fetch(ghUrl(),{method:'PUT',headers:Object.assign({},ghHeaders(),{'Content-Type':'application/json'}),body:JSON.stringify(Object.assign({message:'Jeeves-uppdatering',content:content},sync.sha?{sha:sync.sha}:{}))});let r=await doPut();if(r.status===409||r.status===422){try{await ghGet()}catch(e){}r=await doPut()}if(!r.ok){setBadge('err','Synkfel');throw new Error('HTTP '+r.status)}const j=await r.json();if(j.content&&j.content.sha)sync.sha=j.content.sha;setBadge('ok','Synkad')}
 let pushT=null;
 function schedulePush(){clearTimeout(pushT);pushT=setTimeout(()=>{ghPush().catch(()=>{})},1500)}
 
@@ -446,7 +547,7 @@ $('t-start').onclick=()=>{
 };
 $('t-skip').onclick=()=>{tRun=false;clearInterval(tInt);tMode=tMode==='work'?'break':'work';tLeft=modeLen();tDisp()};
 $('t-reset').onclick=()=>{tRun=false;clearInterval(tInt);tLeft=modeLen();tDisp()};
-document.addEventListener('visibilitychange',()=>{if(tRun)tTick()});
+document.addEventListener('visibilitychange',()=>{if(tRun)tTick();if(!document.hidden&&syncOn())ghPull()});
 
 // ── Dagens plan ───────────────────────────────────────────────────
 function renderPlan(){
@@ -635,7 +736,13 @@ document.addEventListener('keydown',e=>{
 });
 
 // ── Start ─────────────────────────────────────────────────────────
-function renderAll(){renderPlan();renderTodos();renderJobs();renderGoals();renderLog()}
+function renderNews(){
+  $('news-version').textContent=APPINFO.version;
+  $('news-tagline').textContent='”'+APPINFO.tagline+'”';
+  $('news-functions').innerHTML='<div class="soft" style="margin-bottom:8px">'+esc(APPINFO.audience)+'</div>'+APPINFO.functions.map(function(f){return '<div class="plan-row"><span class="p-time">✓</span><span class="p-txt">'+esc(f)+'</span></div>'}).join('');
+  $('news-changelog').innerHTML=APPINFO.changelog.map(function(c){return '<div class="card" style="margin-bottom:10px"><div class="g-head"><span class="g-title">Version '+esc(c.v)+'</span><span class="t-due">'+esc(c.d)+'</span></div>'+c.items.map(function(it){return '<div class="step"><span>• '+esc(it)+'</span></div>'}).join('')+'</div>'}).join('');
+}
+function renderAll(){renderPlan();renderTodos();renderJobs();renderGoals();renderLog();renderNews()}
 function refreshUI(){fi.value=data.focus[TODAY]||'';$('set-work').value=data.settings.workMin;$('set-break').value=data.settings.breakMin;sw.classList.toggle('on',!!data.settings.sound);if(!tRun){tLeft=modeLen()}loadLogForm();renderAll();tDisp()}
 loadLogForm();
 renderAll();

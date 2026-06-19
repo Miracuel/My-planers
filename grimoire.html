@@ -170,6 +170,15 @@ input[type=checkbox]{accent-color:var(--lav);width:17px;height:17px}
 .sync-info b{color:var(--ink);font-weight:500}
 #gh-status{display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:9px;border:1px solid var(--line)}
 
+/* Nyheter & funktioner */
+.info-tag{font-size:13.5px;color:var(--ink);line-height:1.6;margin:2px 0 4px;font-family:Georgia,serif}
+.info-aud{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:6px}
+.info-area{font-family:Georgia,serif;font-size:14px;color:var(--lav);margin-bottom:7px}
+.info-li{font-size:12.5px;color:var(--ink);line-height:1.5;padding:3px 0 3px 15px;position:relative}
+.info-li:before{content:"·";position:absolute;left:4px;color:var(--lav);font-weight:700}
+.info-verrow{font-family:Georgia,serif;font-size:14px;color:var(--lav);margin-bottom:7px;display:flex;justify-content:space-between;align-items:baseline}
+.info-verrow span{font-size:11px;color:var(--muted);font-family:inherit;letter-spacing:.03em}
+
 /* Skuggarbete */
 .shadow-q{font-family:Georgia,serif;font-size:15px;line-height:1.55;color:var(--ink)}
 .shadow-sub{font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.5}
@@ -315,6 +324,18 @@ button:focus-visible,.dc:focus-visible,.lib-item:focus-visible{outline:2px solid
   </div>
   <div class="privacy">Allt beräknas &amp; sparas lokalt i din telefon · tider ungefärliga ✦<br>Örter &amp; kristaller är symboliska verktyg — förtär aldrig något du inte är säker på.</div>
 </div>
+
+<!-- NYHETER & FUNKTIONER -->
+<div class="view" id="view-info">
+  <div class="brand-sub" style="text-align:left;margin:2px 0 8px">✦ Grimoire · <span id="info-ver"></span></div>
+  <div class="info-tag" id="info-tag"></div>
+  <div class="info-aud" id="info-aud"></div>
+  <div class="section-title">Funktioner</div>
+  <div id="info-funcs"></div>
+  <div class="section-title">Nyheter</div>
+  <div id="info-log"></div>
+  <div class="privacy">Grimoire ✦ del av din appsvit · synkar med skrivbordsversionen</div>
+</div>
 </div>
 
 <div class="nav">
@@ -323,6 +344,7 @@ button:focus-visible,.dc:focus-visible,.lib-item:focus-visible{outline:2px solid
   <button data-v="lib"><span>❖</span>Bibliotek</button>
   <button data-v="ritual"><span>🕯</span>Ritual</button>
   <button data-v="journal"><span>📖</span>Dagbok</button>
+  <button data-v="info"><span>ⓘ</span>Nytt</button>
 </div>
 
 <div class="sheet-bg" id="sheet-bg"></div>
@@ -342,7 +364,7 @@ button:focus-visible,.dc:focus-visible,.lib-item:focus-visible{outline:2px solid
 
 <div class="sheet" id="sync-sheet">
   <h3>⚙ Synk via GitHub</h3>
-  <p class="sync-info">Skuggdagboken läses och sparas som <b>grimoire-data.json</b> i ett <b>privat</b> GitHub-repo — så ser mobilen och datorn samma sidor. Token sparas bara lokalt på den här enheten, aldrig i koden.</p>
+  <p class="sync-info">Skuggdagboken läses och sparas som <b>grimoire.json</b> i ett <b>privat</b> GitHub-repo — så ser mobilen och datorn samma sidor. Token sparas bara lokalt på den här enheten, aldrig i koden.</p>
   <label class="lbl">GitHub-användarnamn (ägare av data-repot)</label>
   <input type="text" id="gh-owner" placeholder="dittnamn" autocapitalize="none">
   <label class="lbl">Namn på data-repot (privat)</label>
@@ -1018,7 +1040,7 @@ function ritBox(txt,src){
 let lastRitual=null;
 function showRitual(txt,src,intent){
   const cn=(CATS.find(x=>x.k===curCat)||{}).n;
-  lastRitual={txt:txt,src:src,intent:intent,title:(intent||(cn?cn.replace(/&amp;/g,'&'):'Ritual')),date:toISO(new Date()),cat:curCat,done:false,doneAt:null};
+  lastRitual={id:uid(),txt:txt,src:src,intent:intent,title:(intent||(cn?cn.replace(/&amp;/g,'&'):'Ritual')),date:toISO(new Date()),cat:curCat,done:false,doneAt:null,edited:new Date().toISOString()};
   document.getElementById('rit-out').innerHTML=ritBox(txt,src);
   document.getElementById('rit-save').onclick=()=>{
     state.book.unshift(lastRitual);persistBook();renderJournal();
@@ -1078,7 +1100,7 @@ function renderBook(){
   el.querySelectorAll('.book-item').forEach(it=>{
     const i=+it.dataset.i;
     it.querySelector('.book-head').onclick=()=>it.classList.toggle('open');
-    it.querySelector('.act-done').onclick=()=>{const b=state.book[i];b.done=!b.done;b.doneAt=b.done?new Date().toISOString():null;persistBook();renderJournal();};
+    it.querySelector('.act-done').onclick=()=>{const b=state.book[i];b.done=!b.done;b.doneAt=b.done?new Date().toISOString():null;b.edited=new Date().toISOString();persistBook();renderJournal();};
     it.querySelector('.act-edit').onclick=()=>openEditor(state.book[i].date,i,null);
     it.querySelector('.act-del').onclick=()=>{if(confirm('Ta bort ur skuggdagboken?')){state.book.splice(i,1);persistBook();renderJournal();}};
   });
@@ -1120,9 +1142,9 @@ document.getElementById('je-save').onclick=()=>{
   const t=document.getElementById('je-name').value.trim(),tx=document.getElementById('je-txt').value.trim();
   if(!t&&!tx){alert('Skriv en titel eller några rader först.');return;}
   const done=document.getElementById('je-done').checked;
-  const e={title:t||'Anteckning',txt:tx,date:document.getElementById('je-date').value||toISO(new Date()),cat:jeCat,src:jeSrc,done:done,doneAt:done?new Date().toISOString():null};
+  const e={title:t||'Anteckning',txt:tx,date:document.getElementById('je-date').value||toISO(new Date()),cat:jeCat,src:jeSrc,done:done,doneAt:done?new Date().toISOString():null,edited:new Date().toISOString()};
   if(editIdx!==null){const old=state.book[editIdx];if(old.done&&done&&old.doneAt)e.doneAt=old.doneAt;state.book[editIdx]=Object.assign({},old,e);}
-  else state.book.unshift(e);
+  else {e.id=uid();state.book.unshift(e);}
   persistBook();closeSheets();
   const p=e.date.split('-');jY=+p[0];jM=+p[1]-1;
   renderJournal();
@@ -1135,17 +1157,53 @@ document.getElementById('shadow-write').onclick=()=>{
 };
 
 // ── Synk via GitHub ───────────────────────────────────
+// ── App-info, changelog & Centralen-metadata ──────────
+const APPINFO={
+  version:'1.3',
+  tagline:'Din digitala grimoire — månens faser, magiskt bibliotek, ritualer och skuggdagbok.',
+  audience:'För dig som följer månens cykler och vill ha örter, kristaller, gudar, tarot och egna ritualer samlat — med en skuggdagbok som synkar mellan dina enheter.',
+  functions:[
+    {area:'Idag',items:['Månfas med fasens magi, belyst andel och måntecken','Dagens energi: veckodagens planet, ljusfärg, ört och kristall','Aktuell planettimme i kaldeisk ordning, soluppgångsbaserad','Himlen just nu — sol, måne och planeter med tecken och retrograder','Dagens skuggfråga som följer månfasen']},
+    {area:'Måne',items:['Månadskalender med fasikoner','Ny- och fullmånar framåt med svenska fullmånenamn','Dagdetaljer med fasmagi och veckodagsmagi']},
+    {area:'Bibliotek',items:['Örter, kristaller och ljusfärger med korrespondenser','Gudar och gudinnor med domän, symboler och offergåvor','Hela tarotleken med magisk användning','Månfaser, planeter och årshjulets åtta sabbater','Sökfält och kategoriflikar']},
+    {area:'Ritual',items:['Skriv en intention och välj kategori','Färdiga korrespondenser: ljus, ört, kristall, dag och fas','Skapa ritual med AI (egen nyckel) eller lokalt snabbförslag','Spara direkt till skuggdagboken']},
+    {area:'Skuggdagbok',items:['Kalender med utförda och planerade ritualer','Skriv, redigera och datera egna ritualer','Markera utförd med datum','Månfasen visas automatiskt på varje post']},
+    {area:'Synk & data',items:['GitHub-synk av skuggdagboken (privat repo, grimoire.json)','Sammanslagning per post så inget skrivs över mellan enheter','Auto-synk vid start och när appen blir aktiv','Säkerhetskopiera och importera som JSON','Allt beräknas och sparas lokalt']}
+  ],
+  changelog:[
+    {v:'1.3',d:'2026-06-19',items:['Ny vy "Nyheter & funktioner" med version och hela ändringsloggen','Synken slår ihop skuggdagboken per post (union på id) i stället för att skriva över — poster från flera enheter behålls','Datafilen heter grimoire.json och sparas strax efter ändring (debounce)','Auto-synk även när appen blir synlig igen','Egen favicon och Centralen-metadata inbäddad så hubben kan lista appen automatiskt']},
+    {v:'1.2',d:'2026-06-12',items:['GitHub-synk av skuggdagboken','Separat skrivbordsversion med sidopanel']},
+    {v:'1.1',d:'2026-06-11',items:['Skuggdagboken: kalender, egna ritualer och utförd-markering','Dagens skuggarbete — en djupfråga som följer månens fas']},
+    {v:'1.0',d:'2026-06-11',items:['Grimoire lanseras: månkalender, magiskt bibliotek och ritualhjälp','Idag-vy med planettimmar och himlen just nu','AI-driven ritualskapare med egen nyckel']}
+  ]
+};
+const CENTRALEN_META={id:'grimoire',namn:'Grimoire',ikon:'🔮',desc:'Månkalender, magiskt bibliotek, ritualer & skuggdagbok',mobil:'grimoire.html',desktop:'grimoire-desktop.html',farger:{bg:'#120D1F',line:'#382B5A',ink:'#EBE4F4',muted:'#9C90B8',accent:'#C3A6E8',iconbg:'#1C1530'}};
+function renderInfo(){
+  document.getElementById('info-ver').textContent='v'+APPINFO.version;
+  document.getElementById('info-tag').textContent=APPINFO.tagline;
+  document.getElementById('info-aud').textContent=APPINFO.audience;
+  document.getElementById('info-funcs').innerHTML=APPINFO.functions.map(g=>'<div class="card-panel"><div class="info-area">'+esc(g.area)+'</div>'+g.items.map(it=>'<div class="info-li">'+esc(it)+'</div>').join('')+'</div>').join('');
+  document.getElementById('info-log').innerHTML=APPINFO.changelog.map(c=>'<div class="card-panel"><div class="info-verrow">v'+esc(c.v)+'<span>'+esc(c.d||'')+'</span></div>'+c.items.map(it=>'<div class="info-li">'+esc(it)+'</div>').join('')+'</div>').join('');
+}
+
 const SYNC_KEY='grimoire_sync_v1';
 let sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{const s=localStorage.getItem(SYNC_KEY);if(s){const d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
 const syncOn=()=>!!(sync.owner&&sync.repo&&sync.token);
-const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/grimoire-data.json';
+const ghUrl=()=>'https://api.github.com/repos/'+sync.owner+'/'+sync.repo+'/contents/grimoire.json';
 const ghHeaders=()=>({'Authorization':'Bearer '+sync.token,'Accept':'application/vnd.github+json'});
 const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
 const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,''))));
 function setBadge(cls,txt){const b=document.getElementById('sync-badge');b.className='sp-badge'+(cls?' '+cls:'');b.textContent=txt;}
-function migrateBook(){state.book.forEach(function(b){if(b.title===undefined)b.title=b.intent||'';if(b.done===undefined){b.done=false;b.doneAt=null;}});}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function migrateBook(){state.book.forEach(function(b){if(b.title===undefined)b.title=b.intent||'';if(b.done===undefined){b.done=false;b.doneAt=null;}if(!b.id)b.id=uid();if(!b.edited)b.edited=b.doneAt||(b.date?b.date+'T12:00:00.000Z':new Date().toISOString());});}
+// Union per id — nyaste edited vinner, poster från flera enheter behålls
+function mergeBook(local,remote){
+  const m={};(local||[]).forEach(b=>{if(b&&b.id)m[b.id]=b;});
+  (remote||[]).forEach(r=>{if(!r||!r.id)return;const e=m[r.id];if(!e||String(r.edited||'')>String(e.edited||''))m[r.id]=r;});
+  return Object.keys(m).map(k=>m[k]);
+}
 
 async function ghGet(){
   const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
@@ -1160,7 +1218,7 @@ async function ghPull(){
   try{
     setBadge('load','Hämtar…');
     const data=await ghGet();
-    if(data&&Array.isArray(data.book)){state.book=data.book;migrateBook();save();renderJournal();}
+    if(data&&Array.isArray(data.book)){migrateBook();state.book=mergeBook(state.book,data.book);save();renderJournal();}
     setBadge('ok','Synkad');
   }catch(e){setBadge('err','Synkfel');}
 }
@@ -1179,9 +1237,11 @@ async function ghPush(){
   if(j.content&&j.content.sha)sync.sha=j.content.sha;
   setBadge('ok','Synkad');
 }
-function persistBook(){save();if(syncOn())ghPush().catch(()=>{});}
+let pushT=null;
+function persistBook(){save();if(syncOn()){clearTimeout(pushT);pushT=setTimeout(()=>{ghPush().catch(()=>{});},1200);}}
 
 document.getElementById('sync-now').onclick=()=>ghPull();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&syncOn())ghPull();});
 document.getElementById('sync-settings').onclick=()=>{
   document.getElementById('gh-owner').value=sync.owner;
   document.getElementById('gh-repo').value=sync.repo;
@@ -1199,7 +1259,7 @@ document.getElementById('gh-save').onclick=async()=>{
   st.style.display='block';st.style.color='var(--muted)';st.textContent='Ansluter…';
   try{
     const data=await ghGet();
-    if(data&&Array.isArray(data.book)){state.book=data.book;migrateBook();save();renderJournal();}
+    if(data&&Array.isArray(data.book)){migrateBook();state.book=mergeBook(state.book,data.book);save();renderJournal();}
     else await ghPush();
     setBadge('ok','Synkad');
     st.style.color='var(--lav)';st.textContent='Ansluten ✓ — skuggdagboken är synkad.';
@@ -1241,7 +1301,7 @@ document.getElementById('import-btn').onclick=()=>document.getElementById('impor
 document.getElementById('import-file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.book){state=Object.assign({book:[],loc:{lat:59.33,lon:18.07},locSet:false},d);persistBook();renderJournal();renderToday();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(d&&d.book){state=Object.assign({book:[],loc:{lat:59.33,lon:18.07},locSet:false},d);migrateBook();persistBook();renderJournal();renderToday();}else alert('Ogiltig säkerhetskopia.');}catch(err){alert('Kunde inte läsa filen.');}};
   r.readAsText(f);
 };
 
@@ -1252,12 +1312,13 @@ document.querySelectorAll('.nav button').forEach(b=>{
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-'+b.dataset.v).classList.add('active');
     if(b.dataset.v==='journal')renderJournal();
+    if(b.dataset.v==='info')renderInfo();
   };
 });
 
 // ── Init ──────────────────────────────────────────────
 EVENTS=findEvents(Date.now()-3*86400000,400);
-renderToday();renderCal();renderEvents();renderLib();renderCats();renderJournal();
+migrateBook();renderToday();renderCal();renderEvents();renderLib();renderCats();renderJournal();renderInfo();
 loadSync();if(syncOn())ghPull();
 if(!state.locSet)askLocation(true);
 setInterval(renderToday,60000);
