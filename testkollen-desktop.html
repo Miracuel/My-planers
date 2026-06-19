@@ -92,6 +92,27 @@ textarea{resize:vertical;line-height:1.5}
 .app-score .sc.bad{background:var(--red-soft);color:var(--red)}
 .app-score .sc.imp{background:var(--improve-soft);color:var(--improve)}
 .app-head .tag{border-color:var(--t-line,var(--line))}
+/* Mini-feedback högst upp i kortet */
+.minifb{display:flex;align-items:center;gap:6px;padding:8px 11px 0;flex-wrap:wrap}
+.minifb .mfb-lbl{font-size:10.5px;color:var(--t-muted,var(--muted));margin-right:1px}
+.minifb .mfb{border:1px solid var(--t-line,var(--line));background:var(--t-iconbg,var(--panel2));border-radius:999px;padding:3px 9px;font-size:11px;cursor:pointer;line-height:1.5;color:var(--t-ink,var(--ink))}
+.minifb .mfb.on{background:var(--t-accent,var(--accent));color:#fff;border-color:transparent}
+.mfb-input{display:flex;gap:6px;padding:7px 11px 0}
+.mfb-input input{flex:1;min-width:0;border:1px solid var(--t-line,var(--line));border-radius:10px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--panel);color:var(--ink)}
+.mfb-input button{border:none;background:var(--t-accent,var(--accent));color:#fff;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
+/* Egna taggar */
+.app-tags{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 5px}
+.app-tags .atag{font-size:10px;border-radius:7px;padding:2px 7px;background:var(--t-iconbg,var(--panel2));color:var(--t-accent,var(--accent));border:1px solid var(--t-line,var(--line))}
+.tag-editor{margin:10px 0 2px}
+.tag-editor .lbl{font-size:11px;color:var(--muted);margin-bottom:5px}
+.tag-editor .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px}
+.tag-editor .ed{font-size:11px;border-radius:8px;padding:3px 8px;background:var(--panel2);border:1px solid var(--line);cursor:default;display:inline-flex;align-items:center;gap:5px}
+.tag-editor .ed b{cursor:pointer;color:var(--muted);font-weight:700}
+.tag-editor .addrow{display:flex;gap:6px}
+.tag-editor .addrow input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--panel);color:var(--ink)}
+.tag-editor .addrow button{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
+.apps-tools{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.apps-tools .sort-sel{margin-left:auto;border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:12px;font-family:inherit;background:var(--panel);color:var(--ink)}
 .statpick{flex-shrink:0;width:27px;height:27px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;margin-right:10px}
 .statpick.pass{background:var(--green-soft);color:var(--green);border-color:transparent}
 .statpick.fail{background:var(--red-soft);color:var(--red);border-color:transparent}
@@ -379,7 +400,8 @@ html[data-theme=dark]{
 
 <!-- SYNKADE APPAR -->
 <div class="view" id="view-apps">
-  <div class="soft" style="margin-bottom:8px">Varje app och dess funktioner. Bocka av en och en med statusikonen (✓ ○ △ ✗), eller tryck på namnet för full testvy. Appar märkta <span class="tag">synkad</span> kommer från changelogs.</div>
+  <div class="soft" style="margin-bottom:8px">Varje app och dess funktioner. Tagga apparna som du vill, filtrera och sortera, och ge snabb feedback högst upp i kortet. Tryck på namnet för full testvy.</div>
+  <div class="apps-tools"><div class="fchips" id="apps-tag-filter" style="margin:0;flex:1"></div><select class="sort-sel" id="apps-sort"><option value="namn">Namn A–Ö</option><option value="kvar">Flest kvar att testa</option><option value="tagg">Tagg</option></select></div>
   <div id="apps-list"></div>
 </div>
 
@@ -589,9 +611,9 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 
 // ── State ─────────────────────────────────────────────
 const KEY='testkollen_v1';
-let state={funcs:[],testers:[],bugs:[],cl:{path:'changelog.json',lastPull:null},feedback:[],fbQueue:[],theme:'auto'};
+let state={funcs:[],testers:[],bugs:[],cl:{path:'changelog.json',lastPull:null},feedback:[],fbQueue:[],appTags:{},theme:'auto'};
 try{const s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
-state.funcs=state.funcs||[];state.testers=state.testers||[];state.bugs=state.bugs||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};state.feedback=state.feedback||[];state.fbQueue=state.fbQueue||[];state.clStruct=state.clStruct||{};state.appMeta=state.appMeta||{};
+state.funcs=state.funcs||[];state.testers=state.testers||[];state.bugs=state.bugs||[];state.cl=state.cl||{path:'changelog.json',lastPull:null};state.feedback=state.feedback||[];state.fbQueue=state.fbQueue||[];state.clStruct=state.clStruct||{};state.appMeta=state.appMeta||{};state.appTags=state.appTags||{};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 // "Jag" (testare) sparas bara lokalt — aldrig i synk
@@ -655,6 +677,7 @@ async function ghPull(){
       if(Array.isArray(d.funcs))state.funcs=mergeFuncs(state.funcs,d.funcs);
       if(Array.isArray(d.bugs))state.bugs=mergeBugs(state.bugs,d.bugs);
       if(Array.isArray(d.testers))state.testers=Array.from(new Set(state.testers.concat(d.testers)));
+      if(d.appTags&&typeof d.appTags==='object'){state.appTags=state.appTags||{};Object.keys(d.appTags).forEach(a=>{const merged=Array.from(new Set((state.appTags[a]||[]).concat(d.appTags[a]||[])));state.appTags[a]=merged;});}
       if(d.cl&&d.cl.path)state.cl.path=state.cl.path||d.cl.path;
       save();renderAll();
     }
@@ -668,7 +691,7 @@ function persist(){save();renderAll();if(syncOn()){clearTimeout(pushT);pushT=set
 async function ghPush(){
   if(!syncOn())return;
   setBadge('load','Sparar…');
-  const payload={funcs:state.funcs,testers:state.testers,bugs:state.bugs,cl:{path:state.cl.path,lastPull:state.cl.lastPull},updated:nowISO()};
+  const payload={funcs:state.funcs,testers:state.testers,bugs:state.bugs,appTags:state.appTags,cl:{path:state.cl.path,lastPull:state.cl.lastPull},updated:nowISO()};
   const content=b64enc(JSON.stringify(payload));
   const doPut=()=>fetch(ghUrl('testkollen.json'),{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({message:'Testkollen-uppdatering',content,...(sync.sha?{sha:sync.sha}:{})})});
   let r=await doPut();
@@ -1043,11 +1066,41 @@ function clItemRow(it){
   const st=f?statusOf(f):'pending';
   return '<div class="frow cl-row"><button class="statpick '+st+'" data-pick="'+esc(it.id)+'" title="'+esc(ST[st])+'">'+statGlyph(st)+'</button><div class="fmain" data-open="'+esc(it.id)+'"><div class="fname">'+esc(it.text)+'</div></div></div>';
 }
+let appsTagFilter='*',appsSort='namn',mfbApp=null,mfbType=null;
+function appTagsOf(a){return (state.appTags&&state.appTags[a])||[];}
+function logQuickFeedback(app,typ,text){
+  text=String(text||'').trim();if(!text)return;
+  state.bugs=state.bugs||[];
+  const bug={id:'bug-'+uid(),typ:typ,rubrik:text,beskrivning:'',app:app||'',funktion:'',version:'',status:'ny',prio:'mellan',tester:getMe()||'okänd',created:nowISO(),updated:nowISO()};
+  state.bugs.unshift(bug);
+  persist();updateBugDot();pushIssue(bug);
+  const där=syncOn()?' och skickad till Appcentralen':' — skickas vid synk';
+  toast(BUG_TYP_ICON(typ)+BUG_TYP_LABEL(typ)+' loggad'+där);
+}
 function renderApps(){
   const byApp={};state.funcs.forEach(f=>{const a=f.app||'Allmänt';(byApp[a]=byApp[a]||[]).push(f);});
-  const apps=Object.keys(byApp).sort();
+  let apps=Object.keys(byApp);
   const el=$('apps-list');
-  if(!apps.length){el.innerHTML='<div class="empty-msg">Inga appar ännu. Hämta changelogs (Testa → ⟳) eller lägg till funktioner.</div>';return;}
+  if(!apps.length){$('apps-tag-filter').innerHTML='';el.innerHTML='<div class="empty-msg">Inga appar ännu. Hämta changelogs (Testa → ⟳) eller lägg till funktioner.</div>';return;}
+  // Taggfilter-rad
+  const allTags=Array.from(new Set(apps.reduce((acc,a)=>acc.concat(appTagsOf(a)),[]))).sort((x,y)=>x.localeCompare(y));
+  const hasUntagged=apps.some(a=>!appTagsOf(a).length);
+  if(appsTagFilter!=='*'&&appsTagFilter!=='__none'&&allTags.indexOf(appsTagFilter)<0)appsTagFilter='*';
+  const tf=$('apps-tag-filter');
+  let tfHtml='<button class="fchip'+(appsTagFilter==='*'?' sel':'')+'" data-tag="*">Alla</button>'+allTags.map(t=>'<button class="fchip'+(appsTagFilter===t?' sel':'')+'" data-tag="'+esc(t)+'">#'+esc(t)+'</button>').join('');
+  if(hasUntagged)tfHtml+='<button class="fchip'+(appsTagFilter==='__none'?' sel':'')+'" data-tag="__none">Utan tagg</button>';
+  tf.innerHTML=tfHtml;
+  tf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{appsTagFilter=c.dataset.tag;renderApps();};});
+  $('apps-sort').value=appsSort;$('apps-sort').onchange=()=>{appsSort=$('apps-sort').value;renderApps();};
+  // Filter
+  if(appsTagFilter==='__none')apps=apps.filter(a=>!appTagsOf(a).length);
+  else if(appsTagFilter!=='*')apps=apps.filter(a=>appTagsOf(a).indexOf(appsTagFilter)>=0);
+  // Sortering
+  const kvar=a=>byApp[a].filter(f=>{const s=statusOf(f);return s==='pending'||s==='progress';}).length;
+  if(appsSort==='kvar')apps.sort((x,y)=>kvar(y)-kvar(x)||x.localeCompare(y));
+  else if(appsSort==='tagg')apps.sort((x,y)=>{const tx=(appTagsOf(x)[0]||'~').toLowerCase(),ty=(appTagsOf(y)[0]||'~').toLowerCase();return tx.localeCompare(ty)||x.localeCompare(y);});
+  else apps.sort((x,y)=>x.localeCompare(y));
+  if(!apps.length){el.innerHTML='<div class="empty-msg">Inga appar med den taggen.</div>';return;}
   el.innerHTML=apps.map(a=>{
     const arr=byApp[a];
     const c={pending:0,progress:0,pass:0,fail:0,improve:0,blocked:0,skip:0};arr.forEach(f=>c[statusOf(f)]++);
@@ -1064,6 +1117,12 @@ function renderApps(){
     const sc='<div class="app-score"><span class="sc ok">✓ '+c.pass+' funkar</span>'+(c.fail?'<span class="sc bad">✗ '+c.fail+' funkar inte</span>':'')+(c.improve?'<span class="sc imp">△ '+c.improve+' kan förbättras</span>':'')+'</div>';
     const sum=((c.pending+c.progress)?((c.pending+c.progress)+' kvar att bocka av · '):'')+(c.skip?(c.skip+' ej nödv. · '):'')+(openBugs?(openBugs+' öppna i registret'):'allt loggat');
     const open=appsExpanded.has(a);
+    const tags=appTagsOf(a);
+    const tagsHtml=tags.length?'<div class="app-tags">'+tags.map(t=>'<span class="atag">#'+esc(t)+'</span>').join('')+'</div>':'';
+    // Mini-feedback högst upp
+    const mtypes=[['bugg','🐞'],['ide','💡'],['forbattring','✨']];
+    const minifb='<div class="minifb"><span class="mfb-lbl">Snabb feedback:</span>'+mtypes.map(t=>'<button class="mfb'+(mfbApp===a&&mfbType===t[0]?' on':'')+'" data-mfb="'+t[0]+'" data-app="'+esc(a)+'" title="'+esc(BUG_TYP_LABEL(t[0]))+'">'+t[1]+'</button>').join('')+'</div>'+
+      (mfbApp===a?'<div class="mfb-input"><input id="mfb-in" placeholder="'+esc(BUG_TYP_LABEL(mfbType)+' om '+a+'…')+'"><button data-mfbsend="'+esc(a)+'">Skicka</button></div>':'');
     // Kropp: växla mellan changelogg och funktionslogg
     const struct=(state.clStruct||{})[a];
     let body='';
@@ -1083,10 +1142,18 @@ function renderApps(){
     }else{
       body=arr.slice().sort((x,y)=>(x.namn||'').localeCompare(y.namn||'')).map(fbRow).join('');
     }
-    const headInner='<span class="tikon">'+esc(icon)+'</span><div class="thead"><div class="an">'+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div><div class="tdesc">'+desc+'</div>'+bar+(open?sc:'')+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span>';
-    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'" style="'+styleVars+'"><div class="app-head">'+headInner+'</div><div class="app-body">'+body+'</div></div>';
+    // Taggredigerare i kroppen
+    const tagEd='<div class="tag-editor"><div class="lbl">Taggar</div><div class="chips">'+(tags.length?tags.map(t=>'<span class="ed">#'+esc(t)+'<b data-untag="'+esc(t)+'" data-app="'+esc(a)+'" title="Ta bort">×</b></span>').join(''):'<span class="soft" style="font-size:11px">Inga taggar än</span>')+'</div><div class="addrow"><input class="tag-in" data-app="'+esc(a)+'" placeholder="Ny tagg…"><button data-addtag="'+esc(a)+'">Lägg till</button></div></div>';
+    const headInner='<span class="tikon">'+esc(icon)+'</span><div class="thead"><div class="an">'+esc(a)+(synced?' <span class="tag">synkad</span>':'')+'</div><div class="tdesc">'+desc+'</div>'+tagsHtml+bar+(open?sc:'')+'<div class="app-sum">'+sum+'</div></div><span class="chev">›</span>';
+    return '<div class="app-card'+(open?' open':'')+'" data-app="'+esc(a)+'" style="'+styleVars+'">'+minifb+'<div class="app-head">'+headInner+'</div><div class="app-body">'+body+tagEd+'</div></div>';
   }).join('');
   el.querySelectorAll('.app-head').forEach(h=>{h.onclick=()=>{const card=h.closest('.app-card');const a=card.dataset.app;if(appsExpanded.has(a))appsExpanded.delete(a);else appsExpanded.add(a);card.classList.toggle('open');renderApps();};});
+  el.querySelectorAll('.minifb .mfb').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();const a=b.dataset.app,t=b.dataset.mfb;if(mfbApp===a&&mfbType===t){mfbApp=null;mfbType=null;}else{mfbApp=a;mfbType=t;}renderApps();const inp=$('mfb-in');if(inp)inp.focus();};});
+  const mfbSend=el.querySelector('[data-mfbsend]');
+  if(mfbSend){const a=mfbSend.dataset.mfbsend,inp=$('mfb-in');const go=()=>{const v=inp.value;const t=mfbType;mfbApp=null;mfbType=null;logQuickFeedback(a,t,v);};mfbSend.onclick=(e)=>{e.stopPropagation();go();};if(inp)inp.onkeydown=(e)=>{if(e.key==='Enter'){e.preventDefault();go();}};}
+  el.querySelectorAll('[data-addtag]').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();const a=b.dataset.addtag;const inp=b.closest('.addrow').querySelector('.tag-in');const v=(inp?inp.value:'').trim();if(!v)return;state.appTags=state.appTags||{};const cur=state.appTags[a]||[];if(cur.map(x=>x.toLowerCase()).indexOf(v.toLowerCase())<0){state.appTags[a]=cur.concat([v]);persist();}renderApps();};});
+  el.querySelectorAll('.tag-in').forEach(inp=>{inp.onkeydown=(e)=>{if(e.key==='Enter'){e.preventDefault();const btn=inp.closest('.addrow').querySelector('[data-addtag]');if(btn)btn.click();}};inp.onclick=(e)=>e.stopPropagation();});
+  el.querySelectorAll('[data-untag]').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();const a=b.dataset.app,t=b.dataset.untag;if(state.appTags&&state.appTags[a]){state.appTags[a]=state.appTags[a].filter(x=>x!==t);if(!state.appTags[a].length)delete state.appTags[a];persist();}renderApps();};});
   el.querySelectorAll('.segtabs button').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();appTab[b.dataset.app]=b.dataset.tab;renderApps();};});
   el.querySelectorAll('.statpick').forEach(b=>{b.onclick=(e)=>{e.stopPropagation();openStatusSheet(b.dataset.pick);};});
   el.querySelectorAll('.app-body .fmain[data-open]').forEach(r=>{r.onclick=()=>openFunc(r.dataset.open);});
@@ -1115,7 +1182,7 @@ function renderFeedback(){
     '<div class="tile"><div class="n">'+nF+'</div><div class="l">⚠️ Fel</div></div>'+
     '<div class="tile"><div class="n">'+nFb+'</div><div class="l">💡 Förb.</div></div>';
   // typ-filter
-  const typs=[['*','Alla'],['bugg','🐞 Bugg'],['fel','⚠️ Fel'],['forbattring','💡 Förbättring']];
+  const typs=[['*','Alla'],['bugg','🐞 Bugg'],['fel','⚠️ Fel'],['ide','💡 Idé'],['forbattring','✨ Förbättring']];
   const tf=$('fb-type-filter');
   tf.innerHTML=typs.map(t=>'<button class="fchip'+(fbFilterTyp===t[0]?' sel':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('');
   tf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{fbFilterTyp=c.dataset.t;renderFeedback();};});
@@ -1314,7 +1381,7 @@ function logIssueFromFunc(f,typ){
 function issueItem(bug){
   const rubrik=bug.rubrik||(bug.typ==='forbattring'?'Förbättring':'Bugg');
   const desc=bug.beskrivning||'';
-  const it={id:'tk-'+uid(),name:bug.app||'',file:'',typ:(bug.typ==='forbattring'?'forb':bug.typ==='fel'?'fel':'bugg'),txt:rubrik+(desc?('\n\n'+desc):''),rubrik:rubrik,beskrivning:desc,prio:bug.prio||'mellan',d:fmtDate(nowISO()),ts:nowISO(),kalla:'Testkollen',funktion:bug.funktion||'',version:bug.version||''};
+  const it={id:'tk-'+uid(),name:bug.app||'',file:'',typ:(bug.typ==='forbattring'?'forb':bug.typ==='ide'?'ide':bug.typ==='fel'?'fel':'bugg'),txt:rubrik+(desc?('\n\n'+desc):''),rubrik:rubrik,beskrivning:desc,prio:bug.prio||'mellan',d:fmtDate(nowISO()),ts:nowISO(),kalla:'Testkollen',funktion:bug.funktion||'',version:bug.version||''};
   const m=fbAppList().find(a=>a.name.toLowerCase()===(bug.app||'').toLowerCase());
   if(m){it.file=m.file;if(m.appNo!=null)it.appNo=m.appNo;}
   return it;
@@ -1459,9 +1526,9 @@ $('fb-send').onclick=sendFb;
 
 // ── Buggregister ──────────────────────────────────────
 const BUG_STATUS=[['ny','Ny'],['bekraftad','Bekräftad'],['paborjad','Påbörjad'],['fixad','Fixad'],['omtest','Omtest krävs'],['stangd','Stängd']];
-const BUG_TYPER=[['bugg','🐞 Bugg'],['fel','⚠️ Fel'],['forbattring','💡 Förbättring']];
-const BUG_TYP_ICON=t=>t==='forbattring'?'💡 ':t==='fel'?'⚠️ ':'🐞 ';
-const BUG_TYP_LABEL=t=>t==='forbattring'?'Förbättring':t==='fel'?'Fel':'Bugg';
+const BUG_TYPER=[['bugg','🐞 Bugg'],['fel','⚠️ Fel'],['ide','💡 Idé'],['forbattring','✨ Förbättring']];
+const BUG_TYP_ICON=t=>t==='forbattring'?'✨ ':t==='ide'?'💡 ':t==='fel'?'⚠️ ':'🐞 ';
+const BUG_TYP_LABEL=t=>t==='forbattring'?'Förbättring':t==='ide'?'Idé':t==='fel'?'Fel':'Bugg';
 const BUG_LABEL=s=>{const m=BUG_STATUS.find(x=>x[0]===s);return m?m[1]:s;};
 function bugPill(s){return '<span class="pill b-'+s+'">'+esc(BUG_LABEL(s))+'</span>';}
 const OPEN_BUG=b=>b.status!=='fixad'&&b.status!=='stangd';
@@ -1469,7 +1536,7 @@ let bugFilterSt='*',bugFilterApp='*',bugFilterTyp='*';
 function updateBugDot(){const n=(state.bugs||[]).filter(OPEN_BUG).length;const d=$('bug-dot');if(!d)return;if(n>0){d.style.display='block';d.textContent=n>99?'99+':n;}else d.style.display='none';}
 function renderBugs(){
   state.bugs=state.bugs||[];
-  const typs=[['*','Alla'],['bugg','🐞 Buggar'],['fel','⚠️ Fel'],['forbattring','💡 Förbättringar']];
+  const typs=[['*','Alla'],['bugg','🐞 Buggar'],['fel','⚠️ Fel'],['ide','💡 Idéer'],['forbattring','✨ Förbättringar']];
   const tf=$('bug-typ-filter');
   tf.innerHTML=typs.map(t=>'<button class="fchip'+(bugFilterTyp===t[0]?' sel':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('');
   tf.querySelectorAll('.fchip').forEach(c=>{c.onclick=()=>{bugFilterTyp=c.dataset.t;renderBugs();};});
@@ -1526,7 +1593,7 @@ function saveBug(){
 $('add-bug').onclick=()=>openBug(null);
 $('bug-save').onclick=saveBug;
 $('bug-del').onclick=()=>{if(!bugDraft)return;if(!confirm('Ta bort buggen?'))return;state.bugs=(state.bugs||[]).filter(b=>b.id!==bugDraft.id);persist();closeSheets();renderBugs();updateBugDot();};
-$('bug-tofeedback').onclick=()=>{if(!bugDraft)return;openFeedback({name:bugDraft.app,typ:(bugDraft.typ==='forbattring'?'forb':bugDraft.typ==='fel'?'fel':'bugg'),rubrik:bugDraft.rubrik,desc:bugDraft.beskrivning});};
+$('bug-tofeedback').onclick=()=>{if(!bugDraft)return;openFeedback({name:bugDraft.app,typ:(bugDraft.typ==='forbattring'?'forb':bugDraft.typ==='ide'?'ide':bugDraft.typ==='fel'?'fel':'bugg'),rubrik:bugDraft.rubrik,desc:bugDraft.beskrivning});};
 
 // ── AI: föreslå testfall ──────────────────────────────
 const AI_KEY='testkollen_ai_key';
@@ -1670,7 +1737,7 @@ $('ai-sheet').addEventListener('transitionend',()=>{if($('ai-sheet').classList.c
 
 // ── Export / import ───────────────────────────────────
 $('export-btn').onclick=()=>{
-  const blob=new Blob([JSON.stringify({funcs:state.funcs,testers:state.testers,bugs:state.bugs,cl:{path:state.cl.path,lastPull:state.cl.lastPull}},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({funcs:state.funcs,testers:state.testers,bugs:state.bugs,appTags:state.appTags,cl:{path:state.cl.path,lastPull:state.cl.lastPull}},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);const d=new Date();
   a.download='testkollen-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
   a.click();URL.revokeObjectURL(a.href);
@@ -1694,8 +1761,14 @@ function applyTheme(){
 $('theme-btn').onclick=()=>{state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Changelog / nyheter ───────────────────────────────
-const APP_VERSION='3.0';
+const APP_VERSION='3.1';
 const CHANGELOG=[
+  {version:'3.1',date:'2026-06-18',title:'Egna taggar & mini-feedback',items:[
+    'Tagga apparna med egna taggar (läggs till/tas bort i kortet) och filtrera applistan på en tagg eller "Utan tagg".',
+    'Sortera applistan på namn, flest kvar att testa eller tagg.',
+    'Mini-feedback högst upp i varje app-kort: ge snabb 🐞 bugg, 💡 idé eller ✨ förbättring med en rad — loggas i registret och skickas till Appcentralen.',
+    'Buggregistret har nu även typen Idé (💡).'
+  ]},
   {version:'3.0',date:'2026-06-18',title:'Förinställd Centralen-metadata',items:[
     'Appen bär nu ett förinställt Centralen-kort (id, namn, ikon, beskrivning, mobil/desktop-filnamn och en komplett färgvärld) som Centralen kan synka in automatiskt — kategorin sätts fortfarande i Centralen.',
     'Metadatan följer med i den publicerade testkollen-changelog.json, tillsammans med tagline och målgrupp.',
@@ -1807,7 +1880,7 @@ const FUNCTIONS=[
   {area:'Att testa',items:['Ping för nya funktioner ur changeloggen, ej färdigtestade samt underkända/blockerade i egna sektioner.','Antalsbadge i navet på det som väntar.']},
   {area:'Testprotokoll',items:['Testfall med status godkänd/underkänd/blockerad och automatisk statusrollup per funktion.','Varje rad taggas som 🔄 Ändring (changelogg) eller 🧩 Funktion (funktionslogg), med filter för att visa bara den ena.','"Välj flera" för att kryssa i flera funktioner och massgodkänna ("✓ Godkänn valda") eller markera "Behöver ej testas" på en gång, signerat med testare och tidsstämpel.','Tre modulomdömen utan testfall: "Funkar", "Funkar inte" (loggar bugg) och "Kan förbättras" (loggar förbättring) — plus "Behöver ej testas". Med kommentar som följer med. Lägger du till testfall tar de detaljerade resultaten över.','"Funkar inte" och "Kan förbättras" skickas automatiskt till Appcentralen (köas offline).','Anteckning/kommentar på funktionsnivå under snabbknapparna.','"Jag förstår inte funktionen" — AI förklarar funktionen och vad du bör titta efter.','"Nästa att testa →" tar dig vidare till nästa funktion som behöver testas, med antal kvar.','Bocka av testad på mobil/desktop (spårning, ej separata tester) — markörer på raderna och plattformstäckning i översikten.','Signering med testare + tidsstämpel, fritextanteckning per testfall, AI-föreslagna testfall, manuellt tillagda funktioner.']},
   {area:'Buggregister',items:['Separat register för buggar, fel och förbättringar (typ-filter 🐞/⚠️/💡), med status Ny/Bekräftad/Påbörjad/Fixad/Omtest krävs/Stängd, kopplat till app, funktion och version, med prioritet och rapportör.','Modulomdömena "Funkar inte" och "Kan förbättras" loggar automatiskt här och skickar till Appcentralen. Poster syns i översikten och kan skickas/återsändas till Appcentralen.']},
-  {area:'Synkade appar',items:['Apparna visas som kort i Centralens stil — ikon i färgad cirkel, namn i accentfärg, beskrivning och appens egen färgvärld (hämtad från changelog-filen och centralen.json, annars tonad i accentfärgen). Korten ligger i ett tvåkolumnsrutnät. Fäll ut ett kort i full bredd för att växla med pill-flikar mellan changeloggen (per version) och funktionsloggen (per område), var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".']},
+  {area:'Synkade appar',items:['Apparna visas som kort i Centralens stil — ikon i färgad cirkel, namn i accentfärg, beskrivning och appens egen färgvärld (hämtad från changelog-filen och centralen.json, annars tonad i accentfärgen). Korten ligger i ett tvåkolumnsrutnät. Fäll ut ett kort i full bredd för att växla med pill-flikar mellan changeloggen (per version) och funktionsloggen (per område), var rad med statussymbol (✓ funkar, ○ väntande, △ kan förbättras, ✗ funkar inte). Bocka av en och en via statusikonen eller öppna full testvy via namnet. Appar från changelogs märks "synkad".','Egna taggar per app (läggs till/tas bort i kortet), med filter på tagg eller "Utan tagg" och sortering på namn, flest kvar att testa eller tagg.','Mini-feedback högst upp i kortet: ge snabb 🐞 bugg, 💡 idé eller ✨ förbättring med en rad — loggas i registret och skickas till Appcentralen.']},
   {area:'Feedback',items:['Tavla i Feedbackkollen-stil över alla loggade poster (bugg/fel/förbättring): kort med färgad statusrand, typikon, rubrik, beskrivning och pillar för app, status och prioritet. Filtrera på typ, status och app, med översiktsrutor och "+ Logga feedback". Tryck på ett kort för att redigera.']},
   {area:'Kalender',items:['Kalendervy som visar när varje funktion lades till (antal per dag). Tryck på ett datum för att se och testa bara de funktionerna, plus buggar rapporterade samma dag.']},
   {area:'Testare',items:['Lägg till och ta bort testare, välj "Jag" lokalt (synkas ej), automatisk signering av resultat.']},

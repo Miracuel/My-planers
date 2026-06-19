@@ -265,7 +265,7 @@ label.chk-item:last-child{border-bottom:none}
 .fam-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:9px;background:#ECE7DD;color:#6E675D;border:1px solid #E0D9CC}
 .fam-group{grid-column:1/-1;margin-bottom:4px}
 .fam-head{display:flex;align-items:center;gap:8px;font-family:Georgia,serif;font-size:15px;color:var(--ink);margin:16px 2px 9px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-.fam-head span{font-size:12px;color:var(--ink-soft);font-family:-apple-system,sans-serif}
+.fam-head span{font-size:12px;color:var(--ink-soft);font-family:-apple-system,sans-serif}.stat-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 auto}
 #cards.grouped{display:block}
 .fam-add{display:flex;gap:8px;margin-top:8px}
 .fam-add input{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px;font-size:14px;background:var(--paper);outline:none;font-family:inherit;color:var(--ink)}
@@ -1047,11 +1047,12 @@ function aiStatus(app,ai){const s=app.sync&&app.sync[ai];if(!s)return'off';if(ap
 // ── GitHub-synk (samma mönster som jobbplaneringen) ────
 const APPINFO={
   id:'appkollen',
-  version:'1.45',
+  version:'1.46',
   tagline:'Översikt och status för hela din app-svit',
   audience:'För dig som bygger och underhåller många appar',
   functions:['Appöversikt med kort i tre nivåer','Fokus-vy & Gör idag','Test-vy med testare','Backlogg, idéer & buggar','Moduler & funktioner','Prioritet, poäng & betyg','Tidsspårning','Appfamiljer & kategorier','Portfölj & insikter','Kalender & aktivitet','GitHub-synk','AI-tips (Claude/ChatGPT)','Manifest & Centralen-register','Läser Testkollens feedback'],
   changelog:[
+    {v:'1.46',d:'2026-06-16',items:['Status-sorteringen grupperar nu med rubriker (Ej skapad, Backlogg, Pågår, Test, Klar) med antal och statusfärg \u2014 enklare att hitta t.ex. ej skapade appar.']},
     {v:'1.45',d:'2026-06-16',items:['Anpassad till svit-standarden: inbäddad changelog + denna Nyheter-vy.','App-specifik favicon i accentfärgen.','Förinställd Centralen-metadata för automatisk kortvisning.','Union-merge per id vid synk så inga poster tappas mellan enheter.']},
     {v:'1.44',d:'2026-06-16',items:['Tar emot feedback från Testkollen via appkollen-inbox.json till rätt apps backlogg.']},
     {v:'1.43',d:'2026-06-16',items:['Läser Testkollens testdata: testare, öppna ärenden och testfallsprogress per app.']},
@@ -2242,6 +2243,11 @@ function renderCards(){
     var groups={};list.forEach(function(a){var f=a.family||'';(groups[f]=groups[f]||[]).push(a);});
     var order=famList();var keys=[];order.forEach(function(f){if(groups[f])keys.push(f);});if(groups[''])keys.push('');
     html=keys.map(function(f){var apps=groups[f].slice().sort(svName);return'<div class="fam-group"><div class="fam-head">'+(f?esc(f):'Utan familj')+'<span>('+apps.length+')</span></div>'+apps.map(cardHtml).join('')+'</div>';}).join('');
+    document.getElementById('cards').classList.add('grouped');
+  }else if(state.sort==='status'){
+    var sgroups={};list.forEach(function(a){var s=effStatus(a);(sgroups[s]=sgroups[s]||[]).push(a);});
+    var sorder=['none','back','pagar','test','klar'];var skeys=sorder.filter(function(s){return sgroups[s];});
+    html=skeys.map(function(s){var apps=sgroups[s].slice().sort(svName);var col=STCOL[s]||'var(--ink-soft)';return '<div class="fam-group"><div class="fam-head"><span class="stat-dot" style="background:'+col+'"></span>'+esc(STATUS[s]?STATUS[s].label:s)+'<span>('+apps.length+')</span></div>'+apps.map(cardHtml).join('')+'</div>';}).join('');
     document.getElementById('cards').classList.add('grouped');
   }else{
     html=list.map(cardHtml).join('');
