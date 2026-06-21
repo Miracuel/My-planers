@@ -895,9 +895,20 @@ function sparaAndringar(){
   try{ localStorage.setItem("centralen-andringar", JSON.stringify(ANDRINGAR)); }catch(e){}
 }
 function medAndringar(a){
+  // Läs in appens egen metadata från dess changelog (namn, ikon, färger)
+  const cg = CHANGELOGS[a.id] && CHANGELOGS[a.id].data;
+  let bas = a;
+  if(cg){
+    const meta = {};
+    const namn = cg.namn || cg.name; if(namn) meta.namn = String(namn);
+    const ikon = cg.ikon || cg.icon; if(ikon) meta.ikon = String(ikon);
+    const f = cg.farger || cg.colors;
+    if(f && typeof f === "object") meta.farger = Object.assign({}, a.farger, f);
+    if(Object.keys(meta).length) bas = Object.assign({}, a, meta);
+  }
   const o = ANDRINGAR[a.id];
-  if(!o) return a;
-  return Object.assign({}, a, o, {farger: Object.assign({}, a.farger, o.farger || {})});
+  if(!o) return bas;
+  return Object.assign({}, bas, o, {farger: Object.assign({}, bas.farger, o.farger || {})});
 }
 
 /* Favoriter, status och sökning (favoriter + status synkas i centralen.json) */
@@ -1765,14 +1776,19 @@ const CENTRALEN_LOGG = {
   icon: "🎛️",
   description: "Startsida och appöversikt – hubben för alla dina appar, med arbetsyta, översikt, insikt och synk.",
   audience: "För dig som har många egna appar och vill ha en samlad startsida med översikt, snabb åtkomst och synk mellan enheter.",
-  version: "3.4",
+  version: "3.5",
   updated: "2026-06-16",
   latest: [
-    "Beskrivning är nu en egen flik (först) i app-infon",
-    "Kortet visar kort beskrivning; den långa visas i app-infon",
-    "App-infon visar Beskrivning, Funktioner, Målgrupp, Uppdateringar"
+    "Centralen läser apparnas metadata (namn, ikon, färger) från changeloggen",
+    "Appar med changelog dyker upp automatiskt även om de saknas i listan",
+    "Beskrivning är en egen flik först i app-infon"
   ],
   changelog: [
+    { version: "3.5", date: "2026-06-16", changes: [
+      "Korten speglar appens egen metadata (namn, ikon, färger) från dess changelog-fil",
+      "Appar som har en changelog men saknas i listan läggs till automatiskt (sektion Övrigt)",
+      "Lägg name, icon och farger i changeloggen för att styra hur appen visas i Centralen"
+    ]},
     { version: "3.4", date: "2026-06-16", changes: [
       "Beskrivningen ligger inte längre högst upp – den är en egen flik \"Beskrivning\" först (före Funktioner) och öppnas som standard"
     ]},
@@ -2196,6 +2212,29 @@ async function laddaChangelogs(){
     ny[appIdForCg(fil, data)] = {data:data, fil:fil};
   });
   CHANGELOGS = ny;
+
+  // Auto-upptäck appar som har en changelog men saknas i listan
+  Object.keys(CHANGELOGS).forEach(id => {
+    if(APPS.some(a => a.id === id)) return;
+    const d = CHANGELOGS[id].data || {};
+    const bas = cgBas(CHANGELOGS[id].fil);
+    const f = d.farger || d.colors || {};
+    APPS.push({
+      id: id,
+      namn: String(d.namn || d.name || bas),
+      ikon: String(d.ikon || d.icon || "📦"),
+      desc: d.tagline ? String(d.tagline) : "",
+      sektion: "Övrigt",
+      mobil: bas + ".html",
+      desktop: bas + "-desktop.html",
+      farger: {
+        bg: f.bg || "#FFFFFF", line: f.line || "#E5DFD5", ink: f.ink || "#3A3633",
+        muted: f.muted || "#8A847C", accent: f.accent || "#7A8B6F", iconbg: f.iconbg || "#ECE7DF"
+      },
+      upptackt: true
+    });
+  });
+
   rita();
 }
 
