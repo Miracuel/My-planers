@@ -324,7 +324,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <script>
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.3.1',
+  version:'2.3.2',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -337,6 +337,9 @@ const APPINFO={
     'PDF-export: alla vyer exporteras till en PDF-fil'
   ],
   changelog:[
+    {v:'2.3.2',d:'2026-06-23',items:[
+      'Rättat id-kollision: kollegor som lades till i olika sessioner kunde få samma interna id, vilket gjorde att t.ex. David markerades/redigerades som Rebecca. Nästa lediga id räknas nu om från sparad data och redan sparade dubbletter repareras automatiskt.'
+    ]},
     {v:'2.3.1',d:'2026-06-23',items:[
       'Deadlines kan nu tilldelas en eller flera personer (kryssrutor i formuläret).',
       'Roadmap-filter i deadlines-vyn: visa alla eller bara en vald persons deadlines.',
@@ -871,7 +874,19 @@ document.addEventListener('keydown',function(e){
   const GANTT_COLORS=['#5B7BA6','#5E8C61','#C2588E','#D98032','#8C7BB0','#4E8E8A','#A07845'];
   const GANTT_LIGHT=['#DAE5F5','#D9EFE4','#F9D6E8','#FAE3CE','#EAE6F8','#D4EEEC','#F0E4D0'];
   function saveSommar(){try{localStorage.setItem(STORE_S,JSON.stringify({persons:sPersons,tl:sTl,planStart:sPlanStart.toISOString().slice(0,10),planEnd:sPlanEnd.toISOString().slice(0,10)}));}catch(e){}}
-  function loadSommar(){try{const s=localStorage.getItem(STORE_S);if(s){const d=JSON.parse(s);if(d.persons)sPersons=d.persons.map(p=>({offWeeks:{},dayStatus:{},...p}));if(d.tl){sTl=d.tl.map(it=>({...it,dateFrom:it.dateFrom||it.date||it.dateTo,dateTo:it.dateTo||it.dateFrom||it.date,owners:Array.isArray(it.owners)?it.owners:(it.owner!=null?[it.owner]:[])}));}if(d.planStart){const p=d.planStart.split('-');sPlanStart=new Date(+p[0],+p[1]-1,+p[2]);}if(d.planEnd){const p=d.planEnd.split('-');sPlanEnd=new Date(+p[0],+p[1]-1,+p[2]);}}}catch(e){}}
+  function loadSommar(){try{const s=localStorage.getItem(STORE_S);if(s){const d=JSON.parse(s);if(d.persons)sPersons=d.persons.map(p=>({offWeeks:{},dayStatus:{},...p}));if(d.tl){sTl=d.tl.map(it=>({...it,dateFrom:it.dateFrom||it.date||it.dateTo,dateTo:it.dateTo||it.dateFrom||it.date,owners:Array.isArray(it.owners)?it.owners:(it.owner!=null?[it.owner]:[])}));}if(d.planStart){const p=d.planStart.split('-');sPlanStart=new Date(+p[0],+p[1]-1,+p[2]);}if(d.planEnd){const p=d.planEnd.split('-');sPlanEnd=new Date(+p[0],+p[1]-1,+p[2]);}}}catch(e){}repairIds();saveSommar();}
+  function repairIds(){
+    // Compute next free id from existing data so reloads never reuse an id.
+    let maxId=0;
+    sPersons.forEach(p=>{if(typeof p.id==='number')maxId=Math.max(maxId,p.id);});
+    sTl.forEach(t=>{if(typeof t.id==='number')maxId=Math.max(maxId,t.id);});
+    sNextId=maxId+1;
+    // Repair any already-saved duplicate person ids.
+    const used=new Set();
+    sPersons.forEach(p=>{if(used.has(p.id)){p.id=sNextId++;}used.add(p.id);});
+    const usedT=new Set();
+    sTl.forEach(t=>{if(usedT.has(t.id)){t.id=sNextId++;}usedT.add(t.id);});
+  }
   function getWeeks(s,e){const w=[];const d=new Date(s);d.setDate(d.getDate()-((d.getDay()+6)%7));while(d<=e){const m=new Date(d),su=new Date(d);su.setDate(su.getDate()+6);if(su>=s&&m<=e)w.push(new Date(m));d.setDate(d.getDate()+7);}return w;}
   function wKey(d){return d.toISOString().slice(0,10);}
   function dKey(d){return d.toISOString().slice(0,10);}
