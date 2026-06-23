@@ -261,6 +261,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
       <button class="view-tab active" data-view="cal">Kalender</button>
       <button class="view-tab" data-view="tl">Tidslinje</button>
       <button class="view-tab" data-view="wheel">Årshjul</button>
+      <button class="view-tab" data-view="sommar">Semester</button>
       <button class="view-tab" data-view="news">Nyheter</button>
     </div>
   </div>
@@ -306,6 +307,10 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
   <div class="wk-info" id="wk-info">Tryck på en vecka för info</div>
 </div>
 
+<div class="view-panel" id="view-sommar">
+  <div id="sommar-root"></div>
+</div>
+
 <div class="view-panel" id="view-news">
   <div class="news-card" id="news-card"></div>
 </div>
@@ -334,6 +339,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <div class="foot">
   <button id="export-btn">Säkerhetskopiera</button>
   <button id="import-btn">Importera</button>
+  <button id="pdf-btn">&#128438; Exportera PDF</button>
 </div>
 <input type="file" id="import-file" accept=".json" style="display:none">
 <div class="privacy" id="privacy-line">All data sparas lokalt på den här enheten — koppla på GitHub-synk (⚙) för att dela med teamet.</div>
@@ -342,7 +348,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <script>
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.0.0',
+  version:'2.2.1',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -350,9 +356,26 @@ const APPINFO={
     'Svenska röda dagar och changestopp-perioder (röd/orange/gul)',
     'Semester med varning för lågbemanning när fler än en är ledig',
     'Deadlines med antal arbetsdagar kvar',
-    'GitHub-synk för hela teamet samt lokal lagring och säkerhetskopiering'
+    'GitHub-synk för hela teamet samt lokal lagring och säkerhetskopiering',
+    'Sommarplanering: semester, dagschema (hemma/kontor), tidslinje med deadlines',
+    'PDF-export: alla vyer exporteras till en PDF-fil'
   ],
   changelog:[
+    {v:'2.2.1',d:'2026-06-23',items:[
+      'Rättat krasch i skrivbordsversionen (kvarglömd kodrad gjorde att inget renderades och knappar inte gick att klicka).',
+      'Rättat december i tidslinjen och årshjulet: månadsbandet sträckte sig felaktigt över hela året eftersom vecka 1 (vars onsdag ligger i december) klumpades ihop med december-veckorna. Månadsspann är nu sammanhängande.'
+    ]},
+    {v:'2.2.0',d:'2026-06-23',items:[
+      'Sjuk-status tillagd i dagschemat (klicka tre gånger för att markera sjukdag, orange).',
+      'Rättat datumfel i Juni: dagar visades förskjutet i tidszoner utanför UTC.',
+      'Changelog uppdaterad.'
+    ]},
+    {v:'2.1.0',d:'2026-06-23',items:[
+      'Ny vy Sommar: planera semester (veckovis), dagschema (hemma/kontor per dag, uppdelat per månad) och en tidslinje med upp till 15 deadlines.',
+      'Helger visas i rött i dagschemat.',
+      'PDF-export: exporterar alla vyer (kalender, tidslinje, årshjul, sommar) till en nedladdningsbar PDF.',
+      'Tangentbordssnabbväg 5 öppnar sommarvyn.'
+    ]},
     {v:'2.0.0',d:'2026-06-12',items:[
       'Synk uppgraderad till sviten standard: per-app-filen jobb.json och sammanslagning per id, så att ingen teammedlems poster skrivs över.',
       'Engångsmigrering: en befintlig data.json i repot tas över automatiskt första gången.',
@@ -597,10 +620,9 @@ function renderTl(){
   html+='<div style="display:flex;margin-bottom:1px">';
   quarters.forEach(([s,e],qi)=>{const w=(e-s+1)*WK+(e-s);html+='<div style="width:'+w+'px;background:'+Q_COLORS[qi]+';color:#fff;font-size:10px;font-weight:600;text-align:center;padding:2px 0;border-radius:3px 3px 0 0;margin-right:'+(qi<3?'2px':'0')+';flex-shrink:0">Q'+(qi+1)+'</div>';});
   html+='</div>';
-  const monthSpans={};
-  for(let wk=1;wk<=totalWks;wk++){const mo=getMonthOfWeek(wk,yr);if(!monthSpans[mo])monthSpans[mo]={f:wk,l:wk};else monthSpans[mo].l=wk;}
+  const monthSpans=[];for(let wk=1;wk<=totalWks;wk++){const mo=getMonthOfWeek(wk,yr);const _lr=monthSpans[monthSpans.length-1];if(_lr&&_lr.mo===mo)_lr.l=wk;else monthSpans.push({mo:mo,f:wk,l:wk});}
   html+='<div style="display:flex;margin-bottom:1px">';
-  Object.keys(monthSpans).sort((a,b)=>+a-+b).forEach(mo=>{const{f,l}=monthSpans[mo];const w=(l-f+1)*WK+(l-f);html+='<div style="width:'+w+'px;background:'+MONTH_BG[+mo]+';color:#5C564E;font-size:9px;font-weight:600;text-align:center;padding:2px 1px;flex-shrink:0;overflow:hidden;white-space:nowrap;margin-right:1px">'+MONTH_SHORT[+mo]+'</div>';});
+  monthSpans.forEach(({mo,f,l})=>{const w=(l-f+1)*WK+(l-f);html+='<div style="width:'+w+'px;background:'+MONTH_BG[+mo]+';color:#5C564E;font-size:9px;font-weight:600;text-align:center;padding:2px 1px;flex-shrink:0;overflow:hidden;white-space:nowrap;margin-right:1px">'+MONTH_SHORT[+mo]+'</div>';});
   html+='</div>';
   html+='<div style="display:flex">';
   for(let wk=1;wk<=totalWks;wk++){
@@ -667,10 +689,9 @@ function renderWheel(){
     ctx.fillStyle=past?'#FAF7F2':CS_RED.has(wk)&&showCS?'#FFFFFF':CS_ORANGE.has(wk)&&showCS?'#FFFFFF':CS_YELLOW.has(wk)&&showCS?'#6B5210':'#5C564E';
     ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(wk,0,0);ctx.restore();
   }
-  const monthSpans={};
-  for(let wk=1;wk<=totalWks;wk++){const mo=getMonthOfWeek(wk,yr);if(!monthSpans[mo])monthSpans[mo]={f:wk,l:wk};else monthSpans[mo].l=wk;}
-  Object.keys(monthSpans).sort((a,b)=>+a-+b).forEach(mo=>{
-    const{f,l}=monthSpans[+mo];const a1=getA(f)+0.02,a2=getA(l+1)-0.02;
+  const monthSpans=[];for(let wk=1;wk<=totalWks;wk++){const mo=getMonthOfWeek(wk,yr);const _lr=monthSpans[monthSpans.length-1];if(_lr&&_lr.mo===mo)_lr.l=wk;else monthSpans.push({mo:mo,f:wk,l:wk});}
+  monthSpans.forEach(({mo,f,l})=>{
+    const a1=getA(f)+0.02,a2=getA(l+1)-0.02;
     ctx.beginPath();ctx.arc(cx,cy,RMO,a1,a2);ctx.arc(cx,cy,RMI,a2,a1,true);ctx.closePath();
     ctx.fillStyle=MONTH_BG[+mo];ctx.fill();ctx.strokeStyle='rgba(58,54,51,0.06)';ctx.lineWidth=0.5;ctx.stroke();
     const midA=(a1+a2)/2;const txtR=(RMO+RMI)/2;
@@ -835,12 +856,114 @@ document.addEventListener('keydown',function(e){
     const i=tabs.findIndex(function(b){return b.classList.contains('active');});
     const j=e.key==='ArrowLeft'?Math.max(0,i-1):Math.min(tabs.length-1,i+1);
     if(j!==i&&tabs[j])tabs[j].click();
-  }else if(e.key==='1'||e.key==='2'||e.key==='3'||e.key==='4'){
-    const v=['cal','tl','wheel','news'][+e.key-1];
+  }else if(e.key==='1'||e.key==='2'||e.key==='3'||e.key==='4'||e.key==='5'){
+    const v=['cal','tl','wheel','sommar','news'][+e.key-1];
     const btn=document.querySelector('.view-tab[data-view="'+v+'"]');
     if(btn)btn.click();
   }
 });
+
+// ── Semesterplanering ──────────────────────────────────────────────
+(function(){
+  const STORE_S='jobbsommar_v1';
+  let sPlanStart=new Date(2026,5,1),sPlanEnd=new Date(2026,9,4);
+  let sPersons=[{id:1,name:'Anna',offWeeks:{},dayStatus:{}},{id:2,name:'Björn',offWeeks:{},dayStatus:{}},{id:3,name:'Cecilia',offWeeks:{},dayStatus:{}},{id:4,name:'David',offWeeks:{},dayStatus:{}}];
+  let sTl=[{id:1,name:'Halvårsbokslut',dateFrom:'2026-06-29',dateTo:'2026-06-30',owner:1,status:'prog',desc:''},{id:2,name:'Teamkickoff',dateFrom:'2026-09-28',dateTo:'2026-09-28',owner:1,status:'todo',desc:'v.40'},{id:3,name:'Produktlansering',dateFrom:'2026-07-08',dateTo:'2026-07-15',owner:2,status:'todo',desc:''}];
+  let sNextId=20,sSelMonth=null,sSub='led';
+  let sDlForm={open:false,editing:null};
+  const GANTT_COLORS=['#5B7BA6','#5E8C61','#C2588E','#D98032','#8C7BB0','#4E8E8A','#A07845'];
+  const GANTT_LIGHT=['#DAE5F5','#D9EFE4','#F9D6E8','#FAE3CE','#EAE6F8','#D4EEEC','#F0E4D0'];
+  function saveSommar(){try{localStorage.setItem(STORE_S,JSON.stringify({persons:sPersons,tl:sTl,planStart:sPlanStart.toISOString().slice(0,10),planEnd:sPlanEnd.toISOString().slice(0,10)}));}catch(e){}}
+  function loadSommar(){try{const s=localStorage.getItem(STORE_S);if(s){const d=JSON.parse(s);if(d.persons)sPersons=d.persons;if(d.tl){sTl=d.tl.map(it=>({...it,dateFrom:it.dateFrom||it.date||it.dateTo,dateTo:it.dateTo||it.dateFrom||it.date}));}if(d.planStart){const p=d.planStart.split('-');sPlanStart=new Date(+p[0],+p[1]-1,+p[2]);}if(d.planEnd){const p=d.planEnd.split('-');sPlanEnd=new Date(+p[0],+p[1]-1,+p[2]);}}}catch(e){}}
+  function getWeeks(s,e){const w=[];const d=new Date(s);d.setDate(d.getDate()-((d.getDay()+6)%7));while(d<=e){const m=new Date(d),su=new Date(d);su.setDate(su.getDate()+6);if(su>=s&&m<=e)w.push(new Date(m));d.setDate(d.getDate()+7);}return w;}
+  function wKey(d){return d.toISOString().slice(0,10);}
+  function dKey(d){return d.toISOString().slice(0,10);}
+  function isWe(d){return d.getDay()===0||d.getDay()===6;}
+  function fmtWk(m){const t=new Date(m);t.setDate(t.getDate()+3);const j=new Date(t.getFullYear(),0,4);return 'v'+Math.ceil(((t-j)/86400000+((j.getDay()+6)%7)+1)/7);}
+  function getMonths(){const a=[];const d=new Date(sPlanStart.getFullYear(),sPlanStart.getMonth(),1);while(d<=sPlanEnd){a.push(new Date(d));d.setMonth(d.getMonth()+1);}return a;}
+  function renderSommar(){
+    const root=document.getElementById('sommar-root');if(!root)return;
+    const bg0='#FAF7F2',bg1='#F2EDE5',ink='#3A3633',muted='#8A847C',line='#E5DFD5',accent='#5B7BA6';
+    const AV=['#D9EFE4','#E2DFF8','#FAE8E0','#DAE5F5','#FEF0DC'];
+    const AVC=['#2E7A52','#5047A8','#9C3E25','#2E5A8E','#9E6A10'];
+    function avEl(p,sz){sz=sz||28;return`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${AV[(p.id-1)%5]};color:${AVC[(p.id-1)%5]};display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*0.4)}px;font-weight:600;flex-shrink:0">${p.name.slice(0,2).toUpperCase()}</div>`;}
+    const subs=[['led','Semester'],['schema','Dagschema'],['tl','Deadlines']];
+    let html=`<div style="display:flex;gap:4px;border-bottom:1.5px solid ${line};margin-bottom:12px">`;
+    subs.forEach(([k,l])=>{const act=sSub===k;html+=`<button onclick="window._sommarSub('${k}')" style="padding:7px 14px;font-size:12px;font-weight:${act?600:400};color:${act?ink:muted};border:none;background:none;cursor:pointer;border-bottom:2px solid ${act?ink:'transparent'};margin-bottom:-1.5px;font-family:inherit">${l}</button>`;});
+    html+=`</div>`;
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><span style="font-size:12px;color:${muted}">Period:</span><input type="date" value="${sPlanStart.toISOString().slice(0,10)}" onchange="window._sommarRange('start',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><span style="font-size:12px;color:${muted}">till</span><input type="date" value="${sPlanEnd.toISOString().slice(0,10)}" onchange="window._sommarRange('end',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div>`;
+    if(sSub==='led'){
+      const weeks=getWeeks(sPlanStart,sPlanEnd);const bad=weeks.filter(w=>sPersons.length>1&&sPersons.every(p=>!!p.offWeeks[wKey(w)]));
+      if(bad.length)html+=`<div style="background:#FEF0DC;border:1px solid #FAC775;border-radius:8px;padding:8px 12px;font-size:12px;color:#9E6A10;margin-bottom:10px">⚠ Alla är lediga ${bad.map(w=>fmtWk(w)).join(', ')} — ingen på jobbet!</div>`;
+      const hdr=`<div style="display:flex;gap:3px;margin-bottom:2px">${weeks.map(w=>`<div style="min-width:22px;font-size:8px;color:${muted};text-align:center;flex-shrink:0">${fmtWk(w)}</div>`).join('')}</div>`;
+      html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:10px">${hdr}`;
+      sPersons.forEach(p=>{const cells=weeks.map(w=>{const k=wKey(w);const on=!!p.offWeeks[k];return`<div onclick="window._sommarWk(${p.id},'${k}')" title="${fmtWk(w)}" style="min-width:22px;height:20px;border-radius:4px;border:1px solid ${on?'#5DCAA5':line};background:${on?'#9FE1CB':bg1};cursor:pointer;flex-shrink:0;transition:background .1s"></div>`;}).join('');html+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid ${line}">${avEl(p)}<div style="font-size:12px;font-weight:500;min-width:60px;color:${ink}">${p.name}</div><div style="display:flex;gap:3px">${cells}</div></div>`;});
+      html+=`</div><button onclick="window._sommarAddPerson()" style="width:100%;padding:8px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till kollega</button>`;
+      html+=`<div style="display:flex;gap:12px;margin-top:8px"><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;border-radius:2px;background:#9FE1CB;border:1px solid #5DCAA5;display:inline-block"></span>Semester</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;border-radius:2px;background:${bg1};border:1px solid ${line};display:inline-block"></span>Jobbar</span></div>`;
+    } else if(sSub==='schema'){
+      const months=getMonths();if(!sSelMonth||!months.find(m=>m.getFullYear()===sSelMonth.getFullYear()&&m.getMonth()===sSelMonth.getMonth()))sSelMonth=new Date(months[0]);
+      html+=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">${months.map(m=>{const act=sSelMonth&&m.getFullYear()===sSelMonth.getFullYear()&&m.getMonth()===sSelMonth.getMonth();return`<button onclick="window._sommarMonth(${m.getFullYear()},${m.getMonth()})" style="padding:4px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${act?ink:line};background:${act?ink:bg0};color:${act?'#fff':muted};cursor:pointer;font-family:inherit;text-transform:capitalize">${m.toLocaleDateString('sv-SE',{month:'long'})}</button>`;}).join('')}</div>`;
+      const y=sSelMonth.getFullYear(),mo=sSelMonth.getMonth();const days=[];const ds=new Date(Math.max(new Date(y,mo,1),sPlanStart)),de=new Date(Math.min(new Date(y,mo+1,0),sPlanEnd));const dd=new Date(ds);while(dd<=de){days.push(new Date(dd));dd.setDate(dd.getDate()+1);}
+      const DOW=['M','T','O','T','F','L','S'];
+      html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:10px">`;
+      html+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:1px;padding-left:80px">${days.map(d=>{const we=isWe(d);return`<div style="min-width:20px;font-size:8px;color:${we?'#A32D2D':muted};text-align:center;flex-shrink:0;font-weight:${we?600:400}">${DOW[(d.getDay()+6)%7]}</div>`;}).join('')}</div>`;
+      html+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:6px;padding-left:80px">${days.map(d=>{const we=isWe(d);return`<div style="min-width:20px;font-size:8px;color:${we?'#A32D2D':muted};text-align:center;flex-shrink:0;font-weight:${we?600:400}">${d.getDate()}</div>`;}).join('')}</div>`;
+      sPersons.forEach(p=>{const cells=days.map(d=>{const k=dKey(d);if(isWe(d))return`<div style="min-width:20px;height:22px;border-radius:3px;border:1px solid #F7C1C1;background:#FCEBEB;flex-shrink:0"></div>`;const s=p.dayStatus[k]||'';let bg=bg1,bc=line;if(s==='home'){bg='#EEEDFE';bc='#AFA9EC';}if(s==='office'){bg='#E6F1FB';bc='#B5D4F4';}if(s==='sick'){bg='#F5C4B3';bc='#D85A30';}return`<div onclick="window._sommarDay(${p.id},'${k}')" title="${d.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric'})}" style="min-width:20px;height:22px;border-radius:3px;border:1px solid ${bc};background:${bg};cursor:pointer;flex-shrink:0;transition:background .1s"></div>`;}).join('');html+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid ${line}">${avEl(p)}<div style="font-size:12px;font-weight:500;min-width:44px;color:${ink}">${p.name}</div><div style="display:flex;gap:2px">${cells}</div></div>`;});
+      html+=`</div><button onclick="window._sommarAddPerson()" style="width:100%;padding:8px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till kollega</button>`;
+      html+=`<div style="display:flex;gap:12px;margin-top:8px"><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:#EEEDFE;border:1px solid #AFA9EC;display:inline-block;border-radius:2px"></span>Hemma</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:#E6F1FB;border:1px solid #B5D4F4;display:inline-block;border-radius:2px"></span>Kontoret</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:#F5C4B3;border:1px solid #D85A30;display:inline-block;border-radius:2px"></span>Sjuk</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:#FCEBEB;border:1px solid #F7C1C1;display:inline-block;border-radius:2px"></span>Helg</span></div>`;
+    } else if(sSub==='tl'){
+      const LABEL_W=140,BAR_W=420,ROW_H=32,HDR_H=28;const totalDays=(sPlanEnd-sPlanStart)/86400000;const months=getMonths();const items=[...sTl].sort((a,b)=>new Date(a.dateFrom)-new Date(b.dateFrom));const svgH=HDR_H+items.length*ROW_H+8;const svgW=LABEL_W+BAR_W;
+      function xPct(ds){return Math.max(0,Math.min(1,(new Date(ds)-sPlanStart)/86400000/totalDays));}
+      let gInner='';months.forEach(m=>{const x=LABEL_W+Math.round(xPct(m)*BAR_W);gInner+=`<line x1="${x}" y1="0" x2="${x}" y2="${svgH}" stroke="${line}" stroke-width="1"/><text x="${x+3}" y="14" font-size="9" fill="${muted}">${m.toLocaleDateString('sv-SE',{month:'short'})}</text>`;});
+      const todayPct=xPct(new Date());if(todayPct>0&&todayPct<1){const tx=LABEL_W+Math.round(todayPct*BAR_W);gInner+=`<line x1="${tx}" y1="${HDR_H}" x2="${tx}" y2="${svgH}" stroke="#D85A30" stroke-width="1" stroke-dasharray="3,2"/>`;}
+      gInner+=`<line x1="0" y1="${HDR_H}" x2="${svgW}" y2="${HDR_H}" stroke="${line}" stroke-width="1"/><line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="${line}" stroke-width="1"/>`;
+      items.forEach((it,i)=>{const y=HDR_H+i*ROW_H;const ci=i%GANTT_COLORS.length;const col=GANTT_COLORS[ci];const colL=GANTT_LIGHT[ci];const x0=LABEL_W+Math.round(xPct(it.dateFrom)*BAR_W);const x1=LABEL_W+Math.round(xPct(it.dateTo)*BAR_W);const bw=Math.max(8,x1-x0);const isDone=it.status==='done';if(i%2===1)gInner+=`<rect x="${LABEL_W}" y="${y}" width="${BAR_W}" height="${ROW_H}" fill="${bg1}" opacity="0.5"/>`;const lbl=it.name.length>18?it.name.slice(0,17)+'…':it.name;gInner+=`<text x="${LABEL_W-6}" y="${y+ROW_H/2+4}" font-size="11" fill="${ink}" text-anchor="end" font-weight="500">${lbl}</text>`;gInner+=`<rect x="${x0}" y="${y+6}" width="${bw}" height="${ROW_H-12}" rx="4" fill="${isDone?colL:col}" opacity="${isDone?0.5:1}"/>`;if(bw>40){const sl={done:'✓ Klar',prog:'Pågående',todo:''}[it.status];gInner+=`<text x="${x0+6}" y="${y+ROW_H/2+4}" font-size="9" fill="${isDone?col:'#fff'}" font-weight="500">${sl}</text>`;}gInner+=`<circle cx="${x1}" cy="${y+ROW_H/2}" r="3" fill="${col}"/>`;gInner+=`<rect x="${svgW-18}" y="${y+8}" width="14" height="14" rx="3" fill="${line}" opacity="0.7" onclick="window._sommarRmTl(${it.id})" style="cursor:pointer"/><text x="${svgW-11}" y="${y+19}" font-size="10" fill="${muted}" text-anchor="middle" style="cursor:pointer;pointer-events:none">✕</text>`;});
+      html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px;margin-bottom:12px;overflow-x:auto"><svg viewBox="0 0 ${svgW} ${svgH}" width="100%" style="display:block;min-width:${svgW}px;font-family:inherit">${gInner}</svg></div>`;
+      if(sDlForm.open){const ed=sDlForm.editing;const fv=k=>ed?ed[k]:'';html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:14px;margin-bottom:10px"><div style="font-size:13px;font-weight:600;color:${ink};margin-bottom:10px">${ed?'Redigera':'Ny deadline'}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px"><div style="grid-column:1/-1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Titel</label><input id="dl-f-name" value="${fv('name')}" placeholder="Beskriv aktiviteten" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Startdatum</label><input type="date" id="dl-f-from" value="${fv('dateFrom')||sPlanStart.toISOString().slice(0,10)}" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Slutdatum</label><input type="date" id="dl-f-to" value="${fv('dateTo')||sPlanStart.toISOString().slice(0,10)}" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Status</label><select id="dl-f-status" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><option value="todo"${fv('status')==='todo'?' selected':''}>Planerad</option><option value="prog"${fv('status')==='prog'?' selected':''}>Pågående</option><option value="done"${fv('status')==='done'?' selected':''}>Klar</option></select></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Not</label><input id="dl-f-desc" value="${fv('desc')}" placeholder="Kort info" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div></div><div style="display:flex;gap:8px"><button onclick="window._sommarSaveDl()" style="flex:1;padding:8px;font-size:13px;font-weight:500;background:${ink};color:${bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button><button onclick="window._sommarCancelDl()" style="padding:8px 16px;font-size:13px;border:1px solid ${line};border-radius:8px;background:none;color:${muted};cursor:pointer;font-family:inherit">Avbryt</button></div></div>`;}
+      else{html+=`<button onclick="window._sommarOpenDl()" style="width:100%;padding:8px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till deadline (${sTl.length}/15)</button>`;}
+      html+=`<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:24px;height:10px;border-radius:3px;background:#5B7BA6;display:inline-block"></span>Planerad/Pågående</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:24px;height:10px;border-radius:3px;background:#DAE5F5;border:1px solid #5B7BA6;display:inline-block"></span>Klar</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:2px;height:14px;background:#D85A30;display:inline-block;margin-right:2px"></span>Idag</span></div>`;
+    }
+    root.innerHTML=html;
+  }
+  window._sommarSub=function(k){sSub=k;sDlForm={open:false,editing:null};renderSommar();};
+  window._sommarRange=function(which,val){if(which==='start')sPlanStart=new Date(val);else sPlanEnd=new Date(val);saveSommar();renderSommar();};
+  window._sommarMonth=function(y,mo){sSelMonth=new Date(y,mo,1);renderSommar();};
+  window._sommarWk=function(pid,wk){const p=sPersons.find(x=>x.id===pid);if(!p)return;p.offWeeks[wk]=!p.offWeeks[wk];saveSommar();renderSommar();};
+  window._sommarDay=function(pid,dk){const p=sPersons.find(x=>x.id===pid);if(!p)return;const cur=p.dayStatus[dk]||'';p.dayStatus[dk]=cur===''?'home':cur==='home'?'office':cur==='office'?'sick':'';saveSommar();renderSommar();};
+  window._sommarRmTl=function(id){if(!confirm('Ta bort denna deadline?'))return;sTl=sTl.filter(x=>x.id!==id);saveSommar();renderSommar();};
+  window._sommarOpenDl=function(){sDlForm={open:true,editing:null};renderSommar();};
+  window._sommarCancelDl=function(){sDlForm={open:false,editing:null};renderSommar();};
+  window._sommarSaveDl=function(){const name=document.getElementById('dl-f-name').value.trim();const dateFrom=document.getElementById('dl-f-from').value;const dateTo=document.getElementById('dl-f-to').value;const status=document.getElementById('dl-f-status').value;const desc=document.getElementById('dl-f-desc').value.trim();if(!name||!dateFrom||!dateTo)return;if(sDlForm.editing){Object.assign(sDlForm.editing,{name,dateFrom,dateTo,status,desc});}else{if(sTl.length>=15){alert('Max 15 deadlines');return;}sTl.push({id:sNextId++,name,dateFrom,dateTo,owner:sPersons[0]?.id||1,status,desc});}sDlForm={open:false,editing:null};saveSommar();renderSommar();};
+  window._sommarAddPerson=function(){const n=prompt('Namn på kollega:');if(!n||!n.trim())return;sPersons.push({id:sNextId++,name:n.trim(),offWeeks:{},dayStatus:{}});saveSommar();renderSommar();};
+  document.getElementById('view-tabs').querySelectorAll('.view-tab').forEach(btn=>{btn.addEventListener('click',()=>{if(btn.dataset.view==='sommar')setTimeout(renderSommar,0);});});
+  loadSommar();
+  window._renderSommar=renderSommar;
+})();
+
+// ── PDF-export ─────────────────────────────────────────────────────
+document.getElementById('pdf-btn').onclick=function(){
+  const views=['cal','tl','wheel','sommar'];
+  const names={cal:'Kalender',tl:'Tidslinje',wheel:'Årshjul',sommar:'Sommarplanering'};
+  const win=window.open('','_blank');
+  let body='';
+  views.forEach(v=>{
+    const el=document.getElementById('view-'+v);
+    if(!el)return;
+    body+=`<div class="pdf-section"><h2 class="pdf-heading">${names[v]}</h2><div class="pdf-content">${el.innerHTML}</div></div>`;
+  });
+  win.document.write(`<!DOCTYPE html><html lang="sv"><head><meta charset="UTF-8"><title>Jobbplanering — PDF ${new Date().toLocaleDateString('sv-SE')}</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;color:#3A3633;background:#fff;padding:24px}
+    .pdf-section{page-break-after:always;margin-bottom:40px}
+    .pdf-section:last-child{page-break-after:auto}
+    .pdf-heading{font-size:18px;font-weight:600;color:#3A3633;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #E5DFD5}
+    canvas{max-width:100%;height:auto!important;display:block}
+    button,.add-form,.panels,.foot,.privacy,.pbar-wrap,.sem-lgnd,.wk-info,.chips,.cal-legend,.warn-bar{display:none!important}
+    .months-grid{display:flex;flex-wrap:wrap;gap:8px}
+    @media print{body{padding:0}}
+  </style></head><body>${body}<script>window.onload=function(){setTimeout(function(){window.print();},600);};<\/script></body></html>`);
+  win.document.close();
+};
 
 loadSync();
 loadData();
