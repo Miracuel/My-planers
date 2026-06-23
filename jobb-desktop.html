@@ -261,8 +261,8 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
       <button class="view-tab active" data-view="cal">Kalender</button>
       <button class="view-tab" data-view="tl">Tidslinje</button>
       <button class="view-tab" data-view="wheel">Årshjul</button>
-      <button class="view-tab" data-view="sommar">Semester</button>
-      <button class="view-tab" data-view="news">Nyheter</button>
+      <button class="view-tab" data-view="sommar">Resursplanering</button>
+      <button class="view-tab" data-view="roadmap">Roadmap</button>
     </div>
   </div>
   <div class="chips">
@@ -311,6 +311,10 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
   <div id="sommar-root"></div>
 </div>
 
+<div class="view-panel" id="view-roadmap">
+  <div id="roadmap-root"></div>
+</div>
+
 <div class="view-panel" id="view-news">
   <div class="news-card" id="news-card"></div>
 </div>
@@ -340,6 +344,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
   <button id="export-btn">Säkerhetskopiera</button>
   <button id="import-btn">Importera</button>
   <button id="pdf-btn">&#128438; Exportera PDF</button>
+  <button id="news-btn">Nyheter</button>
 </div>
 <input type="file" id="import-file" accept=".json" style="display:none">
 <div class="privacy" id="privacy-line">All data sparas lokalt på den här enheten — koppla på GitHub-synk (⚙) för att dela med teamet.</div>
@@ -348,7 +353,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <script>
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.3.2',
+  version:'2.4.0',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -361,6 +366,12 @@ const APPINFO={
     'PDF-export: alla vyer exporteras till en PDF-fil'
   ],
   changelog:[
+    {v:'2.4.0',d:'2026-06-23',items:[
+      'Fliken Semester heter nu Resursplanering (innehåller semester och dagschema).',
+      'Deadlines har flyttats till en egen flik högst upp som heter Roadmap, med assignee-filter och gantt-vy.',
+      'Nyheter har flyttats från flikraden till en knapp längst ner bredvid Säkerhetskopiera och Importera.',
+      'PDF-export inkluderar nu både Resursplanering och Roadmap.'
+    ]},
     {v:'2.3.2',d:'2026-06-23',items:[
       'Rättat id-kollision: kollegor som lades till i olika sessioner kunde få samma interna id, vilket gjorde att t.ex. David markerades/redigerades som Rebecca. Nästa lediga id räknas nu om från sparad data och redan sparade dubbletter repareras automatiskt.'
     ]},
@@ -792,6 +803,7 @@ function exportData(){
   a.click();
 }
 document.getElementById('export-btn').onclick=exportData;
+document.getElementById('news-btn').onclick=function(){document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));document.getElementById('view-news').classList.add('active');renderNews();window.scrollTo({top:0,behavior:'smooth'});};
 document.getElementById('import-btn').onclick=()=>document.getElementById('import-file').click();
 document.getElementById('import-file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
@@ -881,7 +893,7 @@ document.addEventListener('keydown',function(e){
     const j=e.key==='ArrowLeft'?Math.max(0,i-1):Math.min(tabs.length-1,i+1);
     if(j!==i&&tabs[j])tabs[j].click();
   }else if(e.key==='1'||e.key==='2'||e.key==='3'||e.key==='4'||e.key==='5'){
-    const v=['cal','tl','wheel','sommar','news'][+e.key-1];
+    const v=['cal','tl','wheel','sommar','roadmap'][+e.key-1];
     const btn=document.querySelector('.view-tab[data-view="'+v+'"]');
     if(btn)btn.click();
   }
@@ -898,7 +910,7 @@ document.addEventListener('keydown',function(e){
   const GANTT_COLORS=['#5B7BA6','#5E8C61','#C2588E','#D98032','#8C7BB0','#4E8E8A','#A07845'];
   const GANTT_LIGHT=['#DAE5F5','#D9EFE4','#F9D6E8','#FAE3CE','#EAE6F8','#D4EEEC','#F0E4D0'];
   function saveSommar(){try{localStorage.setItem(STORE_S,JSON.stringify({persons:sPersons,tl:sTl,planStart:sPlanStart.toISOString().slice(0,10),planEnd:sPlanEnd.toISOString().slice(0,10)}));}catch(e){}}
-  function loadSommar(){try{const s=localStorage.getItem(STORE_S);if(s){const d=JSON.parse(s);if(d.persons)sPersons=d.persons.map(p=>({offWeeks:{},dayStatus:{},...p}));if(d.tl){sTl=d.tl.map(it=>({...it,dateFrom:it.dateFrom||it.date||it.dateTo,dateTo:it.dateTo||it.dateFrom||it.date,owners:Array.isArray(it.owners)?it.owners:(it.owner!=null?[it.owner]:[])}));}if(d.planStart){const p=d.planStart.split('-');sPlanStart=new Date(+p[0],+p[1]-1,+p[2]);}if(d.planEnd){const p=d.planEnd.split('-');sPlanEnd=new Date(+p[0],+p[1]-1,+p[2]);}}}catch(e){}repairIds();saveSommar();}
+  function loadSommar(){try{const s=localStorage.getItem(STORE_S);if(s){const d=JSON.parse(s);if(d.persons)sPersons=d.persons.map(p=>({offWeeks:{},dayStatus:{},...p}));if(d.tl){sTl=d.tl.map(it=>({...it,dateFrom:it.dateFrom||it.date||it.dateTo,dateTo:it.dateTo||it.dateFrom||it.date,owners:Array.isArray(it.owners)?it.owners:(it.owner!=null?[it.owner]:[])}));}if(d.planStart){const p=d.planStart.split('-');sPlanStart=new Date(+p[0],+p[1]-1,+p[2]);}if(d.planEnd){const p=d.planEnd.split('-');sPlanEnd=new Date(+p[0],+p[1]-1,+p[2]);}}}catch(e){}repairIds();if(sSub==='tl')sSub='led';saveSommar();}
   function repairIds(){
     // Compute next free id from existing data so reloads never reuse an id.
     let maxId=0;
@@ -936,7 +948,7 @@ document.addEventListener('keydown',function(e){
     const AVC=['#2E7A52','#5047A8','#9C3E25','#2E5A8E','#9E6A10'];
     const VAC_BG='#9FE1CB',VAC_BC='#5DCAA5',HOME_BG='#EEEDFE',HOME_BC='#AFA9EC',OFF_BG='#E6F1FB',OFF_BC='#B5D4F4',SICK_BG='#F5C4B3',SICK_BC='#D85A30';
     function avEl(p,sz){sz=sz||28;return`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${AV[(p.id-1)%5]};color:${AVC[(p.id-1)%5]};display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*0.4)}px;font-weight:600;flex-shrink:0">${p.name.slice(0,2).toUpperCase()}</div>`;}
-    const subs=[['led','Semester'],['schema','Dagschema'],['tl','Deadlines']];
+    const subs=[['led','Semester'],['schema','Dagschema']];
     let html=`<div style="display:flex;gap:4px;border-bottom:1.5px solid ${line};margin-bottom:12px">`;
     subs.forEach(([k,l])=>{const act=sSub===k;html+=`<button onclick="window._sommarSub('${k}')" style="padding:7px 14px;font-size:12px;font-weight:${act?600:400};color:${act?ink:muted};border:none;background:none;cursor:pointer;border-bottom:2px solid ${act?ink:'transparent'};margin-bottom:-1.5px;font-family:inherit">${l}</button>`;});
     html+=`</div>`;
@@ -990,7 +1002,19 @@ document.addEventListener('keydown',function(e){
       html+=`<div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:${HOME_BG};border:1px solid ${HOME_BC};display:inline-block;border-radius:2px"></span>Hemma</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:${OFF_BG};border:1px solid ${OFF_BC};display:inline-block;border-radius:2px"></span>Kontoret</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:${VAC_BG};border:1px solid ${VAC_BC};display:inline-block;border-radius:2px"></span>Semester</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:${SICK_BG};border:1px solid ${SICK_BC};display:inline-block;border-radius:2px"></span>Sjuk</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:12px;height:12px;background:#FCEBEB;border:1px solid #F7C1C1;display:inline-block;border-radius:2px"></span>Helg</span></div>`;
       html+=`<div style="font-size:10px;color:${muted};margin-top:6px">Klicka på en dag för att bläddra: Hemma → Kontoret → Semester → Sjuk → tom.</div>`;
 
-    } else if(sSub==='tl'){
+    }
+    root.innerHTML=html;
+  }
+
+  function renderRoadmap(){
+    const root=document.getElementById('roadmap-root');if(!root)return;
+    let bg0='#FAF7F2',bg1='#F2EDE5',ink='#3A3633',muted='#8A847C',line='#E5DFD5',accent='#5B7BA6';
+    try{const ac=getComputedStyle(document.documentElement);bg0=ac.getPropertyValue('--paper').trim()||bg0;bg1=ac.getPropertyValue('--bg').trim()||bg1;ink=ac.getPropertyValue('--ink').trim()||ink;muted=ac.getPropertyValue('--ink-soft').trim()||muted;line=ac.getPropertyValue('--line').trim()||line;accent=ac.getPropertyValue('--accent').trim()||accent;}catch(e){}
+    const AV=['#D9EFE4','#E2DFF8','#FAE8E0','#DAE5F5','#FEF0DC'];
+    const AVC=['#2E7A52','#5047A8','#9C3E25','#2E5A8E','#9E6A10'];
+    function avEl(p,sz){sz=sz||28;return`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${AV[(p.id-1)%5]};color:${AVC[(p.id-1)%5]};display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*0.4)}px;font-weight:600;flex-shrink:0">${p.name.slice(0,2).toUpperCase()}</div>`;}
+    let html='';
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><span style="font-size:12px;color:${muted}">Period:</span><input type="date" value="${sPlanStart.toISOString().slice(0,10)}" onchange="window._sommarRange('start',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><span style="font-size:12px;color:${muted}">till</span><input type="date" value="${sPlanEnd.toISOString().slice(0,10)}" onchange="window._sommarRange('end',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div>`;
       const LABEL_W=148;const DEL_W=30;const ROW_H=42;const HDR_H=46;
       const totalDays=Math.max(1,(sPlanEnd-sPlanStart)/86400000);
       const months=getMonths();
@@ -1046,37 +1070,38 @@ document.addEventListener('keydown',function(e){
         html+=`<button onclick="window._sommarOpenDl()" style="width:100%;padding:8px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till deadline (${sTl.length}/15)</button>`;
       }
       html+=`<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:24px;height:10px;border-radius:3px;background:#5B7BA6;display:inline-block"></span>Planerad/Pågående</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:24px;height:10px;border-radius:3px;background:#DAE5F5;border:1px solid #5B7BA6;display:inline-block"></span>Klar</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:2px;height:14px;background:#D85A30;display:inline-block;margin-right:2px"></span>Idag</span></div>`;
-    }
     root.innerHTML=html;
   }
 
-  window._sommarSub=function(k){sSub=k;sDlForm={open:false,editing:null};renderSommar();};
-  window._sommarRange=function(which,val){if(which==='start'){const p=val.split('-');sPlanStart=new Date(+p[0],+p[1]-1,+p[2]);}else{const p=val.split('-');sPlanEnd=new Date(+p[0],+p[1]-1,+p[2]);}saveSommar();renderSommar();};
-  window._sommarMonth=function(y,mo){sSelMonth=new Date(y,mo,1);renderSommar();};
-  window._sommarSchemaView=function(v){sSchemaView=v;renderSommar();};
-  window._sommarWeekNav=function(delta){sSelWeekIdx+=delta;renderSommar();};
-  window._sommarWk=function(pid,wk){const p=sPersons.find(x=>x.id===pid);if(!p)return;p.offWeeks[wk]=!p.offWeeks[wk];saveSommar();renderSommar();};
-  window._sommarDay=function(pid,dk){const p=sPersons.find(x=>x.id===pid);if(!p)return;const cur=p.dayStatus[dk]||'';const next=cur===''?'home':cur==='home'?'office':cur==='office'?'vacation':cur==='vacation'?'sick':'';p.dayStatus[dk]=next;syncWeeksFromDays(p);saveSommar();renderSommar();};
-  window._sommarRmTl=function(id){if(!confirm('Ta bort denna deadline?'))return;sTl=sTl.filter(x=>x.id!==id);saveSommar();renderSommar();};
-  window._sommarCycleStatus=function(id){const it=sTl.find(x=>x.id===id);if(!it)return;it.status=it.status==='todo'?'prog':it.status==='prog'?'done':'todo';saveSommar();renderSommar();};
-  window._sommarSetStatus=function(id,v){const it=sTl.find(x=>x.id===id);if(!it)return;it.status=v;saveSommar();renderSommar();};
-  window._sommarTlFilter=function(id){sTlFilter=id;renderSommar();};
-  window._sommarEditDl=function(id){sDlForm={open:true,editing:sTl.find(x=>x.id===id)||null};renderSommar();};
-  window._sommarOpenDl=function(){sDlForm={open:true,editing:null};renderSommar();};
-  window._sommarCancelDl=function(){sDlForm={open:false,editing:null};renderSommar();};
-  window._sommarSaveDl=function(){const name=document.getElementById('dl-f-name').value.trim();const dateFrom=document.getElementById('dl-f-from').value;const dateTo=document.getElementById('dl-f-to').value;const status=document.getElementById('dl-f-status').value;const desc=document.getElementById('dl-f-desc').value.trim();const owners=[...document.querySelectorAll('.dl-f-owner:checked')].map(c=>+c.value);if(!name||!dateFrom||!dateTo)return;let from=dateFrom,to=dateTo;if(new Date(to)<new Date(from)){const t=from;from=to;to=t;}if(sDlForm.editing){Object.assign(sDlForm.editing,{name,dateFrom:from,dateTo:to,status,desc,owners});}else{if(sTl.length>=15){alert('Max 15 deadlines');return;}sTl.push({id:sNextId++,name,dateFrom:from,dateTo:to,owners:owners.length?owners:(sTlFilter!=null?[sTlFilter]:[]),status,desc});}sDlForm={open:false,editing:null};saveSommar();renderSommar();};
-  window._sommarAddPerson=function(){const n=prompt('Namn på kollega:');if(!n||!n.trim())return;sPersons.push({id:sNextId++,name:n.trim(),offWeeks:{},dayStatus:{}});saveSommar();renderSommar();};
-  window._sommarRmPerson=function(id){const p=sPersons.find(x=>x.id===id);if(!p)return;if(!confirm('Ta bort '+p.name+' från planeringen?'))return;sPersons=sPersons.filter(x=>x.id!==id);saveSommar();renderSommar();};
-  document.getElementById('view-tabs').querySelectorAll('.view-tab').forEach(btn=>{btn.addEventListener('click',()=>{if(btn.dataset.view==='sommar')setTimeout(renderSommar,0);});});
+  function sRefresh(){if(document.getElementById('sommar-root'))renderSommar();if(document.getElementById('roadmap-root'))renderRoadmap();}
+  window._sommarSub=function(k){sSub=k;sDlForm={open:false,editing:null};sRefresh();};
+  window._sommarRange=function(which,val){if(which==='start'){const p=val.split('-');sPlanStart=new Date(+p[0],+p[1]-1,+p[2]);}else{const p=val.split('-');sPlanEnd=new Date(+p[0],+p[1]-1,+p[2]);}saveSommar();sRefresh();};
+  window._sommarMonth=function(y,mo){sSelMonth=new Date(y,mo,1);sRefresh();};
+  window._sommarSchemaView=function(v){sSchemaView=v;sRefresh();};
+  window._sommarWeekNav=function(delta){sSelWeekIdx+=delta;sRefresh();};
+  window._sommarWk=function(pid,wk){const p=sPersons.find(x=>x.id===pid);if(!p)return;p.offWeeks[wk]=!p.offWeeks[wk];saveSommar();sRefresh();};
+  window._sommarDay=function(pid,dk){const p=sPersons.find(x=>x.id===pid);if(!p)return;const cur=p.dayStatus[dk]||'';const next=cur===''?'home':cur==='home'?'office':cur==='office'?'vacation':cur==='vacation'?'sick':'';p.dayStatus[dk]=next;syncWeeksFromDays(p);saveSommar();sRefresh();};
+  window._sommarRmTl=function(id){if(!confirm('Ta bort denna deadline?'))return;sTl=sTl.filter(x=>x.id!==id);saveSommar();sRefresh();};
+  window._sommarCycleStatus=function(id){const it=sTl.find(x=>x.id===id);if(!it)return;it.status=it.status==='todo'?'prog':it.status==='prog'?'done':'todo';saveSommar();sRefresh();};
+  window._sommarSetStatus=function(id,v){const it=sTl.find(x=>x.id===id);if(!it)return;it.status=v;saveSommar();sRefresh();};
+  window._sommarTlFilter=function(id){sTlFilter=id;sRefresh();};
+  window._sommarEditDl=function(id){sDlForm={open:true,editing:sTl.find(x=>x.id===id)||null};sRefresh();};
+  window._sommarOpenDl=function(){sDlForm={open:true,editing:null};sRefresh();};
+  window._sommarCancelDl=function(){sDlForm={open:false,editing:null};sRefresh();};
+  window._sommarSaveDl=function(){const name=document.getElementById('dl-f-name').value.trim();const dateFrom=document.getElementById('dl-f-from').value;const dateTo=document.getElementById('dl-f-to').value;const status=document.getElementById('dl-f-status').value;const desc=document.getElementById('dl-f-desc').value.trim();const owners=[...document.querySelectorAll('.dl-f-owner:checked')].map(c=>+c.value);if(!name||!dateFrom||!dateTo)return;let from=dateFrom,to=dateTo;if(new Date(to)<new Date(from)){const t=from;from=to;to=t;}if(sDlForm.editing){Object.assign(sDlForm.editing,{name,dateFrom:from,dateTo:to,status,desc,owners});}else{if(sTl.length>=15){alert('Max 15 deadlines');return;}sTl.push({id:sNextId++,name,dateFrom:from,dateTo:to,owners:owners.length?owners:(sTlFilter!=null?[sTlFilter]:[]),status,desc});}sDlForm={open:false,editing:null};saveSommar();sRefresh();};
+  window._sommarAddPerson=function(){const n=prompt('Namn på kollega:');if(!n||!n.trim())return;sPersons.push({id:sNextId++,name:n.trim(),offWeeks:{},dayStatus:{}});saveSommar();sRefresh();};
+  window._sommarRmPerson=function(id){const p=sPersons.find(x=>x.id===id);if(!p)return;if(!confirm('Ta bort '+p.name+' från planeringen?'))return;sPersons=sPersons.filter(x=>x.id!==id);saveSommar();sRefresh();};
+  document.getElementById('view-tabs').querySelectorAll('.view-tab').forEach(btn=>{btn.addEventListener('click',()=>{if(btn.dataset.view==='sommar')setTimeout(renderSommar,0);if(btn.dataset.view==='roadmap')setTimeout(renderRoadmap,0);});});
   loadSommar();
   if(document.getElementById('view-sommar')&&document.getElementById('view-sommar').classList.contains('active'))renderSommar();
-  window._renderSommar=renderSommar;
+  if(document.getElementById('view-roadmap')&&document.getElementById('view-roadmap').classList.contains('active'))renderRoadmap();
+  window._renderSommar=renderSommar;window._renderRoadmap=renderRoadmap;
 })();
 
 // ── PDF-export ─────────────────────────────────────────────────────
 document.getElementById('pdf-btn').onclick=function(){
-  const views=['cal','tl','wheel','sommar'];
-  const names={cal:'Kalender',tl:'Tidslinje',wheel:'Årshjul',sommar:'Sommarplanering'};
+  const views=['cal','tl','wheel','sommar','roadmap'];if(window._renderSommar)window._renderSommar();if(window._renderRoadmap)window._renderRoadmap();
+  const names={cal:'Kalender',tl:'Tidslinje',wheel:'Årshjul',sommar:'Resursplanering',roadmap:'Roadmap'};
   const win=window.open('','_blank');
   let body='';
   views.forEach(v=>{
