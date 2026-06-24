@@ -329,7 +329,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <script>
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.4.0',
+  version:'2.5.0',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -342,6 +342,11 @@ const APPINFO={
     'PDF-export: alla vyer exporteras till en PDF-fil'
   ],
   changelog:[
+    {v:'2.5.0',d:'2026-06-23',items:[
+      'Ny redigerbar Dashboard under Roadmap (växla mellan Gantt-tidslinje och Dashboard).',
+      'Dashboard: Initiativ (lägg till/redigera/ta bort med titel, ansvariga, status, prioritering), Prioritering (auto-grupperad, byt prioritering direkt), Team (räknas ut automatiskt från ansvariga) och Resultat (lägg till/ta bort).',
+      'Nyckeltal överst räknas ut automatiskt från initiativens status.'
+    ]},
     {v:'2.4.0',d:'2026-06-23',items:[
       'Fliken Semester heter nu Resursplanering (innehåller semester och dagschema).',
       'Deadlines har flyttats till en egen flik högst upp som heter Roadmap, med assignee-filter och gantt-vy.',
@@ -881,7 +886,7 @@ document.addEventListener('keydown',function(e){
   let sPlanStart=new Date(2026,5,1),sPlanEnd=new Date(2026,9,4);
   let sPersons=[{id:1,name:'Anna',offWeeks:{},dayStatus:{}},{id:2,name:'Björn',offWeeks:{},dayStatus:{}},{id:3,name:'Cecilia',offWeeks:{},dayStatus:{}},{id:4,name:'David',offWeeks:{},dayStatus:{}}];
   let sTl=[{id:1,name:'Halvårsbokslut',dateFrom:'2026-06-29',dateTo:'2026-06-30',owners:[1],status:'prog',desc:''},{id:2,name:'Teamkickoff',dateFrom:'2026-09-28',dateTo:'2026-09-28',owners:[1,4],status:'todo',desc:'v.40'},{id:3,name:'Produktlansering',dateFrom:'2026-07-08',dateTo:'2026-07-15',owners:[2,3],status:'todo',desc:''}];
-  let sNextId=20,sSelMonth=null,sSub='led',sSchemaView='month',sSelWeekIdx=0,sTlFilter=null;
+  let sNextId=20,sSelMonth=null,sSub='led',sSchemaView='month',sSelWeekIdx=0,sTlFilter=null,sRoadView='gantt';
   let sDlForm={open:false,editing:null};
   const GANTT_COLORS=['#5B7BA6','#5E8C61','#C2588E','#D98032','#8C7BB0','#4E8E8A','#A07845'];
   const GANTT_LIGHT=['#DAE5F5','#D9EFE4','#F9D6E8','#FAE3CE','#EAE6F8','#D4EEEC','#F0E4D0'];
@@ -990,6 +995,9 @@ document.addEventListener('keydown',function(e){
     const AVC=['#2E7A52','#5047A8','#9C3E25','#2E5A8E','#9E6A10'];
     function avEl(p,sz){sz=sz||28;return`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${AV[(p.id-1)%5]};color:${AVC[(p.id-1)%5]};display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*0.4)}px;font-weight:600;flex-shrink:0">${p.name.slice(0,2).toUpperCase()}</div>`;}
     let html='';
+    // Gantt / Dashboard toggle
+    html+=`<div style="display:flex;gap:4px;margin-bottom:12px">${[['gantt','Gantt-tidslinje'],['dash','Dashboard']].map(([k,l])=>{const act=sRoadView===k;return `<button onclick="window._sommarRoadView('${k}')" style="padding:5px 16px;font-size:12px;font-weight:${act?600:400};border-radius:20px;border:1.5px solid ${act?ink:line};background:${act?ink:bg0};color:${act?'#fff':muted};cursor:pointer;font-family:inherit">${l}</button>`;}).join('')}</div>`;
+    if(sRoadView==='dash'){root.innerHTML=html+'<div id="dashboard-root"></div>';if(window._renderDashboard)window._renderDashboard();return;}
     html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><span style="font-size:12px;color:${muted}">Period:</span><input type="date" value="${sPlanStart.toISOString().slice(0,10)}" onchange="window._sommarRange('start',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><span style="font-size:12px;color:${muted}">till</span><input type="date" value="${sPlanEnd.toISOString().slice(0,10)}" onchange="window._sommarRange('end',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div>`;
       const LABEL_W=148;const DEL_W=30;const ROW_H=42;const HDR_H=46;
       const totalDays=Math.max(1,(sPlanEnd-sPlanStart)/86400000);
@@ -1061,6 +1069,7 @@ document.addEventListener('keydown',function(e){
   window._sommarCycleStatus=function(id){const it=sTl.find(x=>x.id===id);if(!it)return;it.status=it.status==='todo'?'prog':it.status==='prog'?'done':'todo';saveSommar();sRefresh();};
   window._sommarSetStatus=function(id,v){const it=sTl.find(x=>x.id===id);if(!it)return;it.status=v;saveSommar();sRefresh();};
   window._sommarTlFilter=function(id){sTlFilter=id;sRefresh();};
+  window._sommarRoadView=function(v){sRoadView=v;renderRoadmap();};
   window._sommarEditDl=function(id){sDlForm={open:true,editing:sTl.find(x=>x.id===id)||null};sRefresh();};
   window._sommarOpenDl=function(){sDlForm={open:true,editing:null};sRefresh();};
   window._sommarCancelDl=function(){sDlForm={open:false,editing:null};sRefresh();};
@@ -1074,10 +1083,182 @@ document.addEventListener('keydown',function(e){
   window._renderSommar=renderSommar;window._renderRoadmap=renderRoadmap;
 })();
 
+// ── Roadmap-dashboard ──────────────────────────────────────────────
+(function(){
+  const STORE_D='jobbdash_v1';
+  const STATUSES=['Pågående','Förbereds','Planerad','Snart klar','Väntar'];
+  const SCOL={'Pågående':['#FAEEDA','#854F0B'],'Förbereds':['#EEEDFE','#3C3489'],'Planerad':['#E6F1FB','#0C447C'],'Snart klar':['#EAF3DE','#3B6D11'],'Väntar':['#EFEAE2','#5C564E']};
+  const SDOT={'Pågående':'#EF9F27','Förbereds':'#7F77DD','Planerad':'#5B7BA6','Snart klar':'#5DCAA5','Väntar':'#B0A89C'};
+  const PRIOS=['Affärskritisk','Strategisk','Teknisk'];
+  const PICON={'Affärskritisk':'⚠','Strategisk':'🚀','Teknisk':'⚙'};
+  const PDESC={'Affärskritisk':'måste vara klara innan hösten','Strategisk':'bygger långsiktig förmåga','Teknisk':'höjer mognad och säkerhet'};
+  const PCOL={'Affärskritisk':'#D85A30','Strategisk':'#5B7BA6','Teknisk':'#5E8C61'};
+  let dInit=[
+    {id:1,title:'Flyttprojekt – Internet och nätverk',owners:'Yngve & Karin',desc:'Säkerställa internet, nätverk och kommunikation inför flytten.',status:'Pågående',prio:'Affärskritisk'},
+    {id:2,title:'Mötesrum och Teams Rooms',owners:'Rebecca & Karin',desc:'Standardisering av mötesrum och AV-utrustning.',status:'Pågående',prio:'Affärskritisk'},
+    {id:3,title:'Överlämning från Per',owners:'Rebecca',desc:'Dokumentera system, processer och kunskap.',status:'Förbereds',prio:'Affärskritisk'},
+    {id:4,title:'Fakturaattestering och ekonomiprocesser',owners:'Yngve',desc:'Säkerställa attestflöden och ersättare.',status:'Förbereds',prio:''},
+    {id:5,title:'Shadow IT-kartläggning',owners:'Rebecca & Lars',desc:'Kartlägga system, avtal och leverantörer.',status:'Pågående',prio:'Affärskritisk'},
+    {id:6,title:'Dokumentation och mallar',owners:'Lars',desc:'Mallar, signaturer och dokumentation.',status:'Snart klar',prio:'Strategisk'},
+    {id:7,title:'IT image och servicekatalog',owners:'Rebecca & Lars',desc:'Tydliggöra IT:s tjänster och beställningsvägar.',status:'Planerad',prio:'Strategisk'},
+    {id:8,title:'Fastighet i Jira',owners:'Rebecca & Karin',desc:'Etablera Fastighet i Jira.',status:'Väntar',prio:''},
+    {id:9,title:'Säkerhetsförbättringar',owners:'Lars',desc:'MFA, PIM, FortiEDR, SSPR m.m.',status:'Pågående',prio:'Teknisk'},
+    {id:10,title:'Plattformsstädning och standardisering',owners:'Rebecca & Lars',desc:'Rensning och standardisering av plattformar.',status:'Pågående',prio:'Teknisk'},
+    {id:11,title:'Planering och visualisering 2026–Q1 2027',owners:'Rebecca & Daniel',desc:'Roadmap och planering.',status:'Förbereds',prio:'Strategisk'},
+    {id:12,title:'Onet 2.0 och SSO',owners:'Rebecca & Lars',desc:'Central plattform med SSO.',status:'Pågående',prio:'Strategisk'},
+    {id:13,title:'Dokumentation av Intune och Autopilot',owners:'Lars',desc:'Dokumentation av klienthantering.',status:'Pågående',prio:'Teknisk'},
+    {id:14,title:'Adobe SSO',owners:'Lars',desc:'Implementera SSO för Adobe.',status:'Planerad',prio:'Teknisk'},
+    {id:15,title:'Serverslakt och avveckling av gammal infrastruktur',owners:'Yngve & Lars',desc:'Avveckla äldre servrar och tjänster.',status:'Planerad',prio:'Teknisk'}
+  ];
+  let dOut=[
+    {id:101,cat:'Verksamhet',text:'Flytten förberedd – internet, nätverk och kommunikation på plats'},
+    {id:102,cat:'Verksamhet',text:'Mötesrummen designade och AV-utrustning standardiserad'},
+    {id:103,cat:'Verksamhet',text:'Fastighet på väg in i Jira'},
+    {id:104,cat:'Styrning',text:'Shadow IT kartlagt – system, avtal och leverantörer identifierade'},
+    {id:105,cat:'Styrning',text:'Roadmap 2026–Q1 2027 klar'},
+    {id:106,cat:'Styrning',text:'Kunskap från Per dokumenterad'},
+    {id:107,cat:'IT',text:'Onet 2.0 med SSO etablerat'},
+    {id:108,cat:'IT',text:'Servicekatalog publicerad'},
+    {id:109,cat:'IT',text:'Säkerhetsnivån höjd – MFA, PIM, FortiEDR'},
+    {id:110,cat:'Teknik',text:'Gammal infrastruktur avvecklad'},
+    {id:111,cat:'Teknik',text:'Plattformar rensade och standardiserade'},
+    {id:112,cat:'Teknik',text:'Dokumentation uppdaterad'}
+  ];
+  let dNextId=200,dTab='ini',dFilter='alla',dEdit=null,dEditOut=null,dAddOpen=false,dAddOutOpen=false;
+
+  function saveD(){try{localStorage.setItem(STORE_D,JSON.stringify({init:dInit,out:dOut}));}catch(e){}}
+  function loadD(){try{const s=localStorage.getItem(STORE_D);if(s){const d=JSON.parse(s);if(Array.isArray(d.init))dInit=d.init;if(Array.isArray(d.out))dOut=d.out;}}catch(e){}let m=199;dInit.forEach(i=>{if(i.id>m)m=i.id;});dOut.forEach(o=>{if(o.id>m)m=o.id;});dNextId=m+1;}
+  function names(owners){return (owners||'').split(/[&,]/).map(s=>s.trim()).filter(Boolean);}
+  function initials(nm){return nm.slice(0,2).toUpperCase();}
+
+  function renderDashboard(){
+    const root=document.getElementById('dashboard-root');if(!root)return;
+    let bg0='#FAF7F2',bg1='#F2EDE5',ink='#3A3633',muted='#8A847C',line='#E5DFD5',accent='#5B7BA6';
+    try{const ac=getComputedStyle(document.documentElement);bg0=ac.getPropertyValue('--paper').trim()||bg0;bg1=ac.getPropertyValue('--bg').trim()||bg1;ink=ac.getPropertyValue('--ink').trim()||ink;muted=ac.getPropertyValue('--ink-soft').trim()||muted;line=ac.getPropertyValue('--line').trim()||line;accent=ac.getPropertyValue('--accent').trim()||accent;}catch(e){}
+    const inp=`font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit;width:100%`;
+    let html='';
+    // Metrics (auto)
+    const counts={};STATUSES.forEach(s=>counts[s]=0);dInit.forEach(i=>{if(counts[i.status]!=null)counts[i.status]++;});
+    const mets=[['Totalt',dInit.length,ink],['Pågående',counts['Pågående'],'#854F0B'],['Förbereds',counts['Förbereds'],'#3C3489'],['Planerad',counts['Planerad'],'#0C447C'],['Snart klar',counts['Snart klar'],'#3B6D11'],['Väntar',counts['Väntar'],'#5C564E']];
+    html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">`;
+    mets.forEach(([l,v,c])=>{html+=`<div style="flex:1;min-width:90px;background:${bg0};border:1px solid ${line};border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:${muted};margin-bottom:3px">${l}</div><div style="font-size:22px;font-weight:600;color:${c}">${v}</div></div>`;});
+    html+=`</div>`;
+    // sub-tabs
+    const tabs=[['ini','Initiativ'],['pri','Prioritering'],['tea','Team'],['res','Resultat']];
+    html+=`<div style="display:flex;gap:4px;border-bottom:1.5px solid ${line};margin-bottom:14px;flex-wrap:wrap">`;
+    tabs.forEach(([k,l])=>{const act=dTab===k;html+=`<button onclick="window._dashTab('${k}')" style="padding:7px 14px;font-size:12px;font-weight:${act?600:400};color:${act?ink:muted};border:none;background:none;cursor:pointer;border-bottom:2px solid ${act?ink:'transparent'};margin-bottom:-1.5px;font-family:inherit">${l}</button>`;});
+    html+=`</div>`;
+
+    if(dTab==='ini'){
+      // filter chips
+      html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><button onclick="window._dashFilter('alla')" style="padding:4px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${dFilter==='alla'?ink:line};background:${dFilter==='alla'?ink:bg0};color:${dFilter==='alla'?'#fff':muted};cursor:pointer;font-family:inherit">Alla</button>`;
+      STATUSES.forEach(s=>{const act=dFilter===s;html+=`<button onclick="window._dashFilter('${s}')" style="padding:4px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${act?ink:line};background:${act?ink:bg0};color:${act?'#fff':muted};cursor:pointer;font-family:inherit">${s}</button>`;});
+      html+=`</div>`;
+      const shown=dInit.filter(i=>dFilter==='alla'||i.status===dFilter);
+      shown.forEach((it,idx)=>{
+        const n=dInit.indexOf(it)+1;const sc=SCOL[it.status]||['#EFEAE2','#5C564E'];
+        if(dEdit===it.id){html+=editInitForm(it,inp,ink,muted,line,bg0);}
+        else{
+          html+=`<div style="display:flex;align-items:flex-start;gap:12px;background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:8px">
+            <div style="width:26px;height:26px;border-radius:50%;background:${bg1};color:${muted};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">${n}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:${ink}">${esc(it.title)}</div>
+              <div style="font-size:12px;color:${accent};margin:1px 0 2px">${esc(it.owners)}</div>
+              <div style="font-size:12px;color:${muted}">${esc(it.desc)}</div>
+              ${it.prio?`<span style="display:inline-block;margin-top:5px;font-size:10px;color:${PCOL[it.prio]};border:1px solid ${PCOL[it.prio]};border-radius:20px;padding:1px 7px">${PICON[it.prio]} ${it.prio}</span>`:''}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              <span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;background:${sc[0]};color:${sc[1]};white-space:nowrap">${it.status}</span>
+              <div style="display:flex;gap:2px"><button onclick="window._dashEdit(${it.id})" title="Redigera" style="background:none;border:none;cursor:pointer;color:${muted};font-size:13px;padding:0 3px;font-family:inherit">✎</button><button onclick="window._dashRm(${it.id})" title="Ta bort" style="background:none;border:none;cursor:pointer;color:${muted};font-size:13px;padding:0 3px;font-family:inherit">✕</button></div>
+            </div>
+          </div>`;
+        }
+      });
+      if(dAddOpen){html+=editInitForm(null,inp,ink,muted,line,bg0);}
+      else{html+=`<button onclick="window._dashAdd()" style="width:100%;padding:9px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till initiativ</button>`;}
+
+    } else if(dTab==='pri'){
+      PRIOS.forEach(pr=>{
+        const items=dInit.filter(i=>i.prio===pr);
+        html+=`<div style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:${PCOL[pr]};margin-bottom:8px"><span>${PICON[pr]}</span> ${pr} – ${PDESC[pr]}</div>`;
+        if(!items.length)html+=`<div style="font-size:12px;color:${muted};padding:4px 0">Inga initiativ.</div>`;
+        items.forEach(it=>{const n=dInit.indexOf(it)+1;html+=`<div style="display:flex;align-items:center;gap:10px;background:${bg0};border:1px solid ${line};border-left:3px solid ${PCOL[pr]};border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="flex:1"><div style="font-size:13px;font-weight:500;color:${ink}">${n}. ${esc(it.title)}</div><div style="font-size:11px;color:${muted}">${esc(it.owners)}</div></div><select onchange="window._dashSetPrio(${it.id},this.value)" style="font-size:11px;padding:3px 6px;border:1px solid ${line};border-radius:6px;background:${bg0};color:${ink};font-family:inherit;cursor:pointer"><option value=""${!it.prio?' selected':''}>Ingen</option>${PRIOS.map(p=>`<option value="${p}"${it.prio===p?' selected':''}>${p}</option>`).join('')}</select></div>`;});
+        html+=`</div>`;
+      });
+      const none=dInit.filter(i=>!i.prio||!PRIOS.includes(i.prio));
+      if(none.length){html+=`<div style="margin-bottom:8px"><div style="font-size:13px;font-weight:600;color:${muted};margin-bottom:8px">Oprioriterade</div>`;none.forEach(it=>{const n=dInit.indexOf(it)+1;html+=`<div style="display:flex;align-items:center;gap:10px;background:${bg0};border:1px solid ${line};border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="flex:1"><div style="font-size:13px;font-weight:500;color:${ink}">${n}. ${esc(it.title)}</div><div style="font-size:11px;color:${muted}">${esc(it.owners)}</div></div><select onchange="window._dashSetPrio(${it.id},this.value)" style="font-size:11px;padding:3px 6px;border:1px solid ${line};border-radius:6px;background:${bg0};color:${ink};font-family:inherit;cursor:pointer"><option value="" selected>Ingen</option>${PRIOS.map(p=>`<option value="${p}">${p}</option>`).join('')}</select></div>`;});html+=`</div>`;}
+
+    } else if(dTab==='tea'){
+      const team={};
+      dInit.forEach((it)=>{const n=dInit.indexOf(it)+1;names(it.owners).forEach(nm=>{if(!team[nm])team[nm]={items:[]};team[nm].items.push({n,title:it.title});});});
+      const peopleSorted=Object.keys(team).sort((a,b)=>team[b].items.length-team[a].items.length);
+      const palette=[['#E2DFF8','#5047A8'],['#DAE5F5','#2E5A8E'],['#D9EFE4','#2E7A52'],['#FAE8E0','#9C3E25'],['#FEF0DC','#9E6A10']];
+      peopleSorted.forEach((nm,i)=>{
+        const t=team[nm];const pc=palette[i%palette.length];const pct=Math.round(t.items.length/Math.max(1,dInit.length)*100);
+        html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:34px;height:34px;border-radius:50%;background:${pc[0]};color:${pc[1]};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">${initials(nm)}</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:${ink}">${esc(nm)}</div></div><div style="font-size:12px;color:${muted}">${t.items.length} initiativ</div></div>
+          <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;color:${muted};margin-bottom:3px"><span>Initiativbelastning</span><span>${t.items.length} / ${dInit.length}</span></div><div style="height:8px;background:${bg1};border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${pc[1]};border-radius:4px"></div></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">${t.items.map(x=>`<span style="font-size:11px;background:${bg1};color:${muted};border-radius:6px;padding:2px 8px">#${x.n} ${esc(x.title.length>22?x.title.slice(0,21)+'…':x.title)}</span>`).join('')}</div>
+        </div>`;
+      });
+      if(!peopleSorted.length)html+=`<div style="font-size:12px;color:${muted}">Inga tilldelade ännu. Lägg till ansvariga i initiativens "Ansvarig"-fält.</div>`;
+      html+=`<div style="font-size:10px;color:${muted};margin-top:4px">Teamet räknas ut automatiskt från initiativens ansvariga (separera med & eller ,).</div>`;
+
+    } else if(dTab==='res'){
+      const cats=[];dOut.forEach(o=>{if(!cats.includes(o.cat))cats.push(o.cat);});
+      cats.forEach(cat=>{
+        html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:${ink};text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">${esc(cat)}</div>`;
+        dOut.filter(o=>o.cat===cat).forEach(o=>{
+          if(dEditOut===o.id){html+=`<div style="display:flex;gap:6px;align-items:center;padding:5px 0"><input id="out-f-text" value="${esc(o.text)}" style="${inp}"><input id="out-f-cat" value="${esc(o.cat)}" placeholder="Kategori" style="${inp};max-width:120px"><button onclick="window._dashSaveOut(${o.id})" style="padding:6px 10px;font-size:12px;background:${ink};color:${bg0};border:none;border-radius:6px;cursor:pointer;font-family:inherit">Spara</button><button onclick="window._dashCancelOut()" style="padding:6px 10px;font-size:12px;border:1px solid ${line};background:none;color:${muted};border-radius:6px;cursor:pointer;font-family:inherit">Avbryt</button></div>`;}
+          else{html+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0"><div style="width:18px;height:18px;border-radius:50%;background:#EAF3DE;color:#3B6D11;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px">✓</div><div style="flex:1;font-size:13px;color:${ink}">${esc(o.text)}</div><button onclick="window._dashEditOut(${o.id})" title="Redigera" style="background:none;border:none;cursor:pointer;color:${muted};font-size:12px;padding:0 3px;font-family:inherit">✎</button><button onclick="window._dashRmOut(${o.id})" title="Ta bort" style="background:none;border:none;cursor:pointer;color:${muted};font-size:12px;padding:0 3px;font-family:inherit">✕</button></div>`;}
+        });
+        html+=`</div>`;
+      });
+      if(dAddOutOpen){html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:10px"><div style="font-size:13px;font-weight:600;color:${ink};margin-bottom:8px">Nytt resultat</div><div style="display:flex;flex-direction:column;gap:8px"><input id="out-n-text" placeholder="Beskriv resultatet" style="${inp}"><input id="out-n-cat" placeholder="Kategori (t.ex. IT, Teknik)" list="dash-cats" style="${inp}"><datalist id="dash-cats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist><div style="display:flex;gap:8px"><button onclick="window._dashSaveNewOut()" style="flex:1;padding:8px;font-size:13px;background:${ink};color:${bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Lägg till</button><button onclick="window._dashCancelNewOut()" style="padding:8px 16px;font-size:13px;border:1px solid ${line};background:none;color:${muted};border-radius:8px;cursor:pointer;font-family:inherit">Avbryt</button></div></div></div>`;}
+      else{html+=`<button onclick="window._dashAddOut()" style="width:100%;padding:9px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till resultat</button>`;}
+    }
+    root.innerHTML=html;
+  }
+
+  function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function editInitForm(it,inp,ink,muted,line,bg0){
+    const fv=k=>it?esc(it[k]||''):'';
+    return `<div style="background:${bg0};border:1px solid ${ink};border-radius:12px;padding:14px;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:600;color:${ink};margin-bottom:10px">${it?'Redigera initiativ':'Nytt initiativ'}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Titel</label><input id="ini-f-title" value="${fv('title')}" style="${inp}"></div>
+        <div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Ansvarig (separera med & eller ,)</label><input id="ini-f-owners" value="${fv('owners')}" placeholder="T.ex. Rebecca & Lars" style="${inp}"></div>
+        <div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Beskrivning</label><input id="ini-f-desc" value="${fv('desc')}" style="${inp}"></div>
+        <div style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Status</label><select id="ini-f-status" style="${inp}">${STATUSES.map(s=>`<option value="${s}"${it&&it.status===s?' selected':''}>${s}</option>`).join('')}</select></div><div style="flex:1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Prioritering</label><select id="ini-f-prio" style="${inp}"><option value="">Ingen</option>${PRIOS.map(p=>`<option value="${p}"${it&&it.prio===p?' selected':''}>${p}</option>`).join('')}</select></div></div>
+        <div style="display:flex;gap:8px;margin-top:2px"><button onclick="window._dashSaveInit(${it?it.id:0})" style="flex:1;padding:8px;font-size:13px;font-weight:500;background:${ink};color:${bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button><button onclick="window._dashCancelInit()" style="padding:8px 16px;font-size:13px;border:1px solid ${line};background:none;color:${muted};border-radius:8px;cursor:pointer;font-family:inherit">Avbryt</button></div>
+      </div>
+    </div>`;
+  }
+
+  window._dashTab=function(k){dTab=k;dEdit=null;dAddOpen=false;dEditOut=null;dAddOutOpen=false;renderDashboard();};
+  window._dashFilter=function(s){dFilter=s;renderDashboard();};
+  window._dashEdit=function(id){dEdit=id;dAddOpen=false;renderDashboard();};
+  window._dashAdd=function(){dAddOpen=true;dEdit=null;renderDashboard();};
+  window._dashCancelInit=function(){dEdit=null;dAddOpen=false;renderDashboard();};
+  window._dashRm=function(id){const it=dInit.find(x=>x.id===id);if(!it)return;if(!confirm('Ta bort initiativet "'+it.title+'"?'))return;dInit=dInit.filter(x=>x.id!==id);saveD();renderDashboard();};
+  window._dashSaveInit=function(id){const t=document.getElementById('ini-f-title').value.trim();const o=document.getElementById('ini-f-owners').value.trim();const d=document.getElementById('ini-f-desc').value.trim();const st=document.getElementById('ini-f-status').value;const pr=document.getElementById('ini-f-prio').value;if(!t)return;if(id){const it=dInit.find(x=>x.id===id);if(it)Object.assign(it,{title:t,owners:o,desc:d,status:st,prio:pr});}else{dInit.push({id:dNextId++,title:t,owners:o,desc:d,status:st,prio:pr});}dEdit=null;dAddOpen=false;saveD();renderDashboard();};
+  window._dashSetPrio=function(id,v){const it=dInit.find(x=>x.id===id);if(!it)return;it.prio=v;saveD();renderDashboard();};
+  window._dashEditOut=function(id){dEditOut=id;dAddOutOpen=false;renderDashboard();};
+  window._dashCancelOut=function(){dEditOut=null;renderDashboard();};
+  window._dashSaveOut=function(id){const t=document.getElementById('out-f-text').value.trim();const c=document.getElementById('out-f-cat').value.trim()||'Övrigt';if(!t)return;const o=dOut.find(x=>x.id===id);if(o)Object.assign(o,{text:t,cat:c});dEditOut=null;saveD();renderDashboard();};
+  window._dashRmOut=function(id){if(!confirm('Ta bort detta resultat?'))return;dOut=dOut.filter(x=>x.id!==id);saveD();renderDashboard();};
+  window._dashAddOut=function(){dAddOutOpen=true;dEditOut=null;renderDashboard();};
+  window._dashCancelNewOut=function(){dAddOutOpen=false;renderDashboard();};
+  window._dashSaveNewOut=function(){const t=document.getElementById('out-n-text').value.trim();const c=document.getElementById('out-n-cat').value.trim()||'Övrigt';if(!t)return;dOut.push({id:dNextId++,cat:c,text:t});dAddOutOpen=false;saveD();renderDashboard();};
+
+  loadD();
+  window._renderDashboard=renderDashboard;
+})();
+
 // ── PDF-export ─────────────────────────────────────────────────────
 document.getElementById('pdf-btn').onclick=function(){
   // Switch through each view, capture HTML, then print
-  const views=['cal','tl','wheel','sommar','roadmap'];if(window._renderSommar)window._renderSommar();if(window._renderRoadmap)window._renderRoadmap();
+  const views=['cal','tl','wheel','sommar','roadmap'];if(window._renderSommar)window._renderSommar();if(window._renderRoadmap)window._renderRoadmap();if(window._renderDashboard&&document.getElementById('dashboard-root'))window._renderDashboard();
   const names={cal:'Kalender',tl:'Tidslinje',wheel:'Årshjul',sommar:'Resursplanering',roadmap:'Roadmap'};
   const win=window.open('','_blank');
   const styles=Array.from(document.styleSheets).map(ss=>{try{return Array.from(ss.cssRules).map(r=>r.cssText).join('\n');}catch(e){return '';}}).join('\n');
