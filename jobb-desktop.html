@@ -322,26 +322,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
   <div class="news-card" id="news-card"></div>
 </div>
 
-<div class="panels">
-  <div class="panel">
-    <div class="panel-title">Semester</div>
-    <div id="sem-list"></div>
-    <div class="add-form">
-      <input type="text" id="sem-name" placeholder="Namn på person">
-      <div class="r2"><input type="date" id="sem-from"><input type="date" id="sem-to"></div>
-      <button class="add-btn" id="sem-add">+ Lägg till semester</button>
-    </div>
-  </div>
-  <div class="panel">
-    <div class="panel-title">Deadlines</div>
-    <div id="dl-list"></div>
-    <div class="add-form">
-      <input type="date" id="dl-date">
-      <input type="text" id="dl-name" placeholder="Beskriv deadline">
-      <button class="add-btn" id="dl-add">+ Lägg till deadline</button>
-    </div>
-  </div>
-</div>
+<!-- semester/deadlines hanteras nu i Resursplanering och Roadmap -->
 
 <div class="foot">
   <button id="export-btn">Säkerhetskopiera</button>
@@ -356,7 +337,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <script>
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.6.0',
+  version:'2.7.2',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -369,6 +350,19 @@ const APPINFO={
     'PDF-export: alla vyer exporteras till en PDF-fil'
   ],
   changelog:[
+    {v:'2.7.2',d:'2026-06-23',items:[
+      'Passerade dagar visas nu i mörkare färg i dagschemats vecko- och månadsvy, likt kalendern, tidslinjen och årshjulet.'
+    ]},
+    {v:'2.7.1',d:'2026-06-23',items:[
+      'Dagens datum cirklas nu in i dagschemats vecko- och månadsvy, likt kalendern.'
+    ]},
+    {v:'2.7.0',d:'2026-06-23',items:[
+      'Tog bort de separata Semester- och Deadlines-rutorna i kalendervyn.',
+      'Kalendern visar nu semester från Resursplanering (semesterveckor + semesterdagar i dagschemat) och deadlines från Roadmap automatiskt. De heter fortfarande Deadlines i kalendern.'
+    ]},
+    {v:'2.6.1',d:'2026-06-23',items:[
+      'Stoppljuset: grönt till vänster och rött till höger, med nivåerna Låg (grön), Medel (gul) och Hög (röd).'
+    ]},
     {v:'2.6.0',d:'2026-06-23',items:[
       'Team-taggar i dashboarden är klickbara och tar dig till initiativets kort (markeras och scrollas fram).',
       'Initiativ kan nu ha ärendenummer och länk till Jira; Jira-länken visas som klickbar knapp på kortet.',
@@ -586,7 +580,32 @@ function getVacWeeks(yr){const m={};vacations.forEach((v,vi)=>{let d=new Date(v.
 function getDlWeeks(yr){const m={};deadlines.forEach(dl=>{const d=new Date(dl.date);if(d.getFullYear()!==yr)return;const{week}=getISOWeek(d);if(!m[week])m[week]=[];m[week].push(dl.name);});return m;}
 
 // ── Render ─────────────────────────────────────────────────────────
-function renderAll(){renderProgress();if(currentView==='cal')renderCal();else if(currentView==='tl')renderTl();else if(currentView==='wheel')renderWheel();renderLists();}
+function syncLegacyFromModules(){
+  if(!window._sommarData){return;}
+  let data;try{data=window._sommarData();}catch(e){return;}
+  const vac=[];
+  (data.persons||[]).forEach(function(p){
+    const days={};
+    const ow=p.offWeeks||{};
+    Object.keys(ow).forEach(function(k){if(ow[k]){const mon=new Date(k);for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(d.getDate()+i);days[toISO(d)]=1;}}});
+    const dst=p.dayStatus||{};
+    Object.keys(dst).forEach(function(k){if(dst[k]==='vacation')days[k]=1;});
+    const sorted=Object.keys(days).sort();
+    if(!sorted.length)return;
+    let start=null,prev=null;
+    sorted.forEach(function(iso){
+      if(start===null){start=iso;prev=iso;return;}
+      const pd=new Date(prev);pd.setDate(pd.getDate()+1);
+      if(toISO(pd)===iso){prev=iso;return;}
+      vac.push({id:'m'+p.id+'-'+start,name:p.name,from:start,to:prev});
+      start=iso;prev=iso;
+    });
+    vac.push({id:'m'+p.id+'-'+start,name:p.name,from:start,to:prev});
+  });
+  vacations=vac;
+  deadlines=(data.tl||[]).map(function(t){return{id:'t'+t.id,name:t.name,date:t.dateTo||t.dateFrom};});
+}
+function renderAll(){syncLegacyFromModules();renderProgress();if(currentView==='cal')renderCal();else if(currentView==='tl')renderTl();else if(currentView==='wheel')renderWheel();renderLists();}
 function renderNews(){
   let h='<div class="panel-title">Nyheter &amp; funktioner</div>';
   h+='<div class="news-head"><span class="news-ver">v'+APPINFO.version+'</span><span class="news-tag">'+APPINFO.tagline+'</span></div>';
@@ -754,6 +773,7 @@ function renderWheel(){
 }
 
 function renderLists(){
+  if(!document.getElementById('sem-list')||!document.getElementById('dl-list'))return;
   const yr=currentYear;const wdList=buildWorkdays(yr);
   // Semester list
   const semEl=document.getElementById('sem-list');
@@ -788,7 +808,7 @@ document.getElementById('yr-tabs').querySelectorAll('.yr-tab').forEach(btn=>{btn
 document.getElementById('view-tabs').querySelectorAll('.view-tab').forEach(btn=>{btn.onclick=()=>{currentView=btn.dataset.view;document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));document.getElementById('view-'+currentView).classList.add('active');renderAll();};});
 ['chk-hol','chk-cs','chk-wk','chk-sem','chk-dl'].forEach(id=>document.getElementById(id).onchange=renderAll);
 
-document.getElementById('sem-add').onclick=()=>{
+(function(){var _b=document.getElementById('sem-add');if(_b)_b.onclick=()=>{
   const name=document.getElementById('sem-name').value.trim();
   const from=document.getElementById('sem-from').value;
   const to=document.getElementById('sem-to').value;
@@ -796,16 +816,16 @@ document.getElementById('sem-add').onclick=()=>{
   vacations.push({id:uid(),name,from,to});
   ['sem-name','sem-from','sem-to'].forEach(id=>document.getElementById(id).value='');
   persist();renderAll();
-};
+};})();
 
-document.getElementById('dl-add').onclick=()=>{
+(function(){var _b=document.getElementById('dl-add');if(_b)_b.onclick=()=>{
   const dt=document.getElementById('dl-date').value;
   const nm=document.getElementById('dl-name').value.trim();
   if(!dt||!nm)return;
   deadlines.push({id:uid(),name:nm,date:dt});
   ['dl-date','dl-name'].forEach(id=>document.getElementById(id).value='');
   persist();renderAll();
-};
+};})();
 
 // ── Säkerhetskopiering ─────────────────────────────────
 function exportData(){
@@ -1005,10 +1025,11 @@ document.addEventListener('keydown',function(e){
       const big=sSchemaView==='week';
       const CW=big?40:20,CH=big?30:22,NAMEW=big?96:80;
       html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:10px;overflow-x:auto">`;
+      const _td=new Date();_td.setHours(0,0,0,0);const _isToday=function(d){return d.getFullYear()===_td.getFullYear()&&d.getMonth()===_td.getMonth()&&d.getDate()===_td.getDate();};
       html+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:1px;padding-left:${NAMEW}px">${days.map(d=>{const we=isWe(d);return`<div style="width:${CW}px;font-size:${big?10:8}px;color:${we?'#A32D2D':muted};text-align:center;flex-shrink:0;font-weight:${we?600:400}">${DOW[(d.getDay()+6)%7]}</div>`;}).join('')}</div>`;
-      html+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:6px;padding-left:${NAMEW}px">${days.map(d=>{const we=isWe(d);return`<div style="width:${CW}px;font-size:${big?10:8}px;color:${we?'#A32D2D':muted};text-align:center;flex-shrink:0;font-weight:${we?600:400}">${big?d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'}):d.getDate()}</div>`;}).join('')}</div>`;
+      html+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:6px;padding-left:${NAMEW}px">${days.map(d=>{const we=isWe(d);const tdy=_isToday(d);const txt=big?d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'}):String(d.getDate());const inner=tdy?`<span style="display:inline-flex;align-items:center;justify-content:center;min-width:${big?34:16}px;height:16px;border-radius:${big?9:50}px;outline:2px solid ${ink};outline-offset:-1px;font-weight:700;color:${ink};padding:0 ${big?4:1}px">${txt}</span>`:txt;return`<div style="width:${CW}px;font-size:${big?10:8}px;color:${tdy?ink:(we?'#A32D2D':muted)};text-align:center;flex-shrink:0;font-weight:${we?600:400}">${inner}</div>`;}).join('')}</div>`;
       sPersons.forEach(p=>{
-        const cells=days.map(d=>{const k=dKey(d);if(isWe(d))return`<div style="width:${CW}px;height:${CH}px;border-radius:3px;border:1px solid #F7C1C1;background:#FCEBEB;flex-shrink:0"></div>`;const s=p.dayStatus[k]||'';let bg=bg1,bc=line,t='';if(s==='home'){bg=HOME_BG;bc=HOME_BC;t=big?'Hemma':'';}if(s==='office'){bg=OFF_BG;bc=OFF_BC;t=big?'Kontor':'';}if(s==='sick'){bg=SICK_BG;bc=SICK_BC;t=big?'Sjuk':'';}if(s==='vacation'){bg=VAC_BG;bc=VAC_BC;t=big?'Sem.':'';}return`<div onclick="window._sommarDay(${p.id},'${k}')" title="${d.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric'})}" style="width:${CW}px;height:${CH}px;border-radius:3px;border:1px solid ${bc};background:${bg};cursor:pointer;flex-shrink:0;transition:background .1s;display:flex;align-items:center;justify-content:center;font-size:8px;color:${ink};overflow:hidden">${t}</div>`;}).join('');
+        const cells=days.map(d=>{const k=dKey(d);const past=d<_td;if(isWe(d))return`<div style="width:${CW}px;height:${CH}px;border-radius:3px;border:1px solid #F7C1C1;background:${past?'#E9D6D6':'#FCEBEB'};${past?'opacity:0.85;':''}flex-shrink:0"></div>`;const s=p.dayStatus[k]||'';let bg=bg1,bc=line,t='';if(s==='home'){bg=HOME_BG;bc=HOME_BC;t=big?'Hemma':'';}if(s==='office'){bg=OFF_BG;bc=OFF_BC;t=big?'Kontor':'';}if(s==='sick'){bg=SICK_BG;bc=SICK_BC;t=big?'Sjuk':'';}if(s==='vacation'){bg=VAC_BG;bc=VAC_BC;t=big?'Sem.':'';}if(past&&s===''){bg=line;bc=line;}const op=(past&&s!=='')?'opacity:0.45;':'';return`<div onclick="window._sommarDay(${p.id},'${k}')" title="${d.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric'})}${past?' (passerad)':''}" style="width:${CW}px;height:${CH}px;border-radius:3px;border:1px solid ${bc};background:${bg};${op}cursor:pointer;flex-shrink:0;transition:background .1s;display:flex;align-items:center;justify-content:center;font-size:8px;color:${past?muted:ink};overflow:hidden">${t}</div>`;}).join('');
         html+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid ${line}"><div style="display:flex;align-items:center;gap:6px;width:${NAMEW-4}px;flex-shrink:0">${avEl(p,big?26:24)}<div style="font-size:12px;font-weight:500;color:${ink};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div></div><div style="display:flex;gap:2px">${cells}</div></div>`;
       });
       html+=`</div>`;
@@ -1113,7 +1134,7 @@ document.addEventListener('keydown',function(e){
   loadSommar();
   if(document.getElementById('view-sommar')&&document.getElementById('view-sommar').classList.contains('active'))renderSommar();
   if(document.getElementById('view-roadmap')&&document.getElementById('view-roadmap').classList.contains('active'))renderRoadmap();
-  window._renderSommar=renderSommar;window._renderRoadmap=renderRoadmap;
+  window._renderSommar=renderSommar;window._renderRoadmap=renderRoadmap;window._sommarData=function(){return{persons:sPersons,tl:sTl};};
 })();
 
 // ── Roadmap-dashboard ──────────────────────────────────────────────
@@ -1304,7 +1325,7 @@ document.addEventListener('keydown',function(e){
   function vars(){let o={bg0:'#FAF7F2',bg1:'#F2EDE5',ink:'#3A3633',muted:'#8A847C',line:'#E5DFD5'};try{const ac=getComputedStyle(document.documentElement);o.bg0=ac.getPropertyValue('--paper').trim()||o.bg0;o.bg1=ac.getPropertyValue('--bg').trim()||o.bg1;o.ink=ac.getPropertyValue('--ink').trim()||o.ink;o.muted=ac.getPropertyValue('--ink-soft').trim()||o.muted;o.line=ac.getPropertyValue('--line').trim()||o.line;}catch(e){}return o;}
 
   const SEV={info:{bg:'#E6F1FB',bd:'#B5D4F4',fg:'#0C447C',ic:'ℹ',lbl:'Information'},varning:{bg:'#FAEEDA',bd:'#FAC775',fg:'#854F0B',ic:'⚠',lbl:'Varning'},driftstopp:{bg:'#FBE3E3',bd:'#F0A8A8',fg:'#9B2C2C',ic:'⛔',lbl:'Driftstopp'}};
-  const LOAD={green:{c:'#5DCAA5',lbl:'Normal',desc:'Normal belastning'},yellow:{c:'#EFB02C',lbl:'Hög',desc:'Hög belastning'},red:{c:'#D8504A',lbl:'Kritisk',desc:'Kritisk belastning'}};
+  const LOAD={green:{c:'#5DCAA5',lbl:'Låg',desc:'Låg belastning'},yellow:{c:'#EFB02C',lbl:'Medel',desc:'Medel belastning'},red:{c:'#D8504A',lbl:'Hög',desc:'Hög belastning'}};
 
   function renderBanner(){
     const root=document.getElementById('org-banner');if(!root)return;
@@ -1336,7 +1357,7 @@ document.addEventListener('keydown',function(e){
     const root=document.getElementById('it-load');if(!root)return;
     const v=vars();const L=st.load;const cur=LOAD[L.level]||LOAD.green;const inp=`font-size:13px;padding:7px 9px;border:1px solid ${v.line};border-radius:8px;background:${v.bg0};color:${v.ink};font-family:inherit;width:100%`;
     let lamps='';
-    ['red','yellow','green'].forEach(k=>{const on=L.level===k;lamps+=`<button onclick="window._orgLoadSet('${k}')" title="${LOAD[k].lbl}" aria-label="${LOAD[k].lbl}" style="width:26px;height:26px;border-radius:50%;border:2px solid ${on?LOAD[k].c:v.line};background:${on?LOAD[k].c:v.bg1};cursor:pointer;box-shadow:${on?'0 0 8px '+LOAD[k].c:'none'};transition:all .12s;padding:0"></button>`;});
+    ['green','yellow','red'].forEach(k=>{const on=L.level===k;lamps+=`<button onclick="window._orgLoadSet('${k}')" title="${LOAD[k].lbl}" aria-label="${LOAD[k].lbl}" style="width:26px;height:26px;border-radius:50%;border:2px solid ${on?LOAD[k].c:v.line};background:${on?LOAD[k].c:v.bg1};cursor:pointer;box-shadow:${on?'0 0 8px '+LOAD[k].c:'none'};transition:all .12s;padding:0"></button>`;});
     let noteHtml;
     if(lEdit){
       noteHtml=`<div style="display:flex;gap:6px;margin-top:8px;width:100%"><input id="org-l-note" value="${esc(L.note)}" placeholder="Kort kommentar (valfri), t.ex. många pågående projekt" style="${inp}"><button onclick="window._orgLoadSaveNote()" style="padding:7px 12px;font-size:12px;background:${v.ink};color:${v.bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button></div>`;
