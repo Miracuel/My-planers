@@ -243,6 +243,8 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
   </div>
 </div>
 
+<div id="org-banner"></div>
+
 <div class="controls">
   <div class="tab-row">
     <div class="yr-tabs" id="yr-tabs">
@@ -286,6 +288,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <div id="warn-bar" class="warn-bar"></div>
 
 <div class="view-panel active" id="view-cal">
+  <div id="it-load"></div>
   <div class="pbar-wrap">
     <div class="pbar-bg"><div class="pbar-fill" id="pb"></div></div>
     <div class="plabels"><span id="pl-l"></span><span id="pl-r"></span></div>
@@ -353,7 +356,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <script>
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.5.0',
+  version:'2.6.0',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -366,6 +369,12 @@ const APPINFO={
     'PDF-export: alla vyer exporteras till en PDF-fil'
   ],
   changelog:[
+    {v:'2.6.0',d:'2026-06-23',items:[
+      'Team-taggar i dashboarden är klickbara och tar dig till initiativets kort (markeras och scrollas fram).',
+      'Initiativ kan nu ha ärendenummer och länk till Jira; Jira-länken visas som klickbar knapp på kortet.',
+      'Stoppljus på första sidan (Kalender) som visar IT-avdelningens belastning (Normal/Hög/Kritisk) med valfri kommentar.',
+      'Statusbanner högst upp under rubriken för driftstopp och andra meddelanden till organisationen (Information/Varning/Driftstopp).'
+    ]},
     {v:'2.5.0',d:'2026-06-23',items:[
       'Ny redigerbar Dashboard under Roadmap (växla mellan Gantt-tidslinje och Dashboard).',
       'Dashboard: Initiativ (lägg till/redigera/ta bort med titel, ansvariga, status, prioritering), Prioritering (auto-grupperad, byt prioritering direkt), Team (räknas ut automatiskt från ansvariga) och Resultat (lägg till/ta bort).',
@@ -1125,7 +1134,7 @@ document.addEventListener('keydown',function(e){
     {id:5,title:'Shadow IT-kartläggning',owners:'Rebecca & Lars',desc:'Kartlägga system, avtal och leverantörer.',status:'Pågående',prio:'Affärskritisk'},
     {id:6,title:'Dokumentation och mallar',owners:'Lars',desc:'Mallar, signaturer och dokumentation.',status:'Snart klar',prio:'Strategisk'},
     {id:7,title:'IT image och servicekatalog',owners:'Rebecca & Lars',desc:'Tydliggöra IT:s tjänster och beställningsvägar.',status:'Planerad',prio:'Strategisk'},
-    {id:8,title:'Fastighet i Jira',owners:'Rebecca & Karin',desc:'Etablera Fastighet i Jira.',status:'Väntar',prio:''},
+    {id:8,title:'Fastighet i Jira',owners:'Rebecca & Karin',desc:'Etablera Fastighet i Jira.',status:'Väntar',prio:'',ticket:'ITSM-1042',jira:'https://jira.example.com/browse/ITSM-1042'},
     {id:9,title:'Säkerhetsförbättringar',owners:'Lars',desc:'MFA, PIM, FortiEDR, SSPR m.m.',status:'Pågående',prio:'Teknisk'},
     {id:10,title:'Plattformsstädning och standardisering',owners:'Rebecca & Lars',desc:'Rensning och standardisering av plattformar.',status:'Pågående',prio:'Teknisk'},
     {id:11,title:'Planering och visualisering 2026–Q1 2027',owners:'Rebecca & Daniel',desc:'Roadmap och planering.',status:'Förbereds',prio:'Strategisk'},
@@ -1148,7 +1157,7 @@ document.addEventListener('keydown',function(e){
     {id:111,cat:'Teknik',text:'Plattformar rensade och standardiserade'},
     {id:112,cat:'Teknik',text:'Dokumentation uppdaterad'}
   ];
-  let dNextId=200,dTab='ini',dFilter='alla',dEdit=null,dEditOut=null,dAddOpen=false,dAddOutOpen=false;
+  let dNextId=200,dTab='ini',dFilter='alla',dEdit=null,dEditOut=null,dAddOpen=false,dAddOutOpen=false,dHi=null;
 
   function saveD(){try{localStorage.setItem(STORE_D,JSON.stringify({init:dInit,out:dOut}));}catch(e){}}
   function loadD(){try{const s=localStorage.getItem(STORE_D);if(s){const d=JSON.parse(s);if(Array.isArray(d.init))dInit=d.init;if(Array.isArray(d.out))dOut=d.out;}}catch(e){}let m=199;dInit.forEach(i=>{if(i.id>m)m=i.id;});dOut.forEach(o=>{if(o.id>m)m=o.id;});dNextId=m+1;}
@@ -1183,13 +1192,16 @@ document.addEventListener('keydown',function(e){
         const n=dInit.indexOf(it)+1;const sc=SCOL[it.status]||['#EFEAE2','#5C564E'];
         if(dEdit===it.id){html+=editInitForm(it,inp,ink,muted,line,bg0);}
         else{
-          html+=`<div style="display:flex;align-items:flex-start;gap:12px;background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:8px">
+          const hi=dHi===it.id;
+          html+=`<div id="ini-card-${it.id}" style="display:flex;align-items:flex-start;gap:12px;background:${hi?bg1:bg0};border:1px solid ${hi?ink:line};border-radius:12px;padding:12px 14px;margin-bottom:8px;${hi?'box-shadow:0 0 0 2px '+ink+'22':''}">
             <div style="width:26px;height:26px;border-radius:50%;background:${bg1};color:${muted};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">${n}</div>
             <div style="flex:1;min-width:0">
               <div style="font-size:14px;font-weight:600;color:${ink}">${esc(it.title)}</div>
               <div style="font-size:12px;color:${accent};margin:1px 0 2px">${esc(it.owners)}</div>
               <div style="font-size:12px;color:${muted}">${esc(it.desc)}</div>
               ${it.prio?`<span style="display:inline-block;margin-top:5px;font-size:10px;color:${PCOL[it.prio]};border:1px solid ${PCOL[it.prio]};border-radius:20px;padding:1px 7px">${PICON[it.prio]} ${it.prio}</span>`:''}
+              ${it.ticket?`<span style="display:inline-block;margin-top:5px;margin-left:5px;font-size:10px;color:${muted};background:${bg1};border-radius:20px;padding:1px 8px;font-family:monospace">${esc(it.ticket)}</span>`:''}
+              ${it.jira?`<a href="${esc(it.jira)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;margin-top:5px;margin-left:5px;font-size:10px;color:#0C447C;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:20px;padding:1px 8px;text-decoration:none">Jira ↗</a>`:''}
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
               <span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;background:${sc[0]};color:${sc[1]};white-space:nowrap">${it.status}</span>
@@ -1214,7 +1226,7 @@ document.addEventListener('keydown',function(e){
 
     } else if(dTab==='tea'){
       const team={};
-      dInit.forEach((it)=>{const n=dInit.indexOf(it)+1;names(it.owners).forEach(nm=>{if(!team[nm])team[nm]={items:[]};team[nm].items.push({n,title:it.title});});});
+      dInit.forEach((it)=>{const n=dInit.indexOf(it)+1;names(it.owners).forEach(nm=>{if(!team[nm])team[nm]={items:[]};team[nm].items.push({n,id:it.id,title:it.title});});});
       const peopleSorted=Object.keys(team).sort((a,b)=>team[b].items.length-team[a].items.length);
       const palette=[['#E2DFF8','#5047A8'],['#DAE5F5','#2E5A8E'],['#D9EFE4','#2E7A52'],['#FAE8E0','#9C3E25'],['#FEF0DC','#9E6A10']];
       peopleSorted.forEach((nm,i)=>{
@@ -1222,7 +1234,7 @@ document.addEventListener('keydown',function(e){
         html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:34px;height:34px;border-radius:50%;background:${pc[0]};color:${pc[1]};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">${initials(nm)}</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:${ink}">${esc(nm)}</div></div><div style="font-size:12px;color:${muted}">${t.items.length} initiativ</div></div>
           <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;color:${muted};margin-bottom:3px"><span>Initiativbelastning</span><span>${t.items.length} / ${dInit.length}</span></div><div style="height:8px;background:${bg1};border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${pc[1]};border-radius:4px"></div></div></div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px">${t.items.map(x=>`<span style="font-size:11px;background:${bg1};color:${muted};border-radius:6px;padding:2px 8px">#${x.n} ${esc(x.title.length>22?x.title.slice(0,21)+'…':x.title)}</span>`).join('')}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">${t.items.map(x=>`<button onclick="window._dashOpenInit(${x.id})" title="Öppna initiativet" style="font-size:11px;background:${bg1};color:${ink};border:1px solid ${line};border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit">#${x.n} ${esc(x.title.length>22?x.title.slice(0,21)+'…':x.title)}</button>`).join('')}</div>
         </div>`;
       });
       if(!peopleSorted.length)html+=`<div style="font-size:12px;color:${muted}">Inga tilldelade ännu. Lägg till ansvariga i initiativens "Ansvarig"-fält.</div>`;
@@ -1253,19 +1265,21 @@ document.addEventListener('keydown',function(e){
         <div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Titel</label><input id="ini-f-title" value="${fv('title')}" style="${inp}"></div>
         <div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Ansvarig (separera med & eller ,)</label><input id="ini-f-owners" value="${fv('owners')}" placeholder="T.ex. Rebecca & Lars" style="${inp}"></div>
         <div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Beskrivning</label><input id="ini-f-desc" value="${fv('desc')}" style="${inp}"></div>
+        <div style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Ärendenummer</label><input id="ini-f-ticket" value="${fv('ticket')}" placeholder="T.ex. ITSM-1042" style="${inp}"></div><div style="flex:1.4"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Länk till Jira</label><input id="ini-f-jira" value="${fv('jira')}" placeholder="https://…" style="${inp}"></div></div>
         <div style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Status</label><select id="ini-f-status" style="${inp}">${STATUSES.map(s=>`<option value="${s}"${it&&it.status===s?' selected':''}>${s}</option>`).join('')}</select></div><div style="flex:1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Prioritering</label><select id="ini-f-prio" style="${inp}"><option value="">Ingen</option>${PRIOS.map(p=>`<option value="${p}"${it&&it.prio===p?' selected':''}>${p}</option>`).join('')}</select></div></div>
         <div style="display:flex;gap:8px;margin-top:2px"><button onclick="window._dashSaveInit(${it?it.id:0})" style="flex:1;padding:8px;font-size:13px;font-weight:500;background:${ink};color:${bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button><button onclick="window._dashCancelInit()" style="padding:8px 16px;font-size:13px;border:1px solid ${line};background:none;color:${muted};border-radius:8px;cursor:pointer;font-family:inherit">Avbryt</button></div>
       </div>
     </div>`;
   }
 
+  window._dashOpenInit=function(id){dTab='ini';dFilter='alla';dEdit=null;dAddOpen=false;dHi=id;renderDashboard();setTimeout(function(){const el=document.getElementById('ini-card-'+id);if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});},30);setTimeout(function(){dHi=null;renderDashboard();},2400);};
   window._dashTab=function(k){dTab=k;dEdit=null;dAddOpen=false;dEditOut=null;dAddOutOpen=false;renderDashboard();};
   window._dashFilter=function(s){dFilter=s;renderDashboard();};
   window._dashEdit=function(id){dEdit=id;dAddOpen=false;renderDashboard();};
   window._dashAdd=function(){dAddOpen=true;dEdit=null;renderDashboard();};
   window._dashCancelInit=function(){dEdit=null;dAddOpen=false;renderDashboard();};
   window._dashRm=function(id){const it=dInit.find(x=>x.id===id);if(!it)return;if(!confirm('Ta bort initiativet "'+it.title+'"?'))return;dInit=dInit.filter(x=>x.id!==id);saveD();renderDashboard();};
-  window._dashSaveInit=function(id){const t=document.getElementById('ini-f-title').value.trim();const o=document.getElementById('ini-f-owners').value.trim();const d=document.getElementById('ini-f-desc').value.trim();const st=document.getElementById('ini-f-status').value;const pr=document.getElementById('ini-f-prio').value;if(!t)return;if(id){const it=dInit.find(x=>x.id===id);if(it)Object.assign(it,{title:t,owners:o,desc:d,status:st,prio:pr});}else{dInit.push({id:dNextId++,title:t,owners:o,desc:d,status:st,prio:pr});}dEdit=null;dAddOpen=false;saveD();renderDashboard();};
+  window._dashSaveInit=function(id){const t=document.getElementById('ini-f-title').value.trim();const o=document.getElementById('ini-f-owners').value.trim();const d=document.getElementById('ini-f-desc').value.trim();const st=document.getElementById('ini-f-status').value;const pr=document.getElementById('ini-f-prio').value;const tk=document.getElementById('ini-f-ticket').value.trim();let jr=document.getElementById('ini-f-jira').value.trim();if(jr&&!/^https?:\/\//i.test(jr))jr='https://'+jr;if(!t)return;if(id){const it=dInit.find(x=>x.id===id);if(it)Object.assign(it,{title:t,owners:o,desc:d,status:st,prio:pr,ticket:tk,jira:jr});}else{dInit.push({id:dNextId++,title:t,owners:o,desc:d,status:st,prio:pr,ticket:tk,jira:jr});}dEdit=null;dAddOpen=false;saveD();renderDashboard();};
   window._dashSetPrio=function(id,v){const it=dInit.find(x=>x.id===id);if(!it)return;it.prio=v;saveD();renderDashboard();};
   window._dashEditOut=function(id){dEditOut=id;dAddOutOpen=false;renderDashboard();};
   window._dashCancelOut=function(){dEditOut=null;renderDashboard();};
@@ -1277,6 +1291,79 @@ document.addEventListener('keydown',function(e){
 
   loadD();
   window._renderDashboard=renderDashboard;
+})();
+
+// ── Driftstatus & IT-belastning ────────────────────────────────────
+(function(){
+  const STORE='jobbstatus_v1';
+  let st={banner:{msg:'',sev:'info'},load:{level:'green',note:''}};
+  let bEdit=false,lEdit=false;
+  function save(){try{localStorage.setItem(STORE,JSON.stringify(st));}catch(e){}}
+  function load(){try{const s=localStorage.getItem(STORE);if(s){const d=JSON.parse(s);if(d.banner)st.banner={msg:'',sev:'info',...d.banner};if(d.load)st.load={level:'green',note:'',...d.load};}}catch(e){}}
+  function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function vars(){let o={bg0:'#FAF7F2',bg1:'#F2EDE5',ink:'#3A3633',muted:'#8A847C',line:'#E5DFD5'};try{const ac=getComputedStyle(document.documentElement);o.bg0=ac.getPropertyValue('--paper').trim()||o.bg0;o.bg1=ac.getPropertyValue('--bg').trim()||o.bg1;o.ink=ac.getPropertyValue('--ink').trim()||o.ink;o.muted=ac.getPropertyValue('--ink-soft').trim()||o.muted;o.line=ac.getPropertyValue('--line').trim()||o.line;}catch(e){}return o;}
+
+  const SEV={info:{bg:'#E6F1FB',bd:'#B5D4F4',fg:'#0C447C',ic:'ℹ',lbl:'Information'},varning:{bg:'#FAEEDA',bd:'#FAC775',fg:'#854F0B',ic:'⚠',lbl:'Varning'},driftstopp:{bg:'#FBE3E3',bd:'#F0A8A8',fg:'#9B2C2C',ic:'⛔',lbl:'Driftstopp'}};
+  const LOAD={green:{c:'#5DCAA5',lbl:'Normal',desc:'Normal belastning'},yellow:{c:'#EFB02C',lbl:'Hög',desc:'Hög belastning'},red:{c:'#D8504A',lbl:'Kritisk',desc:'Kritisk belastning'}};
+
+  function renderBanner(){
+    const root=document.getElementById('org-banner');if(!root)return;
+    const v=vars();const b=st.banner;const inp=`font-size:13px;padding:7px 9px;border:1px solid ${v.line};border-radius:8px;background:${v.bg0};color:${v.ink};font-family:inherit;width:100%`;
+    if(bEdit){
+      root.innerHTML=`<div style="background:${v.bg0};border:1px solid ${v.line};border-radius:12px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600;color:${v.ink};margin-bottom:8px">Meddelande till organisationen</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <select id="org-b-sev" style="${inp}">${Object.keys(SEV).map(k=>`<option value="${k}"${b.sev===k?' selected':''}>${SEV[k].ic} ${SEV[k].lbl}</option>`).join('')}</select>
+          <textarea id="org-b-msg" rows="2" placeholder="T.ex. Planerat driftstopp för e-post lördag 06:00–08:00." style="${inp};resize:vertical">${esc(b.msg)}</textarea>
+          <div style="display:flex;gap:8px"><button onclick="window._orgBannerSave()" style="flex:1;padding:8px;font-size:13px;font-weight:500;background:${v.ink};color:${v.bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button><button onclick="window._orgBannerCancel()" style="padding:8px 16px;font-size:13px;border:1px solid ${v.line};background:none;color:${v.muted};border-radius:8px;cursor:pointer;font-family:inherit">Avbryt</button></div>
+        </div></div>`;
+      return;
+    }
+    if(!b.msg){
+      root.innerHTML=`<button onclick="window._orgBannerEdit()" style="width:100%;padding:8px;border:1px dashed ${v.line};border-radius:10px;background:none;color:${v.muted};font-size:12px;cursor:pointer;font-family:inherit;margin-bottom:14px">+ Lägg till driftmeddelande / status till organisationen</button>`;
+      return;
+    }
+    const s=SEV[b.sev]||SEV.info;
+    root.innerHTML=`<div style="display:flex;align-items:flex-start;gap:10px;background:${s.bg};border:1px solid ${s.bd};border-radius:12px;padding:11px 14px;margin-bottom:14px">
+      <div style="font-size:16px;line-height:1.3">${s.ic}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:${s.fg};text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">${s.lbl}</div><div style="font-size:13px;color:${s.fg};white-space:pre-wrap">${esc(b.msg)}</div></div>
+      <button onclick="window._orgBannerEdit()" title="Redigera" style="background:none;border:none;cursor:pointer;color:${s.fg};font-size:13px;padding:0 3px;font-family:inherit">✎</button>
+      <button onclick="window._orgBannerClear()" title="Ta bort" style="background:none;border:none;cursor:pointer;color:${s.fg};font-size:13px;padding:0 3px;font-family:inherit">✕</button>
+    </div>`;
+  }
+
+  function renderLoad(){
+    const root=document.getElementById('it-load');if(!root)return;
+    const v=vars();const L=st.load;const cur=LOAD[L.level]||LOAD.green;const inp=`font-size:13px;padding:7px 9px;border:1px solid ${v.line};border-radius:8px;background:${v.bg0};color:${v.ink};font-family:inherit;width:100%`;
+    let lamps='';
+    ['red','yellow','green'].forEach(k=>{const on=L.level===k;lamps+=`<button onclick="window._orgLoadSet('${k}')" title="${LOAD[k].lbl}" aria-label="${LOAD[k].lbl}" style="width:26px;height:26px;border-radius:50%;border:2px solid ${on?LOAD[k].c:v.line};background:${on?LOAD[k].c:v.bg1};cursor:pointer;box-shadow:${on?'0 0 8px '+LOAD[k].c:'none'};transition:all .12s;padding:0"></button>`;});
+    let noteHtml;
+    if(lEdit){
+      noteHtml=`<div style="display:flex;gap:6px;margin-top:8px;width:100%"><input id="org-l-note" value="${esc(L.note)}" placeholder="Kort kommentar (valfri), t.ex. många pågående projekt" style="${inp}"><button onclick="window._orgLoadSaveNote()" style="padding:7px 12px;font-size:12px;background:${v.ink};color:${v.bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button></div>`;
+    } else {
+      noteHtml=`<div style="display:flex;align-items:center;gap:8px;margin-top:6px;width:100%"><div style="flex:1;font-size:12px;color:${v.muted}">${L.note?esc(L.note):'<span style="opacity:.7">Ingen kommentar</span>'}</div><button onclick="window._orgLoadEditNote()" title="Redigera kommentar" style="background:none;border:none;cursor:pointer;color:${v.muted};font-size:12px;padding:0 3px;font-family:inherit">✎</button></div>`;
+    }
+    root.innerHTML=`<div style="background:${v.bg0};border:1px solid ${v.line};border-radius:14px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="font-size:13px;font-weight:600;color:${v.ink}">IT-avdelningens belastning</div>
+        <div style="display:flex;gap:8px;align-items:center;background:${v.bg1};border-radius:30px;padding:5px 10px">${lamps}</div>
+        <div style="font-size:14px;font-weight:600;color:${cur.c}">${cur.lbl}</div>
+      </div>
+      ${noteHtml}
+    </div>`;
+  }
+
+  window._orgBannerEdit=function(){bEdit=true;renderBanner();};
+  window._orgBannerCancel=function(){bEdit=false;renderBanner();};
+  window._orgBannerSave=function(){st.banner.msg=document.getElementById('org-b-msg').value.trim();st.banner.sev=document.getElementById('org-b-sev').value;bEdit=false;save();renderBanner();};
+  window._orgBannerClear=function(){if(!confirm('Ta bort meddelandet?'))return;st.banner.msg='';save();renderBanner();};
+  window._orgLoadSet=function(k){st.load.level=k;save();renderLoad();};
+  window._orgLoadEditNote=function(){lEdit=true;renderLoad();};
+  window._orgLoadSaveNote=function(){st.load.note=document.getElementById('org-l-note').value.trim();lEdit=false;save();renderLoad();};
+
+  load();
+  window._renderOrgStatus=function(){renderBanner();renderLoad();};
+  renderBanner();renderLoad();
 })();
 
 // ── PDF-export ─────────────────────────────────────────────────────
