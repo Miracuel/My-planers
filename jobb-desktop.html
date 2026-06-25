@@ -363,7 +363,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 try{document.documentElement.setAttribute('data-theme',(localStorage.getItem('jobbtheme')==='dark')?'dark':'light');}catch(e){}
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.17.1',
+  version:'2.17.2',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -378,6 +378,9 @@ const APPINFO={
     'Personalöversikt med belastningsgrad per kollega, baserad på deadlines och initiativ',
   ],
   changelog:[
+    {v:'2.17.2',d:'2026-06-25',items:[
+      'Gantt-tidslinjen går nu att skrolla i sidled på smala skärmar i stället för att tryckas ihop, och titeltexten är mindre så fler etiketter får plats utan att klippas.'
+    ]},
     {v:'2.17.1',d:'2026-06-25',items:[
       'Dagschemats månads- och veckovy listar nu bara deadlines och beslutspunkter vars datum infaller den valda månaden/veckan, i stället för alla som överlappar perioden.'
     ]},
@@ -1276,10 +1279,10 @@ document.addEventListener('keydown',function(e){
         const x0=LABEL_W+Math.round(xPct(it.dateFrom)*BAR_W);const x1=LABEL_W+Math.round(xPct(it.dateTo)*BAR_W);
         const bw=Math.max(16,x1-x0);const isDone=it.status==='done';
         if(i%2===1)gInner+=`<rect x="0" y="${y}" width="${VBW}" height="${ROW_H}" fill="${bg1}" opacity="0.45"/>`;
-        const lbl=it.name.length>20?it.name.slice(0,19)+'…':it.name;
+        const lbl=it.name.length>26?it.name.slice(0,25)+'…':it.name;
         const asg=(it.owners||[]).map(id=>{const pp=sPersons.find(x=>x.id===id);return pp?pp.name.slice(0,2).toUpperCase():'';}).filter(Boolean).join(' ');
-        gInner+=`<text x="${LABEL_W-8}" y="${y+ROW_H/2-2}" font-size="14" fill="${ink}" text-anchor="end" font-weight="500" onclick="window._sommarEditDl(${it.id})" style="cursor:pointer">${it.type==='beslut'?'◆ ':''}${lbl}</text>`;
-        if(asg)gInner+=`<text x="${LABEL_W-8}" y="${y+ROW_H/2+12}" font-size="9" fill="${muted}" text-anchor="end" style="pointer-events:none">${asg}</text>`;
+        gInner+=`<text x="${LABEL_W-8}" y="${y+ROW_H/2-2}" font-size="11" fill="${ink}" text-anchor="end" font-weight="500" onclick="window._sommarEditDl(${it.id})" style="cursor:pointer">${it.type==='beslut'?'◆ ':''}${lbl}</text>`;
+        if(asg)gInner+=`<text x="${LABEL_W-8}" y="${y+ROW_H/2+11}" font-size="8" fill="${muted}" text-anchor="end" style="pointer-events:none">${asg}</text>`;
         gInner+=`<rect x="${x0}" y="${y+8}" width="${bw}" height="${ROW_H-16}" rx="5" fill="${it.type==='beslut'?'#D9A441':(isDone?colL:col)}" opacity="${isDone?0.6:1}" onclick="window._sommarCycleStatus(${it.id})" style="cursor:pointer"><title>Klicka för att ändra status</title></rect>`;
         const sameDay=it.dateFrom===it.dateTo;
         const rangeTxt=sameDay?fmtD(it.dateFrom):fmtD(it.dateFrom)+' – '+fmtD(it.dateTo);
@@ -1288,7 +1291,7 @@ document.addEventListener('keydown',function(e){
         else{gInner+=`<text x="${x0+bw+8}" y="${y+ROW_H/2+4}" font-size="11" fill="${muted}" style="pointer-events:none">${rangeTxt} · ${statusTxt}${it.hours?' · '+it.hours+'h est':''}${it.spent?' · '+it.spent+'h lagd':''}</text>`;}
         gInner+=`<g onclick="window._sommarRmTl(${it.id})" style="cursor:pointer"><rect x="${VBW-DEL_W+6}" y="${y+ROW_H/2-9}" width="18" height="18" rx="4" fill="${line}" opacity="0.7"/><text x="${VBW-DEL_W+15}" y="${y+ROW_H/2+4}" font-size="12" fill="${muted}" text-anchor="middle" style="pointer-events:none">✕</text></g>`;
       });
-      html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px;margin-bottom:8px"><svg viewBox="0 0 ${VBW} ${svgH}" width="100%" style="display:block;font-family:inherit">${gInner}</svg></div>`;
+      html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:12px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch"><svg viewBox="0 0 ${VBW} ${svgH}" width="100%" style="display:block;font-family:inherit;min-width:${VBW}px">${gInner}</svg></div>`;
       html+=`<div style="font-size:10px;color:${muted};margin-bottom:8px">Klicka på en stapel för att ändra status (Planerad → Pågående → Klar), eller på namnet för att redigera allt.</div>`;
       // status quick-edit list (the "other place")
       html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:6px 12px;margin-bottom:10px">`;
