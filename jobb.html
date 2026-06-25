@@ -339,7 +339,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 try{document.documentElement.setAttribute('data-theme',(localStorage.getItem('jobbtheme')==='dark')?'dark':'light');}catch(e){}
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.21.0',
+  version:'2.21.2',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -357,6 +357,12 @@ const APPINFO={
     'Arbetsdagsräkning per deadline och beslutspunkter grupperade under sin deadline',
   ],
   changelog:[
+    {v:'2.21.2',d:'2026-06-25',items:[
+      'Fix: beläggningen kunde skena (t.ex. 1550%) när est. timmar för projekt som sträcker sig över månader ställdes mot ett kort, semesterreducerat fönster. Beläggning räknas nu som ett snitt per vecka: projekttimmar fördelade över sin egen längd och bara den del som infaller i perioden, delat med antal veckor och jämfört med en 40-timmarsvecka. Varnar fortfarande vid >70%.'
+    ]},
+    {v:'2.21.1',d:'2026-06-25',items:[
+      'Tidslinjen och årshjulet visar nu deadline och milstolpe samtidigt även när de infaller samma vecka: deadline som blå D/prick, milstolpe som guldromb (i tidslinjen som ett guldhörn på samma ruta, i årshjulet som en separat romb).'
+    ]},
     {v:'2.21.0',d:'2026-06-25',items:[
       'Personalkorten har nu ett cirkeldiagram (donut) som delar upp belastningspoängen i dagligt arbete (roll) och projekt (deadlines + initiativ), med beläggningsgrad i mitten.',
       'Beläggning i procent = est. timmar / tillgängliga timmar i perioden (8h per arbetsdag, minus semester- och sjukdagar). Varnar för överbelastning när mer än 70% av arbetsperioden är bokad.'
@@ -686,6 +692,7 @@ function getVacMap(yr){const m={};vacations.forEach((v,vi)=>{let d=new Date(v.fr
 function getVacWeeks(yr){const m={};vacations.forEach((v,vi)=>{let d=new Date(v.from);const end=new Date(v.to);while(d<=end){if(d.getFullYear()===yr){const{week}=getISOWeek(d);if(!m[week])m[week]=[];if(!m[week].includes(vi))m[week].push(vi);}d=new Date(d);d.setDate(d.getDate()+1);}});return m;}
 function getDlWeeks(yr){const m={};deadlines.forEach(dl=>{const d=new Date(dl.date);if(d.getFullYear()!==yr)return;const{week}=getISOWeek(d);if(!m[week])m[week]=[];m[week].push(dl.name);});return m;}
 function getBeslutWeeks(yr){const sset=new Set();deadlines.forEach(dl=>{if(dl.type!=='beslut')return;const d=new Date(dl.date);if(d.getFullYear()!==yr)return;sset.add(getISOWeek(d).week);});return sset;}
+function getDlOnlyWeeks(yr){const sset=new Set();deadlines.forEach(dl=>{if(dl.type==='beslut')return;const d=new Date(dl.date);if(d.getFullYear()!==yr)return;sset.add(getISOWeek(d).week);});return sset;}
 
 // ── Render ─────────────────────────────────────────────────────────
 function syncLegacyFromModules(){
@@ -823,7 +830,7 @@ function renderCal(){
 function renderTl(){
   const yr=currentYear;const showCS=document.getElementById('chk-cs').checked;const showWK=document.getElementById('chk-wk').checked;
   const showSem=document.getElementById('chk-sem').checked;const showDL=document.getElementById('chk-dl').checked;
-  const totalWks=getWeeksInYear(yr);const vacWks=getVacWeeks(yr);const dlWks=getDlWeeks(yr);const beslutWk=getBeslutWeeks(yr);const WK=13;
+  const totalWks=getWeeksInYear(yr);const vacWks=getVacWeeks(yr);const dlWks=getDlWeeks(yr);const beslutWk=getBeslutWeeks(yr);const dlOnlyWk=getDlOnlyWeeks(yr);const WK=13;
   let html='';
   const quarters=[[1,13],[14,26],[27,39],[40,totalWks]];
   html+='<div style="display:flex;margin-bottom:1px">';
@@ -860,7 +867,7 @@ function renderTl(){
   }
   if(showDL){
     html+='<div style="display:flex;height:12px;margin-top:2px">';
-    for(let wk=1;wk<=totalWks;wk++){const dls=dlWks[wk]||[];const _isB=beslutWk.has(wk);const _bg=_isB?'#D9A441':(dls.length?'#5B7BA6':'transparent');const _mk=_isB?'◆':(dls.length?'D':'');html+='<div style="width:'+WK+'px;height:12px;background:'+_bg+';border-radius:2px;margin-right:'+(wk<totalWks?'1px':'0')+';flex-shrink:0;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center" title="'+dls.join(', ')+'">'+_mk+'</div>';}
+    for(let wk=1;wk<=totalWks;wk++){const dls=dlWks[wk]||[];const hasMs=beslutWk.has(wk);const hasDl=dlOnlyWk.has(wk);let _bg='transparent',_mk='',_corner='';if(hasDl){_bg='#5B7BA6';_mk='D';}else if(hasMs){_bg='#D9A441';_mk='◆';}if(hasMs&&hasDl){_corner='<span style="position:absolute;top:-2px;right:-2px;width:6px;height:6px;background:#D9A441;transform:rotate(45deg);box-shadow:0 0 0 1px '+(_ddDark()?'#241f1c':'#FAF7F2')+'"></span>';}html+='<div style="position:relative;width:'+WK+'px;height:12px;background:'+_bg+';border-radius:2px;margin-right:'+(wk<totalWks?'1px':'0')+';flex-shrink:0;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center" title="'+dls.join(', ')+'">'+_mk+_corner+'</div>';}
     html+='</div>';
   }
   document.getElementById('tl-root').innerHTML=html;
@@ -874,7 +881,7 @@ function renderWheel(){
   const yr=currentYear;const totalWks=getWeeksInYear(yr);
   const showCS=document.getElementById('chk-cs').checked,showDL=document.getElementById('chk-dl').checked;
   const showSem=document.getElementById('chk-sem').checked,showHol=document.getElementById('chk-hol').checked;
-  const vacWks=getVacWeeks(yr);const dlWks=getDlWeeks(yr);const beslutWk=getBeslutWeeks(yr);const hols=holSet(yr);
+  const vacWks=getVacWeeks(yr);const dlWks=getDlWeeks(yr);const beslutWk=getBeslutWeeks(yr);const dlOnlyWk=getDlOnlyWeeks(yr);const hols=holSet(yr);
   const RO=290,RI=245,RMO=243,RMI=185,RC=100;
   function getA(wk){return((wk-1)/totalWks)*Math.PI*2-Math.PI/2;}
   for(let wk=1;wk<=totalWks;wk++){
@@ -891,7 +898,7 @@ function renderWheel(){
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,RO,a1,a2);ctx.arc(cx,cy,RI,a2,a1,true);ctx.closePath();
     ctx.fillStyle=fill;ctx.fill();
     if(cur){ctx.save();ctx.strokeStyle='#3A3633';ctx.lineWidth=2;ctx.stroke();ctx.restore();}
-    if(showDL&&dlWks[wk]){const midA=(a1+a2)/2;const tx=cx+Math.cos(midA)*(RO+8),ty=cy+Math.sin(midA)*(RO+8);if(beslutWk.has(wk)){ctx.save();ctx.translate(tx,ty);ctx.rotate(Math.PI/4);ctx.fillStyle='#D9A441';ctx.fillRect(-3.5,-3.5,7,7);ctx.restore();}else{ctx.beginPath();ctx.arc(tx,ty,4,0,Math.PI*2);ctx.fillStyle='#5B7BA6';ctx.fill();}}
+    if(showDL){const midA=(a1+a2)/2;if(dlOnlyWk.has(wk)){const tx=cx+Math.cos(midA)*(RO+8),ty=cy+Math.sin(midA)*(RO+8);ctx.beginPath();ctx.arc(tx,ty,4,0,Math.PI*2);ctx.fillStyle='#5B7BA6';ctx.fill();}if(beslutWk.has(wk)){const r2=dlOnlyWk.has(wk)?(RO+17):(RO+8);const dx=cx+Math.cos(midA)*r2,dy=cy+Math.sin(midA)*r2;ctx.save();ctx.translate(dx,dy);ctx.rotate(Math.PI/4);ctx.fillStyle='#D9A441';ctx.fillRect(-3.5,-3.5,7,7);ctx.restore();}}
     if(showSem&&vacWks[wk]){vacWks[wk].slice(0,3).forEach((vi,pi)=>{const midA=(a1+a2)/2;const r=RI+4+pi*5;ctx.beginPath();ctx.arc(cx+Math.cos(midA)*r,cy+Math.sin(midA)*r,3,0,Math.PI*2);ctx.fillStyle=SEM_COLORS[vi%SEM_COLORS.length];ctx.fill();});}
     const midA=(a1+a2)/2;const txtR=(RO+RI)/2;
     ctx.save();ctx.translate(cx+Math.cos(midA)*txtR,cy+Math.sin(midA)*txtR);ctx.rotate(midA+Math.PI/2);
@@ -1235,7 +1242,7 @@ document.addEventListener('keydown',function(e){
         html+='<div style="background:'+bg0+';border:1px solid '+line+';border-radius:14px;padding:14px;margin-bottom:10px">';
         html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'+avEl(p)+'<div style="font-size:15px;font-weight:600;color:'+ink+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(p.name)+roleChips+'</div></div><span style="font-size:11px;font-weight:600;padding:3px 11px;border-radius:20px;background:'+grade[2]+';color:'+grade[3]+';white-space:nowrap;flex-shrink:0">Belastning: '+grade[0]+'</span></div>';
         html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+pill('Deadlines',dlsActive.length+(dls.length>dlsActive.length?' / '+dls.length:''),accent)+pill('Est. timmar',hoursSum||0)+pill('Initiativ',initN)+pill('Roll (dagligt)',(roleScore%1?roleScore.toFixed(1):roleScore),'#8C7BB0')+pill('Semesterdagar',vac,'#2E7A52')+pill('Hemma',home)+pill('Kontor',office)+pill('Remote',remote)+(sick?pill('Sjuk',sick,'#D8504A'):'')+'</div>';
-        var projektScore=dlScore+initN*1.5;var _availWd=Math.max(0,_periodWd-vac-sick);var availHours=Math.round(_availWd*8);var util=availHours>0?Math.round((hoursSum/availHours)*100):0;var over=util>70;var _C=188.5,_pj=score>0?(projektScore/score*_C):0,_dy=score>0?(roleScore/score*_C):0;var PROJ='#5B7BA6',DAILY='#8C7BB0';var _utilCol=over?'#D8504A':(util>50?'#C9852B':'#3B6D11');var donut='<svg width="82" height="82" viewBox="0 0 80 80" style="flex-shrink:0">'+'<circle cx="40" cy="40" r="30" fill="none" stroke="'+bg1+'" stroke-width="12"/>'+(_pj>0?'<circle cx="40" cy="40" r="30" fill="none" stroke="'+PROJ+'" stroke-width="12" stroke-dasharray="'+_pj.toFixed(1)+' '+_C+'" transform="rotate(-90 40 40)"/>':'')+(_dy>0?'<circle cx="40" cy="40" r="30" fill="none" stroke="'+DAILY+'" stroke-width="12" stroke-dasharray="'+_dy.toFixed(1)+' '+_C+'" stroke-dashoffset="'+(-_pj).toFixed(1)+'" transform="rotate(-90 40 40)"/>':'')+'<text x="40" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="'+_utilCol+'" font-family="inherit">'+util+'%</text>'+'<text x="40" y="51" text-anchor="middle" font-size="8" fill="'+muted+'" font-family="inherit">bel\u00e4ggning</text></svg>';var info='<div style="flex:1;min-width:0;font-size:11px;color:'+muted+'">'+'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:9px;height:9px;border-radius:2px;background:'+DAILY+';display:inline-block;flex-shrink:0"></span><span style="color:'+ink+'">Dagligt arbete</span> \u00b7 '+(roleScore%1?roleScore.toFixed(1):roleScore)+' p</div>'+'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+PROJ+';display:inline-block;flex-shrink:0"></span><span style="color:'+ink+'">Projekt (deadlines + initiativ)</span> \u00b7 '+(projektScore%1?projektScore.toFixed(1):projektScore)+' p</div>'+'<div>Bel\u00e4ggning <b style="color:'+_utilCol+'">'+util+'%</b> <span style="color:'+muted+'">('+(hoursSum||0)+'h est / '+availHours+'h tillg\u00e4ngligt i perioden)</span></div>'+(over?'<div style="margin-top:5px;background:'+(_dark?'#3A1414':'#F7E0DD')+';color:'+(_dark?'#E89B92':'#A2392B')+';border-radius:6px;padding:4px 8px;font-weight:600">\u26a0 \u00d6verbelastad \u2013 mer \u00e4n 70% av arbetsperioden \u00e4r bokad</div>':'')+'</div>';html+='<div style="display:flex;align-items:center;gap:14px;margin:2px 0 10px">'+donut+info+'</div>';var pctv=Math.min(100,Math.round(score/14*100));
+        var projektScore=dlScore+initN*1.5;var _psISO=_lISO(_start),_peISO=_lISO(_end);var inPeriodHours=0;dls.forEach(function(it){var hh=+it.hours||0;if(!hh)return;var tot=_workdays(it.dateFrom,it.dateTo||it.dateFrom);if(tot<=0)return;var os=(it.dateFrom>_psISO?it.dateFrom:_psISO),oe=((it.dateTo||it.dateFrom)<_peISO?(it.dateTo||it.dateFrom):_peISO);if(os>oe)return;inPeriodHours+=hh*(_workdays(os,oe)/tot);});var periodWeeks=Math.max(1,_periodWd/5);var weeklyHours=inPeriodHours/periodWeeks;var util=Math.round(weeklyHours/40*100);var over=util>70;var _C=188.5,_pj=score>0?(projektScore/score*_C):0,_dy=score>0?(roleScore/score*_C):0;var PROJ='#5B7BA6',DAILY='#8C7BB0';var _utilCol=over?'#D8504A':(util>50?'#C9852B':'#3B6D11');var donut='<svg width="82" height="82" viewBox="0 0 80 80" style="flex-shrink:0">'+'<circle cx="40" cy="40" r="30" fill="none" stroke="'+bg1+'" stroke-width="12"/>'+(_pj>0?'<circle cx="40" cy="40" r="30" fill="none" stroke="'+PROJ+'" stroke-width="12" stroke-dasharray="'+_pj.toFixed(1)+' '+_C+'" transform="rotate(-90 40 40)"/>':'')+(_dy>0?'<circle cx="40" cy="40" r="30" fill="none" stroke="'+DAILY+'" stroke-width="12" stroke-dasharray="'+_dy.toFixed(1)+' '+_C+'" stroke-dashoffset="'+(-_pj).toFixed(1)+'" transform="rotate(-90 40 40)"/>':'')+'<text x="40" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="'+_utilCol+'" font-family="inherit">'+util+'%</text>'+'<text x="40" y="51" text-anchor="middle" font-size="8" fill="'+muted+'" font-family="inherit">bel\u00e4ggning</text></svg>';var info='<div style="flex:1;min-width:0;font-size:11px;color:'+muted+'">'+'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:9px;height:9px;border-radius:2px;background:'+DAILY+';display:inline-block;flex-shrink:0"></span><span style="color:'+ink+'">Dagligt arbete</span> \u00b7 '+(roleScore%1?roleScore.toFixed(1):roleScore)+' p</div>'+'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+PROJ+';display:inline-block;flex-shrink:0"></span><span style="color:'+ink+'">Projekt (deadlines + initiativ)</span> \u00b7 '+(projektScore%1?projektScore.toFixed(1):projektScore)+' p</div>'+'<div>Bel\u00e4ggning <b style="color:'+_utilCol+'">'+util+'%</b> <span style="color:'+muted+'">(\u2248 '+(weeklyHours<10?weeklyHours.toFixed(1):Math.round(weeklyHours))+'h/vecka av 40h, snitt \u00f6ver perioden)</span></div>'+(over?'<div style="margin-top:5px;background:'+(_dark?'#3A1414':'#F7E0DD')+';color:'+(_dark?'#E89B92':'#A2392B')+';border-radius:6px;padding:4px 8px;font-weight:600">\u26a0 \u00d6verbelastad \u2013 projektarbetet motsvarar mer \u00e4n 70% av en arbetsvecka i snitt</div>':'')+'</div>';html+='<div style="display:flex;align-items:center;gap:14px;margin:2px 0 10px">'+donut+info+'</div>';var pctv=Math.min(100,Math.round(score/14*100));
         html+='<div style="height:6px;background:'+bg1+';border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+pctv+'%;background:'+grade[1]+'"></div></div>';
         html+='<div style="font-size:10px;color:'+muted+'">\u2248 '+(score%1?score.toFixed(1):score)+' po\u00e4ng: '+(roleScore%1?roleScore.toFixed(1):roleScore)+' roll (dagligt) + '+dlsActive.length+' aktiva deadlines (vikt '+dlScore+') + '+initN+' initiativ\u00d71,5. '+(vac?vac+' semesterdagar i perioden minskar tillg\u00e4ngligheten.':'')+'</div>';
         if(dls.length){
