@@ -363,7 +363,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 try{document.documentElement.setAttribute('data-theme',(localStorage.getItem('jobbtheme')==='dark')?'dark':'light');}catch(e){}
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.20.0',
+  version:'2.21.0',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -377,9 +377,14 @@ const APPINFO={
     'Riskregister, beroenden mellan initiativ/avdelningar och drivande avdelning per punkt',
     'Personalöversikt med belastningsgrad per kollega, baserad på deadlines och initiativ',
     'Redigerbar standardbelastning per roll (dagligt arbete) som ingår i personernas belastning',
+    'Beläggningsgrad i procent per person med varning vid överbelastning (>70% av perioden)',
     'Arbetsdagsräkning per deadline och beslutspunkter grupperade under sin deadline',
   ],
   changelog:[
+    {v:'2.21.0',d:'2026-06-25',items:[
+      'Personalkorten har nu ett cirkeldiagram (donut) som delar upp belastningspoängen i dagligt arbete (roll) och projekt (deadlines + initiativ), med beläggningsgrad i mitten.',
+      'Beläggning i procent = est. timmar / tillgängliga timmar i perioden (8h per arbetsdag, minus semester- och sjukdagar). Varnar för överbelastning när mer än 70% av arbetsperioden är bokad.'
+    ]},
     {v:'2.20.0',d:'2026-06-25',items:[
       'Personal-vyn har nu en redigerbar standardbelastning per roll (Management/Support/Drift) som speglar det dagliga arbetet. Sätt egna poäng per roll – de adderas till varje persons belastningspoäng (flera roller summeras) och visas som egen ruta och i poängförklaringen.'
     ]},
@@ -1232,7 +1237,7 @@ document.addEventListener('keydown',function(e){
       function _initCount(name){var c=0;_inits.forEach(function(i){if(i.status!=='Klar'&&_names(i.owners).indexOf(name)>=0)c++;});return c;}
       function _lw(it){var l=dlLoad(it);return l==='high'?4:l==='med'?2:1;}
       var LOADLBL={low:['L\u00e5g','#5DCAA5'],med:['Medel','#EFB02C'],high:['H\u00f6g','#D8504A']};
-      var _start=new Date(sPlanStart),_end=new Date(sPlanEnd);
+      var _start=new Date(sPlanStart),_end=new Date(sPlanEnd);var _periodWd=_workdays(_lISO(_start),_lISO(_end));
       html+='<div style="font-size:11px;color:'+muted+';margin-bottom:12px">Belastning under perioden = deadlines (viktade efter belastningsgrad) + aktiva initiativ, justerat f\u00f6r tillg\u00e4nglighet.</div>';
       html+='<div style="background:'+bg0+';border:1px solid '+line+';border-radius:12px;padding:10px 12px;margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:'+muted+';text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Standardbelastning per roll (dagligt arbete)</div><div style="display:flex;gap:12px;flex-wrap:wrap">'+ROLES.map(function(r){return '<div style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:3px;background:'+(ROLECOL[r]||muted)+';display:inline-block"></span><label style="font-size:12px;color:'+ink+'">'+r+'</label><input type="number" min="0" step="0.5" value="'+(sRoleLoad[r]!=null?sRoleLoad[r]:0)+'" onchange="window._sommarSetRoleLoad(\''+r+'\',this.value)" style="width:56px;font-size:13px;padding:4px 6px;border:1px solid '+line+';border-radius:6px;background:'+bg1+';color:'+ink+';font-family:inherit"></div>';}).join('')+'</div><div style="font-size:10px;color:'+muted+';margin-top:6px">Poäng per dag som adderas till varje person med rollen. Flera roller summeras.</div></div>';
       sPersons.forEach(function(p){
@@ -1254,7 +1259,7 @@ document.addEventListener('keydown',function(e){
         html+='<div style="background:'+bg0+';border:1px solid '+line+';border-radius:14px;padding:14px;margin-bottom:10px">';
         html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'+avEl(p)+'<div style="font-size:15px;font-weight:600;color:'+ink+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(p.name)+roleChips+'</div></div><span style="font-size:11px;font-weight:600;padding:3px 11px;border-radius:20px;background:'+grade[2]+';color:'+grade[3]+';white-space:nowrap;flex-shrink:0">Belastning: '+grade[0]+'</span></div>';
         html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+pill('Deadlines',dlsActive.length+(dls.length>dlsActive.length?' / '+dls.length:''),accent)+pill('Est. timmar',hoursSum||0)+pill('Initiativ',initN)+pill('Roll (dagligt)',(roleScore%1?roleScore.toFixed(1):roleScore),'#8C7BB0')+pill('Semesterdagar',vac,'#2E7A52')+pill('Hemma',home)+pill('Kontor',office)+pill('Remote',remote)+(sick?pill('Sjuk',sick,'#D8504A'):'')+'</div>';
-        var pctv=Math.min(100,Math.round(score/14*100));
+        var projektScore=dlScore+initN*1.5;var _availWd=Math.max(0,_periodWd-vac-sick);var availHours=Math.round(_availWd*8);var util=availHours>0?Math.round((hoursSum/availHours)*100):0;var over=util>70;var _C=188.5,_pj=score>0?(projektScore/score*_C):0,_dy=score>0?(roleScore/score*_C):0;var PROJ='#5B7BA6',DAILY='#8C7BB0';var _utilCol=over?'#D8504A':(util>50?'#C9852B':'#3B6D11');var donut='<svg width="82" height="82" viewBox="0 0 80 80" style="flex-shrink:0">'+'<circle cx="40" cy="40" r="30" fill="none" stroke="'+bg1+'" stroke-width="12"/>'+(_pj>0?'<circle cx="40" cy="40" r="30" fill="none" stroke="'+PROJ+'" stroke-width="12" stroke-dasharray="'+_pj.toFixed(1)+' '+_C+'" transform="rotate(-90 40 40)"/>':'')+(_dy>0?'<circle cx="40" cy="40" r="30" fill="none" stroke="'+DAILY+'" stroke-width="12" stroke-dasharray="'+_dy.toFixed(1)+' '+_C+'" stroke-dashoffset="'+(-_pj).toFixed(1)+'" transform="rotate(-90 40 40)"/>':'')+'<text x="40" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="'+_utilCol+'" font-family="inherit">'+util+'%</text>'+'<text x="40" y="51" text-anchor="middle" font-size="8" fill="'+muted+'" font-family="inherit">bel\u00e4ggning</text></svg>';var info='<div style="flex:1;min-width:0;font-size:11px;color:'+muted+'">'+'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:9px;height:9px;border-radius:2px;background:'+DAILY+';display:inline-block;flex-shrink:0"></span><span style="color:'+ink+'">Dagligt arbete</span> \u00b7 '+(roleScore%1?roleScore.toFixed(1):roleScore)+' p</div>'+'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+PROJ+';display:inline-block;flex-shrink:0"></span><span style="color:'+ink+'">Projekt (deadlines + initiativ)</span> \u00b7 '+(projektScore%1?projektScore.toFixed(1):projektScore)+' p</div>'+'<div>Bel\u00e4ggning <b style="color:'+_utilCol+'">'+util+'%</b> <span style="color:'+muted+'">('+(hoursSum||0)+'h est / '+availHours+'h tillg\u00e4ngligt i perioden)</span></div>'+(over?'<div style="margin-top:5px;background:'+(_dark?'#3A1414':'#F7E0DD')+';color:'+(_dark?'#E89B92':'#A2392B')+';border-radius:6px;padding:4px 8px;font-weight:600">\u26a0 \u00d6verbelastad \u2013 mer \u00e4n 70% av arbetsperioden \u00e4r bokad</div>':'')+'</div>';html+='<div style="display:flex;align-items:center;gap:14px;margin:2px 0 10px">'+donut+info+'</div>';var pctv=Math.min(100,Math.round(score/14*100));
         html+='<div style="height:6px;background:'+bg1+';border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+pctv+'%;background:'+grade[1]+'"></div></div>';
         html+='<div style="font-size:10px;color:'+muted+'">\u2248 '+(score%1?score.toFixed(1):score)+' po\u00e4ng: '+(roleScore%1?roleScore.toFixed(1):roleScore)+' roll (dagligt) + '+dlsActive.length+' aktiva deadlines (vikt '+dlScore+') + '+initN+' initiativ\u00d71,5. '+(vac?vac+' semesterdagar i perioden minskar tillg\u00e4ngligheten.':'')+'</div>';
         if(dls.length){
