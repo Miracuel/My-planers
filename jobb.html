@@ -339,7 +339,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 try{document.documentElement.setAttribute('data-theme',(localStorage.getItem('jobbtheme')==='dark')?'dark':'light');}catch(e){}
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.18.1',
+  version:'2.18.2',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -355,6 +355,9 @@ const APPINFO={
     'Arbetsdagsräkning per deadline och beslutspunkter grupperade under sin deadline',
   ],
   changelog:[
+    {v:'2.18.2',d:'2026-06-25',items:[
+      'Fix: deadlines/beslutspunkter utan tilldelad ägare (teamgemensamma) visas nu som markör på alla anställdas rader i resursplaneringen. Tilldelade deadlines visas som tidigare på sina ägare.'
+    ]},
     {v:'2.18.1',d:'2026-06-25',items:[
       'Går nu att ta bort en deadline eller beslutspunkt — via ✕ i Roadmap-statuslistan eller Ta bort-knappen i redigeringsformuläret (med bekräftelse). Eventuella underordnade beslutspunkter blir fristående.'
     ]},
@@ -1102,8 +1105,8 @@ document.addEventListener('keydown',function(e){
   function awayCountRole(iso,roleArr){let c=0;sPersons.forEach(function(p){const r=p.roles||[];if(roleArr.some(function(x){return r.includes(x);})&&awayOn(p,iso))c++;});return c;}
   function todayKey(){const n=new Date();return dKey(new Date(n.getFullYear(),n.getMonth(),n.getDate()));}
   function _lISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-  function dlsForDay(pid,d){const iso=_lISO(d);return sTl.filter(function(it){return (it.owners||[]).includes(pid)&&iso===(it.dateTo||it.dateFrom);});}
-  function dlsForWeek(pid,monday){const a=_lISO(monday);const su=new Date(monday);su.setDate(su.getDate()+6);const b=_lISO(su);return sTl.filter(function(it){if(!(it.owners||[]).includes(pid))return false;const e=it.dateTo||it.dateFrom;return e>=a&&e<=b;});}
+  function dlsForDay(pid,d){const iso=_lISO(d);return sTl.filter(function(it){const ow=it.owners||[];return (ow.length===0||ow.indexOf(pid)>=0)&&iso===(it.dateTo||it.dateFrom);});}
+  function dlsForWeek(pid,monday){const a=_lISO(monday);const su=new Date(monday);su.setDate(su.getDate()+6);const b=_lISO(su);return sTl.filter(function(it){const ow=it.owners||[];if(ow.length>0&&ow.indexOf(pid)<0)return false;const e=it.dateTo||it.dateFrom;return e>=a&&e<=b;});}
   function triAdvice(t,c,q){if(!t||!c||!q)return '';if(t===q||t===c||c===q)return 'Sätt unika prioriteringar 1–3';if(q===3)return 'Snabbt + billigt → lägre kvalitet';if(c===3)return 'Snabbt + hög kvalitet → högre kostnad';if(t===3)return 'Billigt + hög kvalitet → tar längre tid';return '';}
   function dlsInRange(a,b){const ai=_lISO(a),bi=_lISO(b);return sTl.filter(function(it){const f=it.dateFrom,t=it.dateTo||it.dateFrom;return f<=bi&&t>=ai;}).sort(function(x,y){return new Date(x.dateTo||x.dateFrom)-new Date(y.dateTo||y.dateFrom);});}
   function _workdays(f,t){if(!f)return 0;var a=new Date(f),b=new Date(t||f);if(b<a){var x=a;a=b;b=x;}var c=0,d=new Date(a);while(d<=b){if(isWorkday(d.getFullYear(),d))c++;d.setDate(d.getDate()+1);}return c;}
