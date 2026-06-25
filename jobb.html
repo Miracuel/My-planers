@@ -328,7 +328,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 <div class="foot">
   <button id="export-btn">Säkerhetskopiera</button>
   <button id="import-btn">Importera</button>
-  <button id="pdf-btn">&#128438; Exportera PDF</button>
+  <button id="pdf-btn">&#128202; Exportera Excel</button>
   <button id="news-btn">Nyheter</button>
 </div>
 <input type="file" id="import-file" accept=".json" style="display:none">
@@ -339,7 +339,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 try{document.documentElement.setAttribute('data-theme',(localStorage.getItem('jobbtheme')==='dark')?'dark':'light');}catch(e){}
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'2.14.0',
+  version:'2.15.0',
   tagline:'Årsplanering för IT-enheten — röda dagar, changestopp, semester och deadlines.',
   audience:'IT-enheten på Operan',
   functions:[
@@ -352,6 +352,12 @@ const APPINFO={
     'PDF-export: alla vyer exporteras till en PDF-fil'
   ],
   changelog:[
+    {v:'2.15.0',d:'2026-06-25',items:[
+      'Export sker nu till Excel (.xlsx) istället för PDF – flera blad: Deadlines, Initiativ, Resultat och Personer. CSV-fallback om biblioteket inte kan laddas.',
+      'Max antal deadlines höjt från 15 till 100.',
+      'Klara deadlines kan döljas i Roadmap (Dölj klara), och i Dashboarden finns nu status Klar med samma Dölj klara-funktion.',
+      'Risk- & värdesbedömning per deadline: prioritera Kort tid, Låg kostnad och Hög kvalitet 1–3. Appen visar avvägningen (t.ex. snabbt + billigt → lägre kvalitet).'
+    ]},
     {v:'2.14.0',d:'2026-06-25',items:[
       'Deadline-pricken i resursplaneringen sitter nu bara på slutdatumet (inte hela perioden).',
       'Ny typ Beslutspunkt i Roadmap-formuläret (datum istället för period). Visas som en gul romb på samma ställen som deadlines: kalender, tidslinje, årshjul, Alla deadlines-listan och resursplaneringen.'
@@ -1020,7 +1026,7 @@ document.addEventListener('keydown',function(e){
   let sPlanStart=new Date(2026,5,1),sPlanEnd=new Date(2026,9,4);
   let sPersons=[{id:1,name:'Anna',offWeeks:{},dayStatus:{},roles:['Support']},{id:2,name:'Björn',offWeeks:{},dayStatus:{},roles:['Drift']},{id:3,name:'Cecilia',offWeeks:{},dayStatus:{},roles:['Management','Support']},{id:4,name:'David',offWeeks:{},dayStatus:{},roles:['Drift']}];
   let sTl=[{id:1,name:'Halvårsbokslut',dateFrom:'2026-06-29',dateTo:'2026-06-30',owners:[1],status:'prog',desc:''},{id:2,name:'Teamkickoff',dateFrom:'2026-09-28',dateTo:'2026-09-28',owners:[1,4],status:'todo',desc:'v.40'},{id:3,name:'Produktlansering',dateFrom:'2026-07-08',dateTo:'2026-07-15',owners:[2,3],status:'todo',desc:''}];
-  let sNextId=20,sSelMonth=null,sSub='led',sSchemaView='month',sSelWeekIdx=0,sTlFilter=null,sRoadView='gantt',sPEdit=null;
+  let sNextId=20,sSelMonth=null,sSub='led',sSchemaView='month',sSelWeekIdx=0,sTlFilter=null,sRoadView='gantt',sPEdit=null,sHideDone=true;
   const ROLES=['Management','Support','Drift'];const ROLECOL={Management:'#8C7BB0',Support:'#5B7BA6',Drift:'#5E8C61'};
   let sDlForm={open:false,editing:null};
   const GANTT_COLORS=['#5B7BA6','#5E8C61','#C2588E','#D98032','#8C7BB0','#4E8E8A','#A07845'];
@@ -1063,6 +1069,7 @@ document.addEventListener('keydown',function(e){
   function _lISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
   function dlsForDay(pid,d){const iso=_lISO(d);return sTl.filter(function(it){return (it.owners||[]).includes(pid)&&iso===(it.dateTo||it.dateFrom);});}
   function dlsForWeek(pid,monday){const a=_lISO(monday);const su=new Date(monday);su.setDate(su.getDate()+6);const b=_lISO(su);return sTl.filter(function(it){if(!(it.owners||[]).includes(pid))return false;const e=it.dateTo||it.dateFrom;return e>=a&&e<=b;});}
+  function triAdvice(t,c,q){if(!t||!c||!q)return '';if(t===q||t===c||c===q)return 'Sätt unika prioriteringar 1–3';if(q===3)return 'Snabbt + billigt → lägre kvalitet';if(c===3)return 'Snabbt + hög kvalitet → högre kostnad';if(t===3)return 'Billigt + hög kvalitet → tar längre tid';return '';}
   function dlsInRange(a,b){const ai=_lISO(a),bi=_lISO(b);return sTl.filter(function(it){const f=it.dateFrom,t=it.dateTo||it.dateFrom;return f<=bi&&t>=ai;}).sort(function(x,y){return new Date(x.dateTo||x.dateFrom)-new Date(y.dateTo||y.dateFrom);});}
   function renderSommar(){
     const root=document.getElementById('sommar-root');if(!root)return;
@@ -1160,12 +1167,12 @@ document.addEventListener('keydown',function(e){
       const weeks=getWeeks(sPlanStart,sPlanEnd);
       let allItems=[...sTl].sort((a,b)=>new Date(a.dateFrom)-new Date(b.dateFrom));
       if(sTlFilter!=null&&!sPersons.find(p=>p.id===sTlFilter))sTlFilter=null;
-      const items=sTlFilter==null?allItems:allItems.filter(it=>(it.owners||[]).includes(sTlFilter));
+      const items=(sTlFilter==null?allItems:allItems.filter(it=>(it.owners||[]).includes(sTlFilter))).filter(it=>!sHideDone||it.status!=='done');
       // assignee filter chips (roadmap per person)
       html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center"><span style="font-size:11px;color:${muted}">Roadmap:</span>`;
       html+=`<button onclick="window._sommarTlFilter(null)" style="padding:3px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${sTlFilter==null?ink:line};background:${sTlFilter==null?ink:bg0};color:${sTlFilter==null?'#fff':muted};cursor:pointer;font-family:inherit">Alla</button>`;
       sPersons.forEach(p=>{const act=sTlFilter===p.id;html+=`<button onclick="window._sommarTlFilter(${p.id})" style="display:flex;align-items:center;gap:5px;padding:3px 10px 3px 4px;font-size:12px;border-radius:20px;border:1.5px solid ${act?ink:line};background:${act?ink:bg0};color:${act?'#fff':muted};cursor:pointer;font-family:inherit">${avEl(p,20)}${p.name}</button>`;});
-      html+=`</div>`;
+      html+=`<button onclick="window._sommarToggleDone()" style="margin-left:auto;padding:3px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${line};background:${sHideDone?ink:bg0};color:${sHideDone?'#fff':muted};cursor:pointer;font-family:inherit">${sHideDone?'✓ ':''}Dölj klara</button>`;html+=`</div>`;
       const VBW=960;const BAR_W=VBW-LABEL_W-DEL_W;
       const svgH=HDR_H+items.length*ROW_H+10;
       function xPct(ds){return Math.max(0,Math.min(1,(new Date(ds)-sPlanStart)/86400000/totalDays));}
@@ -1200,13 +1207,13 @@ document.addEventListener('keydown',function(e){
       html+=`<div style="font-size:10px;color:${muted};margin-bottom:8px">Klicka på en stapel för att ändra status (Planerad → Pågående → Klar), eller på namnet för att redigera allt.</div>`;
       // status quick-edit list (the "other place")
       html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:6px 12px;margin-bottom:10px">`;
-      items.forEach(it=>{const _dk2=document.documentElement.getAttribute('data-theme')==='dark';const sb=(_dk2?{todo:'#211A3C',prog:'#3A2C10',done:'#13301C'}:{todo:'#EEEDFE',prog:'#FAEEDA',done:'#EAF3DE'})[it.status];const stc=(_dk2?{todo:'#AB9BEC',prog:'#E8C673',done:'#92C56E'}:{todo:'#3C3489',prog:'#854F0B',done:'#3B6D11'})[it.status];const avs=(it.owners||[]).map(id=>{const pp=sPersons.find(x=>x.id===id);return pp?avEl(pp,20):'';}).join('');html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid ${line}"><div style="display:flex;gap:2px">${avs||'<span style=\'font-size:10px;color:'+muted+'\'>–</span>'}</div><div style="flex:1;font-size:12px;font-weight:500;color:${ink}">${it.type==='beslut'?`<span style="color:#D9A441">◆ </span>`:''}${it.name}${(it.hours||it.spent)?` <span style="font-weight:400;color:${muted}">· ${it.spent?it.spent+'/':''}${it.hours||0}h</span>`:''}</div><select onchange="window._sommarSetStatus(${it.id},this.value)" style="font-size:11px;padding:3px 6px;border:1px solid ${line};border-radius:6px;background:${sb};color:${stc};font-family:inherit;cursor:pointer"><option value="todo"${it.status==='todo'?' selected':''}>Planerad</option><option value="prog"${it.status==='prog'?' selected':''}>Pågående</option><option value="done"${it.status==='done'?' selected':''}>Klar</option></select><button onclick="window._sommarEditDl(${it.id})" title="Redigera" style="background:none;border:none;cursor:pointer;color:${muted};font-size:13px;padding:0 4px;font-family:inherit">✎</button></div>`;});
+      items.forEach(it=>{const _dk2=document.documentElement.getAttribute('data-theme')==='dark';const sb=(_dk2?{todo:'#211A3C',prog:'#3A2C10',done:'#13301C'}:{todo:'#EEEDFE',prog:'#FAEEDA',done:'#EAF3DE'})[it.status];const stc=(_dk2?{todo:'#AB9BEC',prog:'#E8C673',done:'#92C56E'}:{todo:'#3C3489',prog:'#854F0B',done:'#3B6D11'})[it.status];const avs=(it.owners||[]).map(id=>{const pp=sPersons.find(x=>x.id===id);return pp?avEl(pp,20):'';}).join('');html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid ${line}"><div style="display:flex;gap:2px">${avs||'<span style=\'font-size:10px;color:'+muted+'\'>–</span>'}</div><div style="flex:1;font-size:12px;font-weight:500;color:${ink}">${it.type==='beslut'?`<span style="color:#D9A441">◆ </span>`:''}${it.name}${(it.hours||it.spent)?` <span style="font-weight:400;color:${muted}">· ${it.spent?it.spent+'/':''}${it.hours||0}h</span>`:''}</div><select onchange="window._sommarSetStatus(${it.id},this.value)" style="font-size:11px;padding:3px 6px;border:1px solid ${line};border-radius:6px;background:${sb};color:${stc};font-family:inherit;cursor:pointer"><option value="todo"${it.status==='todo'?' selected':''}>Planerad</option><option value="prog"${it.status==='prog'?' selected':''}>Pågående</option><option value="done"${it.status==='done'?' selected':''}>Klar</option></select><button onclick="window._sommarEditDl(${it.id})" title="Redigera" style="background:none;border:none;cursor:pointer;color:${muted};font-size:13px;padding:0 4px;font-family:inherit">✎</button></div>`;const _adv=triAdvice(+it.pri_time,+it.pri_cost,+it.pri_qual);if(_adv)html+=`<div style="font-size:10px;color:${muted};padding:0 0 6px 0;border-bottom:1px solid ${line};margin-top:-4px">⚖ ${_adv}</div>`;});
       html+=`</div>`;
       if(sDlForm.open){
         const ed=sDlForm.editing;const fv=k=>ed?(ed[k]||''):'';
-        html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:14px;margin-bottom:10px"><div style="font-size:13px;font-weight:600;color:${ink};margin-bottom:10px">${ed?'Redigera deadline':'Ny deadline'}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px"><div style="grid-column:1/-1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Titel</label><input id="dl-f-name" value="${fv('name')}" placeholder="Beskriv aktiviteten" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Startdatum</label><input type="date" id="dl-f-from" value="${fv('dateFrom')||sPlanStart.toISOString().slice(0,10)}" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Slutdatum</label><input type="date" id="dl-f-to" value="${fv('dateTo')||sPlanStart.toISOString().slice(0,10)}" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div style="grid-column:1/-1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:4px">Tilldelad (en eller flera)</label><div style="display:flex;flex-wrap:wrap;gap:6px">${sPersons.map(pp=>{const on=ed&&(ed.owners||[]).includes(pp.id);return `<label style="display:flex;align-items:center;gap:5px;font-size:12px;color:${ink};border:1px solid ${on?ink:line};border-radius:20px;padding:3px 10px 3px 4px;cursor:pointer;background:${bg0}">${avEl(pp,20)}<input type="checkbox" class="dl-f-owner" value="${pp.id}" ${on?'checked':''} style="margin:0">${pp.name}</label>`;}).join('')}</div></div><div style="grid-column:1/-1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Typ</label><select id="dl-f-type" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><option value="deadline"${(!ed||ed.type!=='beslut')?' selected':''}>Deadline (period)</option><option value="beslut"${ed&&ed.type==='beslut'?' selected':''}>Beslutspunkt (datum)</option></select></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Status</label><select id="dl-f-status" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><option value="todo"${fv('status')==='todo'?' selected':''}>Planerad</option><option value="prog"${fv('status')==='prog'?' selected':''}>Pågående</option><option value="done"${fv('status')==='done'?' selected':''}>Klar</option></select></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Uppskattad tid (h, aktiv arbete)</label><input id="dl-f-hours" type="number" min="0" step="0.5" value="${ed&&ed.hours?ed.hours:''}" placeholder="t.ex. 8" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Lagd tid hittills (h)</label><input id="dl-f-spent" type="number" min="0" step="0.5" value="${ed&&ed.spent?ed.spent:''}" placeholder="t.ex. 3" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Not</label><input id="dl-f-desc" value="${fv('desc')}" placeholder="Kort info" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div></div><div style="display:flex;gap:8px"><button onclick="window._sommarSaveDl()" style="flex:1;padding:8px;font-size:13px;font-weight:500;background:${ink};color:${bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button><button onclick="window._sommarCancelDl()" style="padding:8px 16px;font-size:13px;border:1px solid ${line};border-radius:8px;background:none;color:${muted};cursor:pointer;font-family:inherit">Avbryt</button></div></div>`;
+        html+=`<div style="background:${bg0};border:1px solid ${line};border-radius:12px;padding:14px;margin-bottom:10px"><div style="font-size:13px;font-weight:600;color:${ink};margin-bottom:10px">${ed?'Redigera deadline':'Ny deadline'}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px"><div style="grid-column:1/-1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Titel</label><input id="dl-f-name" value="${fv('name')}" placeholder="Beskriv aktiviteten" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Startdatum</label><input type="date" id="dl-f-from" value="${fv('dateFrom')||sPlanStart.toISOString().slice(0,10)}" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Slutdatum</label><input type="date" id="dl-f-to" value="${fv('dateTo')||sPlanStart.toISOString().slice(0,10)}" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div style="grid-column:1/-1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:4px">Tilldelad (en eller flera)</label><div style="display:flex;flex-wrap:wrap;gap:6px">${sPersons.map(pp=>{const on=ed&&(ed.owners||[]).includes(pp.id);return `<label style="display:flex;align-items:center;gap:5px;font-size:12px;color:${ink};border:1px solid ${on?ink:line};border-radius:20px;padding:3px 10px 3px 4px;cursor:pointer;background:${bg0}">${avEl(pp,20)}<input type="checkbox" class="dl-f-owner" value="${pp.id}" ${on?'checked':''} style="margin:0">${pp.name}</label>`;}).join('')}</div></div><div style="grid-column:1/-1"><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Typ</label><select id="dl-f-type" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><option value="deadline"${(!ed||ed.type!=='beslut')?' selected':''}>Deadline (period)</option><option value="beslut"${ed&&ed.type==='beslut'?' selected':''}>Beslutspunkt (datum)</option></select></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Status</label><select id="dl-f-status" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><option value="todo"${fv('status')==='todo'?' selected':''}>Planerad</option><option value="prog"${fv('status')==='prog'?' selected':''}>Pågående</option><option value="done"${fv('status')==='done'?' selected':''}>Klar</option></select></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Uppskattad tid (h, aktiv arbete)</label><input id="dl-f-hours" type="number" min="0" step="0.5" value="${ed&&ed.hours?ed.hours:''}" placeholder="t.ex. 8" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Lagd tid hittills (h)</label><input id="dl-f-spent" type="number" min="0" step="0.5" value="${ed&&ed.spent?ed.spent:''}" placeholder="t.ex. 3" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div><label style="font-size:11px;color:${muted};display:block;margin-bottom:2px">Not</label><input id="dl-f-desc" value="${fv('desc')}" placeholder="Kort info" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"></div><div style="grid-column:1/-1;border-top:1px solid ${line};margin-top:4px;padding-top:8px"><label style="font-size:11px;color:${muted};display:block;margin-bottom:4px">Risk- & värdesbedömning – prioritera 1 (viktigast) till 3</label><div style="display:flex;gap:8px;flex-wrap:wrap">${[['time','Kort tid'],['cost','Låg kostnad'],['qual','Hög kvalitet']].map(function(o){const key=o[0],lbl=o[1];const cur=ed?(ed['pri_'+key]||''):'';return `<div style="flex:1;min-width:90px"><div style="font-size:10px;color:${muted};margin-bottom:2px">${lbl}</div><select id="dl-f-pri-${key}" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid ${line};border-radius:8px;background:${bg0};color:${ink};font-family:inherit"><option value="">–</option><option value="1"${cur==1?' selected':''}>1</option><option value="2"${cur==2?' selected':''}>2</option><option value="3"${cur==3?' selected':''}>3</option></select></div>`;}).join('')}</div>${ed&&triAdvice(+ed.pri_time,+ed.pri_cost,+ed.pri_qual)?`<div style="font-size:11px;color:${ink};margin-top:6px;background:${bg1};border-radius:6px;padding:5px 8px">Avvägning: ${triAdvice(+ed.pri_time,+ed.pri_cost,+ed.pri_qual)}</div>`:''}</div></div><div style="display:flex;gap:8px"><button onclick="window._sommarSaveDl()" style="flex:1;padding:8px;font-size:13px;font-weight:500;background:${ink};color:${bg0};border:none;border-radius:8px;cursor:pointer;font-family:inherit">Spara</button><button onclick="window._sommarCancelDl()" style="padding:8px 16px;font-size:13px;border:1px solid ${line};border-radius:8px;background:none;color:${muted};cursor:pointer;font-family:inherit">Avbryt</button></div></div>`;
       } else {
-        html+=`<button onclick="window._sommarOpenDl()" style="width:100%;padding:8px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till deadline (${sTl.length}/15)</button>`;
+        html+=`<button onclick="window._sommarOpenDl()" style="width:100%;padding:8px;border:1px dashed ${line};border-radius:8px;background:none;color:${muted};font-size:12px;cursor:pointer;font-family:inherit">+ Lägg till deadline (${sTl.length}/100)</button>`;
       }
       html+=`<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:24px;height:10px;border-radius:3px;background:#5B7BA6;display:inline-block"></span>Planerad/Pågående</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:24px;height:10px;border-radius:3px;background:#DAE5F5;border:1px solid #5B7BA6;display:inline-block"></span>Klar</span><span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${muted}"><span style="width:2px;height:14px;background:#D85A30;display:inline-block;margin-right:2px"></span>Idag</span></div>`;
     root.innerHTML=html;
@@ -1225,10 +1232,11 @@ document.addEventListener('keydown',function(e){
   window._sommarSetStatus=function(id,v){const it=sTl.find(x=>x.id===id);if(!it)return;it.status=v;saveSommar();sRefresh();};
   window._sommarTlFilter=function(id){sTlFilter=id;sRefresh();};
   window._sommarRoadView=function(v){sRoadView=v;renderRoadmap();};
+  window._sommarToggleDone=function(){sHideDone=!sHideDone;renderRoadmap();};
   window._sommarEditDl=function(id){sDlForm={open:true,editing:sTl.find(x=>x.id===id)||null};sRefresh();};
   window._sommarOpenDl=function(){sDlForm={open:true,editing:null};sRefresh();};
   window._sommarCancelDl=function(){sDlForm={open:false,editing:null};sRefresh();};
-  window._sommarSaveDl=function(){const name=document.getElementById('dl-f-name').value.trim();const dateFrom=document.getElementById('dl-f-from').value;const dateTo=document.getElementById('dl-f-to').value;const status=document.getElementById('dl-f-status').value;const desc=document.getElementById('dl-f-desc').value.trim();const hours=parseFloat(document.getElementById('dl-f-hours').value)||0;const spent=parseFloat(document.getElementById('dl-f-spent').value)||0;const type=document.getElementById('dl-f-type').value;const owners=[...document.querySelectorAll('.dl-f-owner:checked')].map(c=>+c.value);if(!name||!dateFrom||!dateTo)return;let from=dateFrom,to=dateTo;if(new Date(to)<new Date(from)){const t=from;from=to;to=t;}if(type==='beslut')from=to;if(sDlForm.editing){Object.assign(sDlForm.editing,{name,dateFrom:from,dateTo:to,status,desc,hours,spent,type,owners});}else{if(sTl.length>=15){alert('Max 15 deadlines');return;}sTl.push({id:sNextId++,name,dateFrom:from,dateTo:to,owners:owners.length?owners:(sTlFilter!=null?[sTlFilter]:[]),status,desc,hours,spent,type});}sDlForm={open:false,editing:null};saveSommar();sRefresh();};
+  window._sommarSaveDl=function(){const name=document.getElementById('dl-f-name').value.trim();const dateFrom=document.getElementById('dl-f-from').value;const dateTo=document.getElementById('dl-f-to').value;const status=document.getElementById('dl-f-status').value;const desc=document.getElementById('dl-f-desc').value.trim();const hours=parseFloat(document.getElementById('dl-f-hours').value)||0;const spent=parseFloat(document.getElementById('dl-f-spent').value)||0;const type=document.getElementById('dl-f-type').value;const pri_time=+document.getElementById('dl-f-pri-time').value||0;const pri_cost=+document.getElementById('dl-f-pri-cost').value||0;const pri_qual=+document.getElementById('dl-f-pri-qual').value||0;const owners=[...document.querySelectorAll('.dl-f-owner:checked')].map(c=>+c.value);if(!name||!dateFrom||!dateTo)return;let from=dateFrom,to=dateTo;if(new Date(to)<new Date(from)){const t=from;from=to;to=t;}if(type==='beslut')from=to;if(sDlForm.editing){Object.assign(sDlForm.editing,{name,dateFrom:from,dateTo:to,status,desc,hours,spent,type,pri_time,pri_cost,pri_qual,owners});}else{if(sTl.length>=100){alert('Max 100 deadlines');return;}sTl.push({id:sNextId++,name,dateFrom:from,dateTo:to,owners:owners.length?owners:(sTlFilter!=null?[sTlFilter]:[]),status,desc,hours,spent,type,pri_time,pri_cost,pri_qual});}sDlForm={open:false,editing:null};saveSommar();sRefresh();};
   window._sommarAddPerson=function(){const n=prompt('Namn på kollega:');if(!n||!n.trim())return;sPersons.push({id:sNextId++,name:n.trim(),offWeeks:{},dayStatus:{},roles:[]});saveSommar();sRefresh();};
   window._sommarEditPerson=function(id){sPEdit=id;renderSommar();};
   window._sommarCancelPerson=function(){sPEdit=null;renderSommar();};
@@ -1244,9 +1252,9 @@ document.addEventListener('keydown',function(e){
 // ── Roadmap-dashboard ──────────────────────────────────────────────
 (function(){
   const STORE_D='jobbdash_v1';
-  const STATUSES=['Pågående','Förbereds','Planerad','Snart klar','Väntar'];
-  const SCOL={'Pågående':['#FAEEDA','#854F0B'],'Förbereds':['#EEEDFE','#3C3489'],'Planerad':['#E6F1FB','#0C447C'],'Snart klar':['#EAF3DE','#3B6D11'],'Väntar':['#EFEAE2','#5C564E']};
-  const SDOT={'Pågående':'#EF9F27','Förbereds':'#7F77DD','Planerad':'#5B7BA6','Snart klar':'#5DCAA5','Väntar':'#B0A89C'};
+  const STATUSES=['Pågående','Förbereds','Planerad','Snart klar','Väntar','Klar'];
+  const SCOL={'Pågående':['#FAEEDA','#854F0B'],'Förbereds':['#EEEDFE','#3C3489'],'Planerad':['#E6F1FB','#0C447C'],'Snart klar':['#EAF3DE','#3B6D11'],'Väntar':['#EFEAE2','#5C564E'],'Klar':['#EAF3DE','#3B6D11']};
+  const SDOT={'Pågående':'#EF9F27','Förbereds':'#7F77DD','Planerad':'#5B7BA6','Snart klar':'#5DCAA5','Väntar':'#B0A89C','Klar':'#5DCAA5'};
   const PRIOS=['Affärskritisk','Strategisk','Teknisk'];
   const PICON={'Affärskritisk':'⚠','Strategisk':'🚀','Teknisk':'⚙'};
   const PDESC={'Affärskritisk':'måste vara klara innan hösten','Strategisk':'bygger långsiktig förmåga','Teknisk':'höjer mognad och säkerhet'};
@@ -1282,7 +1290,7 @@ document.addEventListener('keydown',function(e){
     {id:111,cat:'Teknik',text:'Plattformar rensade och standardiserade'},
     {id:112,cat:'Teknik',text:'Dokumentation uppdaterad'}
   ];
-  let dNextId=200,dTab='ini',dFilter='alla',dEdit=null,dEditOut=null,dAddOpen=false,dAddOutOpen=false,dHi=null;
+  let dNextId=200,dTab='ini',dFilter='alla',dEdit=null,dEditOut=null,dAddOpen=false,dAddOutOpen=false,dHi=null,dHideDone=true;
 
   function saveD(){try{localStorage.setItem(STORE_D,JSON.stringify({init:dInit,out:dOut}));}catch(e){}}
   function loadD(){try{const s=localStorage.getItem(STORE_D);if(s){const d=JSON.parse(s);if(Array.isArray(d.init))dInit=d.init;if(Array.isArray(d.out))dOut=d.out;}}catch(e){}let m=199;dInit.forEach(i=>{if(i.id>m)m=i.id;});dOut.forEach(o=>{if(o.id>m)m=o.id;});dNextId=m+1;}
@@ -1297,7 +1305,7 @@ document.addEventListener('keydown',function(e){
     let html='';
     // Metrics (auto)
     const counts={};STATUSES.forEach(s=>counts[s]=0);dInit.forEach(i=>{if(counts[i.status]!=null)counts[i.status]++;});
-    const mets=[['Totalt',dInit.length,ink],['Pågående',counts['Pågående'],'#854F0B'],['Förbereds',counts['Förbereds'],'#3C3489'],['Planerad',counts['Planerad'],'#0C447C'],['Snart klar',counts['Snart klar'],'#3B6D11'],['Väntar',counts['Väntar'],'#5C564E']];
+    const mets=[['Totalt',dInit.length,ink],['Pågående',counts['Pågående'],'#854F0B'],['Förbereds',counts['Förbereds'],'#3C3489'],['Planerad',counts['Planerad'],'#0C447C'],['Snart klar',counts['Snart klar'],'#3B6D11'],['Väntar',counts['Väntar'],'#5C564E'],['Klar',counts['Klar'],'#3B6D11']];
     html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">`;
     mets.forEach(([l,v,c])=>{html+=`<div style="flex:1;min-width:90px;background:${bg0};border:1px solid ${line};border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:${muted};margin-bottom:3px">${l}</div><div style="font-size:22px;font-weight:600;color:${c}">${v}</div></div>`;});
     html+=`</div>`;
@@ -1311,8 +1319,9 @@ document.addEventListener('keydown',function(e){
       // filter chips
       html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><button onclick="window._dashFilter('alla')" style="padding:4px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${dFilter==='alla'?ink:line};background:${dFilter==='alla'?ink:bg0};color:${dFilter==='alla'?'#fff':muted};cursor:pointer;font-family:inherit">Alla</button>`;
       STATUSES.forEach(s=>{const act=dFilter===s;html+=`<button onclick="window._dashFilter('${s}')" style="padding:4px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${act?ink:line};background:${act?ink:bg0};color:${act?'#fff':muted};cursor:pointer;font-family:inherit">${s}</button>`;});
+      html+=`<button onclick="window._dashToggleDone()" style="margin-left:auto;padding:4px 12px;font-size:12px;border-radius:20px;border:1.5px solid ${line};background:${dHideDone?ink:bg0};color:${dHideDone?'#fff':muted};cursor:pointer;font-family:inherit">${dHideDone?'✓ ':''}Dölj klara</button>`;
       html+=`</div>`;
-      const shown=dInit.filter(i=>dFilter==='alla'||i.status===dFilter);
+      const shown=dInit.filter(i=>dFilter==='alla'||i.status===dFilter).filter(i=>!dHideDone||dFilter==='Klar'||i.status!=='Klar');
       shown.forEach((it,idx)=>{
         const n=dInit.indexOf(it)+1;const _dk=document.documentElement.getAttribute('data-theme')==='dark';const _SC=_dk?{'Pågående':['#3A2C10','#E8C673'],'Förbereds':['#211A3C','#AB9BEC'],'Planerad':['#12273E','#7FAAE6'],'Snart klar':['#13301C','#92C56E'],'Väntar':['#26221D','#B6AC9C']}:SCOL;const sc=_SC[it.status]||(_dk?['#26221D','#B6AC9C']:['#EFEAE2','#5C564E']);
         if(dEdit===it.id){html+=editInitForm(it,inp,ink,muted,line,bg0);}
@@ -1399,7 +1408,8 @@ document.addEventListener('keydown',function(e){
 
   window._dashOpenInit=function(id){dTab='ini';dFilter='alla';dEdit=null;dAddOpen=false;dHi=id;renderDashboard();setTimeout(function(){const el=document.getElementById('ini-card-'+id);if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});},30);setTimeout(function(){dHi=null;renderDashboard();},2400);};
   window._dashTab=function(k){dTab=k;dEdit=null;dAddOpen=false;dEditOut=null;dAddOutOpen=false;renderDashboard();};
-  window._dashFilter=function(s){dFilter=s;renderDashboard();};
+  window._dashFilter=function(s){dFilter=s;renderDashboard();}
+  window._dashToggleDone=function(){dHideDone=!dHideDone;renderDashboard();};
   window._dashEdit=function(id){dEdit=id;dAddOpen=false;renderDashboard();};
   window._dashAdd=function(){dAddOpen=true;dEdit=null;renderDashboard();};
   window._dashCancelInit=function(){dEdit=null;dAddOpen=false;renderDashboard();};
@@ -1416,6 +1426,7 @@ document.addEventListener('keydown',function(e){
 
   loadD();
   window._renderDashboard=renderDashboard;
+  window._dashData=function(){return {init:dInit,out:dOut};};
 })();
 
 // ── Driftstatus & IT-belastning ────────────────────────────────────
@@ -1493,38 +1504,45 @@ document.addEventListener('keydown',function(e){
 
 // ── PDF-export ─────────────────────────────────────────────────────
 document.getElementById('pdf-btn').onclick=function(){
-  // Switch through each view, capture HTML, then print
-  const views=['cal','tl','wheel','sommar','roadmap'];if(window._renderSommar)window._renderSommar();if(window._renderRoadmap)window._renderRoadmap();if(window._renderDashboard&&document.getElementById('dashboard-root'))window._renderDashboard();
-  const names={cal:'Kalender',tl:'Tidslinje',wheel:'Årshjul',sommar:'Resursplanering',roadmap:'Roadmap'};
-  const win=window.open('','_blank');
-  const styles=Array.from(document.styleSheets).map(ss=>{try{return Array.from(ss.cssRules).map(r=>r.cssText).join('\n');}catch(e){return '';}}).join('\n');
-
-  // Gather HTML for each view
-  let body='';
-  views.forEach(v=>{
-    const el=document.getElementById('view-'+v);
-    if(!el)return;
-    body+=`<div class="pdf-section"><h2 class="pdf-heading">${names[v]}</h2><div class="pdf-content">${el.innerHTML}</div></div>`;
-  });
-
-  win.document.write(`<!DOCTYPE html><html lang="sv"><head><meta charset="UTF-8"><title>Jobbplanering — PDF-export ${new Date().toLocaleDateString('sv-SE')}</title><style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;color:#3A3633;background:#fff;padding:20px}
-    .pdf-section{page-break-after:always;margin-bottom:40px}
-    .pdf-section:last-child{page-break-after:auto}
-    .pdf-heading{font-size:18px;font-weight:600;color:#3A3633;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #E5DFD5}
-    canvas{max-width:100%;height:auto}
-    button,input[type=checkbox]{display:none}
-    .add-form,.panels,.foot,.privacy,.pbar-wrap,.sem-lgnd,.wk-info,.chips,.cal-legend,.warn-bar,.add-btn,.add-form{display:none!important}
-    .months-grid{display:flex;flex-wrap:wrap;gap:8px}
-    .month-card{background:#FAF7F2;border:1px solid #E5DFD5;border-radius:8px;padding:8px;min-width:140px}
-    ${styles}
-    @media print{body{padding:0}canvas{display:block;max-width:100%}}
-  </style></head><body>${body}<script>
-    // Re-draw wheel canvas if present
-    window.onload=function(){setTimeout(function(){window.print();},800);};
-  <\/script></body></html>`);
-  win.document.close();
+  if(window._renderSommar)window._renderSommar();
+  if(window._renderRoadmap)window._renderRoadmap();
+  if(window._renderDashboard)window._renderDashboard();
+  const STAT={todo:'Planerad',prog:'Pågående',done:'Klar'};
+  const adv=function(t,c,q){if(!t||!c||!q)return '';if(t===q||t===c||c===q)return '';if(q===3)return 'Snabbt + billigt -> lägre kvalitet';if(c===3)return 'Snabbt + hög kvalitet -> högre kostnad';if(t===3)return 'Billigt + hög kvalitet -> tar längre tid';return '';};
+  const fname='jobbplanering-'+new Date().toISOString().slice(0,10);
+  function data(){const sd=(window._sommarData?window._sommarData():{persons:[],tl:[]});const dd=(window._dashData?window._dashData():{init:[],out:[]});return {persons:sd.persons||[],tl:sd.tl||[],init:dd.init||[],out:dd.out||[]};}
+  function pname(persons,id){const p=persons.find(function(x){return x.id===id;});return p?p.name:'';}
+  function build(){
+    try{
+      const X=window.XLSX;const d=data();
+      const dlRows=d.tl.map(function(it){return {'Namn':it.name,'Typ':it.type==='beslut'?'Beslutspunkt':'Deadline','Start':it.dateFrom,'Slut':it.dateTo,'Status':STAT[it.status]||it.status,'Uppskattad tid (h)':it.hours||'','Lagd tid (h)':it.spent||'','Ansvariga':(it.owners||[]).map(function(id){return pname(d.persons,id);}).filter(Boolean).join(', '),'Prio tid':it.pri_time||'','Prio kostnad':it.pri_cost||'','Prio kvalitet':it.pri_qual||'','Avvägning':adv(+it.pri_time,+it.pri_cost,+it.pri_qual),'Not':it.desc||''};});
+      const iniRows=d.init.map(function(it){return {'Titel':it.title,'Ansvariga':it.owners||'','Status':it.status||'','Prioritering':it.prio||'','Ärendenr':it.ticket||'','Jira':it.jira||'','Beskrivning':it.desc||''};});
+      const outRows=d.out.map(function(o){return {'Kategori':o.cat||'','Resultat':o.text||''};});
+      const pplRows=d.persons.map(function(p){return {'Namn':p.name,'Roller':(p.roles||[]).join(', ')};});
+      const wb=X.utils.book_new();
+      X.utils.book_append_sheet(wb,X.utils.json_to_sheet(dlRows.length?dlRows:[{'Namn':''}]),'Deadlines');
+      X.utils.book_append_sheet(wb,X.utils.json_to_sheet(iniRows.length?iniRows:[{'Titel':''}]),'Initiativ');
+      X.utils.book_append_sheet(wb,X.utils.json_to_sheet(outRows.length?outRows:[{'Kategori':''}]),'Resultat');
+      X.utils.book_append_sheet(wb,X.utils.json_to_sheet(pplRows.length?pplRows:[{'Namn':''}]),'Personer');
+      X.writeFile(wb,fname+'.xlsx');
+    }catch(e){csvFallback();}
+  }
+  function csvFallback(){
+    try{
+      const d=data();
+      const rows=[['Namn','Typ','Start','Slut','Status','Uppskattad tid (h)','Lagd tid (h)','Ansvariga','Not']];
+      d.tl.forEach(function(it){rows.push([it.name,it.type==='beslut'?'Beslutspunkt':'Deadline',it.dateFrom,it.dateTo,STAT[it.status]||it.status,it.hours||'',it.spent||'',(it.owners||[]).map(function(id){return pname(d.persons,id);}).filter(Boolean).join(' '),it.desc||'']);});
+      const csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+      const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname+'.csv';document.body.appendChild(a);a.click();a.remove();
+      alert('Kunde inte ladda Excel-biblioteket - exporterade CSV istället (öppnas i Excel).');
+    }catch(e){alert('Export misslyckades.');}
+  }
+  if(window.XLSX){build();return;}
+  const sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  sc.onload=build;sc.onerror=csvFallback;
+  document.head.appendChild(sc);
 };
 
 loadSync();
