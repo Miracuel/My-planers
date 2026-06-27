@@ -103,14 +103,29 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .star-pick button{background:none;border:none;font-size:24px;cursor:pointer;color:var(--line);padding:0}
 .star-pick button.on{color:var(--wish)}
 .icon-pick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
-.crumbs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;color:var(--muted);margin:2px 0 8px}
-.crumbs button{background:none;border:none;font:inherit;color:var(--amber);cursor:pointer;padding:2px 3px;border-radius:6px}
-.crumbs span.sep{color:var(--line)}
-.subgrp{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
-.subgrp .gcard{display:flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 11px;cursor:pointer;font-size:13px;color:var(--ink)}
-.subgrp .gcard .gc-count{font-size:11px;color:var(--muted);background:var(--panel);border-radius:9px;padding:1px 7px}
-.subgrp .gcard .gc-edit{color:var(--muted);font-size:13px;padding:0 2px}
-.subgrp .gadd{background:none;border:1px dashed var(--line);border-radius:12px;padding:8px 11px;cursor:pointer;font-size:13px;color:var(--muted)}
+.tagbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tagbar button{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--ink);font-family:inherit}
+.tagbar button.sel{background:var(--amber-soft);border-color:var(--amber);color:var(--amber);font-weight:600}
+.tagbar button .tb-count{color:var(--muted);font-size:10px;margin-left:4px}
+.swatch{display:inline-block;width:16px;height:16px;border-radius:5px;border:1px solid var(--line);flex:none;vertical-align:middle}
+.item-mark{font-size:16px;flex:none;width:20px;text-align:center}
+.tag.click{cursor:pointer}
+.tag.click:hover{background:var(--amber-soft);color:var(--amber)}
+.part-of{font-size:10px;color:var(--amber);background:var(--amber-soft);border-radius:8px;padding:2px 7px}
+.parts-list{margin:4px 0 2px}
+.part-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.part-row .swatch{width:18px;height:18px}
+.part-add{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.part-add input[type=text]{flex:1;min-width:110px}
+.mark-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0}
+.mark-row input[type=color]{width:44px;height:34px;padding:0;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer}
+.mark-clear{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit}
+.tag-edit{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.tag-edit .te-chip{display:inline-flex;align-items:center;gap:5px;background:var(--amber-soft);color:var(--amber);border-radius:10px;padding:3px 9px;font-size:12px}
+.tag-edit .te-chip b{cursor:pointer;font-weight:700}
+.tag-sugg{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.tag-sugg button{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:2px 8px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit}
+.set-link{background:none;border:none;color:var(--amber);cursor:pointer;font:inherit;text-decoration:underline;padding:0}
 .link-line{display:flex;align-items:center;gap:6px}
 .link-line input{flex:1}
 .item-link{font-size:11px;color:var(--amber);text-decoration:none}
@@ -192,7 +207,6 @@ html[data-theme=dark]{
       <button class="btn ghost" id="edit-coll">Ändra</button>
     </div>
     <div class="detail-title" id="detail-title"></div>
-    <div class="crumbs" id="crumbs"></div>
     <div class="toolbar">
       <input type="text" id="search-in" placeholder="Sök i samlingen…">
       <select id="sort-sel">
@@ -203,7 +217,7 @@ html[data-theme=dark]{
       </select>
     </div>
     <div class="filter-chips" id="filter-chips"></div>
-    <div class="subgrp" id="subgrp"></div>
+    <div class="tagbar" id="tagbar"></div>
     <div class="card-panel"><div id="item-list"></div></div>
     <button class="btn fill full" id="add-item" style="margin-top:10px">+ Lägg till sak</button>
   </div>
@@ -275,14 +289,24 @@ html[data-theme=dark]{
   <input type="text" id="f-name" placeholder="T.ex. Catan, Vinröd läppstift, Ljus akrylfärg…">
   <label>Samling</label>
   <select id="f-coll"></select>
-  <label>Undergrupp (placering)</label>
-  <select id="f-group"></select>
   <label>Status</label>
   <div class="chips" id="f-status"></div>
   <label>Märke (frivilligt)</label>
-  <input type="text" id="f-brand" placeholder="T.ex. MAC, Catan, Winsor &amp; Newton…">
-  <label>Kategori / etikett (frivilligt)</label>
-  <input type="text" id="f-cat" placeholder="T.ex. Strategi, Läppar, Akvarell…">
+  <input type="text" id="f-brand" list="brand-list" placeholder="T.ex. MAC, Catan, Winsor &amp; Newton…">
+  <datalist id="brand-list"></datalist>
+  <label>Taggar / kategorier</label>
+  <div class="tag-edit" id="f-tags"></div>
+  <div class="scan-wrap">
+    <input type="text" id="f-tag-input" placeholder="Skriv en tagg + Enter">
+    <button class="btn ghost" id="f-tag-add" type="button">Lägg till</button>
+  </div>
+  <div class="tag-sugg" id="f-tag-sugg"></div>
+  <label>Färgplupp / emoji (frivilligt)</label>
+  <div class="mark-row">
+    <input type="color" id="f-hex" value="#A8794E">
+    <button type="button" class="mark-clear" id="f-hex-clear">Ingen färg</button>
+    <input type="text" id="f-emoji" maxlength="4" placeholder="emoji" style="width:80px">
+  </div>
   <label>Streckkod (frivilligt)</label>
   <div class="scan-wrap">
     <input type="text" id="f-barcode" placeholder="EAN/UPC eller fritext">
@@ -300,7 +324,19 @@ html[data-theme=dark]{
   <div class="star-pick" id="f-rating"></div>
   <label>Anteckning (frivilligt)</label>
   <textarea id="f-note" rows="2" placeholder="Var den står, vem som lånat, färgnummer…"></textarea>
+  <div id="parts-box" style="display:none">
+    <div id="part-of-line" style="margin:6px 0"></div>
+    <label id="parts-label">Delar i settet</label>
+    <div class="parts-list" id="parts-list"></div>
+    <div class="part-add">
+      <input type="text" id="p-name" placeholder="Namn på del, t.ex. en färg">
+      <input type="color" id="p-hex" value="#A8794E">
+      <input type="text" id="p-emoji" maxlength="4" placeholder="emoji" style="width:64px">
+      <button type="button" class="btn ghost" id="p-add">+ Del</button>
+    </div>
+  </div>
   <button class="sheet-close" id="item-save">Spara</button>
+  <button class="btn ghost" id="item-dup" type="button" style="display:none;margin-top:8px;width:100%">Duplicera den här saken</button>
   <button class="del-link" id="item-del" style="display:none">Ta bort den här saken</button>
 </div>
 
@@ -318,16 +354,6 @@ html[data-theme=dark]{
   <button class="del-link" id="coll-del" style="display:none">Ta bort samlingen och allt i den</button>
 </div>
 
-<!-- Undergrupp-sheet -->
-<div class="sheet" id="group-sheet">
-  <h3 id="group-sheet-title">Ny undergrupp</h3>
-  <div class="hint" id="group-where"></div>
-  <label>Namn</label>
-  <input type="text" id="g-name" placeholder="T.ex. Ögonskugga, MAC, Akvarell…">
-  <button class="sheet-close" id="group-save">Spara</button>
-  <button class="del-link" id="group-del" style="display:none">Ta bort undergruppen (saker flyttas upp en nivå)</button>
-</div>
-
 <!-- Streckkods-skanner -->
 <div class="scan-overlay" id="scan-overlay">
   <button class="scan-close" id="scan-close">×</button>
@@ -341,28 +367,40 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.2.0',
+  version:'1.4.0',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
-    {area:'Samlingar',items:['Skapa egna samlingar med namn, färg och valfri ikon — välj förslag eller skriv en egen emoji','Lägg till saker med märke, kategori, status, antal, värde, betyg och anteckning','Statusar: Äger, Önskar, Utlånad, Slut']},
-    {area:'Undergrupper',items:['Bygg ett träd upp till tre steg djupt i varje samling (t.ex. Smink ▸ Ögonskugga ▸ märke)','Bläddra med brödsmulor och lägg saker direkt i rätt undergrupp','Räknare visar hur många saker som finns under varje undergrupp']},
-    {area:'På varje sak',items:['Märke, streckkod (skanna med kameran där det stöds) och köplänk/källa','Snabblänk till där saken köps eller köptes']},
+    {area:'Samlingar',items:['Skapa egna samlingar med namn, färg och valfri ikon — välj förslag eller skriv en egen emoji','Lägg till saker med märke, status, antal, värde, betyg och anteckning','Duplicera en sak för att snabbt lägga till en liknande utan att fylla i allt','Statusar: Äger, Önskar, Utlånad, Slut']},
+    {area:'Taggar & märken',items:['Sätt flera taggar/kategorier på varje sak','Märken och taggar du använt sparas och föreslås i formuläret','Klicka på en tagg i taggraden eller på en sak för att filtrera direkt']},
+    {area:'Set & delar',items:['Koppla ihop saker: lägg delar i ett set (t.ex. ett färgset med fyra färger)','Varje del blir en egen sak med settets konfiguration och syns i listan','Öppna en del och se vilket set den ingår i']},
+    {area:'På varje sak',items:['Färgplupp (hexkod) eller emoji som markör','Märke, streckkod (skanna med kameran där det stöds) och köplänk/källa']},
     {area:'Önskelista',items:['Samlar automatiskt allt som är markerat som Önskar','Snabb överblick över vad du vill komplettera med']},
     {area:'Översikt',items:['Totalt antal saker, antal samlingar och uppskattat värde','Fördelning per status och dina största samlingar']},
     {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
   ],
   changelog:[
-    {v:'1.2.0',d:'2026-06-18',items:[
+    {v:'1.4.0',d:'2026-06-27',items:[
+      'Duplicera-knapp på en sak — skapar en kopia och öppnar den direkt så du slipper fylla i allt på nytt (streckkod kopieras inte).',
+      'Märken du lagt in sparas och föreslås i namnfältet (datalista) i sak-formuläret.',
+      'Taggförslag visar nu alla kategorier du använt, tvärs över samlingar.'
+    ]},
+    {v:'1.3.0',d:'2026-06-27',items:[
+      'Undergrupperna ersatta av klickbara taggar — sätt flera taggar per sak och filtrera med ett klick.',
+      'Set & delar: koppla ihop saker, lägg delar i ett set (varje del blir en egen sak med settets konfiguration), och se vilket set en del tillhör.',
+      'Färgplupp (hexkod) eller emoji som markör på en sak.',
+      'Befintliga kategorier blir taggar automatiskt; allt synkas som vanligt.'
+    ]},
+    {v:'1.2.0',d:'2026-06-26',items:[
       'Undergrupper: bygg ett träd upp till tre steg djupt i varje samling, med brödsmulor och räknare.',
       'Egen ikon: skriv valfri emoji när du skapar eller ändrar en samling.',
       'Nya fält på saker: märke, streckkod och köplänk/källa.',
       'Streckkodsskanning med kameran där webbläsaren stöder det (annars manuell inmatning).',
-      'Sökning matchar nu även märke och streckkod; undergrupper synkas mellan enheter.'
+      'Sökning matchar nu även märke och streckkod.'
     ]},
-    {v:'1.1.0',d:'2026-06-18',items:[
+    {v:'1.1.0',d:'2026-06-26',items:[
       'Uppdaterad till sviten-standard.',
-      'Synk: per-app-fil samlingen.json, union-sammanfogning per id (saker från flera enheter bevaras), tema utesluts ur synkdatan.',
+      'Synk: per-app-fil samlingen.json, union-sammanfogning per id, tema utesluts ur synkdatan.',
       'Ny vy: Nyheter & funktioner med versionshistorik.',
       'Genererad PNG-favicon, apple-touch-icon och webmanifest.',
       'Separat desktop-version och Centralen-metadata.'
@@ -396,17 +434,30 @@ var state={
     {id:'c4',name:'Smink',icon:'💄',color:'#B58A82'}
   ],
   items:[
-    {id:'i1',coll:'c1',name:'Exempel: en bok du äger',cat:'Roman',group:'',brand:'',barcode:'',link:'',status:'have',qty:1,value:'',rating:4,note:'Tryck på raden för att ändra eller ta bort.',created:Date.now()-5000},
-    {id:'i2',coll:'c2',name:'Exempel: ett spel du önskar dig',cat:'Strategi',group:'',brand:'',barcode:'',link:'',status:'wish',qty:1,value:599,rating:0,note:'',created:Date.now()-4000}
-  ],
-  groups:[
-    {id:'g1',coll:'c4',parent:'',name:'Ögonskugga'},
-    {id:'g2',coll:'c4',parent:'',name:'Läppstift'}
+    {id:'i1',coll:'c1',name:'Exempel: en bok du äger',tags:['Roman'],brand:'',barcode:'',link:'',hex:'',emoji:'',parent:'',status:'have',qty:1,value:'',rating:4,note:'Tryck på raden för att ändra eller ta bort.',created:Date.now()-5000},
+    {id:'i2',coll:'c2',name:'Exempel: ett spel du önskar dig',tags:['Strategi'],brand:'',barcode:'',link:'',hex:'',emoji:'',parent:'',status:'wish',qty:1,value:599,rating:0,note:'',created:Date.now()-4000},
+    {id:'i3',coll:'c3',name:'Exempel: akvarellset',tags:['Set'],brand:'',barcode:'',link:'',hex:'',emoji:'🎨',parent:'',status:'have',qty:1,value:299,rating:0,note:'Tryck för att se delarna i settet.',created:Date.now()-3000},
+    {id:'i3a',coll:'c3',name:'Koboltblå',tags:['Set'],brand:'',barcode:'',link:'',hex:'#2B5FA8',emoji:'',parent:'i3',status:'have',qty:1,value:'',rating:0,note:'',created:Date.now()-2900},
+    {id:'i3b',coll:'c3',name:'Karmosinröd',tags:['Set'],brand:'',barcode:'',link:'',hex:'#B1303A',emoji:'',parent:'i3',status:'have',qty:1,value:'',rating:0,note:'',created:Date.now()-2800}
   ],
   theme:'auto'
 };
 try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
-if(!Array.isArray(state.groups))state.groups=[];
+function migrateItems(){
+  if(!Array.isArray(state.items))state.items=[];
+  for(var mi=0;mi<state.items.length;mi++){
+    var it=state.items[mi];
+    if(!Array.isArray(it.tags))it.tags=(it.cat?[it.cat]:[]);
+    if(it.parent==null)it.parent='';
+    if(it.hex==null)it.hex='';
+    if(it.emoji==null)it.emoji='';
+    if(it.brand==null)it.brand='';
+    if(it.barcode==null)it.barcode='';
+    if(it.link==null)it.link='';
+  }
+  if('groups' in state)delete state.groups; // ersatt av taggar
+}
+migrateItems();
 function save(){try{state.updated=Date.now();localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}schedulePush();}
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
@@ -414,17 +465,28 @@ function el(id){return document.getElementById(id);}
 function statusOf(k){for(var i=0;i<STATUS.length;i++){if(STATUS[i][0]===k)return STATUS[i];}return STATUS[0];}
 function collById(id){for(var i=0;i<state.collections.length;i++){if(state.collections[i].id===id)return state.collections[i];}return null;}
 function countIn(cid){var n=0;for(var i=0;i<state.items.length;i++){if(state.items[i].coll===cid)n++;}return n;}
-// ── Undergrupps-träd ───────────────────────────────────
-var MAX_DEPTH=3; // antal steg under samlingen
-function groupById(id){for(var i=0;i<state.groups.length;i++){if(state.groups[i].id===id)return state.groups[i];}return null;}
-function groupsOf(coll,parent){var a=[];for(var i=0;i<state.groups.length;i++){var g=state.groups[i];if(g.coll===coll&&(g.parent||'')===(parent||''))a.push(g);}a.sort(function(x,y){return (x.name||'').localeCompare(y.name||'','sv');});return a;}
-function groupDepth(id){var d=0,g=groupById(id);while(g){d++;g=g.parent?groupById(g.parent):null;}return d;} // 1..MAX_DEPTH
-function groupPath(id){var p=[],g=groupById(id);while(g){p.unshift(g);g=g.parent?groupById(g.parent):null;}return p;}
-function descendantIds(id){var out=[id],i=0;while(i<out.length){var kids=groupsOf(currentColl,out[i]);for(var k=0;k<kids.length;k++)out.push(kids[k].id);i++;}return out;}
-function countUnder(coll,gid){
-  var ids={};var stack=[gid];while(stack.length){var cur=stack.pop();ids[cur]=1;for(var i=0;i<state.groups.length;i++){if(state.groups[i].coll===coll&&(state.groups[i].parent||'')===cur)stack.push(state.groups[i].id);}}
-  var n=0;for(var j=0;j<state.items.length;j++){var it=state.items[j];if(it.coll===coll&&ids[(it.group||'')])n++;}return n;
+// ── Taggar & delar ─────────────────────────────────────
+function childrenOf(id){var a=[];for(var i=0;i<state.items.length;i++){if(state.items[i].parent===id)a.push(state.items[i]);}return a;}
+function itemById(id){for(var i=0;i<state.items.length;i++){if(state.items[i].id===id)return state.items[i];}return null;}
+function tagsInColl(coll){
+  var seen={},out=[];
+  for(var i=0;i<state.items.length;i++){var it=state.items[i];if(it.coll!==coll)continue;var t=it.tags||[];for(var j=0;j<t.length;j++){if(t[j]&&!seen[t[j]]){seen[t[j]]=1;out.push(t[j]);}}}
+  out.sort(function(a,b){return a.localeCompare(b,'sv');});
+  return out;
 }
+function tagsAll(){
+  var seen={},out=[];
+  for(var i=0;i<state.items.length;i++){var t=state.items[i].tags||[];for(var j=0;j<t.length;j++){if(t[j]&&!seen[t[j]]){seen[t[j]]=1;out.push(t[j]);}}}
+  out.sort(function(a,b){return a.localeCompare(b,'sv');});
+  return out;
+}
+function brandsAll(){
+  var seen={},out=[];
+  for(var i=0;i<state.items.length;i++){var b=state.items[i].brand;if(b&&!seen[b]){seen[b]=1;out.push(b);}}
+  out.sort(function(a,b){return a.localeCompare(b,'sv');});
+  return out;
+}
+function countTag(coll,tag){var n=0;for(var i=0;i<state.items.length;i++){var it=state.items[i];if(it.coll===coll&&(it.tags||[]).indexOf(tag)>=0)n++;}return n;}
 
 // ── Sheets ─────────────────────────────────────────────
 var bg=el('sheet-bg');
@@ -433,7 +495,7 @@ function closeSheets(){bg.classList.remove('open');var sh=document.querySelector
 bg.onclick=closeSheets;
 
 // ── Navigationstillstånd ───────────────────────────────
-var currentColl=null,currentGroup='',search='',sortBy='new',statusFilter='all';
+var currentColl=null,tagFilter='',search='',sortBy='new',statusFilter='all';
 
 // ── Hem / samlingsrutnät ───────────────────────────────
 function renderHome(){
@@ -459,7 +521,7 @@ function renderHome(){
 
 // ── Detaljvy ───────────────────────────────────────────
 function openCollection(id){
-  currentColl=id;currentGroup='';search='';statusFilter='all';
+  currentColl=id;tagFilter='';search='';statusFilter='all';
   el('search-in').value='';el('sort-sel').value=sortBy;
   el('coll-home').style.display='none';
   el('coll-detail').style.display='block';
@@ -482,14 +544,13 @@ function renderFilterChips(){
 
 function filteredItems(){
   var arr=[];
-  var searching=!!search;
   for(var i=0;i<state.items.length;i++){
     var it=state.items[i];
     if(it.coll!==currentColl)continue;
-    if(!searching&&(it.group||'')!==currentGroup)continue;
+    if(tagFilter&&(it.tags||[]).indexOf(tagFilter)<0)continue;
     if(statusFilter!=='all'&&it.status!==statusFilter)continue;
     if(search){
-      var hay=((it.name||'')+' '+(it.cat||'')+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.note||'')).toLowerCase();
+      var hay=((it.name||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.note||'')).toLowerCase();
       if(hay.indexOf(search.toLowerCase())<0)continue;
     }
     arr.push(it);
@@ -501,69 +562,53 @@ function filteredItems(){
   return arr;
 }
 
+function markHtml(it){
+  if(it.emoji)return '<span class="item-mark">'+esc(it.emoji)+'</span>';
+  if(it.hex)return '<span class="item-mark"><span class="swatch" style="background:'+esc(it.hex)+'"></span></span>';
+  return '';
+}
 function itemRow(it){
   var st=statusOf(it.status);
   var sub='';
   if(it.brand)sub+='<span class="tag">'+esc(it.brand)+'</span>';
-  if(it.cat)sub+='<span class="tag">'+esc(it.cat)+'</span>';
+  var tg=it.tags||[];
+  for(var t=0;t<tg.length;t++)sub+='<span class="tag click" data-tag="'+esc(tg[t])+'">'+esc(tg[t])+'</span>';
+  if(it.parent){var p=itemById(it.parent);if(p)sub+='<span class="part-of">del av '+esc(p.name)+'</span>';}
   if(it.rating>0){var s='';for(var r=0;r<5;r++)s+=(r<it.rating?'★':'☆');sub+='<span class="stars">'+s+'</span>';}
   if(it.qty&&+it.qty!==1)sub+='<span class="qty">×'+esc(it.qty)+'</span>';
   if(it.value)sub+='<span class="qty">'+esc(it.value)+' kr</span>';
+  if(childrenOf(it.id).length)sub+='<span class="qty">'+childrenOf(it.id).length+' delar</span>';
   if(it.link)sub+='<a class="item-link" href="'+esc(it.link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Köp/Källa ↗</a>';
-  return '<div class="item" data-id="'+it.id+'">'+
+  return '<div class="item" data-id="'+it.id+'">'+markHtml(it)+
     '<div class="item-body"><div class="item-name'+(it.status==='used'?' used':'')+'">'+esc(it.name)+'</div>'+
     (sub?'<div class="item-sub">'+sub+'</div>':'')+'</div>'+
     '<span class="badge" style="background:'+st[2]+'">'+st[1]+'</span></div>';
 }
 
-function renderBreadcrumb(){
+function pickTag(t){tagFilter=(tagFilter===t?'':t);search='';el('search-in').value='';renderItems();}
+function renderTagbar(){
   var c=collById(currentColl);
   el('detail-title').textContent=(c?c.icon+' '+c.name:'');
-  var cr=el('crumbs');
-  if(!currentGroup){cr.innerHTML='';cr.style.display='none';return;}
-  cr.style.display='flex';
-  var h='<button data-g="">'+(c?esc(c.name):'Samling')+'</button>';
-  var path=groupPath(currentGroup);
-  for(var i=0;i<path.length;i++){
-    h+='<span class="sep">▸</span>';
-    if(i===path.length-1)h+='<span style="color:var(--ink)">'+esc(path[i].name)+'</span>';
-    else h+='<button data-g="'+path[i].id+'">'+esc(path[i].name)+'</button>';
+  var box=el('tagbar');
+  var tags=tagsInColl(currentColl);
+  if(!tags.length){box.innerHTML='';return;}
+  var h='<button class="'+(tagFilter===''?'sel':'')+'" data-tag="">Alla</button>';
+  for(var i=0;i<tags.length;i++){
+    h+='<button class="'+(tagFilter===tags[i]?'sel':'')+'" data-tag="'+esc(tags[i])+'">'+esc(tags[i])+'<span class="tb-count">'+countTag(currentColl,tags[i])+'</span></button>';
   }
-  cr.innerHTML=h;
-  var bs=cr.querySelectorAll('button');
-  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){currentGroup=this.dataset.g;search='';el('search-in').value='';renderItems();};}
-}
-function renderSubgroups(){
-  var box=el('subgrp');
-  if(search){box.innerHTML='';return;}
-  var subs=groupsOf(currentColl,currentGroup);
-  var depth=currentGroup?groupDepth(currentGroup):0;
-  var h='';
-  for(var i=0;i<subs.length;i++){
-    h+='<div class="gcard" data-g="'+subs[i].id+'"><span>'+esc(subs[i].name)+'</span>'+
-       '<span class="gc-count">'+countUnder(currentColl,subs[i].id)+'</span>'+
-       '<span class="gc-edit" data-edit="'+subs[i].id+'">⋯</span></div>';
-  }
-  if(depth<MAX_DEPTH)h+='<button class="gadd" id="gadd-btn">+ Ny undergrupp</button>';
   box.innerHTML=h;
-  var cards=box.querySelectorAll('.gcard');
-  for(var j=0;j<cards.length;j++){
-    cards[j].onclick=function(e){
-      if(e.target&&e.target.getAttribute('data-edit')){openGroup(e.target.getAttribute('data-edit'));return;}
-      currentGroup=this.getAttribute('data-g');renderItems();
-    };
-  }
-  var add=el('gadd-btn');if(add)add.onclick=function(){openGroup(null);};
+  var bs=box.querySelectorAll('button');
+  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){var t=this.getAttribute('data-tag');tagFilter=t;search='';el('search-in').value='';renderItems();};}
 }
 function renderItems(){
-  renderBreadcrumb();renderSubgroups();
+  renderTagbar();
   var arr=filteredItems();var l=el('item-list');
   if(!arr.length){
     var any=countIn(currentColl);
     var msg;
     if(!any)msg='Tomt här än — tryck på <b>Lägg till sak</b> nedan.';
     else if(search)msg='Inget matchar sökningen.';
-    else if(currentGroup||groupsOf(currentColl,currentGroup).length)msg='Inga saker direkt här. Öppna en undergrupp eller lägg till en sak.';
+    else if(tagFilter)msg='Inga saker med taggen <b>'+esc(tagFilter)+'</b>.';
     else msg='Inget matchar filtret.';
     l.innerHTML='<div class="empty-msg">'+msg+'</div>';
     return;
@@ -572,6 +617,8 @@ function renderItems(){
   l.innerHTML=h;
   var rows=l.querySelectorAll('.item');
   for(var j=0;j<rows.length;j++){rows[j].onclick=function(){openItem(this.dataset.id);};}
+  var chips=l.querySelectorAll('.tag.click');
+  for(var k=0;k<chips.length;k++){chips[k].onclick=function(e){e.stopPropagation();pickTag(this.getAttribute('data-tag'));};}
 }
 
 el('coll-back').onclick=backToHome;
@@ -602,19 +649,50 @@ function fillCollSelect(sel){
   var o='';for(var i=0;i<state.collections.length;i++){o+='<option value="'+state.collections[i].id+'">'+esc(state.collections[i].name)+'</option>';}
   el('f-coll').innerHTML=o;el('f-coll').value=sel||(state.collections[0]&&state.collections[0].id)||'';
 }
-function fillGroupSelect(coll,selected){
-  var o='<option value="">(direkt i samlingen)</option>';
-  function walk(parent,depth){
-    var subs=groupsOf(coll,parent);
-    for(var i=0;i<subs.length;i++){
-      var pad='';for(var d=0;d<depth;d++)pad+=' — ';
-      o+='<option value="'+subs[i].id+'">'+pad+esc(subs[i].name)+'</option>';
-      walk(subs[i].id,depth+1);
-    }
+var tmpTags=[],tmpHex='';
+function renderTagEditor(){
+  var box=el('f-tags');var h='';
+  for(var i=0;i<tmpTags.length;i++)h+='<span class="te-chip">'+esc(tmpTags[i])+'<b data-rm="'+i+'">×</b></span>';
+  box.innerHTML=h||'<span style="font-size:12px;color:var(--muted)">Inga taggar än</span>';
+  var rm=box.querySelectorAll('b');
+  for(var j=0;j<rm.length;j++){rm[j].onclick=function(){tmpTags.splice(+this.getAttribute('data-rm'),1);renderTagEditor();renderTagSugg();};}
+}
+function renderTagSugg(){
+  var all=tagsAll();var h='';
+  for(var i=0;i<all.length;i++){if(tmpTags.indexOf(all[i])<0)h+='<button type="button" data-t="'+esc(all[i])+'">+ '+esc(all[i])+'</button>';}
+  var box=el('f-tag-sugg');box.innerHTML=h;
+  var bs=box.querySelectorAll('button');
+  for(var j=0;j<bs.length;j++){bs[j].onclick=function(){addTag(this.getAttribute('data-t'));};}
+}
+function fillBrandList(){
+  var b=brandsAll();var h='';
+  for(var i=0;i<b.length;i++)h+='<option value="'+esc(b[i])+'"></option>';
+  el('brand-list').innerHTML=h;
+}
+function addTag(t){t=(t||'').trim();if(!t)return;if(tmpTags.indexOf(t)<0)tmpTags.push(t);el('f-tag-input').value='';renderTagEditor();renderTagSugg();}
+function setHexMark(hex){
+  tmpHex=hex||'';
+  if(tmpHex){el('f-hex').value=tmpHex;el('f-hex-clear').textContent='Rensa färg';}
+  else{el('f-hex-clear').textContent='Ingen färg';}
+}
+function renderParts(it){
+  var box=el('parts-box');
+  if(!it){box.style.display='none';return;}
+  box.style.display='block';
+  // ingår i?
+  var pl=el('part-of-line');
+  if(it.parent){var p=itemById(it.parent);pl.innerHTML=p?('Ingår i: <button class="set-link" id="open-set">'+esc(p.name)+'</button>'):'';var os=el('open-set');if(os)os.onclick=function(){openItem(it.parent);};}
+  else pl.innerHTML='';
+  // delar
+  var kids=childrenOf(it.id);
+  var h='';
+  for(var i=0;i<kids.length;i++){
+    var k=kids[i];var mk=k.emoji?('<span class="item-mark">'+esc(k.emoji)+'</span>'):(k.hex?('<span class="swatch" style="background:'+esc(k.hex)+'"></span>'):'<span class="swatch" style="background:var(--panel2)"></span>');
+    h+='<div class="part-row" data-id="'+k.id+'">'+mk+'<div class="item-body"><div class="item-name">'+esc(k.name)+'</div></div><span style="color:var(--muted);font-size:12px">›</span></div>';
   }
-  walk('',0);
-  el('f-group').innerHTML=o;
-  el('f-group').value=selected||'';
+  el('parts-list').innerHTML=h||'<div style="font-size:12px;color:var(--muted);padding:6px 0">Inga delar än. Lägg till nedan så blir varje del en egen sak kopplad till settet.</div>';
+  var rows=el('parts-list').querySelectorAll('.part-row');
+  for(var j=0;j<rows.length;j++){rows[j].onclick=function(){openItem(this.getAttribute('data-id'));};}
 }
 
 function openItem(id){
@@ -625,82 +703,78 @@ function openItem(id){
   el('item-sheet-title').textContent=it?'Ändra sak':'Ny sak';
   el('f-name').value=it?it.name:'';
   fillCollSelect(it?it.coll:currentColl);
-  fillGroupSelect(it?it.coll:currentColl, it?(it.group||''):currentGroup);
   tmpStatus=it?it.status:'have';buildStatusChips();
   el('f-brand').value=it&&it.brand?it.brand:'';
-  el('f-cat').value=it&&it.cat?it.cat:'';
+  fillBrandList();
+  tmpTags=it&&Array.isArray(it.tags)?it.tags.slice():(tagFilter?[tagFilter]:[]);
+  el('f-tag-input').value='';renderTagEditor();renderTagSugg();
   el('f-barcode').value=it&&it.barcode?it.barcode:'';
   el('f-link').value=it&&it.link?it.link:'';
+  setHexMark(it&&it.hex?it.hex:'');
+  el('f-emoji').value=it&&it.emoji?it.emoji:'';
   el('f-qty').value=it&&it.qty!=null?it.qty:1;
   el('f-value').value=it&&it.value?it.value:'';
   tmpRating=it&&it.rating?it.rating:0;buildRating();
   el('f-note').value=it&&it.note?it.note:'';
   el('item-del').style.display=it?'block':'none';
+  el('item-dup').style.display=it?'block':'none';
+  renderParts(it);
   openSheet('item-sheet');
 }
-el('f-coll').onchange=function(){fillGroupSelect(this.value,'');};
+el('f-coll').onchange=function(){renderTagSugg();};
+el('f-tag-add').onclick=function(){addTag(el('f-tag-input').value);};
+el('f-tag-input').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();addTag(this.value);}};
+el('f-hex').oninput=function(){setHexMark(this.value);};
+el('f-hex-clear').onclick=function(){setHexMark('');};
+el('p-add').onclick=function(){
+  if(!editItemId)return;
+  var set=itemById(editItemId);if(!set)return;
+  var nm=el('p-name').value.trim();if(!nm){el('p-name').focus();return;}
+  var part={id:uid(),coll:set.coll,name:nm,tags:(set.tags||[]).slice(),brand:set.brand||'',
+    barcode:'',link:'',hex:el('p-hex').value||'',emoji:el('p-emoji').value.trim(),
+    parent:set.id,status:set.status,qty:1,value:'',rating:0,note:'',created:Date.now()};
+  state.items.push(part);save();
+  el('p-name').value='';el('p-emoji').value='';
+  renderParts(set);
+  if(currentColl)renderItems();refreshAll();
+};
 el('item-save').onclick=function(){
   var name=el('f-name').value.trim();
   if(!name){el('f-name').focus();return;}
   var data={
-    coll:el('f-coll').value,name:name,cat:el('f-cat').value.trim(),
-    group:el('f-group').value,brand:el('f-brand').value.trim(),
-    barcode:el('f-barcode').value.trim(),link:el('f-link').value.trim(),
+    coll:el('f-coll').value,name:name,tags:tmpTags.slice(),
+    brand:el('f-brand').value.trim(),barcode:el('f-barcode').value.trim(),link:el('f-link').value.trim(),
+    hex:tmpHex,emoji:el('f-emoji').value.trim(),
     status:tmpStatus,qty:el('f-qty').value===''?1:+el('f-qty').value,
     value:el('f-value').value===''?'':+el('f-value').value,rating:tmpRating,
     note:el('f-note').value.trim()
   };
   if(editItemId){for(var i=0;i<state.items.length;i++){if(state.items[i].id===editItemId){Object.assign(state.items[i],data);break;}}}
-  else{data.id=uid();data.created=Date.now();state.items.push(data);}
+  else{data.id=uid();data.parent='';data.created=Date.now();state.items.push(data);}
   save();closeSheets();
-  if(currentColl){if(data.coll!==currentColl&&!editItemId){}renderItems();}else renderHome();
+  if(currentColl)renderItems();else renderHome();
   refreshAll();
 };
 el('item-del').onclick=function(){
   if(!editItemId)return;
-  if(!confirm('Ta bort den här saken?'))return;
+  var kids=childrenOf(editItemId);
+  var msg=kids.length?('Ta bort den här saken? Dess '+kids.length+' del(ar) blir fristående saker.'):'Ta bort den här saken?';
+  if(!confirm(msg))return;
+  for(var i=0;i<state.items.length;i++){if(state.items[i].parent===editItemId)state.items[i].parent='';}
   state.items=state.items.filter(function(x){return x.id!==editItemId;});
-  save();closeSheets();renderItems();refreshAll();
+  save();closeSheets();if(currentColl)renderItems();refreshAll();
 };
 el('add-item').onclick=function(){openItem(null);};
-
-// ── Undergrupp-redigering ──────────────────────────────
-var editGroupId=null;
-function openGroup(id){
-  var g=id?groupById(id):null;
-  editGroupId=g?g.id:null;
-  el('group-sheet-title').textContent=g?'Ändra undergrupp':'Ny undergrupp';
-  var c=collById(currentColl);
-  var loc=c?c.name:'';
-  var parentId=g?(g.parent||''):currentGroup;
-  if(parentId){var pp=groupPath(parentId);for(var i=0;i<pp.length;i++)loc+=' ▸ '+pp[i].name;}
-  el('group-where').textContent='Placeras i: '+loc;
-  el('g-name').value=g?g.name:'';
-  el('group-del').style.display=g?'block':'none';
-  openSheet('group-sheet');
-  setTimeout(function(){el('g-name').focus();},80);
-}
-el('group-save').onclick=function(){
-  var name=el('g-name').value.trim();
-  if(!name){el('g-name').focus();return;}
-  if(editGroupId){var g=groupById(editGroupId);if(g)g.name=name;}
-  else{state.groups.push({id:uid(),coll:currentColl,parent:currentGroup,name:name});}
-  save();closeSheets();renderItems();
-};
-el('group-del').onclick=function(){
-  if(!editGroupId)return;
-  if(!confirm('Ta bort undergruppen? Saker i den (och undergrupper) flyttas upp en nivå.'))return;
-  var g=groupById(editGroupId);if(!g){closeSheets();return;}
-  var parent=g.parent||'';
-  var ids=descendantIds(editGroupId);
-  var idset={};for(var i=0;i<ids.length;i++)idset[ids[i]]=1;
-  // flytta saker i hela subträdet upp till borttagna gruppens förälder
-  for(var j=0;j<state.items.length;j++){if(state.items[j].coll===currentColl&&idset[(state.items[j].group||'')])state.items[j].group=parent;}
-  // flytta direkta barngrupper upp, ta bort själva gruppen
-  for(var k=0;k<state.groups.length;k++){if(state.groups[k].parent===editGroupId)state.groups[k].parent=parent;}
-  state.groups=state.groups.filter(function(x){return x.id!==editGroupId;});
-  if(currentGroup===editGroupId)currentGroup=parent;
-  save();closeSheets();renderItems();refreshAll();
+el('item-dup').onclick=function(){
+  if(!editItemId)return;
+  var src=itemById(editItemId);if(!src)return;
+  var copy={id:uid(),coll:src.coll,name:(src.name||'')+' (kopia)',
+    tags:(src.tags||[]).slice(),brand:src.brand||'',barcode:'',link:src.link||'',
+    hex:src.hex||'',emoji:src.emoji||'',parent:src.parent||'',status:src.status,
+    qty:src.qty,value:src.value,rating:src.rating,note:src.note||'',created:Date.now()};
+  state.items.push(copy);save();
+  if(currentColl)renderItems();refreshAll();
+  openItem(copy.id); // öppna kopian direkt för snabb justering
 };
 
 // ── Samling-redigering ─────────────────────────────────
@@ -844,7 +918,7 @@ el('import-btn').onclick=function(){el('import-file').click();};
 el('import-file').onchange=function(e){
   var f=e.target.files[0];if(!f)return;
   var r=new FileReader();
-  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.collections&&d.items){state=Object.assign(state,d);if(!Array.isArray(state.groups))state.groups=[];save();backToHome();refreshAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.collections&&d.items){state=Object.assign(state,d);migrateItems();save();backToHome();refreshAll();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
   r.readAsText(f);
 };
 
@@ -948,7 +1022,7 @@ function ghPull(){
       var remoteNewer=(data.updated||0)>=(state.updated||0);
       state.collections=mergeById(state.collections,data.collections,remoteNewer);
       state.items=mergeById(state.items,data.items,remoteNewer);
-      if(Array.isArray(data.groups))state.groups=mergeById(state.groups,data.groups,remoteNewer);
+      migrateItems();
       save();backToHome();refreshAll();
     }
     setBadge('ok','Synkad');
@@ -957,7 +1031,7 @@ function ghPull(){
 function ghPush(){
   if(!syncOn())return Promise.resolve();
   setBadge('','Sparar…');
-  var content=b64enc(JSON.stringify({collections:state.collections,items:state.items,groups:state.groups,updated:Date.now()}));
+  var content=b64enc(JSON.stringify({collections:state.collections,items:state.items,updated:Date.now()}));
   function doPut(){
     var body={message:'Uppdatering via Samlingen',content:content};
     if(sync.sha)body.sha=sync.sha;
