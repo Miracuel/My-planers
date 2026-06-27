@@ -78,6 +78,8 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .stars{color:var(--wish);font-size:11px;letter-spacing:1px}
 .qty{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .badge{font-size:10px;padding:3px 8px;border-radius:9px;color:#fff;flex-shrink:0;white-space:nowrap}
+.dup-btn{background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:14px;cursor:pointer;flex-shrink:0;width:30px;height:30px;line-height:1;font-family:inherit;padding:0}
+.dup-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
 
 /* Statistik */
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
@@ -356,6 +358,7 @@ html[data-theme=dark]{
     <div class="part-add">
       <input type="text" id="p-name" placeholder="Namn på del, t.ex. en färg">
       <input type="text" id="p-tags" placeholder="taggar (komma), t.ex. pensel, färg">
+      <input type="url" id="p-link" placeholder="köplänk (https://…)">
       <input type="color" id="p-hex" value="#A8794E">
       <input type="text" id="p-emoji" maxlength="4" placeholder="emoji" style="width:64px">
       <button type="button" class="btn ghost" id="p-add">+ Del</button>
@@ -393,7 +396,7 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.7.0',
+  version:'1.7.2',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
@@ -405,6 +408,12 @@ var APPINFO={
     {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
   ],
   changelog:[
+    {v:'1.7.2',d:'2026-06-27',items:[
+      'Köplänk kan nu anges direkt när du lägger till en del i ett set.'
+    ]},
+    {v:'1.7.1',d:'2026-06-27',items:[
+      'Snabb duplicera-knapp (⧉) direkt på varje rad bredvid statusmärket — kopierar saken utan att öppna formuläret.'
+    ]},
     {v:'1.7.0',d:'2026-06-27',items:[
       'Två nya statusar: Förbeställd och Överväger sälja.',
       '"Till salu"-filter och försäljningssummering fångar både statusen Överväger sälja och saker du markerat till salu.'
@@ -659,7 +668,8 @@ function itemRow(it){
   return '<div class="item" data-id="'+it.id+'">'+markHtml(it)+
     '<div class="item-body"><div class="item-name'+(it.status==='used'?' used':'')+'">'+esc(it.name)+'</div>'+
     (sub?'<div class="item-sub">'+sub+'</div>':'')+dc+'</div>'+
-    '<span class="badge" style="background:'+st[2]+'">'+st[1]+'</span></div>';
+    '<span class="badge" style="background:'+st[2]+'">'+st[1]+'</span>'+
+    '<button class="dup-btn" data-dup="'+it.id+'" title="Duplicera">⧉</button></div>';
 }
 
 function pickTag(t){tagFilter=(tagFilter===t?'':t);search='';el('search-in').value='';renderItems();}
@@ -712,6 +722,8 @@ function renderItems(){
   for(var j=0;j<rows.length;j++){rows[j].onclick=function(){openItem(this.dataset.id);};}
   var chips=l.querySelectorAll('.tag.click');
   for(var k=0;k<chips.length;k++){chips[k].onclick=function(e){e.stopPropagation();pickTag(this.getAttribute('data-tag'));};}
+  var dups=l.querySelectorAll('.dup-btn');
+  for(var p=0;p<dups.length;p++){dups[p].onclick=function(e){e.stopPropagation();duplicateItem(this.getAttribute('data-dup'),false);};}
   var dcs=l.querySelectorAll('.dc-btn');
   for(var m=0;m<dcs.length;m++){dcs[m].onclick=declutterAction;}
 }
@@ -858,12 +870,12 @@ el('p-add').onclick=function(){
   var nm=el('p-name').value.trim();if(!nm){el('p-name').focus();return;}
   var ptags=el('p-tags').value.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
   var part={id:uid(),coll:set.coll,name:nm,tags:ptags,brand:set.brand||'',type:'',
-    barcode:'',link:'',hex:el('p-hex').value||'',emoji:el('p-emoji').value.trim(),
+    barcode:'',link:el('p-link').value.trim(),hex:el('p-hex').value||'',emoji:el('p-emoji').value.trim(),
     parent:set.id,status:set.status,qty:1,value:'',sell:'',bought:'',forSale:false,rating:0,note:'',created:Date.now()};
   state.items.push(part);
   distributeSet(set.id);
   save();
-  el('p-name').value='';el('p-emoji').value='';el('p-tags').value='';
+  el('p-name').value='';el('p-emoji').value='';el('p-tags').value='';el('p-link').value='';
   renderParts(set);
   if(currentColl)renderItems();refreshAll();
 };
@@ -903,18 +915,22 @@ el('item-del').onclick=function(){
   save();closeSheets();if(currentColl)renderItems();refreshAll();
 };
 el('add-item').onclick=function(){openItem(null);};
-el('item-dup').onclick=function(){
-  if(!editItemId)return;
-  var src=itemById(editItemId);if(!src)return;
+function duplicateItem(srcId,openAfter){
+  var src=itemById(srcId);if(!src)return null;
   var copy={id:uid(),coll:src.coll,name:(src.name||'')+' (kopia)',
     tags:(src.tags||[]).slice(),brand:src.brand||'',type:src.type||'',barcode:'',link:src.link||'',
     hex:src.hex||'',emoji:src.emoji||'',parent:src.parent||'',status:src.status,
     qty:src.qty,value:src.value,sell:src.sell||'',bought:'',forSale:false,
     rating:src.rating,note:src.note||'',created:Date.now()};
-  state.items.push(copy);save();
-  if(currentColl)renderItems();refreshAll();
-  openItem(copy.id); // öppna kopian direkt för snabb justering
-};
+  state.items.push(copy);
+  applyDistribution(copy);
+  save();
+  if(currentColl)renderItems();
+  refreshAll();
+  if(openAfter)openItem(copy.id);
+  return copy.id;
+}
+el('item-dup').onclick=function(){if(editItemId)duplicateItem(editItemId,true);};
 
 // ── Samling-redigering ─────────────────────────────────
 var editCollId=null,tmpIcon='📚',tmpColor=COLORS[0];
