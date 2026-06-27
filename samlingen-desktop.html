@@ -17,6 +17,7 @@
   --bg:#F3EFE7;--panel:#FBF8F2;--panel2:#ECE6DA;--line:#DDD5C6;
   --ink:#3E382E;--muted:#857C6C;--amber:#A8794E;--amber-soft:#EADFCB;
   --have:#7A8B6F;--wish:#C09A3E;--lent:#6E89A8;--used:#B58A82;
+  --preorder:#7E9AA6;--forsale:#B5708A;
   --navbg:rgba(243,239,231,.95);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -166,6 +167,7 @@ html[data-theme=dark]{
   --bg:#26231C;--panel:#2F2B22;--panel2:#39342A;--line:#46402F;
   --ink:#E8E1D2;--muted:#A39A86;--amber:#C49A66;--amber-soft:#43392A;
   --have:#8FA383;--wish:#D0B36A;--lent:#86A0BE;--used:#C49A91;
+  --preorder:#96AEB8;--forsale:#C98AA2;
   --navbg:rgba(38,35,28,.95);
 }
 .theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
@@ -370,7 +372,7 @@ h1.brand{display:none}
     <div><label>Inköpsdatum</label><input type="date" id="f-bought"></div>
     <div><label>Försäljningsvärde (kr)</label><input type="number" id="f-sell" min="0" step="1" placeholder="–"></div>
   </div>
-  <div class="sale-toggle"><button type="button" id="f-sale" class="chip">♻ Överväger att sälja</button></div>
+  <div class="sale-toggle"><button type="button" id="f-sale" class="chip">♻ Markera till salu</button> <span style="font-size:11px;color:var(--muted)">(även om du äger den)</span></div>
   <label>Betyg</label>
   <div class="star-pick" id="f-rating"></div>
   <label>Anteckning (frivilligt)</label>
@@ -419,7 +421,7 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.6.0',
+  version:'1.7.0',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
@@ -431,6 +433,10 @@ var APPINFO={
     {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
   ],
   changelog:[
+    {v:'1.7.0',d:'2026-06-27',items:[
+      'Två nya statusar: Förbeställd och Överväger sälja.',
+      '"Till salu"-filter och försäljningssummering fångar både statusen Överväger sälja och saker du markerat till salu.'
+    ]},
     {v:'1.6.0',d:'2026-06-27',items:[
       'Settets inköpspris fördelas nu automatiskt jämnt på dess delar — varje del får sin andel som värde.',
       'Tagga delar separat redan i lägg-till-fältet (t.ex. pensel, färg) istället för att ärva settets taggar.',
@@ -483,7 +489,8 @@ var CENTRALEN_META={
   desktop:'samlingen-desktop.html',
   farger:{bg:'#F3EFE7',line:'#DDD5C6',ink:'#3E382E',muted:'#857C6C',accent:'#A8794E',iconbg:'#EADFCB'}
 };
-var STATUS=[['have','Äger','var(--have)'],['wish','Önskar','var(--wish)'],['lent','Utlånad','var(--lent)'],['used','Slut','var(--used)']];
+var STATUS=[['have','Äger','var(--have)'],['wish','Önskar','var(--wish)'],['lent','Utlånad','var(--lent)'],['used','Slut','var(--used)'],['preorder','Förbeställd','var(--preorder)'],['forsale','Överväger sälja','var(--forsale)']];
+function isForSale(it){return it.forSale===true||it.status==='forsale';}
 var ICONS=['📚','🎲','🎨','💄','🎮','🎸','💿','🧶','🪙','🍷','🌱','🧩','🎬','🃏','⌚','🧴'];
 var COLORS=['#A8794E','#7A8B6F','#6E89A8','#9E7BA6','#B58A82','#5F8C82','#C09A3E','#8A8FB0'];
 
@@ -634,7 +641,7 @@ function filteredItems(){
     var it=state.items[i];
     if(it.coll!==currentColl)continue;
     if(tagFilter&&(it.tags||[]).indexOf(tagFilter)<0)continue;
-    if(statusFilter==='sale'){if(!it.forSale)continue;}
+    if(statusFilter==='sale'){if(!isForSale(it))continue;}
     else if(statusFilter!=='all'&&it.status!==statusFilter)continue;
     if(search){
       var hay=((it.name||'')+' '+(it.type||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.note||'')).toLowerCase();
@@ -667,7 +674,7 @@ function itemRow(it){
   if(it.qty&&+it.qty!==1)sub+='<span class="qty">×'+esc(it.qty)+'</span>';
   if(it.value)sub+='<span class="qty">'+esc(it.value)+' kr</span>';
   if(it.bought)sub+='<span class="qty">'+esc(it.bought)+'</span>';
-  if(it.forSale)sub+='<span class="for-sale">Till salu'+(it.sell?(' '+esc(it.sell)+' kr'):'')+'</span>';
+  if(isForSale(it))sub+='<span class="for-sale">Till salu'+(it.sell?(' '+esc(it.sell)+' kr'):'')+'</span>';
   if(childrenOf(it.id).length)sub+='<span class="qty">'+childrenOf(it.id).length+' delar</span>';
   if(it.link)sub+='<a class="item-link" href="'+esc(it.link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Köp/Källa ↗</a>';
   var dc='';
@@ -706,7 +713,7 @@ function renderSummary(){
     n++;
     var q=(it.qty&&+it.qty>0?+it.qty:1);
     if(it.value&&childrenOf(it.id).length===0)buy+=(+it.value)*q;
-    if(it.forSale){saleN++;if(it.sell)saleSum+=(+it.sell);}
+    if(isForSale(it)){saleN++;if(it.sell)saleSum+=(+it.sell);}
   }
   var h='<span>'+n+' saker</span><span>Inköpsvärde <b>'+buy.toLocaleString('sv-SE')+' kr</b></span>';
   if(saleN)h+='<span class="sb-sale">Till salu '+saleN+' st <b>'+saleSum.toLocaleString('sv-SE')+' kr</b></span>';
@@ -1017,7 +1024,7 @@ function renderStats(){
   for(var i=0;i<state.items.length;i++){
     var it=state.items[i];
     if(it.value&&childrenOf(it.id).length===0)val+=(+it.value)*(it.qty&&+it.qty>0?+it.qty:1);
-    if(it.forSale&&it.sell)saleSum+=(+it.sell);
+    if(isForSale(it)&&it.sell)saleSum+=(+it.sell);
     if(it.status==='lent')lent++;
     counts[it.status]=(counts[it.status]||0)+1;
   }
