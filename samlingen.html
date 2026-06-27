@@ -126,6 +126,17 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .tag-sugg{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
 .tag-sugg button{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:2px 8px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit}
 .set-link{background:none;border:none;color:var(--amber);cursor:pointer;font:inherit;text-decoration:underline;padding:0}
+.sumbar{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:10px}
+.sumbar b{color:var(--ink)}
+.sumbar .sb-sale b{color:var(--wish)}
+.for-sale{font-size:10px;color:#fff;background:var(--wish);border-radius:8px;padding:2px 7px}
+.dc-actions{display:flex;gap:6px;margin-top:6px}
+.dc-btn{font-family:inherit;font-size:11px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:4px 9px;cursor:pointer}
+.dc-btn.on{background:var(--wish);border-color:var(--wish);color:#fff}
+.dc-btn.danger{color:var(--used);border-color:var(--used)}
+.declutter-on .item{background:var(--panel)}
+.sale-toggle{margin:4px 0}
+.sale-toggle .chip.sel{background:var(--wish);border-color:var(--wish);color:#fff}
 .link-line{display:flex;align-items:center;gap:6px}
 .link-line input{flex:1}
 .item-link{font-size:11px;color:var(--amber);text-decoration:none}
@@ -204,16 +215,19 @@ html[data-theme=dark]{
   <div id="coll-detail" style="display:none">
     <div class="detail-head">
       <button class="back-btn" id="coll-back">‹ Samlingar</button>
+      <button class="btn ghost" id="declutter-btn">Declutter</button>
       <button class="btn ghost" id="edit-coll">Ändra</button>
     </div>
     <div class="detail-title" id="detail-title"></div>
+    <div class="sumbar" id="sumbar"></div>
     <div class="toolbar">
       <input type="text" id="search-in" placeholder="Sök i samlingen…">
       <select id="sort-sel">
         <option value="new">Senast</option>
         <option value="name">A–Ö</option>
         <option value="rating">Betyg</option>
-        <option value="value">Värde</option>
+        <option value="value">Inköpspris</option>
+        <option value="bought">Inköpsdatum</option>
       </select>
     </div>
     <div class="filter-chips" id="filter-chips"></div>
@@ -236,7 +250,8 @@ html[data-theme=dark]{
   <div class="card-panel">
     <div class="stat-row"><span>Saker totalt</span><b id="st-items">0</b></div>
     <div class="stat-row"><span>Samlingar</span><b id="st-colls">0</b></div>
-    <div class="stat-row"><span>Uppskattat värde</span><b id="st-value">0 kr</b></div>
+    <div class="stat-row"><span>Uppskattat inköpsvärde</span><b id="st-value">0 kr</b></div>
+    <div class="stat-row"><span>Till salu (försäljningsvärde)</span><b id="st-sale">0 kr</b></div>
     <div class="stat-row"><span>Utlånat just nu</span><b id="st-lent">0</b></div>
   </div>
   <div class="section-title">Per status</div>
@@ -294,6 +309,9 @@ html[data-theme=dark]{
   <label>Märke (frivilligt)</label>
   <input type="text" id="f-brand" list="brand-list" placeholder="T.ex. MAC, Catan, Winsor &amp; Newton…">
   <datalist id="brand-list"></datalist>
+  <label>Typ (frivilligt)</label>
+  <input type="text" id="f-type" list="type-list" placeholder="T.ex. Pensel, Färg, Roman…">
+  <datalist id="type-list"></datalist>
   <label>Taggar / kategorier</label>
   <div class="tag-edit" id="f-tags"></div>
   <div class="scan-wrap">
@@ -318,8 +336,13 @@ html[data-theme=dark]{
   </div>
   <div class="row2">
     <div><label>Antal</label><input type="number" id="f-qty" min="0" step="1" value="1"></div>
-    <div><label>Värde (kr)</label><input type="number" id="f-value" min="0" step="1" placeholder="–"></div>
+    <div><label>Inköpspris (kr)</label><input type="number" id="f-value" min="0" step="1" placeholder="–"></div>
   </div>
+  <div class="row2">
+    <div><label>Inköpsdatum</label><input type="date" id="f-bought"></div>
+    <div><label>Försäljningsvärde (kr)</label><input type="number" id="f-sell" min="0" step="1" placeholder="–"></div>
+  </div>
+  <div class="sale-toggle"><button type="button" id="f-sale" class="chip">♻ Överväger att sälja</button></div>
   <label>Betyg</label>
   <div class="star-pick" id="f-rating"></div>
   <label>Anteckning (frivilligt)</label>
@@ -330,6 +353,7 @@ html[data-theme=dark]{
     <div class="parts-list" id="parts-list"></div>
     <div class="part-add">
       <input type="text" id="p-name" placeholder="Namn på del, t.ex. en färg">
+      <input type="text" id="p-tags" placeholder="taggar (komma), t.ex. pensel, färg">
       <input type="color" id="p-hex" value="#A8794E">
       <input type="text" id="p-emoji" maxlength="4" placeholder="emoji" style="width:64px">
       <button type="button" class="btn ghost" id="p-add">+ Del</button>
@@ -367,43 +391,52 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.4.0',
+  version:'1.6.0',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
-    {area:'Samlingar',items:['Skapa egna samlingar med namn, färg och valfri ikon — välj förslag eller skriv en egen emoji','Lägg till saker med märke, status, antal, värde, betyg och anteckning','Duplicera en sak för att snabbt lägga till en liknande utan att fylla i allt','Statusar: Äger, Önskar, Utlånad, Slut']},
-    {area:'Taggar & märken',items:['Sätt flera taggar/kategorier på varje sak','Märken och taggar du använt sparas och föreslås i formuläret','Klicka på en tagg i taggraden eller på en sak för att filtrera direkt']},
-    {area:'Set & delar',items:['Koppla ihop saker: lägg delar i ett set (t.ex. ett färgset med fyra färger)','Varje del blir en egen sak med settets konfiguration och syns i listan','Öppna en del och se vilket set den ingår i']},
-    {area:'På varje sak',items:['Färgplupp (hexkod) eller emoji som markör','Märke, streckkod (skanna med kameran där det stöds) och köplänk/källa']},
-    {area:'Önskelista',items:['Samlar automatiskt allt som är markerat som Önskar','Snabb överblick över vad du vill komplettera med']},
-    {area:'Översikt',items:['Totalt antal saker, antal samlingar och uppskattat värde','Fördelning per status och dina största samlingar']},
+    {area:'Samlingar',items:['Skapa egna samlingar med namn, färg och valfri ikon','Ta bort en samling (och allt i den) via Ändra-knappen','Se inköpsvärde och försäljningsvärde per samling','Duplicera en sak för att snabbt lägga till en liknande']},
+    {area:'Sak-fält',items:['Märke, Typ, inköpspris, inköpsdatum och försäljningsvärde','Flera taggar/kategorier per sak — t.ex. Förbrukningsvara','Färgplupp (hexkod) eller emoji som markör','Märken och typer du använt sparas och föreslås']},
+    {area:'Set & delar',items:['Lägg delar i ett set — varje del blir en egen sak','Settets inköpspris fördelas automatiskt jämnt på delarna','Tagga varje del separat redan när du lägger till den','Öppna en del och se vilket set den ingår i']},
+    {area:'Declutter & värde',items:['Declutter-läge: markera till salu eller ta bort direkt i listan','Filtret Till salu samlar allt du flaggat','Översikt med inköpsvärde och försäljningsvärde']},
+    {area:'Önskelista',items:['Samlar automatiskt allt som är markerat som Önskar']},
     {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
   ],
   changelog:[
+    {v:'1.6.0',d:'2026-06-27',items:[
+      'Settets inköpspris fördelas nu automatiskt jämnt på dess delar — varje del får sin andel som värde.',
+      'Tagga delar separat redan i lägg-till-fältet (t.ex. pensel, färg) istället för att ärva settets taggar.',
+      'Nytt fält: Typ — med förslag på typer du använt tidigare.',
+      'Summering och översikt dubbelräknar inte längre set och deras delar.'
+    ]},
+    {v:'1.5.0',d:'2026-06-27',items:[
+      'Inköpspris, inköpsdatum och försäljningsvärde på varje sak.',
+      'Markera saker som "Till salu" — eget filter och summering.',
+      'Summeringsrad i samlingen och declutter-läge.',
+      'Snabbtagg "Förbrukningsvara" alltid tillgänglig.',
+      'Ta bort hel samling tydliggjord (Ändra → Ta bort samlingen och allt i den).'
+    ]},
     {v:'1.4.0',d:'2026-06-27',items:[
-      'Duplicera-knapp på en sak — skapar en kopia och öppnar den direkt så du slipper fylla i allt på nytt (streckkod kopieras inte).',
-      'Märken du lagt in sparas och föreslås i namnfältet (datalista) i sak-formuläret.',
-      'Taggförslag visar nu alla kategorier du använt, tvärs över samlingar.'
+      'Duplicera-knapp på en sak (streckkod kopieras inte).',
+      'Märken sparas och föreslås i formuläret.',
+      'Taggförslag tvärs över samlingar.'
     ]},
     {v:'1.3.0',d:'2026-06-27',items:[
-      'Undergrupperna ersatta av klickbara taggar — sätt flera taggar per sak och filtrera med ett klick.',
-      'Set & delar: koppla ihop saker, lägg delar i ett set (varje del blir en egen sak med settets konfiguration), och se vilket set en del tillhör.',
-      'Färgplupp (hexkod) eller emoji som markör på en sak.',
-      'Befintliga kategorier blir taggar automatiskt; allt synkas som vanligt.'
+      'Undergrupperna ersatta av klickbara taggar — flera taggar per sak.',
+      'Set & delar: koppla ihop saker.',
+      'Färgplupp (hexkod) eller emoji som markör.',
+      'Befintliga kategorier blir taggar automatiskt.'
     ]},
     {v:'1.2.0',d:'2026-06-26',items:[
-      'Undergrupper: bygg ett träd upp till tre steg djupt i varje samling, med brödsmulor och räknare.',
-      'Egen ikon: skriv valfri emoji när du skapar eller ändrar en samling.',
-      'Nya fält på saker: märke, streckkod och köplänk/källa.',
-      'Streckkodsskanning med kameran där webbläsaren stöder det (annars manuell inmatning).',
-      'Sökning matchar nu även märke och streckkod.'
+      'Undergrupper: träd upp till tre steg djupt (ersatt i 1.3.0).',
+      'Egen ikon: skriv valfri emoji på en samling.',
+      'Märke, streckkod och köplänk/källa på saker.',
+      'Streckkodsskanning med kameran där det stöds.'
     ]},
     {v:'1.1.0',d:'2026-06-26',items:[
       'Uppdaterad till sviten-standard.',
-      'Synk: per-app-fil samlingen.json, union-sammanfogning per id, tema utesluts ur synkdatan.',
-      'Ny vy: Nyheter & funktioner med versionshistorik.',
-      'Genererad PNG-favicon, apple-touch-icon och webmanifest.',
-      'Separat desktop-version och Centralen-metadata.'
+      'Synk: samlingen.json, union-sammanfogning per id, tema utesluts.',
+      'Vy: Nyheter & funktioner; PNG-favicon; desktop + Centralen-metadata.'
     ]},
     {v:'1.0.0',d:'2026-06-13',items:[
       'Första versionen: samlingar, saker, önskelista och översikt.',
@@ -436,9 +469,9 @@ var state={
   items:[
     {id:'i1',coll:'c1',name:'Exempel: en bok du äger',tags:['Roman'],brand:'',barcode:'',link:'',hex:'',emoji:'',parent:'',status:'have',qty:1,value:'',rating:4,note:'Tryck på raden för att ändra eller ta bort.',created:Date.now()-5000},
     {id:'i2',coll:'c2',name:'Exempel: ett spel du önskar dig',tags:['Strategi'],brand:'',barcode:'',link:'',hex:'',emoji:'',parent:'',status:'wish',qty:1,value:599,rating:0,note:'',created:Date.now()-4000},
-    {id:'i3',coll:'c3',name:'Exempel: akvarellset',tags:['Set'],brand:'',barcode:'',link:'',hex:'',emoji:'🎨',parent:'',status:'have',qty:1,value:299,rating:0,note:'Tryck för att se delarna i settet.',created:Date.now()-3000},
-    {id:'i3a',coll:'c3',name:'Koboltblå',tags:['Set'],brand:'',barcode:'',link:'',hex:'#2B5FA8',emoji:'',parent:'i3',status:'have',qty:1,value:'',rating:0,note:'',created:Date.now()-2900},
-    {id:'i3b',coll:'c3',name:'Karmosinröd',tags:['Set'],brand:'',barcode:'',link:'',hex:'#B1303A',emoji:'',parent:'i3',status:'have',qty:1,value:'',rating:0,note:'',created:Date.now()-2800}
+    {id:'i3',coll:'c3',name:'Exempel: akvarellset',tags:['Set'],type:'Set',brand:'',barcode:'',link:'',hex:'',emoji:'🎨',parent:'',status:'have',qty:1,value:300,sell:'',forSale:false,bought:'',rating:0,note:'Tryck för att se delarna — priset fördelas på dem.',created:Date.now()-3000},
+    {id:'i3a',coll:'c3',name:'Koboltblå',tags:['Färg'],type:'Färg',brand:'',barcode:'',link:'',hex:'#2B5FA8',emoji:'',parent:'i3',status:'have',qty:1,value:'',sell:'',forSale:false,bought:'',rating:0,note:'',created:Date.now()-2900},
+    {id:'i3b',coll:'c3',name:'Karmosinröd',tags:['Färg'],type:'Färg',brand:'',barcode:'',link:'',hex:'#B1303A',emoji:'',parent:'i3',status:'have',qty:1,value:'',sell:'',forSale:false,bought:'',rating:0,note:'',created:Date.now()-2800}
   ],
   theme:'auto'
 };
@@ -454,6 +487,11 @@ function migrateItems(){
     if(it.brand==null)it.brand='';
     if(it.barcode==null)it.barcode='';
     if(it.link==null)it.link='';
+    if(it.value==null)it.value='';
+    if(it.sell==null)it.sell='';
+    if(it.forSale==null)it.forSale=false;
+    if(it.bought==null)it.bought='';
+    if(it.type==null)it.type='';
   }
   if('groups' in state)delete state.groups; // ersatt av taggar
 }
@@ -468,6 +506,24 @@ function countIn(cid){var n=0;for(var i=0;i<state.items.length;i++){if(state.ite
 // ── Taggar & delar ─────────────────────────────────────
 function childrenOf(id){var a=[];for(var i=0;i<state.items.length;i++){if(state.items[i].parent===id)a.push(state.items[i]);}return a;}
 function itemById(id){for(var i=0;i<state.items.length;i++){if(state.items[i].id===id)return state.items[i];}return null;}
+// Fördela settets inköpspris jämnt på dess delar (heltal kr, rest till de första)
+function distributeSet(setId){
+  var set=itemById(setId);if(!set)return;
+  var kids=childrenOf(setId);if(!kids.length)return;
+  var total=(set.value===''||set.value==null)?0:(+set.value||0);
+  var n=kids.length,base=Math.floor(total/n),rem=total-base*n;
+  for(var i=0;i<n;i++)kids[i].value=base+(i<rem?1:0);
+}
+function distributeAllSets(){
+  for(var i=0;i<state.items.length;i++){if(childrenOf(state.items[i].id).length)distributeSet(state.items[i].id);}
+}
+function applyDistribution(it){if(!it)return;if(childrenOf(it.id).length)distributeSet(it.id);if(it.parent)distributeSet(it.parent);}
+function typesAll(){
+  var seen={},out=[];
+  for(var i=0;i<state.items.length;i++){var t=state.items[i].type;if(t&&!seen[t]){seen[t]=1;out.push(t);}}
+  out.sort(function(a,b){return a.localeCompare(b,'sv');});
+  return out;
+}
 function tagsInColl(coll){
   var seen={},out=[];
   for(var i=0;i<state.items.length;i++){var it=state.items[i];if(it.coll!==coll)continue;var t=it.tags||[];for(var j=0;j<t.length;j++){if(t[j]&&!seen[t[j]]){seen[t[j]]=1;out.push(t[j]);}}}
@@ -495,7 +551,7 @@ function closeSheets(){bg.classList.remove('open');var sh=document.querySelector
 bg.onclick=closeSheets;
 
 // ── Navigationstillstånd ───────────────────────────────
-var currentColl=null,tagFilter='',search='',sortBy='new',statusFilter='all';
+var currentColl=null,tagFilter='',search='',sortBy='new',statusFilter='all',declutter=false;
 
 // ── Hem / samlingsrutnät ───────────────────────────────
 function renderHome(){
@@ -521,8 +577,9 @@ function renderHome(){
 
 // ── Detaljvy ───────────────────────────────────────────
 function openCollection(id){
-  currentColl=id;tagFilter='';search='';statusFilter='all';
+  currentColl=id;tagFilter='';search='';statusFilter='all';declutter=false;
   el('search-in').value='';el('sort-sel').value=sortBy;
+  el('declutter-btn').classList.remove('sel');
   el('coll-home').style.display='none';
   el('coll-detail').style.display='block';
   renderFilterChips();renderItems();
@@ -533,6 +590,7 @@ function renderFilterChips(){
   var f=el('filter-chips');
   var opts=[['all','Alla']];
   for(var i=0;i<STATUS.length;i++)opts.push([STATUS[i][0],STATUS[i][1]]);
+  opts.push(['sale','Till salu']);
   var h='';
   for(var j=0;j<opts.length;j++){
     h+='<button class="fchip'+(statusFilter===opts[j][0]?' sel':'')+'" data-s="'+opts[j][0]+'">'+esc(opts[j][1])+'</button>';
@@ -548,9 +606,10 @@ function filteredItems(){
     var it=state.items[i];
     if(it.coll!==currentColl)continue;
     if(tagFilter&&(it.tags||[]).indexOf(tagFilter)<0)continue;
-    if(statusFilter!=='all'&&it.status!==statusFilter)continue;
+    if(statusFilter==='sale'){if(!it.forSale)continue;}
+    else if(statusFilter!=='all'&&it.status!==statusFilter)continue;
     if(search){
-      var hay=((it.name||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.note||'')).toLowerCase();
+      var hay=((it.name||'')+' '+(it.type||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.note||'')).toLowerCase();
       if(hay.indexOf(search.toLowerCase())<0)continue;
     }
     arr.push(it);
@@ -558,6 +617,7 @@ function filteredItems(){
   if(sortBy==='name')arr.sort(function(a,b){return (a.name||'').localeCompare(b.name||'','sv');});
   else if(sortBy==='rating')arr.sort(function(a,b){return (b.rating||0)-(a.rating||0);});
   else if(sortBy==='value')arr.sort(function(a,b){return (+b.value||0)-(+a.value||0);});
+  else if(sortBy==='bought')arr.sort(function(a,b){return (b.bought||'').localeCompare(a.bought||'');});
   else arr.sort(function(a,b){return (b.created||0)-(a.created||0);});
   return arr;
 }
@@ -570,6 +630,7 @@ function markHtml(it){
 function itemRow(it){
   var st=statusOf(it.status);
   var sub='';
+  if(it.type)sub+='<span class="tag" style="color:var(--ink)">'+esc(it.type)+'</span>';
   if(it.brand)sub+='<span class="tag">'+esc(it.brand)+'</span>';
   var tg=it.tags||[];
   for(var t=0;t<tg.length;t++)sub+='<span class="tag click" data-tag="'+esc(tg[t])+'">'+esc(tg[t])+'</span>';
@@ -577,11 +638,20 @@ function itemRow(it){
   if(it.rating>0){var s='';for(var r=0;r<5;r++)s+=(r<it.rating?'★':'☆');sub+='<span class="stars">'+s+'</span>';}
   if(it.qty&&+it.qty!==1)sub+='<span class="qty">×'+esc(it.qty)+'</span>';
   if(it.value)sub+='<span class="qty">'+esc(it.value)+' kr</span>';
+  if(it.bought)sub+='<span class="qty">'+esc(it.bought)+'</span>';
+  if(it.forSale)sub+='<span class="for-sale">Till salu'+(it.sell?(' '+esc(it.sell)+' kr'):'')+'</span>';
   if(childrenOf(it.id).length)sub+='<span class="qty">'+childrenOf(it.id).length+' delar</span>';
   if(it.link)sub+='<a class="item-link" href="'+esc(it.link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Köp/Källa ↗</a>';
+  var dc='';
+  if(declutter){
+    dc='<div class="dc-actions">'+
+       '<button class="dc-btn'+(it.forSale?' on':'')+'" data-act="sale" data-id="'+it.id+'">'+(it.forSale?'✓ Till salu':'♻ Till salu')+'</button>'+
+       '<button class="dc-btn danger" data-act="del" data-id="'+it.id+'">🗑 Ta bort</button>'+
+       '</div>';
+  }
   return '<div class="item" data-id="'+it.id+'">'+markHtml(it)+
     '<div class="item-body"><div class="item-name'+(it.status==='used'?' used':'')+'">'+esc(it.name)+'</div>'+
-    (sub?'<div class="item-sub">'+sub+'</div>':'')+'</div>'+
+    (sub?'<div class="item-sub">'+sub+'</div>':'')+dc+'</div>'+
     '<span class="badge" style="background:'+st[2]+'">'+st[1]+'</span></div>';
 }
 
@@ -600,14 +670,30 @@ function renderTagbar(){
   var bs=box.querySelectorAll('button');
   for(var j=0;j<bs.length;j++){bs[j].onclick=function(){var t=this.getAttribute('data-tag');tagFilter=t;search='';el('search-in').value='';renderItems();};}
 }
+function renderSummary(){
+  var box=el('sumbar');if(!box)return;
+  var n=0,buy=0,saleN=0,saleSum=0;
+  for(var i=0;i<state.items.length;i++){
+    var it=state.items[i];if(it.coll!==currentColl)continue;
+    n++;
+    var q=(it.qty&&+it.qty>0?+it.qty:1);
+    if(it.value&&childrenOf(it.id).length===0)buy+=(+it.value)*q;
+    if(it.forSale){saleN++;if(it.sell)saleSum+=(+it.sell);}
+  }
+  var h='<span>'+n+' saker</span><span>Inköpsvärde <b>'+buy.toLocaleString('sv-SE')+' kr</b></span>';
+  if(saleN)h+='<span class="sb-sale">Till salu '+saleN+' st <b>'+saleSum.toLocaleString('sv-SE')+' kr</b></span>';
+  box.innerHTML=h;
+}
 function renderItems(){
-  renderTagbar();
+  renderTagbar();renderSummary();
+  el('coll-detail').classList.toggle('declutter-on',declutter);
   var arr=filteredItems();var l=el('item-list');
   if(!arr.length){
     var any=countIn(currentColl);
     var msg;
     if(!any)msg='Tomt här än — tryck på <b>Lägg till sak</b> nedan.';
     else if(search)msg='Inget matchar sökningen.';
+    else if(statusFilter==='sale')msg='Inget är markerat som <b>Till salu</b> än.';
     else if(tagFilter)msg='Inga saker med taggen <b>'+esc(tagFilter)+'</b>.';
     else msg='Inget matchar filtret.';
     l.innerHTML='<div class="empty-msg">'+msg+'</div>';
@@ -619,9 +705,27 @@ function renderItems(){
   for(var j=0;j<rows.length;j++){rows[j].onclick=function(){openItem(this.dataset.id);};}
   var chips=l.querySelectorAll('.tag.click');
   for(var k=0;k<chips.length;k++){chips[k].onclick=function(e){e.stopPropagation();pickTag(this.getAttribute('data-tag'));};}
+  var dcs=l.querySelectorAll('.dc-btn');
+  for(var m=0;m<dcs.length;m++){dcs[m].onclick=declutterAction;}
+}
+function declutterAction(e){
+  e.stopPropagation();
+  var id=this.getAttribute('data-id'),act=this.getAttribute('data-act');
+  var it=itemById(id);if(!it)return;
+  if(act==='sale'){it.forSale=!it.forSale;save();renderItems();refreshAll();}
+  else if(act==='del'){
+    var kids=childrenOf(id);
+    if(!confirm(kids.length?('Ta bort? Dess '+kids.length+' del(ar) blir fristående.'):'Ta bort den här saken?'))return;
+    var pid=it.parent;
+    for(var i=0;i<state.items.length;i++){if(state.items[i].parent===id)state.items[i].parent='';}
+    state.items=state.items.filter(function(x){return x.id!==id;});
+    if(pid)distributeSet(pid);
+    save();renderItems();refreshAll();
+  }
 }
 
 el('coll-back').onclick=backToHome;
+el('declutter-btn').onclick=function(){declutter=!declutter;this.classList.toggle('sel',declutter);renderItems();};
 el('search-in').oninput=function(){search=this.value;renderItems();};
 el('sort-sel').onchange=function(){sortBy=this.value;renderItems();};
 
@@ -649,7 +753,7 @@ function fillCollSelect(sel){
   var o='';for(var i=0;i<state.collections.length;i++){o+='<option value="'+state.collections[i].id+'">'+esc(state.collections[i].name)+'</option>';}
   el('f-coll').innerHTML=o;el('f-coll').value=sel||(state.collections[0]&&state.collections[0].id)||'';
 }
-var tmpTags=[],tmpHex='';
+var tmpTags=[],tmpHex='',tmpForSale=false;
 function renderTagEditor(){
   var box=el('f-tags');var h='';
   for(var i=0;i<tmpTags.length;i++)h+='<span class="te-chip">'+esc(tmpTags[i])+'<b data-rm="'+i+'">×</b></span>';
@@ -657,9 +761,13 @@ function renderTagEditor(){
   var rm=box.querySelectorAll('b');
   for(var j=0;j<rm.length;j++){rm[j].onclick=function(){tmpTags.splice(+this.getAttribute('data-rm'),1);renderTagEditor();renderTagSugg();};}
 }
+var QUICKTAGS=['Förbrukningsvara'];
 function renderTagSugg(){
-  var all=tagsAll();var h='';
-  for(var i=0;i<all.length;i++){if(tmpTags.indexOf(all[i])<0)h+='<button type="button" data-t="'+esc(all[i])+'">+ '+esc(all[i])+'</button>';}
+  var all=tagsAll(),merged=[],seen={},i;
+  for(i=0;i<QUICKTAGS.length;i++){if(!seen[QUICKTAGS[i]]){seen[QUICKTAGS[i]]=1;merged.push(QUICKTAGS[i]);}}
+  for(i=0;i<all.length;i++){if(!seen[all[i]]){seen[all[i]]=1;merged.push(all[i]);}}
+  var h='';
+  for(i=0;i<merged.length;i++){if(tmpTags.indexOf(merged[i])<0)h+='<button type="button" data-t="'+esc(merged[i])+'">+ '+esc(merged[i])+'</button>';}
   var box=el('f-tag-sugg');box.innerHTML=h;
   var bs=box.querySelectorAll('button');
   for(var j=0;j<bs.length;j++){bs[j].onclick=function(){addTag(this.getAttribute('data-t'));};}
@@ -668,6 +776,9 @@ function fillBrandList(){
   var b=brandsAll();var h='';
   for(var i=0;i<b.length;i++)h+='<option value="'+esc(b[i])+'"></option>';
   el('brand-list').innerHTML=h;
+  var t=typesAll();var th='';
+  for(var j=0;j<t.length;j++)th+='<option value="'+esc(t[j])+'"></option>';
+  el('type-list').innerHTML=th;
 }
 function addTag(t){t=(t||'').trim();if(!t)return;if(tmpTags.indexOf(t)<0)tmpTags.push(t);el('f-tag-input').value='';renderTagEditor();renderTagSugg();}
 function setHexMark(hex){
@@ -705,6 +816,7 @@ function openItem(id){
   fillCollSelect(it?it.coll:currentColl);
   tmpStatus=it?it.status:'have';buildStatusChips();
   el('f-brand').value=it&&it.brand?it.brand:'';
+  el('f-type').value=it&&it.type?it.type:'';
   fillBrandList();
   tmpTags=it&&Array.isArray(it.tags)?it.tags.slice():(tagFilter?[tagFilter]:[]);
   el('f-tag-input').value='';renderTagEditor();renderTagSugg();
@@ -714,6 +826,12 @@ function openItem(id){
   el('f-emoji').value=it&&it.emoji?it.emoji:'';
   el('f-qty').value=it&&it.qty!=null?it.qty:1;
   el('f-value').value=it&&it.value?it.value:'';
+  var isPart=!!(it&&it.parent);
+  el('f-value').disabled=isPart;
+  el('f-value').title=isPart?'Andel av settets pris — räknas ut automatiskt':'';
+  el('f-sell').value=it&&it.sell?it.sell:'';
+  el('f-bought').value=it&&it.bought?it.bought:'';
+  tmpForSale=it?!!it.forSale:false;el('f-sale').classList.toggle('sel',tmpForSale);
   tmpRating=it&&it.rating?it.rating:0;buildRating();
   el('f-note').value=it&&it.note?it.note:'';
   el('item-del').style.display=it?'block':'none';
@@ -726,31 +844,42 @@ el('f-tag-add').onclick=function(){addTag(el('f-tag-input').value);};
 el('f-tag-input').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();addTag(this.value);}};
 el('f-hex').oninput=function(){setHexMark(this.value);};
 el('f-hex-clear').onclick=function(){setHexMark('');};
+el('f-sale').onclick=function(){tmpForSale=!tmpForSale;this.classList.toggle('sel',tmpForSale);};
 el('p-add').onclick=function(){
   if(!editItemId)return;
   var set=itemById(editItemId);if(!set)return;
   var nm=el('p-name').value.trim();if(!nm){el('p-name').focus();return;}
-  var part={id:uid(),coll:set.coll,name:nm,tags:(set.tags||[]).slice(),brand:set.brand||'',
+  var ptags=el('p-tags').value.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+  var part={id:uid(),coll:set.coll,name:nm,tags:ptags,brand:set.brand||'',type:'',
     barcode:'',link:'',hex:el('p-hex').value||'',emoji:el('p-emoji').value.trim(),
-    parent:set.id,status:set.status,qty:1,value:'',rating:0,note:'',created:Date.now()};
-  state.items.push(part);save();
-  el('p-name').value='';el('p-emoji').value='';
+    parent:set.id,status:set.status,qty:1,value:'',sell:'',bought:'',forSale:false,rating:0,note:'',created:Date.now()};
+  state.items.push(part);
+  distributeSet(set.id);
+  save();
+  el('p-name').value='';el('p-emoji').value='';el('p-tags').value='';
   renderParts(set);
   if(currentColl)renderItems();refreshAll();
 };
 el('item-save').onclick=function(){
   var name=el('f-name').value.trim();
   if(!name){el('f-name').focus();return;}
+  var existing=editItemId?itemById(editItemId):null;
+  var isPart=!!(existing&&existing.parent);
   var data={
     coll:el('f-coll').value,name:name,tags:tmpTags.slice(),
-    brand:el('f-brand').value.trim(),barcode:el('f-barcode').value.trim(),link:el('f-link').value.trim(),
+    brand:el('f-brand').value.trim(),type:el('f-type').value.trim(),
+    barcode:el('f-barcode').value.trim(),link:el('f-link').value.trim(),
     hex:tmpHex,emoji:el('f-emoji').value.trim(),
     status:tmpStatus,qty:el('f-qty').value===''?1:+el('f-qty').value,
-    value:el('f-value').value===''?'':+el('f-value').value,rating:tmpRating,
-    note:el('f-note').value.trim()
+    sell:el('f-sell').value===''?'':+el('f-sell').value,
+    bought:el('f-bought').value||'',forSale:tmpForSale,
+    rating:tmpRating,note:el('f-note').value.trim()
   };
-  if(editItemId){for(var i=0;i<state.items.length;i++){if(state.items[i].id===editItemId){Object.assign(state.items[i],data);break;}}}
-  else{data.id=uid();data.parent='';data.created=Date.now();state.items.push(data);}
+  if(!isPart)data.value=el('f-value').value===''?'':+el('f-value').value; // delars pris styrs av settet
+  var saved=null;
+  if(editItemId){for(var i=0;i<state.items.length;i++){if(state.items[i].id===editItemId){Object.assign(state.items[i],data);saved=state.items[i];break;}}}
+  else{data.value=el('f-value').value===''?'':+el('f-value').value;data.id=uid();data.parent='';data.created=Date.now();state.items.push(data);saved=data;}
+  applyDistribution(saved);
   save();closeSheets();
   if(currentColl)renderItems();else renderHome();
   refreshAll();
@@ -758,10 +887,12 @@ el('item-save').onclick=function(){
 el('item-del').onclick=function(){
   if(!editItemId)return;
   var kids=childrenOf(editItemId);
+  var victim=itemById(editItemId);var parentId=victim?victim.parent:'';
   var msg=kids.length?('Ta bort den här saken? Dess '+kids.length+' del(ar) blir fristående saker.'):'Ta bort den här saken?';
   if(!confirm(msg))return;
   for(var i=0;i<state.items.length;i++){if(state.items[i].parent===editItemId)state.items[i].parent='';}
   state.items=state.items.filter(function(x){return x.id!==editItemId;});
+  if(parentId)distributeSet(parentId);
   save();closeSheets();if(currentColl)renderItems();refreshAll();
 };
 el('add-item').onclick=function(){openItem(null);};
@@ -769,9 +900,10 @@ el('item-dup').onclick=function(){
   if(!editItemId)return;
   var src=itemById(editItemId);if(!src)return;
   var copy={id:uid(),coll:src.coll,name:(src.name||'')+' (kopia)',
-    tags:(src.tags||[]).slice(),brand:src.brand||'',barcode:'',link:src.link||'',
+    tags:(src.tags||[]).slice(),brand:src.brand||'',type:src.type||'',barcode:'',link:src.link||'',
     hex:src.hex||'',emoji:src.emoji||'',parent:src.parent||'',status:src.status,
-    qty:src.qty,value:src.value,rating:src.rating,note:src.note||'',created:Date.now()};
+    qty:src.qty,value:src.value,sell:src.sell||'',bought:'',forSale:false,
+    rating:src.rating,note:src.note||'',created:Date.now()};
   state.items.push(copy);save();
   if(currentColl)renderItems();refreshAll();
   openItem(copy.id); // öppna kopian direkt för snabb justering
@@ -853,14 +985,16 @@ function renderWishlist(){
 function renderStats(){
   el('st-items').textContent=state.items.length;
   el('st-colls').textContent=state.collections.length;
-  var val=0,lent=0,counts={};
+  var val=0,lent=0,saleSum=0,counts={};
   for(var i=0;i<state.items.length;i++){
     var it=state.items[i];
-    if(it.value)val+=(+it.value)*(it.qty&&+it.qty>0?+it.qty:1);
+    if(it.value&&childrenOf(it.id).length===0)val+=(+it.value)*(it.qty&&+it.qty>0?+it.qty:1);
+    if(it.forSale&&it.sell)saleSum+=(+it.sell);
     if(it.status==='lent')lent++;
     counts[it.status]=(counts[it.status]||0)+1;
   }
   el('st-value').textContent=val.toLocaleString('sv-SE')+' kr';
+  el('st-sale').textContent=saleSum.toLocaleString('sv-SE')+' kr';
   el('st-lent').textContent=lent;
   var total=state.items.length||1;
   var sh='';
@@ -1023,6 +1157,7 @@ function ghPull(){
       state.collections=mergeById(state.collections,data.collections,remoteNewer);
       state.items=mergeById(state.items,data.items,remoteNewer);
       migrateItems();
+      distributeAllSets();
       save();backToHome();refreshAll();
     }
     setBadge('ok','Synkad');
@@ -1077,6 +1212,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden&&syn
 
 // ── Start ──────────────────────────────────────────────
 loadSync();
+distributeAllSets();
 renderHome();
 applyTheme();
 setInterval(applyTheme,60000);
