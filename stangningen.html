@@ -43,6 +43,7 @@ h1.brand{font-family:Georgia,serif;font-weight:400;font-size:22px;letter-spacing
 .btn:active{background:var(--accent-soft)}
 .btn.fill{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn.ghost{border-color:var(--line);color:var(--muted);font-size:12px;padding:8px 11px}
+.btn.wide{width:100%;margin-top:12px;font-size:14px;padding:13px}
 .btn.danger{border-color:var(--red);color:var(--red)}
 .btn.big{width:100%;padding:14px;font-size:15px;border-radius:16px}
 .btn-row{display:flex;gap:8px}
@@ -131,6 +132,10 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .md{aspect-ratio:1;border-radius:7px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted)}
 .md.done{background:var(--accent);color:#fff;font-weight:600}
 .md.today{outline:2px solid var(--accent);outline-offset:-2px}
+.md.tap{cursor:pointer;transition:transform .08s}
+.md.tap:active{transform:scale(.9)}
+.md.future{opacity:.4}
+.mhint{font-size:11px;color:var(--muted);margin-top:10px;text-align:center;line-height:1.45}
 .md.empty{background:transparent}
 .hrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line)}
 .hrow:first-child{border-top:none}
@@ -259,16 +264,17 @@ input:focus,textarea:focus{border-color:var(--accent)}
 <script>
 /* ============ Stängningen v1.0.0 ============ */
 var APPINFO={
-  version:'1.0.0',
+  version:'1.1.0',
   tagline:'Stäng nedervåningen för natten – som att stänga en restaurang.',
   audience:'Du som vill avsluta arbetsdagen på nedervåningen i lugn och ro innan du går upp till ledigheten.',
   functions:[
-    {area:'Kvällsstängning',items:['Bocka av stationer som ett stängningsschema','Egna stationer och punkter','Progress och stängningsritual när allt är klart','Nollställs automatiskt varje ny dag']},
+    {area:'Kvällsstängning',items:['Bocka av stationer som ett stängningsschema','Egna stationer och punkter','Stäng kvällen när som helst – även med punkter kvar','Progress och stängningsritual när allt är klart','Nollställs automatiskt varje ny dag']},
     {area:'Imorgon',items:['De tre viktigaste sakerna att ta tag i','Kopplas automatiskt till checklistan']},
-    {area:'Historik',items:['Antal kvällar i rad','Månadsöversikt med prickar','Logg över stängningar med tid']},
+    {area:'Historik',items:['Antal kvällar i rad','Månadsöversikt med prickar','Registrera eller ta bort stängningar bakåt direkt i kalendern','Logg över stängningar med tid']},
     {area:'Övrigt',items:['Flera rutiner (t.ex. över- och nedervåningen)','Teman och färgskinn','Valfri AI-hjälp som putsar dina anteckningar','Molnsynk via GitHub']}
   ],
   changelog:[
+    {v:'1.1.0',d:'2026-06-29',items:['Stäng kvällen-knapp som alltid finns – stäng även med punkter kvar (med bekräftelse)','Bakåtregistrering: tryck på en dag i månadsöversikten för att registrera eller ta bort en stängning','Stängningsrutan visar hur många punkter som var kvar vid en tidig stängning']},
     {v:'1.0.0',d:'2026-06-28',items:['Första version','Kvällsstängning för nedervåningen med stationer','Tre-saker-till-imorgon kopplat till checklistan','Stängningsritual med låsanimation','Historik, kvällar-i-rad och månadsprickar','Stationsredigerare och stöd för flera rutiner','Teman, skinn, valfri AI-hjälp och GitHub-synk']}
   ]
 };
@@ -372,7 +378,7 @@ function renderClose(){
     +'<div class="pbig">'+p.done+' / '+p.total+'</div>'
     +'<div class="plab">'+(ready?'allt klart – dags att stänga':'avbockat')+'</div>'
     +'<div class="ptrack"><div class="pfill" style="width:'+(p.total?Math.round(p.done/p.total*100):0)+'%"></div></div>'
-    +(ready?'<div class="gostrip"><button class="btn fill big" onclick="closeDown()">Stäng nedervåningen 🔑</button></div>':'')
+    +'<div class="gostrip">'+closeStripHtml(ready)+'</div>'
     +'</div>';
   /* tre saker */
   html+='<div class="card-panel three" id="threecard">'
@@ -417,8 +423,7 @@ function refreshProgressLive(){
     prog.querySelector('.plab').textContent=ready?'allt klart – dags att stänga':'avbockat';
     prog.classList.toggle('ready',ready);
     var strip=prog.querySelector('.gostrip');
-    if(ready&&!strip){var dv=document.createElement('div');dv.className='gostrip';dv.innerHTML='<button class="btn fill big" onclick="closeDown()">Stäng nedervåningen 🔑</button>';prog.appendChild(dv);}
-    if(!ready&&strip)strip.remove();
+    if(strip)strip.innerHTML=closeStripHtml(ready);
   }
   /* uppdatera auto-item bock i Imorgon-stationen */
   document.querySelectorAll('#close-body .item.auto').forEach(function(el){
@@ -446,12 +451,24 @@ function focusThree(){var c=document.getElementById('threecard');if(c)c.scrollIn
   setTimeout(function(){for(var i=0;i<3;i++){var inp=document.getElementById('three'+i);if(inp&&!inp.value){inp.focus();break;}}},350);}
 
 /* ---- stängningsritual ---- */
+function closeStripHtml(ready){
+  if(ready)return '<button class="btn fill big" onclick="closeDown()">Stäng nedervåningen 🔑</button>';
+  return '<button class="btn ghost wide" onclick="closeEvening()">Stäng kvällen ändå 🌙</button>';
+}
+function closeEvening(){
+  var r=activeRoutine(),rec=dayRec(),p=progress(r,rec);
+  var left=p.total-p.done;
+  if(left>0&&!confirm('Stänga kvällen med '+left+' '+(left===1?'punkt':'punkter')+' kvar?'))return;
+  closeDown();
+}
 function closeDown(){
-  var rec=dayRec();rec.done=true;rec.closedAt=new Date().toISOString();save();
+  var r=activeRoutine(),rec=dayRec(),p=progress(r,rec);
+  rec.done=true;rec.closedAt=new Date().toISOString();save();
   var st=streak(state.active);
   var sub='Stängt '+clockOf(rec.closedAt);
   if(st>1)sub+=' · '+st+' kvällar i rad';
   else sub+=' · första kvällen';
+  if(p.total>0&&p.done<p.total)sub+=' · '+(p.total-p.done)+' kvar';
   document.getElementById('scene-sub').textContent=sub;
   document.getElementById('scene-quote').textContent='';
   document.getElementById('scene').classList.add('on');
@@ -488,9 +505,12 @@ function renderHist(){
   for(var day=1;day<=dim;day++){
     var dk2=y+'-'+pad2(m+1)+'-'+pad2(day);
     var done=state.days[dk2]&&state.days[dk2][rid]&&state.days[dk2][rid].done;
-    html+='<div class="md'+(done?' done':'')+(dk2===tk?' today':'')+'">'+day+'</div>';
+    var future=dk2>tk;
+    var cls='md'+(done?' done':'')+(dk2===tk?' today':'')+(future?' future':' tap');
+    var click=future?'':' onclick="toggleDay(\''+dk2+'\')"';
+    html+='<div class="'+cls+'"'+click+'>'+day+'</div>';
   }
-  html+='</div></div>';
+  html+='</div><div class="mhint">Tryck på en dag för att registrera eller ta bort en stängning bakåt.</div></div>';
   /* logg */
   var rows=[];for(var dk3 in state.days){var rr=state.days[dk3][rid];if(rr&&rr.done)rows.push({dk:dk3,rec:rr});}
   rows.sort(function(a,b){return a.dk<b.dk?1:-1;});
@@ -510,6 +530,23 @@ function renderHist(){
 }
 function monthName(m){return ['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'][m];}
 function weekdayName(d){return ['Söndag','Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag'][d.getDay()];}
+function toggleDay(dk){
+  if(dk>todayKey())return;
+  var rid=state.active,rec=dayRec(dk,rid);
+  var d=new Date(dk+'T00:00:00');
+  var label=weekdayName(d).toLowerCase()+' '+d.getDate()+' '+monthName(d.getMonth()).toLowerCase();
+  if(rec.done){
+    if(!confirm('Ta bort stängningen för '+label+'?'))return;
+    rec.done=false;rec.closedAt='';
+    save();toast('Borttagen');
+  }else{
+    rec.done=true;
+    rec.closedAt=(dk===todayKey())?new Date().toISOString():new Date(dk+'T21:00:00').toISOString();
+    save();toast('Registrerad bakåt ✓');
+  }
+  renderHist();
+  if(dk===todayKey())renderClose();
+}
 
 /* ============ STATIONER (redigerare) ============ */
 function renderEdit(){
