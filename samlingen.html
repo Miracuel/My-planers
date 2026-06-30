@@ -158,6 +158,13 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .pal-info .pi-sw{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);flex:none}
 .pal-info .pi-open{margin-left:auto;background:none;border:1px solid var(--amber);color:var(--amber);border-radius:9px;padding:5px 10px;font:inherit;cursor:pointer;flex:none}
 .pal-info .pi-hex{color:var(--muted);font-size:12px}
+.pal-grid{display:block}
+.pal-row{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 4px}
+.pal-fam-head{font-size:12px;color:var(--muted);font-weight:600;margin:12px 0 2px;letter-spacing:.02em}
+.pal-note{font-size:12px;color:var(--muted);margin:6px 0 2px}
+.pal-cluster{border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-bottom:8px;background:var(--panel)}
+.pal-cluster .pc-names{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+.btn.ghost.on{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
 .item-mark{font-size:16px;flex:none;width:20px;text-align:center}
 .tag.click{cursor:pointer}
 .tag.click:hover{background:var(--amber-soft);color:var(--amber)}
@@ -351,8 +358,17 @@ html[data-theme=dark]{
     <select id="pal-coll"></select>
     <select id="pal-sort">
       <option value="hue">Färgskala</option>
+      <option value="family">Färgfamilj</option>
       <option value="light">Ljushet</option>
       <option value="name">Namn</option>
+    </select>
+  </div>
+  <div class="toolbar" style="margin-top:0">
+    <button class="btn ghost" id="pal-similar">Hitta snarlika färger</button>
+    <select id="pal-thr" style="display:none;max-width:150px">
+      <option value="22">Nästan identiska</option>
+      <option value="34" selected>Snarlika</option>
+      <option value="52">Ungefär lika</option>
     </select>
   </div>
   <div class="pal-info" id="pal-info">Tryck på en färg för att se vilken sak den tillhör.</div>
@@ -552,7 +568,7 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.14.0',
+  version:'1.15.0',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
@@ -563,11 +579,15 @@ var APPINFO={
     {area:'Declutter & värde',items:['Declutter-läge: markera till salu eller ta bort direkt i listan','Filtret Till salu samlar allt du flaggat','Översikt med inköpsvärde och försäljningsvärde']},
     {area:'Massredigera',items:['Markera-läge: bocka i flera saker på en gång','Ge dem gemensam tagg, typ, märke eller status','Eller ta bort flera markerade i ett svep']},
     {area:'Inventering',items:['Inventeringsläge: bocka av saker som inventerade med dagens datum','Sätt plats / var den finns (med förslag på platser du använt)','Se hur många som är inventerade, filtrera på ej inventerade och nollställ en ny runda']},
-    {area:'Palett',items:['Palettvy som samlar alla saker med en färgplupp','Sorteras på färgskala (nyans), ljushet eller namn','Klicka eller hovra på en färg för att se vilken sak den tillhör — och öppna den']},
+    {area:'Palett',items:['Alla saker med färgplupp som rutor på en färgskala','Gruppera i färgfamiljer (röda, blåa, neutrala osv.)','Hitta snarlika / nästan identiska färger genom att jämföra hexkoder','Klicka eller hovra på en färg för att se vilken sak den tillhör']},
     {area:'Planera & önska',items:['Två flikar: Önskar och På väg / förbeställt','Lägg till önskan eller förbeställning direkt med samling och info','"✓ Köpt" respektive "✓ Klar" flyttar saken till Äger med dagens datum']},
     {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
   ],
   changelog:[
+    {v:'1.15.0',d:'2026-06-30',items:[
+      'Paletten kan gruppera färger i färgfamiljer (röda, blåa, neutrala osv.) via sorteringsvalet Färgfamilj.',
+      'Ny funktion "Hitta snarlika färger" som jämför hexkoderna och grupperar nästan identiska färger — med justerbar känslighet.'
+    ]},
     {v:'1.14.0',d:'2026-06-27',items:[
       'Planera-vyn har nu två flikar: Önskar och På väg / förbeställt — förbeställt får en egen lista med "✓ Klar"-knapp.',
       'Familjer: ge varor en familj (serie / färgmatch). Klicka på familjeetiketten för att se alla i samma familj.',
@@ -1624,6 +1644,40 @@ function hexToHsl(hex){
   return {h:h,s:s,l:l};
 }
 var palSelId=null;
+function hexToRgb(hex){
+  hex=(hex||'').replace('#','');
+  if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  if(hex.length!==6)return null;
+  var r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  if(isNaN(r)||isNaN(g)||isNaN(b))return null;
+  return {r:r,g:g,b:b};
+}
+function colorDist(a,b){var rm=(a.r+b.r)/2,dr=a.r-b.r,dg=a.g-b.g,db=a.b-b.b;return Math.sqrt((2+rm/256)*dr*dr+4*dg*dg+(2+(255-rm)/256)*db*db);}
+function colorFamily(hsl){
+  if(hsl.l<=0.10)return {k:'black',label:'Svarta / mörka'};
+  if(hsl.l>=0.92&&hsl.s<0.25)return {k:'white',label:'Vita / ljusa'};
+  if(hsl.s<0.12)return {k:'gray',label:'Neutrala / grå'};
+  var h=hsl.h;
+  if(h<15||h>=345)return {k:'red',label:'Röda'};
+  if(h<45)return {k:'orange',label:'Orange'};
+  if(h<70)return {k:'yellow',label:'Gula'};
+  if(h<160)return {k:'green',label:'Gröna'};
+  if(h<200)return {k:'cyan',label:'Turkosa'};
+  if(h<255)return {k:'blue',label:'Blåa'};
+  if(h<290)return {k:'purple',label:'Lila'};
+  return {k:'pink',label:'Rosa / magenta'};
+}
+var FAMILY_ORDER=['red','orange','yellow','green','cyan','blue','purple','pink','gray','white','black'];
+function colorClusters(arr,thr){
+  var n=arr.length,parent=[],i,j;for(i=0;i<n;i++)parent[i]=i;
+  function find(x){while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x];}return x;}
+  for(i=0;i<n;i++)for(j=i+1;j<n;j++){if(colorDist(arr[i].rgb,arr[j].rgb)<=thr)parent[find(i)]=find(j);}
+  var g={},k;for(k=0;k<n;k++){var r=find(k);(g[r]=g[r]||[]).push(arr[k]);}
+  var out=[];for(var key in g){if(g[key].length>=2)out.push(g[key]);}
+  out.sort(function(a,b){return b.length-a.length;});
+  return out;
+}
+var palSimilar=false;
 function renderPalette(){
   // samlingsfilter
   var sel=el('pal-coll');
@@ -1634,19 +1688,47 @@ function renderPalette(){
   }
   var coll=sel.value;
   var sort=el('pal-sort').value;
+  el('pal-thr').style.display=palSimilar?'block':'none';
+  el('pal-similar').classList.toggle('on',palSimilar);
+  el('pal-similar').textContent=palSimilar?'✓ Snarlika färger':'Hitta snarlika färger';
   var arr=[];
   for(var j=0;j<state.items.length;j++){
     var it=state.items[j];if(!it.hex)continue;if(coll&&it.coll!==coll)continue;
-    var hsl=hexToHsl(it.hex);if(!hsl)continue;
-    arr.push({it:it,hsl:hsl});
+    var hsl=hexToHsl(it.hex),rgb=hexToRgb(it.hex);if(!hsl||!rgb)continue;
+    arr.push({it:it,hsl:hsl,rgb:rgb});
   }
-  if(sort==='name')arr.sort(function(a,b){return (a.it.name||'').localeCompare(b.it.name||'','sv');});
-  else if(sort==='light')arr.sort(function(a,b){return b.hsl.l-a.hsl.l;});
-  else arr.sort(function(a,b){return (a.hsl.h-b.hsl.h)||(a.hsl.s-b.hsl.s)||(a.hsl.l-b.hsl.l);});
   var grid=el('pal-grid');
   if(!arr.length){grid.innerHTML='<div class="empty-msg">Inga saker med färgplupp än. Lägg en hexfärg på en sak så dyker den upp här.</div>';el('pal-info').textContent='Tryck på en färg för att se vilken sak den tillhör.';return;}
+  function sw(o){return '<div class="pal-sw'+(o.it.id===palSelId?' sel':'')+'" data-id="'+o.it.id+'" title="'+esc(o.it.name)+'" style="background:'+esc(o.it.hex)+'"></div>';}
+  function byHue(a,b){return (a.hsl.h-b.hsl.h)||(a.hsl.s-b.hsl.s)||(a.hsl.l-b.hsl.l);}
   var h='';
-  for(var k=0;k<arr.length;k++){var it2=arr[k].it;h+='<div class="pal-sw'+(it2.id===palSelId?' sel':'')+'" data-id="'+it2.id+'" title="'+esc(it2.name)+'" style="background:'+esc(it2.hex)+'"></div>';}
+  if(palSimilar){
+    var thr=+el('pal-thr').value||34;
+    var clusters=colorClusters(arr,thr);
+    if(!clusters.length){h='<div class="pal-note">Inga snarlika färger hittades på den här nivån. Prova en lösare nivå.</div>';}
+    else{
+      h='<div class="pal-note">'+clusters.length+(clusters.length===1?' grupp':' grupper')+' med snarlika färger:</div>';
+      for(var ci=0;ci<clusters.length;ci++){
+        var cl=clusters[ci].slice().sort(byHue),names=[];
+        var sws='';for(var ji=0;ji<cl.length;ji++){sws+=sw(cl[ji]);var cc=collById(cl[ji].it.coll);names.push(esc(cl[ji].it.name)+(cc?' ('+esc(cc.name)+')':''));}
+        h+='<div class="pal-cluster"><div class="pal-row">'+sws+'</div><div class="pc-names">'+names.join(' · ')+'</div></div>';
+      }
+    }
+  }else if(sort==='family'){
+    var byFam={};for(var fi=0;fi<arr.length;fi++){var fk=colorFamily(arr[fi].hsl);(byFam[fk.k]=byFam[fk.k]||{label:fk.label,items:[]}).items.push(arr[fi]);}
+    for(var oi=0;oi<FAMILY_ORDER.length;oi++){
+      var grp=byFam[FAMILY_ORDER[oi]];if(!grp||!grp.items.length)continue;
+      grp.items.sort(byHue);
+      var s2='';for(var gi=0;gi<grp.items.length;gi++)s2+=sw(grp.items[gi]);
+      h+='<div class="pal-fam-head">'+grp.label+' ('+grp.items.length+')</div><div class="pal-row">'+s2+'</div>';
+    }
+  }else{
+    if(sort==='name')arr.sort(function(a,b){return (a.it.name||'').localeCompare(b.it.name||'','sv');});
+    else if(sort==='light')arr.sort(function(a,b){return b.hsl.l-a.hsl.l;});
+    else arr.sort(byHue);
+    var s3='';for(var k=0;k<arr.length;k++)s3+=sw(arr[k]);
+    h='<div class="pal-row">'+s3+'</div>';
+  }
   grid.innerHTML=h;
   var sws=grid.querySelectorAll('.pal-sw');
   for(var m=0;m<sws.length;m++){sws[m].onclick=function(){palSelId=this.getAttribute('data-id');renderPalette();showPalInfo();};}
@@ -1756,6 +1838,8 @@ for(var b=0;b<navBtns.length;b++){
 }
 el('pal-coll').onchange=function(){palSelId=null;renderPalette();};
 el('pal-sort').onchange=function(){renderPalette();};
+el('pal-similar').onclick=function(){palSimilar=!palSimilar;renderPalette();};
+el('pal-thr').onchange=function(){renderPalette();};
 
 // ── Synk via GitHub (samma mönster som jobb-appen) ─────
 var SYNC_KEY='samlingen_sync_v1';
