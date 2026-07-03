@@ -422,7 +422,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 try{document.documentElement.setAttribute('data-theme',(localStorage.getItem('jobbtheme')==='dark')?'dark':'light');}catch(e){}
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'3.3.0',
+  version:'3.6.0',
   tagline:'Årsplanering för teamet — röda dagar, changestopp, semester och deadlines.',
   audience:'teamet',
   functions:[
@@ -453,6 +453,17 @@ const APPINFO={
     'Arbetsdagsräkning per deadline och beslutspunkter grupperade under sin deadline',
   ],
   changelog:[
+    {v:'3.6.0',d:'2026-06-30',items:[
+      'Jira-importen läser nu även klockslag (t.ex. 9:01 fm / 3:30 em) ur Skapad/Uppdaterad.',
+      'Snitt öppettid räknas nu i arbetstimmar mån–fre 08–17 (skapad → senast uppdaterad), och visar även ungefärligt antal arbetsdagar. Importera om CSV:n för att få tidsprecisionen.'
+    ]},
+    {v:'3.5.0',d:'2026-06-30',items:[
+      'Jira-CSV-importen sparar nu även på ärendenivå (status, lösning, request type, skapad, uppdaterad).',
+      'Ny Statistik-panel i Jira-vyn med växling Dag/Vecka/Månad/År: volym per period, fördelning på status (löst, avbruten, pending m.m.), lösning (klart, won’t do m.m.), request type, samt snitt öppettid (skapad → senast uppdaterad).'
+    ]},
+    {v:'3.4.0',d:'2026-06-30',items:[
+      'Tidslinjen (Projekt & deadlines) har fått en tidsaxel: månadsetiketter (med årtal på första) och månadsgridlinjer, så man ser när staplarna infaller. Idag-linjen är inriktad mot staplarna.'
+    ]},
     {v:'3.3.0',d:'2026-06-30',items:[
       'Stor utbyggnad av projektformuläret: Mål/Effekt (under Syfte), Leverabler (checkboxar), Beslut krävs (dropdown), Budget (intern tid + extern kostnad), Påverkade tjänster, Förvaltningsobjekt, Definition av klart, samt checkboxar för vad initiativet påverkar och Risk om ej genomfört.',
       'IT-ägare är nu flerval (bockar per person) i stället för fritext. Berörda system är taggar. Externa beroenden är uppdelat i Leverantörer och Externt beroende. Verksamhetsägare är kvar som fritext.',
@@ -1827,12 +1838,12 @@ document.addEventListener('keydown',function(e){
     var rows=_jiraParseCSV(text);if(rows.length<2){alert('Tom eller ogiltig CSV.');return;}
     var head=rows[0].map(function(h){return String(h||'').replace(/^\uFEFF/,'').trim();});
     function colAny(cands){for(var ci2=0;ci2<cands.length;ci2++){for(var j=0;j<head.length;j++){if(head[j].toLowerCase()===cands[ci2].toLowerCase())return j;}}return -1;}
-    var ci={typ:colAny(['Ärendetyp','Issue Type','Issue type']),ass:colAny(['Tilldelad','Assignee']),prio:colAny(['Prioritet','Priority']),los:colAny(['Lösning','Resolution']),skap:colAny(['Skapad','Created']),upp:colAny(['Uppdaterad','Updated']),res:colAny(['Löst','Löst datum','Lösningsdatum','Resolved','Resolution date','Resolved date']),req:_jiraReqCol(head)};
+    var ci={typ:colAny(['Ärendetyp','Issue Type','Issue type']),ass:colAny(['Tilldelad','Assignee']),prio:colAny(['Prioritet','Priority']),los:colAny(['Lösning','Resolution']),skap:colAny(['Skapad','Created']),upp:colAny(['Uppdaterad','Updated']),res:colAny(['Löst','Löst datum','Lösningsdatum','Resolved','Resolution date','Resolved date']),req:_jiraReqCol(head),st:colAny(['Status','Ärendestatus'])};
     if(ci.skap<0){alert('Hittar inte kolumnen "Skapad" \u2013 \u00e4r det en Jira-CSV-export?');return;}
-    var months={},typesFound={},priosFound={},weeksAcc={},nIss=0,nOpen=0,nClosed=0;
+    var months={},typesFound={},priosFound={},weeksAcc={},nIss=0,nOpen=0,nClosed=0;var _tickets=[];function _tISO(d){return d?d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'T'+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2):'';}
     function ensure(k){if(!months[k])months[k]={opened:0,closed:0,type:{},prio:{},person:{},reqtype:{},resol:{}};return months[k];}
     for(var r=1;r<rows.length;r++){var row=rows[r];if(!row||(row.length===1&&String(row[0]).trim()===''))continue;nIss++;
-      var createdObj=_jiraDateObj(row[ci.skap]);var createdYM=createdObj?_jiraYM(createdObj):null;
+      var createdObj=_jiraDateObj(row[ci.skap]);var createdYM=createdObj?_jiraYM(createdObj):null;var _uObj=(ci.upp>=0?_jiraDateObj(row[ci.upp]):null);_tickets.push({c:_tISO(createdObj),u:_tISO(_uObj),st:(ci.st>=0?String(row[ci.st]||'').trim():''),rs:(ci.los>=0?String(row[ci.los]||'').trim():''),rt:(ci.req>=0?String(row[ci.req]||'').trim():''),ty:_jiraNormType(ci.typ>=0?row[ci.typ]:''),pr:_jiraNormPrio(ci.prio>=0?row[ci.prio]:'')});
       if(createdYM){ensure(createdYM).opened++;nOpen++;}
       if(createdObj){var _wo=_jiraWeekKey(createdObj);weeksAcc[_wo]=weeksAcc[_wo]||{opened:0,closed:0};weeksAcc[_wo].opened++;}
       var isClosed=(ci.los>=0&&String(row[ci.los]||'').trim()!=='')||(ci.res>=0&&_jiraDateObj(row[ci.res])!=null);
@@ -1846,7 +1857,7 @@ document.addEventListener('keydown',function(e){
       }
     }
     var mk=Object.keys(months);if(!mk.length){alert('Inga datum kunde tolkas ur CSV:n.');return;}
-    mk.forEach(function(k){sJira.months[k]=months[k];});sJira.weeks=sJira.weeks||{};Object.keys(weeksAcc).forEach(function(k){sJira.weeks[k]=weeksAcc[k];});
+    mk.forEach(function(k){sJira.months[k]=months[k];});sJira.tickets=_tickets;sJira.weeks=sJira.weeks||{};Object.keys(weeksAcc).forEach(function(k){sJira.weeks[k]=weeksAcc[k];});
     Object.keys(typesFound).forEach(function(t){if(sJira.types.indexOf(t)<0)sJira.types.push(t);});
     Object.keys(priosFound).forEach(function(p){if(sJira.prios.indexOf(p)<0)sJira.prios.push(p);});
     mk.sort();sJiraSel=mk[mk.length-1];sJiraEdit=null;sJiraYear=(mk[mk.length-1]||'').slice(0,4)||sJiraYear;sJira.settings.lastImport=new Date().toISOString();sJira.settings.lastImportCount=nIss;
@@ -1855,7 +1866,7 @@ document.addEventListener('keydown',function(e){
   };
   window._jiraImportFile=function(input){var f=input.files&&input.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{window._jiraImportText(String(rd.result));}catch(e){alert('Kunde inte l\u00e4sa filen: '+e.message);}};rd.readAsText(f);input.value='';};
   function _jTopN(o,n){var ks=Object.keys(o).sort(function(a,b){return (o[b]||0)-(o[a]||0);});var r={};ks.slice(0,n).forEach(function(k){r[k]=o[k];});if(ks.length>n){var rest=0;ks.slice(n).forEach(function(k){rest+=o[k]||0;});if(rest)r['(övriga '+(ks.length-n)+')']=rest;}return r;}
-    function _jiraDateObj(s){if(!s)return null;var m=String(s).trim().toLowerCase().match(/^(\d{1,2})\/([a-zåäö]+)\/(\d{2,4})/);if(!m)return null;var mon={jan:0,feb:1,mar:2,apr:3,maj:4,jun:5,jul:6,aug:7,sep:8,okt:9,nov:10,dec:11}[m[2]];if(mon==null)return null;var y=parseInt(m[3],10);if(y<100)y+=2000;return new Date(y,mon,parseInt(m[1],10));}
+    function _jiraDateObj(s){if(!s)return null;var _s=String(s).trim().toLowerCase();var m=_s.match(/^(\d{1,2})\/([a-zåäö]+)\/(\d{2,4})/);if(!m)return null;var mon={jan:0,feb:1,mar:2,apr:3,maj:4,jun:5,jul:6,aug:7,sep:8,okt:9,nov:10,dec:11}[m[2]];if(mon==null)return null;var y=parseInt(m[3],10);if(y<100)y+=2000;var hh=0,mm=0;var tm=_s.match(/(\d{1,2}):(\d{2})\s*(fm|em|am|pm)?/);if(tm){hh=parseInt(tm[1],10);mm=parseInt(tm[2],10)||0;var ap=tm[3];if(ap==='em'||ap==='pm'){if(hh<12)hh+=12;}else if((ap==='fm'||ap==='am')&&hh===12){hh=0;}}return new Date(y,mon,parseInt(m[1],10),hh,mm);}
   function _jiraYM(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
   function _jiraISOWeek(date){var d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));var dn=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-dn+3);var ft=d.getTime();d.setUTCMonth(0,1);if(d.getUTCDay()!==4){d.setUTCMonth(0,1+((4-d.getUTCDay())+7)%7);}var week=1+Math.ceil((ft-d.getTime())/604800000);return {year:new Date(ft).getUTCFullYear(),week:week};}
   function _jiraWeekKey(d){var w=_jiraISOWeek(d);return w.year+'-W'+String(w.week).padStart(2,'0');}
@@ -1956,6 +1967,38 @@ function _jiraDashHTML(present){
     else{H+='<div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px">Ingen person har rollen Support \u00e4nnu.</div>';}
     H+='</div>';return H;
   }
+
+  // ── Jira statistik (dag/vecka/månad/år) ──
+  var sJiraStatGran='month';
+  window._jiraStatGran=function(g){sJiraStatGran=g;if(window._renderJira)window._renderJira();};
+  function _bizHours(aISO,bISO){if(!aISO||!bISO)return null;var a=new Date(aISO),b=new Date(bISO);if(isNaN(a.getTime())||isNaN(b.getTime()))return null;if(b<=a)return 0;var DS=8,DE=17,total=0,d=new Date(a.getFullYear(),a.getMonth(),a.getDate()),g=0;while(d<=b&&g<6000){g++;var dow=d.getDay();if(dow>=1&&dow<=5){var ws=new Date(d.getFullYear(),d.getMonth(),d.getDate(),DS,0,0,0).getTime();var we=new Date(d.getFullYear(),d.getMonth(),d.getDate(),DE,0,0,0).getTime();var s=Math.max(ws,a.getTime()),e=Math.min(we,b.getTime());if(e>s)total+=(e-s)/3600000;}d.setDate(d.getDate()+1);}return Math.round(total*10)/10;}
+  function _jiraStatHTML(){
+    function _je(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    var T=(sJira&&sJira.tickets&&sJira.tickets.length)?sJira.tickets:[];
+    var pan='background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px';
+    if(!T.length)return '<div style="'+pan+'"><div style="font-weight:600;font-size:14px;color:var(--ink);margin-bottom:4px">Statistik</div><div style="font-size:12px;color:var(--ink-soft)">Importera en Jira-CSV (knappen h\u00f6gst upp) f\u00f6r att se statistik p\u00e5 status, l\u00f6sning, \u00f6ppettid och request type per dag/vecka/m\u00e5nad/\u00e5r.</div></div>';
+    var G=sJiraStatGran||'month';var GN={day:'dag',week:'vecka',month:'m\u00e5nad',year:'\u00e5r'};
+    var H='<div style="'+pan+'"><div style="font-weight:600;font-size:14px;color:var(--ink);margin-bottom:2px">Statistik \u00b7 '+T.length+' \u00e4renden</div><div style="font-size:11px;color:var(--ink-soft);margin-bottom:12px">Baserat p\u00e5 importerad Jira-data.</div>';
+    var GRS=[['day','Dag'],['week','Vecka'],['month','M\u00e5nad'],['year','\u00c5r']];
+    H+='<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">';
+    GRS.forEach(function(o){var on=(G===o[0]);H+='<button onclick="window._jiraStatGran(\''+o[0]+'\')" style="padding:5px 13px;font-size:12px;font-weight:'+(on?'600':'400')+';border-radius:18px;border:1px solid '+(on?'var(--ink)':'var(--line)')+';background:'+(on?'var(--ink)':'var(--paper)')+';color:'+(on?'#fff':'var(--ink-soft)')+';cursor:pointer;font-family:inherit">'+o[1]+'</button>';});
+    H+='</div>';
+    function bkey(iso){if(!iso)return '';var d=new Date(iso);if(isNaN(d.getTime()))return '';if(G==='day')return iso.slice(0,10);if(G==='year')return iso.slice(0,4);if(G==='month')return iso.slice(0,7);var dt=new Date(d);var day=(dt.getDay()+6)%7;dt.setDate(dt.getDate()-day+3);var wk=Math.floor((dt-new Date(dt.getFullYear(),0,1))/864e5/7)+1;return dt.getFullYear()+'-v'+('0'+wk).slice(-2);}
+    var vol={};T.forEach(function(t){var k=bkey(t.c);if(k)vol[k]=(vol[k]||0)+1;});
+    var vk=Object.keys(vol).sort();var vmax=1;vk.forEach(function(k){if(vol[k]>vmax)vmax=vol[k];});
+    H+='<div style="font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:8px">Inkomna \u00e4renden per '+GN[G]+'</div>';
+    if(vk.length){H+='<div style="display:flex;align-items:flex-end;gap:4px;height:96px;overflow-x:auto;padding-bottom:18px">';vk.forEach(function(k){var hpx=Math.round(vol[k]/vmax*66)+4;H+='<div title="'+_je(k)+': '+vol[k]+'" style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:8px;color:var(--ink-soft)">'+vol[k]+'</div><div style="width:18px;height:'+hpx+'px;background:#5B7BA6;border-radius:3px 3px 0 0"></div><div style="font-size:8px;color:var(--ink-soft);white-space:nowrap;height:0;transform:translateY(4px) rotate(-45deg);transform-origin:top right">'+_je(k.replace(/^[0-9]{4}-/,''))+'</div></div>';});H+='</div>';}
+    function dist(field,title,pal){var c={},tot=0;T.forEach(function(t){var v=String(t[field]==null?'':t[field]).trim()||'(tom)';c[v]=(c[v]||0)+1;tot++;});var ks=Object.keys(c).sort(function(a,b){return c[b]-c[a];});if(!tot)return '';var s='<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:8px">'+title+'</div>';ks.forEach(function(k,i){var v=c[k];var pct=Math.round(v/tot*100);var col=pal[i%pal.length];s+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink);margin-bottom:3px"><span>'+_je(k)+'</span><span style="color:var(--ink-soft)">'+v+' \u00b7 '+pct+'%</span></div><div style="height:7px;border-radius:4px;background:var(--bg);overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+col+'"></div></div></div>';});return s;}
+    var PAL=['#5B7BA6','#5E8C61','#D9A441','#C96A6A','#8C7BB0','#3DA5A5','#D98032','#9C8B70'];
+    H+=dist('st','Status',PAL);
+    H+=dist('rs','L\u00f6sning',PAL);
+    H+=dist('rt','Request type',PAL);
+    var sumH=0,nD=0;T.forEach(function(t){if(t.c&&t.u){var _bh=_bizHours(t.c,t.u);if(_bh!=null){sumH+=_bh;nD++;}}});
+    var avgD=nD?sumH/nD:null;
+    H+='<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:4px">Snitt \u00f6ppettid (skapad \u2192 senast uppdaterad, arbetstid m\u00e5n\u2013fre 08\u201317)</div>';
+    H+='<div style="font-size:13px;color:var(--ink)">'+(avgD!=null?('<b>'+(Math.round(avgD*10)/10)+' arbetstimmar</b> <span style="color:var(--ink-soft);font-size:11.5px">i snitt \u00f6ver '+nD+' \u00e4renden \u00b7 \u2248 '+(Math.round(avgD/9*10)/10)+' arbetsdagar (m\u00e5n\u2013fre 08\u201317)</span>'):'\u2013')+'</div>';
+    H+='</div>';return H;}
+
   window._renderJira=function(){var root=document.getElementById('jira-root');if(!root)return;
     var ks=Object.keys(sJira.months).sort();
     var _pan='background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px';
@@ -1988,7 +2031,7 @@ function _jiraDashHTML(present){
     H+='<div><div style="font-size:11px;color:var(--ink-soft);margin-bottom:3px">R\u00e4kna belastning p\u00e5</div><select onchange="window._jiraBasis(this.value)" style="'+fInp+'"><option value="closed"'+(sJira.settings.basis!=='opened'&&sJira.settings.basis!=='all'?' selected':'')+'>St\u00e4ngda (utf\u00f6rt)</option><option value="opened"'+(sJira.settings.basis==='opened'?' selected':'')+'>\u00d6ppnade (inkommande)</option><option value="all"'+(sJira.settings.basis==='all'?' selected':'')+'>Alla \u00e4renden</option></select></div>';
     H+='<div style="align-self:end"><button onclick="window._jiraSeed()" style="'+_jb+'">Fyll exempeldata</button></div>';
     H+='</div></div>';
-    H+=_jiraResHTML();
+    H+=_jiraStatHTML();H+=_jiraResHTML();
     root.innerHTML=H;
   };
   window._renderJiraView=function(){var root=document.getElementById('jiraview-root');if(!root)return;
@@ -2230,7 +2273,7 @@ function _jiraDashHTML(present){
     var rows=fitems.slice().sort(function(a,b){return (a.dateFrom||'').localeCompare(b.dateFrom||'');}).map(function(it){var stt=_projStatus(it);var f=new Date(it.dateFrom||t0),t=new Date(it.dateTo||it.dateFrom||t0);var l=Math.max(0,(f-d0)/864e5/span*100);var wdt=Math.max(1.5,(t-f)/864e5/span*100);var pr=_projProg(it);
       return '<div onclick="window._projOpen(\''+it.id+'\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:120px;flex:none;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_esc(it.name||'')+'</div><div style="flex:1;position:relative;height:16px;background:var(--bg);border-radius:5px"><div style="position:absolute;left:'+l+'%;width:'+wdt+'%;top:0;height:16px;border-radius:5px;background:'+stt.col+';opacity:.30"></div><div style="position:absolute;left:'+l+'%;width:'+(wdt*pr/100)+'%;top:0;height:16px;border-radius:5px;background:'+stt.col+'"></div></div></div>';}).join('');
     var _rbA={};items.forEach(function(it){if(!it||it.status==='done')return;if(it.type==='deadline'||it.type==='milestone'||it.type==='beslut')return;var ar=it.area||'(Utan område)';_rbA[ar]=(_rbA[ar]||0)+(+it.hours||0);});var _rbK=Object.keys(_rbA).filter(function(k){return _rbA[k]>0;});if(_rbK.length){var _rbMax=1;_rbK.forEach(function(k){if(_rbA[k]>_rbMax)_rbMax=_rbA[k];});_rbK.sort(function(a,b){return _rbA[b]-_rbA[a];});H+='<div style="'+_pan+';margin-bottom:12px"><div style="font-weight:600;font-size:14px;margin-bottom:12px;color:var(--ink)">Resursbehov per område</div>';_rbK.forEach(function(k){var v=_rbA[k];var pct=Math.round(v/_rbMax*100);H+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="flex:0 0 140px;font-size:12.5px;color:var(--ink)">'+_esc(k)+'</div><div style="flex:1 1 auto;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#5B7BA6"></div></div><div style="flex:0 0 96px;text-align:right;font-size:12px;color:var(--ink-soft)">'+Math.round(v)+' h \u00b7 '+(v/160).toFixed(1)+' FTE</div></div>';});H+='</div>';}
-      H+='<div style="'+_pan+';margin-bottom:12px"><div style="font-weight:600;font-size:14px;margin-bottom:12px;color:var(--ink)">Tidslinje</div><div style="position:relative">'+rows+'<div style="position:absolute;left:calc(120px + '+todayPct+'% * (100% - 128px)/100);top:-4px;bottom:0;width:2px;background:#C16B6B" title="Idag"></div></div><div style="font-size:11px;color:var(--ink-soft);margin-top:8px">'+_projFmtDate(t0)+' \u2013 '+_projFmtDate(t1)+' \u00b7 fylld stapel = framsteg \u00b7 r\u00f6d linje = idag</div></div>';
+      var _MNL=['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];var _mMarks=[];var _mmD=new Date(d0.getFullYear(),d0.getMonth(),1);var _mmG=0;while(_mmD<=d1&&_mmG<72){_mmG++;var _mmP=(_mmD-d0)/864e5/span*100;if(_mmP>=-0.5&&_mmP<=100.5){_mMarks.push({p:Math.max(0,Math.min(100,_mmP)),lbl:_MNL[_mmD.getMonth()]+((_mmD.getMonth()===0||_mMarks.length===0)?(' '+_mmD.getFullYear()):'')});}_mmD=new Date(_mmD.getFullYear(),_mmD.getMonth()+1,1);}var _lblRow='<div style="position:relative;height:14px;margin-bottom:4px">'+_mMarks.map(function(m){return '<div style="position:absolute;left:calc(128px + '+m.p+'% * (100% - 128px)/100);top:0;font-size:9px;color:var(--ink-soft);white-space:nowrap;transform:translateX(1px)">'+m.lbl+'</div>';}).join('')+'</div>';var _gridHTML=_mMarks.map(function(m){return '<div style="position:absolute;left:calc(128px + '+m.p+'% * (100% - 128px)/100);top:18px;bottom:0;width:1px;background:var(--line);opacity:.6"></div>';}).join('');H+='<div style="'+_pan+';margin-bottom:12px"><div style="font-weight:600;font-size:14px;margin-bottom:12px;color:var(--ink)">Tidslinje</div><div style="position:relative">'+_lblRow+_gridHTML+rows+'<div style="position:absolute;left:calc(128px + '+todayPct+'% * (100% - 128px)/100);top:-4px;bottom:0;width:2px;background:#C16B6B" title="Idag"></div></div><div style="font-size:11px;color:var(--ink-soft);margin-top:8px">'+_projFmtDate(t0)+' \u2013 '+_projFmtDate(t1)+' \u00b7 fylld stapel = framsteg \u00b7 r\u00f6d linje = idag</div></div>';
     // list cards
     H+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">'+fitems.slice().sort(function(a,b){return (a.dateFrom||'').localeCompare(b.dateFrom||'');}).map(function(it){var stt=_projStatus(it);var late=_projLate(it);var pr=_projProg(it);var ow=_projOwners(it);var tk=(it.tickets||[]).length;
       return '<div onclick="window._projOpen(\''+it.id+'\')" style="'+_pan+';cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px"><div style="font-weight:600;font-size:14px;color:var(--ink)">'+_esc(it.name||'')+'</div><span style="font-size:10.5px;font-weight:600;color:#fff;background:'+(late?'#C16B6B':stt.col)+';border-radius:6px;padding:2px 7px;white-space:nowrap">'+(late?'F\u00f6rsenad':stt.label)+'</span></div>'+_projBar(pr,stt.col,8)+'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:6px"><span>'+pr+'%</span><span class="mono" style="font-family:monospace">'+(+it.spent||0)+'/'+(+it.hours||0)+'h</span></div><div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px">'+(it.ptype?'<span style="display:inline-block;background:var(--accent);color:#fff;border-radius:5px;padding:1px 7px;margin-right:6px">'+_esc(_pkLab(it.ptype))+'</span>':'')+(it.area?'<span style="display:inline-block;background:var(--bg);border-radius:5px;padding:1px 7px;margin-right:6px;color:var(--ink)">'+_esc(it.area)+'</span>':'')+_projFmtDate(it.dateFrom)+'\u2013'+_projFmtDate(it.dateTo)+(ow.length?' \u00b7 '+_esc(ow.join(', ')):'')+(tk?' \u00b7 '+tk+' \u00e4renden':'')+'</div></div>';}).join('')+'</div>';
