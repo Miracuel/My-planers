@@ -185,6 +185,32 @@ html[data-theme=dark] .batt-wrap.zr{background:linear-gradient(180deg,rgba(192,1
 .cal-cell.future{opacity:.4;cursor:default}
 .cal-legend{display:flex;gap:12px;justify-content:center;margin-top:10px;font-size:11px;color:var(--muted)}
 .cal-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+/* Lägesväxlare Månad/Vecka/År */
+.cal-modes{display:flex;gap:6px;margin-bottom:12px}
+.cal-modes button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:11px;padding:8px 4px;font-size:12px;cursor:pointer;font-family:inherit}
+.cal-modes button.on{background:var(--moss);border-color:var(--moss);color:#fff}
+/* Månadsruta med siffra + minikurva */
+.cal-cell .cc-val{font-size:9px;color:var(--muted);line-height:1;font-weight:600}
+.cal-cell.has .cc-val{color:var(--ink)}
+.cal-cell .cc-spark{width:80%;height:12px;display:block}
+/* Veckovy */
+.wk-day{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.wk-day:first-child{border-top:none}
+.wk-day .wk-name{width:58px;font-size:12px;color:var(--muted);flex-shrink:0}
+.wk-day.today .wk-name{color:var(--moss);font-weight:700}
+.wk-day .wk-spark{flex:1;height:34px;min-width:0}
+.wk-day .wk-val{width:44px;text-align:right;font-size:13px;font-weight:600;flex-shrink:0}
+.wk-day .wk-val.soft{font-weight:400}
+/* Årsheatmap */
+.yr-months{display:flex;flex-direction:column;gap:7px}
+.yr-row{display:flex;align-items:center;gap:8px}
+.yr-row .yr-name{width:34px;font-size:11px;color:var(--muted);flex-shrink:0}
+.yr-cells{display:grid;grid-template-columns:repeat(31,1fr);gap:2px;flex:1;min-width:0}
+.yr-cell{aspect-ratio:1;border-radius:2px;background:var(--panel2);cursor:pointer;min-width:0}
+.yr-cell.empty{background:var(--panel2);opacity:.45;cursor:default}
+.yr-cell.today{outline:1.5px solid var(--ink);outline-offset:1px}
+.yr-scale{display:flex;align-items:center;gap:5px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted)}
+.yr-scale i{display:inline-block;width:12px;height:12px;border-radius:3px}
 /* Dagskurva */
 .curve-wrap{margin-top:4px}
 .curve-wrap canvas{width:100%;height:160px;display:block}
@@ -362,15 +388,30 @@ html[data-theme=dark]{--bg:#22251F;--panel:#2B2F28;--panel2:#333830;--line:#4146
 
 <!-- KALENDER -->
 <div class="view" id="view-calendar">
+  <div class="cal-modes" id="cal-modes">
+    <button data-m="month" class="on">Månad</button>
+    <button data-m="week">Vecka</button>
+    <button data-m="year">År</button>
+  </div>
   <div class="card-panel">
     <div class="cal-head">
-      <button id="cal-prev" aria-label="Föregående månad">‹</button>
+      <button id="cal-prev" aria-label="Bakåt">‹</button>
       <div class="cal-title" id="cal-title"></div>
-      <button id="cal-next" aria-label="Nästa månad">›</button>
+      <button id="cal-next" aria-label="Framåt">›</button>
     </div>
-    <div class="cal-week"><span>Må</span><span>Ti</span><span>On</span><span>To</span><span>Fr</span><span>Lö</span><span>Sö</span></div>
-    <div class="cal-grid" id="cal-grid"></div>
-    <div class="cal-legend"><span><i style="background:var(--green)"></i>God</span><span><i style="background:var(--yellow)"></i>Lågt</span><span><i style="background:var(--red)"></i>Tomt</span></div>
+
+    <div id="cal-month">
+      <div class="cal-week"><span>Må</span><span>Ti</span><span>On</span><span>To</span><span>Fr</span><span>Lö</span><span>Sö</span></div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend"><span><i style="background:var(--green)"></i>God</span><span><i style="background:var(--yellow)"></i>Lågt</span><span><i style="background:var(--red)"></i>Tomt</span></div>
+    </div>
+
+    <div id="cal-weekview" style="display:none"></div>
+
+    <div id="cal-yearview" style="display:none">
+      <div class="yr-months" id="yr-months"></div>
+      <div class="yr-scale"><span>Tomt</span><i style="background:var(--red)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i><span>Fullt</span></div>
+    </div>
   </div>
   <div class="soft" style="text-align:center;margin-top:10px">Tryck på en dag för att se kurvan — eller efterregistrera batteriet.</div>
 </div>
@@ -1494,11 +1535,11 @@ document.getElementById('ask-reflect').onclick=async function(){
 
 // ── In-app changelog ───────────────────────────────────
 var CHANGELOG={
-  appId:'batteriet',version:'2.4.0',updated:'2026-06-18',
+  appId:'batteriet',version:'2.5.0',updated:'2026-07-14',
   tagline:'Ett varsamt energistöd för vardagen.',
   description:'Batteriet hjälper dig följa din energi som ett batteri som laddas och dras. Du loggar det som drar och laddar, gör en morgonkoll, ser mönster över tid och planerar imorgon — helt offline, med dina data i din egen telefon.',
   audience:'För dig som lätt blir överstimulerad eller utmattad och vill ha ett lugnt, reklamfritt verktyg för att märka och respektera din energi. Ett vardagsstöd — inte vård. Vid djup utmattning: ta hjälp av vården eller företagshälsan.',
-  latest:'2.4.0',
+  latest:'2.5.0',
   functions:[
     'Batterinivå i zoner (grön/gul/röd) med rekommendation',
     'Snabbregistrera det som drar och laddar energi',
@@ -1522,6 +1563,8 @@ var CHANGELOG={
     'Halvcirkel-m\u00e4tare f\u00f6r morgondagens prognos',
     'Veckobatteri som st\u00e5ende staplar',
     'Insikt f\u00f6r dig: vad som lyfter batteriet mest',
+    'Kalender i tre l\u00e4gen: m\u00e5nad, vecka och \u00e5r',
+    '\u00c5rsheatmap \u2014 hela \u00e5ret i en blick',
     'Kalender med dagskurva och efterregistrering',
     'Efterregistrera morgonkoll och m\u00e5ende per dag',
     'Förinställt Centralen-kort för automatisk synk till hubben',
@@ -1529,6 +1572,7 @@ var CHANGELOG={
     'Export/import som säkerhetskopia'
   ],
   changelog:[
+    {version:'2.5.0',date:'2026-07-14',items:['Kalendern i tre lägen: Månad, Vecka och År','Årsheatmap över hela året','Veckovy med dagskurva per dag','Batterisiffra och minikurva i månadsrutan']},
     {version:'2.4.0',date:'2026-06-18',items:['Förinställt Centralen-kort (id, namn, ikon, beskrivning, filer, färger) så hubben kan synka in appen automatiskt']},
     {version:'2.3.2',date:'2026-06-17',items:['Dagskurvan i samma stil som 14-dagarsgrafen (staplar + linje)']},
     {version:'2.3.1',date:'2026-06-17',items:['Efterregistrera morgonkoll per dag','Efterregistrera mående per dag']},
@@ -1599,12 +1643,43 @@ function recalcDay(d){
 }
 function minOf(t){var m=/^(\d{1,2}):(\d{2})$/.exec(t||'');return m?(+m[1])*60+(+m[2]):null;}
 
+var calMode='month';
+var MONTHS_LONG=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+var MONTHS_SHORT=['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+var WD_SHORT=['Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag','Söndag'];
+
+// Liten SVG-sparkline av dagens batterikurva (samma punkter som dagsgrafen)
+function sparkSVG(d,w,h,thin){
+  if(!d)return '';
+  var pts=dayCurvePoints(d);
+  if(pts.length<2)return '';
+  var minM=pts[0].m,maxM=pts[pts.length-1].m;if(maxM<=minM)maxM=minM+60;
+  var X=function(m){return (m-minM)/(maxM-minM)*w;};
+  var Y=function(v){return h-2-(v/100)*(h-4);};
+  var line=pts.map(function(pp,i){return (i?'L':'M')+X(pp.m).toFixed(1)+','+Y(pp.v).toFixed(1);}).join(' ');
+  var area=line+' L'+w+','+h+' L0,'+h+' Z';
+  var col='var(--'+zone(d.val)+')';
+  var sw=thin?1.4:2;
+  return '<svg class="cc-spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true">'
+    +'<path d="'+area+'" fill="'+col+'" opacity=".22"/>'
+    +'<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
 function renderCalendar(){
+  document.getElementById('cal-month').style.display=calMode==='month'?'':'none';
+  document.getElementById('cal-weekview').style.display=calMode==='week'?'':'none';
+  document.getElementById('cal-yearview').style.display=calMode==='year'?'':'none';
+  document.getElementById('cal-modes').querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.m===calMode);});
+  if(calMode==='month')renderCalMonth();
+  else if(calMode==='week')renderCalWeek();
+  else renderCalYear();
+}
+
+function renderCalMonth(){
   var grid=document.getElementById('cal-grid');if(!grid)return;
-  var months=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
-  document.getElementById('cal-title').textContent=months[calCur.getMonth()]+' '+calCur.getFullYear();
+  document.getElementById('cal-title').textContent=MONTHS_LONG[calCur.getMonth()]+' '+calCur.getFullYear();
   var first=new Date(calCur.getFullYear(),calCur.getMonth(),1);
-  var startWd=(first.getDay()+6)%7; // måndag=0
+  var startWd=(first.getDay()+6)%7;
   var dim=new Date(calCur.getFullYear(),calCur.getMonth()+1,0).getDate();
   var todayIso=todayKey();
   var html='';
@@ -1618,9 +1693,15 @@ function renderCalendar(){
     if(k===todayIso)cls+=' today';
     if(d)cls+=' has';
     if(isFuture)cls+=' future';
-    var bar='transparent';
-    if(d&&typeof d.val==='number')bar='var(--'+zone(d.val)+')';
-    html+='<div class="'+cls+'" data-k="'+k+'"'+(isFuture?'':' role="button"')+'><span class="cc-day">'+dnum+'</span><span class="cc-bar" style="background:'+bar+'"></span></div>';
+    var inner='<span class="cc-day">'+dnum+'</span>';
+    if(d&&typeof d.val==='number'){
+      var spark=sparkSVG(d,40,12,true);
+      inner+=spark?spark:'<span class="cc-bar" style="background:var(--'+zone(d.val)+')"></span>';
+      inner+='<span class="cc-val">'+d.val+'%</span>';
+    }else{
+      inner+='<span class="cc-bar" style="background:transparent"></span>';
+    }
+    html+='<div class="'+cls+'" data-k="'+k+'"'+(isFuture?'':' role="button"')+'>'+inner+'</div>';
   }
   grid.innerHTML=html;
   grid.querySelectorAll('.cal-cell[data-k]').forEach(function(cell){
@@ -1628,8 +1709,81 @@ function renderCalendar(){
     cell.onclick=function(){openCalDay(cell.dataset.k);};
   });
 }
-document.getElementById('cal-prev').onclick=function(){calCur.setMonth(calCur.getMonth()-1);renderCalendar();};
-document.getElementById('cal-next').onclick=function(){var n=new Date(calCur);n.setMonth(n.getMonth()+1);var now=new Date();if(n.getFullYear()*12+n.getMonth()>now.getFullYear()*12+now.getMonth())return;calCur.setMonth(calCur.getMonth()+1);renderCalendar();};
+
+function weekStart(dt){var n=new Date(dt);var wd=(n.getDay()+6)%7;n.setDate(n.getDate()-wd);n.setHours(0,0,0,0);return n;}
+function renderCalWeek(){
+  var box=document.getElementById('cal-weekview');if(!box)return;
+  var ws=weekStart(calCur);
+  var we=new Date(ws);we.setDate(we.getDate()+6);
+  document.getElementById('cal-title').textContent=ws.getDate()+' '+MONTHS_SHORT[ws.getMonth()].toLowerCase()+' – '+we.getDate()+' '+MONTHS_SHORT[we.getMonth()].toLowerCase();
+  var todayIso=todayKey();
+  var html='';
+  for(var i=0;i<7;i++){
+    var dt=new Date(ws);dt.setDate(dt.getDate()+i);
+    var k=toISO(dt);
+    var d=state.days[k];
+    var isFuture=k>todayIso;
+    var cls='wk-day'+(k===todayIso?' today':'');
+    var spark=d?sparkSVG(d,120,34,false):'';
+    var val=d&&typeof d.val==='number'?'<span class="wk-val" style="color:var(--'+zone(d.val)+')">'+d.val+'%</span>':'<span class="wk-val soft">–</span>';
+    html+='<div class="'+cls+'"'+(isFuture?'':' data-k="'+k+'" role="button"')+' style="'+(isFuture?'opacity:.4':'')+'">'
+      +'<span class="wk-name">'+WD_SHORT[i]+' '+dt.getDate()+'</span>'
+      +'<span class="wk-spark">'+(spark||'')+'</span>'+val+'</div>';
+  }
+  box.innerHTML=html;
+  box.querySelectorAll('.wk-day[data-k]').forEach(function(row){row.onclick=function(){openCalDay(row.dataset.k);};});
+}
+
+function renderCalYear(){
+  var box=document.getElementById('yr-months');if(!box)return;
+  var yr=calCur.getFullYear();
+  document.getElementById('cal-title').textContent=String(yr);
+  var todayIso=todayKey();
+  var html='';
+  for(var mo=0;mo<12;mo++){
+    var dim=new Date(yr,mo+1,0).getDate();
+    var cells='';
+    for(var dnum=1;dnum<=31;dnum++){
+      if(dnum>dim){cells+='<div class="yr-cell empty" style="visibility:hidden"></div>';continue;}
+      var k=toISO(new Date(yr,mo,dnum));
+      var d=state.days[k];
+      var cls='yr-cell'+(k===todayIso?' today':'');
+      var st='';
+      if(d&&typeof d.val==='number'){
+        st='background:var(--'+zone(d.val)+');opacity:'+(0.35+0.65*(d.val/100)).toFixed(2);
+      }else{cls+=' empty';}
+      var isFuture=k>todayIso;
+      var attr=isFuture?'':' data-k="'+k+'" role="button"';
+      cells+='<div class="'+cls+'"'+attr+' style="'+st+'" title="'+k+(d&&typeof d.val==='number'?' · '+d.val+'%':'')+'"></div>';
+    }
+    html+='<div class="yr-row"><span class="yr-name">'+MONTHS_SHORT[mo]+'</span><div class="yr-cells">'+cells+'</div></div>';
+  }
+  box.innerHTML=html;
+  box.querySelectorAll('.yr-cell[data-k]').forEach(function(cell){cell.onclick=function(){openCalDay(cell.dataset.k);};});
+}
+
+document.getElementById('cal-modes').querySelectorAll('button').forEach(function(b){
+  b.onclick=function(){calMode=b.dataset.m;calCur=new Date();if(calMode==='month')calCur.setDate(1);renderCalendar();};
+});
+function calStep(dir){
+  var now=new Date();
+  if(calMode==='month'){
+    var n=new Date(calCur);n.setMonth(n.getMonth()+dir);
+    if(dir>0&&n.getFullYear()*12+n.getMonth()>now.getFullYear()*12+now.getMonth())return;
+    calCur=n;
+  }else if(calMode==='week'){
+    var w=new Date(calCur);w.setDate(w.getDate()+dir*7);
+    if(dir>0&&weekStart(w)>weekStart(now))return;
+    calCur=w;
+  }else{
+    var y=new Date(calCur);y.setFullYear(y.getFullYear()+dir);
+    if(dir>0&&y.getFullYear()>now.getFullYear())return;
+    calCur=y;
+  }
+  renderCalendar();
+}
+document.getElementById('cal-prev').onclick=function(){calStep(-1);};
+document.getElementById('cal-next').onclick=function(){calStep(1);};
 
 function ensureDay(k){
   if(!state.days[k]){
