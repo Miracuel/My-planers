@@ -19,6 +19,7 @@
   --have:#7A8B6F;--wish:#C09A3E;--lent:#6E89A8;--used:#B58A82;
   --preorder:#7E9AA6;--forsale:#B5708A;
   --ordered:#6F9E94;--waiting:#9E8FB0;--discarded:#9A938A;
+  --sold:#8E8FA8;--flag:#C58A3D;--proj:#6E8FA8;--expire:#B5705E;
   --navbg:rgba(243,239,231,.95);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -79,6 +80,22 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .buy-btn{font-family:inherit;font-size:11px;border-radius:9px;border:1px solid var(--have);background:var(--panel);color:var(--have);padding:6px 11px;cursor:pointer;flex:none}
 .buy-btn:hover{background:var(--have);color:#fff}
 .wish-group{font-size:12px;color:var(--muted);font-weight:600;margin:12px 0 4px;letter-spacing:.02em}
+.flag-chip{font-size:10px;border-radius:8px;padding:2px 7px;color:#fff;white-space:nowrap}
+.flag-chip.first{background:var(--flag)}
+.flag-chip.proj{background:var(--proj)}
+.usage-chip{font-size:10px;border-radius:8px;padding:2px 7px;background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.exp-chip{font-size:10px;border-radius:8px;padding:2px 7px;background:var(--panel2);color:var(--expire);border:1px solid var(--expire)}
+.exp-chip.past{background:var(--expire);color:#fff}
+.sold-chip{font-size:10px;border-radius:8px;padding:2px 7px;background:var(--panel2);color:var(--sold);border:1px solid var(--sold)}
+.flag-pick{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0}
+.flag-pick button{font-family:inherit;font-size:12px;border-radius:11px;border:1.5px solid var(--line);background:var(--panel2);color:var(--muted);padding:8px 12px;cursor:pointer}
+.flag-pick button.on{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
+.stamp-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0}
+.stamp-btn{font-family:inherit;font-size:11px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:5px 9px;cursor:pointer}
+.stamp-btn.on{border-color:var(--have);background:var(--have);color:#fff}
+.invbar .seg{margin-bottom:0}
+.dc-btn.sold{color:var(--sold);border-color:var(--sold)}
+.dc-btn.disc{color:var(--discarded);border-color:var(--discarded)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:10px}
 .seg button{font-family:inherit;font-size:13px;background:var(--panel);color:var(--muted);border:none;padding:7px 16px;cursor:pointer}
 .seg button.on{background:var(--amber-soft);color:var(--amber);font-weight:600}
@@ -233,6 +250,7 @@ html[data-theme=dark]{
   --have:#8FA383;--wish:#D0B36A;--lent:#86A0BE;--used:#C49A91;
   --preorder:#96AEB8;--forsale:#C98AA2;
   --ordered:#84B0A6;--waiting:#B0A2C0;--discarded:#ABA399;
+  --sold:#A3A4BC;--flag:#D4A45F;--proj:#8CA8BE;--expire:#C98878;
   --navbg:rgba(38,35,28,.95);
 }
 .theme-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:max(12px,calc(50vw - 228px));width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;z-index:45;font-family:inherit}
@@ -329,11 +347,17 @@ h1.brand{display:none}
       </select>
     </div>
     <div class="filter-chips" id="filter-chips"></div>
+    <div class="filter-chips" id="filter-chips2"></div>
     <div class="tagbar" id="tagbar"></div>
     <div class="brandbar" id="brandbar"></div>
     <div class="invbar" id="invbar" style="display:none">
-      <span class="inv-count" id="inv-count">0/0 inventerade</span>
-      <button id="inv-pending">Visa ej inventerade</button>
+      <div class="seg" id="inv-seg">
+        <button data-st="inventoried" class="on">Inventerad</button>
+        <button data-st="usedOn">Använd</button>
+        <button data-st="declutteredOn">Decluttrad</button>
+      </div>
+      <span class="inv-count" id="inv-count">0/0</span>
+      <button id="inv-pending">Visa ej stämplade</button>
       <button id="inv-reset">Nollställ runda</button>
     </div>
     <div class="card-panel"><div id="item-list"></div></div>
@@ -345,6 +369,7 @@ h1.brand{display:none}
       <button id="bulk-brand" class="prim">Märke</button>
       <button id="bulk-status" class="prim">Status</button>
       <button id="bulk-family" class="prim">Familj</button>
+      <button id="bulk-flags" class="prim">Flaggor</button>
       <button id="bulk-del" class="danger">Ta bort</button>
       <button id="sel-done">Klar</button>
     </div>
@@ -488,10 +513,26 @@ h1.brand{display:none}
   <label>Familj / serie / färgmatch (frivilligt)</label>
   <input type="text" id="f-family" list="fam-list" placeholder="T.ex. Höstkollektion, Varma röda…">
   <datalist id="fam-list"></datalist>
-  <div class="mark-row">
-    <button type="button" class="inv-today" id="f-inv-today">✓ Inventerad idag</button>
-    <button type="button" class="mark-clear" id="f-inv-clear">Rensa</button>
-    <span id="f-inv-status" style="font-size:12px;color:var(--muted)"></span>
+  <div class="row2">
+    <div><label id="f-usage-label">Användning</label><select id="f-usage"></select></div>
+    <div><label>Utgångsdatum (frivilligt)</label><input type="date" id="f-expiry"></div>
+  </div>
+  <label>Flaggor</label>
+  <div class="flag-pick">
+    <button type="button" id="f-usefirst">⚡ Använd först</button>
+    <button type="button" id="f-project">🎯 Projekt — gör slut på</button>
+  </div>
+  <label>Stämplar</label>
+  <div class="stamp-row">
+    <button type="button" class="stamp-btn" id="f-st-inventoried">Inventerad</button>
+    <button type="button" class="stamp-btn" id="f-st-usedOn">Använd</button>
+    <button type="button" class="stamp-btn" id="f-st-declutteredOn">Decluttrad</button>
+    <button type="button" class="mark-clear" id="f-st-clear">Rensa alla</button>
+  </div>
+  <div id="f-st-status" style="font-size:11px;color:var(--muted);margin-bottom:4px"></div>
+  <div class="row2">
+    <div><label>Såld / given till</label><input type="text" id="f-soldto" placeholder="Namn (frivilligt)"></div>
+    <div><label>Datum</label><input type="date" id="f-solddate"></div>
   </div>
   <div class="row2">
     <div><label>Antal</label><input type="number" id="f-qty" min="0" step="1" value="1"></div>
@@ -534,6 +575,8 @@ h1.brand{display:none}
   <h3 id="coll-sheet-title">Ny samling</h3>
   <label>Namn</label>
   <input type="text" id="c-name" placeholder="T.ex. Böcker, Brädspel, Smink…">
+  <label>Typ av samling (styr ord som Läst / Använd)</label>
+  <select id="c-kind"></select>
   <label>Ikon</label>
   <div class="icon-pick" id="c-icons"></div>
   <input type="text" id="c-icon-custom" maxlength="4" placeholder="…eller skriv en egen emoji" style="margin-top:2px">
@@ -549,6 +592,19 @@ h1.brand{display:none}
   <div class="hint">Ladda upp en logga för ett märke så visas den på saker och i märkesfiltret. Bilden skalas ner automatiskt.</div>
   <div id="brandmanage-list"></div>
   <input type="file" id="brand-logo-file" accept="image/*" style="display:none">
+</div>
+
+<!-- Såld / given-sheet -->
+<div class="sheet" id="sold-sheet">
+  <h3 id="sold-title">Såld / given</h3>
+  <div class="hint">Håll koll på vem du sålt eller gett saken till. Statusen blir <b>Såld / bortgiven</b>.</div>
+  <label>Till vem?</label>
+  <input type="text" id="sold-to" placeholder="Namn (frivilligt)">
+  <label>Datum</label>
+  <input type="date" id="sold-date">
+  <label>Pris (frivilligt)</label>
+  <input type="number" id="sold-price" min="0" step="1" placeholder="kr">
+  <button class="sheet-close" id="sold-save">Spara</button>
 </div>
 
 <!-- Inventera-sheet -->
@@ -596,13 +652,16 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.15.0',
+  version:'1.16.0',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
     {area:'Samlingar',items:['Skapa egna samlingar med namn, färg och valfri ikon','Ta bort en samling (och allt i den) via Ändra-knappen','Se inköpsvärde och försäljningsvärde per samling','Duplicera en sak för att snabbt lägga till en liknande']},
     {area:'Sak-fält',items:['Märke, Typ, inköpspris, inköpsdatum och försäljningsvärde','Butik/köpställe och ordernummer (bra för beställda/förbeställda)','Flera taggar/kategorier per sak — t.ex. Förbrukningsvara','Färgplupp (hexkod) eller emoji som markör']},
     {area:'Set & delar',items:['Lägg delar i ett set — varje del blir en egen sak','Lägg även till en befintlig vara i settet via sökning','Settets inköpspris fördelas automatiskt på delarna (om settet har ett pris)','Öppna en del och se vilket set den ingår i']},
+    {area:'Använd & läs',items:['Användningsstatus per sak — orden anpassas efter samlingens typ (Läst \/ Läser för böcker, Oöppnad \/ Använd \/ Slut för smink & färg)','Utgångsdatum med varning när något går ut snart eller redan gått ut','Flaggorna Använd först och Projekt (gör slut på) — med egna filter']},
+    {area:'Stämplar',items:['Stämpla saker som Inventerad, Använd eller Decluttrad med dagens datum','Växla stämpel i genomgångsläget: antal, filter för ej stämplade och nollställ runda per stämpel']},
+    {area:'Såld & slängd',items:['Markera en sak som Såld \/ bortgiven och spara till vem, när och för hur mycket','Markera som Slängd direkt i declutter-läget — utan att radera historiken']},
     {area:'Familjer',items:['Ge varor en familj — t.ex. en serie eller färgmatch','Klicka på familjeetiketten för att filtrera fram alla i samma familj','Matcha flera varor till en familj samtidigt via Markera → Familj']},
     {area:'Declutter & värde',items:['Declutter-läge: markera till salu eller ta bort direkt i listan','Filtret Till salu samlar allt du flaggat','Översikt med inköpsvärde och försäljningsvärde']},
     {area:'Massredigera',items:['Markera-läge: bocka i flera saker på en gång','Ge dem gemensam tagg, typ, märke eller status','Eller ta bort flera markerade i ett svep']},
@@ -612,6 +671,14 @@ var APPINFO={
     {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
   ],
   changelog:[
+    {v:'1.16.0',d:'2026-07-13',items:[
+      'Flaggorna Använd först och Projekt (gör slut på) — sätt dem per sak eller på flera samtidigt via Markera.',
+      'Användningsstatus som anpassar sig efter samlingens typ: Inte läst \/ Läser \/ Läst för böcker, Oöppnad \/ Använd \/ Slut för smink & färg.',
+      'Utgångsdatum med varning när något snart går ut eller redan är utgånget, plus filtret Går ut snart.',
+      'Ny status Såld \/ bortgiven med Till vem, datum och pris — nås via Såld-knappen i declutter-läget.',
+      'Slängd-knapp i declutter-läget som markerar utan att radera.',
+      'Stämplarna Använd och Decluttrad fungerar nu precis som Inventerad, och genomgångsläget kan växla mellan dem.'
+    ]},
     {v:'1.15.0',d:'2026-06-30',items:[
       'Paletten kan gruppera färger i färgfamiljer (röda, blåa, neutrala osv.) via sorteringsvalet Färgfamilj.',
       'Ny funktion "Hitta snarlika färger" som jämför hexkoderna och grupperar nästan identiska färger — med justerbar känslighet.'
@@ -721,7 +788,19 @@ var CENTRALEN_META={
   desktop:'samlingen-desktop.html',
   farger:{bg:'#F3EFE7',line:'#DDD5C6',ink:'#3E382E',muted:'#857C6C',accent:'#A8794E',iconbg:'#EADFCB'}
 };
-var STATUS=[['have','Äger','var(--have)'],['wish','Önskar','var(--wish)'],['preorder','Förbeställd','var(--preorder)'],['ordered','Beställd','var(--ordered)'],['waiting','Väntande','var(--waiting)'],['lent','Utlånad','var(--lent)'],['used','Slut','var(--used)'],['discarded','Slängd','var(--discarded)'],['forsale','Överväger sälja','var(--forsale)']];
+var STATUS=[['have','Äger','var(--have)'],['wish','Önskar','var(--wish)'],['preorder','Förbeställd','var(--preorder)'],['ordered','Beställd','var(--ordered)'],['waiting','Väntande','var(--waiting)'],['lent','Utlånad','var(--lent)'],['used','Slut','var(--used)'],['sold','Såld / bortgiven','var(--sold)'],['discarded','Slängd','var(--discarded)'],['forsale','Överväger sälja','var(--forsale)']];
+var KINDS=[['general','Allmänt'],['books','Böcker'],['beauty','Skönhet & färg']];
+var USAGE_LABELS={
+  general:[['unused','Oanvänd'],['planned','Planerad'],['started','Påbörjad'],['done','Använd upp']],
+  books:[['unused','Inte läst'],['planned','Planerar läsa'],['started','Läser'],['done','Läst']],
+  beauty:[['unused','Oöppnad'],['planned','Planerad'],['started','Använd'],['done','Slut']]
+};
+function collKind(coll){var c=collById(coll);return (c&&c.kind)||'general';}
+function usageOpts(coll){return USAGE_LABELS[collKind(coll)]||USAGE_LABELS.general;}
+function usageLabel(it){var o=usageOpts(it.coll);for(var i=0;i<o.length;i++){if(o[i][0]===it.usage)return o[i][1];}return '';}
+function daysUntil(d){if(!d)return null;var t=new Date(d+'T00:00:00');if(isNaN(t.getTime()))return null;var now=new Date();now.setHours(0,0,0,0);return Math.round((t-now)/86400000);}
+function expiringSoon(it){var d=daysUntil(it.expiry);return d!==null&&d<=60;}
+var STAMPS=[['inventoried','Inventerad','inventerade'],['usedOn','Använd','använda'],['declutteredOn','Decluttrad','decluttrade']];
 function isForSale(it){return it.forSale===true||it.status==='forsale';}
 var ICONS=['📚','🎲','🎨','💄','🎮','🎸','💿','🧶','🪙','🍷','🌱','🧩','🎬','🃏','⌚','🧴'];
 var COLORS=['#A8794E','#7A8B6F','#6E89A8','#9E7BA6','#B58A82','#5F8C82','#C09A3E','#8A8FB0'];
@@ -764,7 +843,17 @@ function migrateItems(){
     if(it.location==null)it.location='';
     if(it.inventoried==null)it.inventoried='';
     if(it.family==null)it.family='';
+    if(it.usage==null)it.usage='';
+    if(it.expiry==null)it.expiry='';
+    if(it.useFirst==null)it.useFirst=false;
+    if(it.project==null)it.project=false;
+    if(it.usedOn==null)it.usedOn='';
+    if(it.declutteredOn==null)it.declutteredOn='';
+    if(it.soldTo==null)it.soldTo='';
+    if(it.soldDate==null)it.soldDate='';
   }
+  if(!Array.isArray(state.collections))state.collections=[];
+  for(var ci=0;ci<state.collections.length;ci++){if(state.collections[ci].kind==null)state.collections[ci].kind='general';}
   if('groups' in state)delete state.groups; // ersatt av taggar
   if(!state.brandLogos||typeof state.brandLogos!=='object')state.brandLogos={};
 }
@@ -842,7 +931,8 @@ function closeSheets(){bg.classList.remove('open');var sh=document.querySelector
 bg.onclick=closeSheets;
 
 // ── Navigationstillstånd ───────────────────────────────
-var currentColl=null,tagFilter='',brandFilter={},familyFilter='',search='',sortBy='new',statusFilter='all',declutter=false,selectMode=false,selected={},bulkAction='',bulkStatus='',inventoryMode=false,invPending=false,invEditId=null,tmpInv='';
+var tmpUseFirst=false,tmpProject=false,tmpStamps={inventoried:'',usedOn:'',declutteredOn:''},extraFilter='';
+var currentColl=null,tagFilter='',brandFilter={},familyFilter='',search='',sortBy='new',statusFilter='all',declutter=false,selectMode=false,selected={},bulkAction='',bulkStatus='',inventoryMode=false,invPending=false,invEditId=null,tmpInv='',invStamp='inventoried';
 
 // ── Hem / samlingsrutnät ───────────────────────────────
 function renderHome(){
@@ -868,7 +958,7 @@ function renderHome(){
 
 // ── Detaljvy ───────────────────────────────────────────
 function openCollection(id){
-  currentColl=id;tagFilter='';brandFilter={};familyFilter='';search='';statusFilter='all';declutter=false;selectMode=false;selected={};inventoryMode=false;invPending=false;
+  currentColl=id;tagFilter='';brandFilter={};familyFilter='';extraFilter='';search='';statusFilter='all';declutter=false;selectMode=false;selected={};inventoryMode=false;invPending=false;
   el('search-in').value='';el('sort-sel').value=sortBy;
   el('declutter-btn').classList.remove('sel');
   el('select-btn').classList.remove('sel');
@@ -891,6 +981,18 @@ function renderFilterChips(){
   f.innerHTML=h;
   var bs=f.querySelectorAll('.fchip');
   for(var k=0;k<bs.length;k++){bs[k].onclick=function(){statusFilter=this.dataset.s;renderFilterChips();renderItems();};}
+  renderExtraChips();
+}
+function renderExtraChips(){
+  var f2=el('filter-chips2');
+  var opts=[['','Inget extrafilter'],['usefirst','⚡ Använd först'],['project','🎯 Projekt'],['expiring','⏳ Går ut snart']];
+  var uo=usageOpts(currentColl);
+  for(var i=0;i<uo.length;i++)opts.push(['usage:'+uo[i][0],uo[i][1]]);
+  var h='';
+  for(var j=0;j<opts.length;j++)h+='<button class="fchip'+(extraFilter===opts[j][0]?' sel':'')+'" data-x="'+opts[j][0]+'">'+esc(opts[j][1])+'</button>';
+  f2.innerHTML=h;
+  var bs=f2.querySelectorAll('.fchip');
+  for(var k=0;k<bs.length;k++){bs[k].onclick=function(){extraFilter=this.getAttribute('data-x');renderFilterChips();renderItems();};}
 }
 
 function filteredItems(){
@@ -901,11 +1003,15 @@ function filteredItems(){
     if(tagFilter&&(it.tags||[]).indexOf(tagFilter)<0)continue;
     if(brandFilterActive()&&!brandFilter[it.brand||''])continue;
     if(familyFilter&&it.family!==familyFilter)continue;
-    if(inventoryMode&&invPending&&it.inventoried)continue;
+    if(extraFilter==='usefirst'&&!it.useFirst)continue;
+    if(extraFilter==='project'&&!it.project)continue;
+    if(extraFilter==='expiring'&&!expiringSoon(it))continue;
+    if(extraFilter.indexOf('usage:')===0&&it.usage!==extraFilter.slice(6))continue;
+    if(inventoryMode&&invPending&&it[invStamp])continue;
     if(statusFilter==='sale'){if(!isForSale(it))continue;}
     else if(statusFilter!=='all'&&it.status!==statusFilter)continue;
     if(search){
-      var hay=((it.name||'')+' '+(it.type||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.store||'')+' '+(it.order||'')+' '+(it.location||'')+' '+(it.family||'')+' '+(it.note||'')).toLowerCase();
+      var hay=((it.name||'')+' '+(it.type||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.store||'')+' '+(it.order||'')+' '+(it.location||'')+' '+(it.family||'')+' '+(it.soldTo||'')+' '+(it.note||'')).toLowerCase();
       if(hay.indexOf(search.toLowerCase())<0)continue;
     }
     arr.push(it);
@@ -932,6 +1038,15 @@ function itemRow(it){
   for(var t=0;t<tg.length;t++)sub+='<span class="tag click" data-tag="'+esc(tg[t])+'">'+esc(tg[t])+'</span>';
   if(it.parent){var p=itemById(it.parent);if(p)sub+='<span class="part-of">del av '+esc(p.name)+'</span>';}
   if(it.family)sub+='<span class="tag fam" data-fam="'+esc(it.family)+'">❖ '+esc(it.family)+'</span>';
+  if(it.useFirst)sub+='<span class="flag-chip first">⚡ Använd först</span>';
+  if(it.project)sub+='<span class="flag-chip proj">🎯 Projekt</span>';
+  var ul=usageLabel(it);
+  if(ul)sub+='<span class="usage-chip">'+esc(ul)+'</span>';
+  if(it.expiry){var dd=daysUntil(it.expiry);
+    if(dd!==null&&dd<0)sub+='<span class="exp-chip past">⏳ Utgången '+esc(it.expiry)+'</span>';
+    else if(dd!==null&&dd<=60)sub+='<span class="exp-chip">⏳ Går ut '+esc(it.expiry)+'</span>';
+    else sub+='<span class="qty">⏳ '+esc(it.expiry)+'</span>';}
+  if(it.status==='sold'&&it.soldTo)sub+='<span class="sold-chip">Till '+esc(it.soldTo)+(it.soldDate?' · '+esc(it.soldDate):'')+'</span>';
   if(it.rating>0){var s='';for(var r=0;r<5;r++)s+=(r<it.rating?'★':'☆');sub+='<span class="stars">'+s+'</span>';}
   if(it.qty&&+it.qty!==1)sub+='<span class="qty">×'+esc(it.qty)+'</span>';
   var kidsN=childrenOf(it.id).length;
@@ -946,18 +1061,21 @@ function itemRow(it){
   if(it.location)sub+='<span class="qty">📍 '+esc(it.location)+'</span>';
   var invLine='';
   if(inventoryMode){
-    invLine='<div class="inv-line">'+(it.inventoried?('<span class="done">✓ Inventerad '+esc(it.inventoried)+'</span>'):'<span class="todo">Ej inventerad</span>')+'</div>';
+    var sm=stampMeta();
+    invLine='<div class="inv-line">'+(it[invStamp]?('<span class="done">✓ '+esc(sm[1])+' '+esc(it[invStamp])+'</span>'):('<span class="todo">Ej '+esc(sm[2].slice(0,-1))+'</span>'))+'</div>';
   }
   var dc='';
   if(declutter&&!selectMode){
     dc='<div class="dc-actions">'+
        '<button class="dc-btn'+(it.forSale?' on':'')+'" data-act="sale" data-id="'+it.id+'">'+(it.forSale?'✓ Till salu':'♻ Till salu')+'</button>'+
-       '<button class="dc-btn danger" data-act="del" data-id="'+it.id+'">🗑 Ta bort</button>'+
+       '<button class="dc-btn sold" data-act="sold" data-id="'+it.id+'">💌 Såld / given</button>'+
+       '<button class="dc-btn disc" data-act="disc" data-id="'+it.id+'">🗑 Slängd</button>'+
+       '<button class="dc-btn danger" data-act="del" data-id="'+it.id+'">✕ Ta bort</button>'+
        '</div>';
   }
   var ck=selectMode?('<span class="ck">'+(selected[it.id]?'☑':'☐')+'</span>'):'';
   var right;
-  if(inventoryMode){var today=todayKey();right='<button class="inv-today'+(it.inventoried===today?' on':'')+'" data-inv="'+it.id+'">'+(it.inventoried===today?'✓ Idag':'✓ Idag')+'</button>';}
+  if(inventoryMode){var today=todayKey();right='<button class="inv-today'+(it[invStamp]===today?' on':'')+'" data-inv="'+it.id+'">✓ Idag</button>';}
   else right=(selectMode?'':'<button class="dup-btn" data-dup="'+it.id+'" title="Duplicera">⧉</button>');
   return '<div class="item'+(selectMode&&selected[it.id]?' sel-on':'')+'" data-id="'+it.id+'">'+ck+markHtml(it)+
     '<div class="item-body"><div class="item-name'+(it.status==='used'||it.status==='discarded'?' used':'')+'">'+esc(it.name)+'</div>'+
@@ -1137,16 +1255,21 @@ function renderItems(){
   var dcs=l.querySelectorAll('.dc-btn');
   for(var m=0;m<dcs.length;m++){dcs[m].onclick=declutterAction;}
 }
-function invCounts(){var done=0,tot=0;for(var i=0;i<state.items.length;i++){var it=state.items[i];if(it.coll!==currentColl)continue;tot++;if(it.inventoried)done++;}return {done:done,tot:tot};}
+function stampMeta(){for(var i=0;i<STAMPS.length;i++){if(STAMPS[i][0]===invStamp)return STAMPS[i];}return STAMPS[0];}
+function invCounts(){var done=0,tot=0;for(var i=0;i<state.items.length;i++){var it=state.items[i];if(it.coll!==currentColl)continue;tot++;if(it[invStamp])done++;}return {done:done,tot:tot};}
 function updateInvbar(){
   var c=invCounts();
-  el('inv-count').textContent=c.done+'/'+c.tot+' inventerade';
+  var m=stampMeta();
+  el('inv-count').textContent=c.done+'/'+c.tot+' '+m[2];
+  el('inv-pending').textContent='Visa ej '+m[2];
   el('inv-pending').classList.toggle('on',invPending);
+  var segs=el('inv-seg').querySelectorAll('button');
+  for(var i=0;i<segs.length;i++)segs[i].classList.toggle('on',segs[i].getAttribute('data-st')===invStamp);
 }
-function stampInv(id){var it=itemById(id);if(!it)return;var t=todayKey();it.inventoried=(it.inventoried===t?'':t);save();renderItems();refreshAll();}
+function stampInv(id){var it=itemById(id);if(!it)return;var t=todayKey();it[invStamp]=(it[invStamp]===t?'':t);save();renderItems();refreshAll();}
 function openInv(id){
   invEditId=id;var it=itemById(id);if(!it)return;
-  tmpInv=it.inventoried||'';
+  tmpInv=it[invStamp]||'';
   el('inv-sheet-title').textContent='Inventera: '+it.name;
   el('inv-location').value=it.location||'';
   fillLocList();
@@ -1154,7 +1277,10 @@ function openInv(id){
   openSheet('inv-sheet');
 }
 function updateInvSheetStatus(){
-  el('inv-sheet-status').textContent=tmpInv?('Senast inventerad: '+tmpInv):'Ej inventerad än.';
+  var m=stampMeta();
+  el('inv-sheet-status').textContent=tmpInv?(m[1]+': '+tmpInv):('Ej '+m[2].slice(0,-1)+' än.');
+  el('inv-today-btn').textContent='✓ '+m[1]+' idag';
+  el('inv-clear-btn').textContent='Rensa stämpel';
   el('inv-today-btn').classList.toggle('on',tmpInv===todayKey());
 }
 function fillLocList(){var L=locationsAll(),h='';for(var i=0;i<L.length;i++)h+='<option value="'+esc(L[i])+'"></option>';el('loc-list').innerHTML=h;}
@@ -1164,7 +1290,7 @@ function updateSelbar(){
   var n=selectedIds().length;
   el('sel-count').textContent=n+' markerade';
   var dis=n===0;
-  var b=['bulk-tag','bulk-type','bulk-brand','bulk-status','bulk-family','bulk-del'];
+  var b=['bulk-tag','bulk-type','bulk-brand','bulk-status','bulk-family','bulk-flags','bulk-del'];
   for(var i=0;i<b.length;i++)el(b[i]).disabled=dis;
 }
 function declutterAction(e){
@@ -1172,6 +1298,8 @@ function declutterAction(e){
   var id=this.getAttribute('data-id'),act=this.getAttribute('data-act');
   var it=itemById(id);if(!it)return;
   if(act==='sale'){it.forSale=!it.forSale;save();renderItems();refreshAll();}
+  else if(act==='sold'){openSold(id);}
+  else if(act==='disc'){it.status='discarded';it.forSale=false;if(!it.declutteredOn)it.declutteredOn=todayKey();save();renderItems();refreshAll();}
   else if(act==='del'){
     var kids=childrenOf(id);
     if(!confirm(kids.length?('Ta bort? Dess '+kids.length+' del(ar) blir fristående.'):'Ta bort den här saken?'))return;
@@ -1189,17 +1317,40 @@ el('select-btn').onclick=function(){selectMode=!selectMode;if(selectMode){declut
 el('inv-btn').onclick=function(){inventoryMode=!inventoryMode;if(inventoryMode){declutter=false;selectMode=false;selected={};el('declutter-btn').classList.remove('sel');el('select-btn').classList.remove('sel');}else{invPending=false;}this.classList.toggle('sel',inventoryMode);renderItems();};
 el('inv-pending').onclick=function(){invPending=!invPending;renderItems();};
 el('inv-reset').onclick=function(){
-  var c=invCounts();
-  if(!confirm('Nollställ inventeringen för "'+(collById(currentColl)?collById(currentColl).name:'')+'"? Alla '+c.tot+' saker markeras som ej inventerade (datum rensas).'))return;
-  for(var i=0;i<state.items.length;i++){if(state.items[i].coll===currentColl)state.items[i].inventoried='';}
+  var c=invCounts(),m=stampMeta();
+  if(!confirm('Nollställ stämpeln "'+m[1]+'" för '+c.tot+' saker i samlingen? Datumen rensas.'))return;
+  for(var i=0;i<state.items.length;i++){if(state.items[i].coll===currentColl)state.items[i][invStamp]='';}
   save();renderItems();refreshAll();
+};
+(function(){var segs=el('inv-seg').querySelectorAll('button');for(var i=0;i<segs.length;i++){segs[i].onclick=function(){invStamp=this.getAttribute('data-st');renderItems();};}})();
+var soldEditId=null;
+function openSold(id){
+  var it=itemById(id);if(!it)return;
+  soldEditId=id;
+  el('sold-title').textContent='Såld / given: '+it.name;
+  el('sold-to').value=it.soldTo||'';
+  el('sold-date').value=it.soldDate||todayKey();
+  el('sold-price').value=(it.sell!==''&&it.sell!=null)?it.sell:'';
+  openSheet('sold-sheet');
+}
+el('sold-save').onclick=function(){
+  var it=soldEditId?itemById(soldEditId):null;
+  if(it){
+    it.soldTo=el('sold-to').value.trim();
+    it.soldDate=el('sold-date').value||todayKey();
+    if(el('sold-price').value!=='')it.sell=+el('sold-price').value;
+    it.status='sold';it.forSale=false;
+    if(!it.declutteredOn)it.declutteredOn=todayKey();
+    save();
+  }
+  closeSheets();renderItems();refreshAll();
 };
 el('inv-today-btn').onclick=function(){tmpInv=(tmpInv===todayKey()?'':todayKey());updateInvSheetStatus();};
 el('inv-clear-btn').onclick=function(){tmpInv='';updateInvSheetStatus();};
 el('inv-save').onclick=function(){
   if(!invEditId){closeSheets();return;}
   var it=itemById(invEditId);
-  if(it){it.location=el('inv-location').value.trim();it.inventoried=tmpInv;save();}
+  if(it){it.location=el('inv-location').value.trim();it[invStamp]=tmpInv;save();}
   closeSheets();renderItems();refreshAll();
 };
 el('sel-done').onclick=function(){selectMode=false;selected={};el('select-btn').classList.remove('sel');renderItems();};
@@ -1214,7 +1365,19 @@ function openBulk(action){
   var n=selectedIds().length;
   var wrap=el('bulk-input-wrap'),chips=el('bulk-chips');
   wrap.style.display='none';chips.style.display='none';
-  if(action==='status'){
+  if(action==='flags'){
+    el('bulk-title').textContent='Flaggor på '+n+' saker';
+    el('bulk-hint').textContent='Välj vad de markerade ska få.';
+    chips.style.display='flex';
+    var fh='';
+    fh+='<button class="chip" data-f="first-on">⚡ Sätt Använd först</button>';
+    fh+='<button class="chip" data-f="first-off">Ta bort Använd först</button>';
+    fh+='<button class="chip" data-f="proj-on">🎯 Sätt Projekt</button>';
+    fh+='<button class="chip" data-f="proj-off">Ta bort Projekt</button>';
+    chips.innerHTML=fh;
+    var fb=chips.querySelectorAll('.chip');
+    for(var fi=0;fi<fb.length;fi++){fb[fi].onclick=function(){bulkStatus=this.getAttribute('data-f');var all=chips.querySelectorAll('.chip');for(var x=0;x<all.length;x++)all[x].classList.remove('sel');this.classList.add('sel');};}
+  }else if(action==='status'){
     el('bulk-title').textContent='Sätt status på '+n+' saker';
     el('bulk-hint').textContent='Välj status som alla markerade ska få.';
     chips.style.display='flex';var ch='';
@@ -1240,6 +1403,7 @@ el('bulk-type').onclick=function(){openBulk('type');};
 el('bulk-brand').onclick=function(){openBulk('brand');};
 el('bulk-status').onclick=function(){openBulk('status');};
 el('bulk-family').onclick=function(){openBulk('family');};
+el('bulk-flags').onclick=function(){openBulk('flags');};
 el('bulk-apply').onclick=function(){
   var ids=selectedIds();if(!ids.length){closeSheets();return;}
   var i,it,v=el('bulk-input').value.trim();
@@ -1247,6 +1411,15 @@ el('bulk-apply').onclick=function(){
   else if(bulkAction==='type'){for(i=0;i<ids.length;i++){it=itemById(ids[i]);if(it)it.type=v;}}
   else if(bulkAction==='brand'){for(i=0;i<ids.length;i++){it=itemById(ids[i]);if(it)it.brand=v;}}
   else if(bulkAction==='family'){for(i=0;i<ids.length;i++){it=itemById(ids[i]);if(it)it.family=v;}}
+  else if(bulkAction==='flags'){
+    if(!bulkStatus)return;
+    for(i=0;i<ids.length;i++){it=itemById(ids[i]);if(!it)continue;
+      if(bulkStatus==='first-on')it.useFirst=true;
+      else if(bulkStatus==='first-off')it.useFirst=false;
+      else if(bulkStatus==='proj-on')it.project=true;
+      else if(bulkStatus==='proj-off')it.project=false;
+    }
+  }
   else if(bulkAction==='status'){if(!bulkStatus){return;}for(i=0;i<ids.length;i++){it=itemById(ids[i]);if(it)it.status=bulkStatus;}}
   save();closeSheets();renderItems();refreshAll();
 };
@@ -1363,9 +1536,16 @@ function openItem(id){
   fillLocList();
   el('f-family').value=it&&it.family?it.family:'';
   fillFamList();
-  tmpInv=it&&it.inventoried?it.inventoried:'';
-  el('f-inv-status').textContent=tmpInv?('Senast inventerad: '+tmpInv):'Ej inventerad än.';
-  el('f-inv-today').classList.toggle('on',tmpInv===todayKey());
+  buildUsageSelect(it?it.coll:el('f-coll').value, it?it.usage:'');
+  el('f-expiry').value=it&&it.expiry?it.expiry:'';
+  tmpUseFirst=it?!!it.useFirst:false;
+  tmpProject=it?!!it.project:false;
+  el('f-usefirst').classList.toggle('on',tmpUseFirst);
+  el('f-project').classList.toggle('on',tmpProject);
+  tmpStamps={inventoried:(it&&it.inventoried)||'',usedOn:(it&&it.usedOn)||'',declutteredOn:(it&&it.declutteredOn)||''};
+  renderStampRow();
+  el('f-soldto').value=it&&it.soldTo?it.soldTo:'';
+  el('f-solddate').value=it&&it.soldDate?it.soldDate:'';
   setHexMark(it&&it.hex?it.hex:'');
   el('f-emoji').value=it&&it.emoji?it.emoji:'';
   el('f-qty').value=it&&it.qty!=null?it.qty:1;
@@ -1384,13 +1564,34 @@ function openItem(id){
   renderParts(it);
   openSheet('item-sheet');
 }
-el('f-coll').onchange=function(){renderTagSugg();};
+el('f-coll').onchange=function(){renderTagSugg();buildUsageSelect(this.value,el('f-usage').value);};
 el('f-tag-add').onclick=function(){addTag(el('f-tag-input').value);};
 el('f-tag-input').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();addTag(this.value);}};
 el('f-hex').oninput=function(){setHexMark(this.value);};
 el('f-hex-clear').onclick=function(){setHexMark('');};
-el('f-inv-today').onclick=function(){tmpInv=(tmpInv===todayKey()?'':todayKey());el('f-inv-status').textContent=tmpInv?('Senast inventerad: '+tmpInv):'Ej inventerad än.';this.classList.toggle('on',tmpInv===todayKey());};
-el('f-inv-clear').onclick=function(){tmpInv='';el('f-inv-status').textContent='Ej inventerad än.';el('f-inv-today').classList.remove('on');};
+function buildUsageSelect(coll,val){
+  var o=usageOpts(coll),h='<option value="">— inte satt —</option>';
+  for(var i=0;i<o.length;i++)h+='<option value="'+o[i][0]+'">'+esc(o[i][1])+'</option>';
+  el('f-usage').innerHTML=h;el('f-usage').value=val||'';
+  el('f-usage-label').textContent=(collKind(coll)==='books')?'Läsning':'Användning';
+}
+function renderStampRow(){
+  var txt=[];
+  for(var i=0;i<STAMPS.length;i++){
+    var k=STAMPS[i][0],v=tmpStamps[k]||'';
+    el('f-st-'+k).classList.toggle('on',!!v);
+    el('f-st-'+k).textContent=(v?'✓ ':'')+STAMPS[i][1];
+    if(v)txt.push(STAMPS[i][1]+': '+v);
+  }
+  el('f-st-status').textContent=txt.length?txt.join(' · '):'Inga stämplar än — tryck för att stämpla med dagens datum.';
+}
+function toggleStamp(k){tmpStamps[k]=tmpStamps[k]?'':todayKey();renderStampRow();}
+el('f-st-inventoried').onclick=function(){toggleStamp('inventoried');};
+el('f-st-usedOn').onclick=function(){toggleStamp('usedOn');};
+el('f-st-declutteredOn').onclick=function(){toggleStamp('declutteredOn');};
+el('f-st-clear').onclick=function(){tmpStamps={inventoried:'',usedOn:'',declutteredOn:''};renderStampRow();};
+el('f-usefirst').onclick=function(){tmpUseFirst=!tmpUseFirst;this.classList.toggle('on',tmpUseFirst);};
+el('f-project').onclick=function(){tmpProject=!tmpProject;this.classList.toggle('on',tmpProject);};
 el('f-sale').onclick=function(){tmpForSale=!tmpForSale;this.classList.toggle('sel',tmpForSale);};
 el('p-add').onclick=function(){
   if(!editItemId)return;
@@ -1399,7 +1600,8 @@ el('p-add').onclick=function(){
   var ptags=el('p-tags').value.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
   var part={id:uid(),coll:set.coll,name:nm,tags:ptags,brand:set.brand||'',type:'',
     barcode:'',link:el('p-link').value.trim(),hex:el('p-hex').value||'',emoji:el('p-emoji').value.trim(),
-    store:'',order:'',location:'',inventoried:'',family:'',parent:set.id,status:set.status,qty:1,value:'',sell:'',bought:'',forSale:false,rating:0,note:'',created:Date.now()};
+    store:'',order:'',location:'',inventoried:'',usedOn:'',declutteredOn:'',family:'',
+    usage:'',expiry:'',useFirst:false,project:false,soldTo:'',soldDate:'',parent:set.id,status:set.status,qty:1,value:'',sell:'',bought:'',forSale:false,rating:0,note:'',created:Date.now()};
   state.items.push(part);
   distributeSet(set.id);
   save();
@@ -1456,8 +1658,12 @@ el('item-save').onclick=function(){
     brand:el('f-brand').value.trim(),type:el('f-type').value.trim(),
     barcode:el('f-barcode').value.trim(),link:el('f-link').value.trim(),
     store:el('f-store').value.trim(),order:el('f-order').value.trim(),
-    location:el('f-location').value.trim(),inventoried:tmpInv,
+    location:el('f-location').value.trim(),
+    inventoried:tmpStamps.inventoried,usedOn:tmpStamps.usedOn,declutteredOn:tmpStamps.declutteredOn,
     family:el('f-family').value.trim(),
+    usage:el('f-usage').value,expiry:el('f-expiry').value||'',
+    useFirst:tmpUseFirst,project:tmpProject,
+    soldTo:el('f-soldto').value.trim(),soldDate:el('f-solddate').value||'',
     hex:tmpHex,emoji:el('f-emoji').value.trim(),
     status:tmpStatus,qty:el('f-qty').value===''?1:+el('f-qty').value,
     sell:el('f-sell').value===''?'':+el('f-sell').value,
@@ -1491,7 +1697,8 @@ function duplicateItem(srcId,openAfter){
   var src=itemById(srcId);if(!src)return null;
   var copy={id:uid(),coll:src.coll,name:(src.name||'')+' (kopia)',
     tags:(src.tags||[]).slice(),brand:src.brand||'',type:src.type||'',barcode:'',link:src.link||'',
-    store:src.store||'',order:'',location:src.location||'',inventoried:'',family:src.family||'',
+    store:src.store||'',order:'',location:src.location||'',inventoried:'',usedOn:'',declutteredOn:'',family:src.family||'',
+    usage:src.usage||'',expiry:src.expiry||'',useFirst:!!src.useFirst,project:!!src.project,soldTo:'',soldDate:'',
     hex:src.hex||'',emoji:src.emoji||'',parent:src.parent||'',status:src.status,
     qty:src.qty,value:src.value,sell:src.sell||'',bought:'',forSale:false,
     rating:src.rating,note:src.note||'',created:Date.now()};
@@ -1528,6 +1735,9 @@ function openColl(id){
   editCollId=c?c.id:null;
   el('coll-sheet-title').textContent=c?'Ändra samling':'Ny samling';
   el('c-name').value=c?c.name:'';
+  var kh='';for(var ki=0;ki<KINDS.length;ki++)kh+='<option value="'+KINDS[ki][0]+'">'+KINDS[ki][1]+'</option>';
+  el('c-kind').innerHTML=kh;
+  el('c-kind').value=(c&&c.kind)?c.kind:'general';
   tmpIcon=c?c.icon:ICONS[0];
   el('c-icon-custom').value=(ICONS.indexOf(tmpIcon)<0)?tmpIcon:'';
   buildIconPick();
@@ -1544,9 +1754,10 @@ el('edit-coll').onclick=function(){if(currentColl)openColl(currentColl);};
 el('coll-save').onclick=function(){
   var name=el('c-name').value.trim();
   if(!name){el('c-name').focus();return;}
-  if(editCollId){var c=collById(editCollId);c.name=name;c.icon=tmpIcon;c.color=tmpColor;
+  var kind=el('c-kind').value||'general';
+  if(editCollId){var c=collById(editCollId);c.name=name;c.icon=tmpIcon;c.color=tmpColor;c.kind=kind;
     el('detail-title').textContent=c.icon+' '+c.name;}
-  else{state.collections.push({id:uid(),name:name,icon:tmpIcon,color:tmpColor});}
+  else{state.collections.push({id:uid(),name:name,icon:tmpIcon,color:tmpColor,kind:kind});}
   save();closeSheets();refreshAll();
 };
 el('coll-del').onclick=function(){
