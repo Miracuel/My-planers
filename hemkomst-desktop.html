@@ -144,9 +144,12 @@ html[data-theme=dark] .cal-cell.part{color:#22251F}
   .nav button span{display:inline;font-size:16px;margin:0}
   .nav button.active{background:var(--moss-soft)}
   .view{display:block;margin-bottom:6px}
-  .sheet{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-46%);
-       width:480px;max-width:92vw;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.18)}
-  .sheet.open{transform:translate(-50%,-50%)}
+  /* Bottom-sheets → centrerade modaler. Dolda tills .open (JS oförändrad). */
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;
+       width:480px;max-width:92vw;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.18);
+       transform:translate(-50%,-50%) scale(.96);opacity:0;visibility:hidden;
+       transition:transform .22s ease,opacity .22s ease,visibility .22s}
+  .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;visibility:visible}
 }
 </style>
 </head>
@@ -227,6 +230,7 @@ html[data-theme=dark] .cal-cell.part{color:#22251F}
     <div class="foot">
       <button id="reset-today">Nollställ idag</button>
       <button id="news-btn">Nyheter &amp; funktioner</button>
+      <button id="reset-steps">Återställ standardrutin</button>
     </div>
   </div>
   <div class="privacy">Allt sparas bara lokalt på den här enheten. Inget skickas någonstans.</div>
@@ -249,7 +253,7 @@ html[data-theme=dark] .cal-cell.part{color:#22251F}
 
 <div class="sheet" id="sync-sheet">
   <h3>⚙ Synk via GitHub</h3>
-  <div class="soft">Appen läser och sparar <code>data.json</code> i ett <strong>privat</strong> GitHub-repo så att dina enheter delar samma rutin och historik. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
+  <div class="soft">Appen läser och sparar <code>hemkomst.json</code> i ett <strong>privat</strong> GitHub-repo så att dina enheter delar samma rutin och historik. Token sparas bara lokalt på den här enheten — aldrig i koden.</div>
   <label>GitHub-användarnamn (ägare av repot)</label>
   <input type="text" id="gh-owner" placeholder="dittnamn">
   <label>Namn på data-repot (privat)</label>
@@ -284,12 +288,19 @@ var state={
   days:{},
   theme:'auto'
 };
+var STANDARDSTEG=state.steps.slice();
 try{var s=localStorage.getItem(KEY);if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function saneraSteg(arr){
+  if(!Array.isArray(arr))return [];
+  return arr.filter(function(st){return st&&typeof st.text==='string'&&st.text.length&&st.id;});
+}
+state.steps=saneraSteg(state.steps);
+if(!state.steps.length)state.steps=STANDARDSTEG.slice();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 // ── APPINFO (changelog + funktioner, visas i Nyheter-vyn) ──
 var APPINFO={
-  version:'1.1.0',
+  version:'1.1.1',
   tagline:'Din rutin när du kliver in genom dörren.',
   audience:'För dig som vill landa mjukt hemma med en tydlig, egen hemkomstrutin.',
   functions:[
@@ -302,6 +313,12 @@ var APPINFO={
     'Auto/ljust/mörkt tema och säkerhetskopiering'
   ],
   changelog:[
+    {v:'1.1.1',d:'2026-07-14',items:[
+      'Fixat: bottom-sheets kunde ligga öppna och blockera desktop-vyn.',
+      'Fixat: steg utan text (t.ex. från fel synkfil) visades som undefined — saneras nu bort.',
+      'Ny knapp: Återställ standardrutin, om stegen blivit fel.',
+      'Synk-dialogen visar nu rätt filnamn (hemkomst.json).'
+    ]},
     {v:'1.1.0',d:'2026-06-18',items:[
       'Synk uppgraderad till union-merge per id — inga tappade ändringar mellan enheter.',
       'Synkfilen heter nu hemkomst.json så flera appar kan dela samma repo.',
@@ -543,7 +560,7 @@ document.getElementById('import-btn').onclick=function(){document.getElementById
 document.getElementById('import-file').onchange=function(e){
   var f=e.target.files[0];if(!f)return;
   var r=new FileReader();
-  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.steps){state=Object.assign(state,d);persist();renderHome();renderEdit();renderCal();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
+  r.onload=function(){try{var d=JSON.parse(r.result);if(d&&d.steps){state=Object.assign(state,d);state.steps=saneraSteg(state.steps);if(!state.steps.length)state.steps=STANDARDSTEG.slice();persist();renderHome();renderEdit();renderCal();}else alert('Ogiltig fil.');}catch(err){alert('Kunde inte läsa filen.');}};
   r.readAsText(f);
 };
 
@@ -592,7 +609,7 @@ function ghPull(){
   setBadge('load','Hämtar…');
   return ghGet().then(function(data){
     if(data){
-      if(Array.isArray(data.steps))state.steps=mergeSteps(state.steps,data.steps);
+      if(Array.isArray(data.steps))state.steps=mergeSteps(state.steps,saneraSteg(data.steps));
       if(data.days&&typeof data.days==='object')state.days=mergeDays(state.days,data.days);
       save();renderAll();
     }
@@ -664,6 +681,11 @@ function renderNyheter(){
   }
   b.innerHTML=h;
 }
+document.getElementById('reset-steps').onclick=function(){
+  if(confirm('Ersätta stegen med standardrutinen? Din kalender och historik behålls.')){
+    state.steps=STANDARDSTEG.slice();persist();renderEdit();renderHome();renderCal();
+  }
+};
 document.getElementById('news-btn').onclick=function(){renderNyheter();openSheet('news-sheet');};
 document.getElementById('news-close').onclick=closeSheets;
 

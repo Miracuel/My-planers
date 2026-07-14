@@ -311,6 +311,13 @@ body.desktop .dash-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
 @media(hover:hover){ .val-rad:hover{background:var(--card)} }
 .val-rad input{width:17px;height:17px;flex:0 0 auto}
 .insikt-vy{margin-top:4px}
+.alla-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 2px 14px}
+.alla-filter button{font:inherit;font-size:12px;line-height:1;padding:7px 11px;border:1px solid var(--line);background:var(--card);color:var(--ink-soft);border-radius:999px;cursor:pointer;white-space:nowrap}
+.alla-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.dolj-oga{position:absolute;top:8px;left:8px;font-size:13px;line-height:1;cursor:pointer;opacity:.75;z-index:2}
+.tile.ar-dold{opacity:.45}
+.tile.kommande{border-style:dashed;cursor:default}
+.tile.kommande .namn{color:var(--t-ink)}
 .insikt-vy[hidden]{display:none}
 .insikt-vy iframe{display:block;border:1px solid var(--line);border-radius:16px;background:#fff;width:100%;height:80vh}
 @media(hover:hover){ .ws-rapport:hover{border-color:var(--ink-soft)} }
@@ -351,8 +358,17 @@ textarea.rap-in{resize:vertical;min-height:64px}
   body.desktop .ws-frame iframe{max-width:none;box-shadow:none}
 }
 /* Desktop-filens MOBILVY: vänsterställd och med större arbetsyta */
-body.desktopfil:not(.desktop) .app{margin-left:24px;margin-right:auto}
-body.desktopfil:not(.desktop) .ws-frame{height:80vh}
+body.desktopfil:not(.desktop) .app{margin-left:0;margin-right:auto;max-width:none;padding-left:20px;padding-right:20px}
+body.desktopfil:not(.desktop) .head,
+body.desktopfil:not(.desktop) .toolrow,
+body.desktopfil:not(.desktop) .sok-rad,
+body.desktopfil:not(.desktop) .snabbstart,
+body.desktopfil:not(.desktop) #sektioner,
+body.desktopfil:not(.desktop) .foot{max-width:480px}
+body.desktopfil:not(.desktop) .ws{max-width:none}
+body.desktopfil:not(.desktop) .ws-frame{height:86vh}
+body.desktopfil:not(.desktop) .ws-frame iframe{max-width:560px;margin:0}
+body.desktopfil:not(.desktop) .insikt-vy iframe{height:86vh}
 
 /* Sökrad */
 .sok-rad{position:relative;margin-top:14px}
@@ -673,9 +689,12 @@ body.desktopfil:not(.desktop) .ws-frame{height:80vh}
         <option value="bugg">Bugg</option>
         <option value="forb">Förbättring</option>
         <option value="ide">Idé</option>
+        <option value="feedback">Feedback / test</option>
       </select>
+      <label class="rap-lbl" for="rap-namn">Ditt namn</label>
+      <input class="rap-in" id="rap-namn" type="text" autocomplete="name" placeholder="Namn (valfritt)">
       <label class="rap-lbl" for="rap-txt">Vad gäller det?</label>
-      <textarea class="rap-in" id="rap-txt" rows="3" placeholder="Beskriv buggen eller förbättringen…"></textarea>
+      <textarea class="rap-in" id="rap-txt" rows="3" placeholder="Beskriv buggen, förbättringen eller din feedback…"></textarea>
     </div>
     <div class="rap-status" id="rap-status" hidden></div>
     <div class="sheet-knappar">
@@ -1077,10 +1096,13 @@ function byggTile(a, val){
   const infoKn = val.infobar
     ? '<span class="info-knapp" role="button" tabindex="0" aria-label="Visa funktioner och changelog">ⓘ</span>'
     : '';
+  const dolj = val.doljbar
+    ? '<span class="dolj-oga" role="button" tabindex="0" aria-label="' + (val.dold ? 'Visa appen' : 'Dölj appen') + '" title="' + (val.dold ? 'Visa appen' : 'Dölj appen') + '">' + (val.dold ? '🙈' : '👁') + '</span>'
+    : '';
   const idNr = appAppNo(a);
   const idBadge = (idNr != null) ? '<span class="app-id">APP-' + String(idNr).padStart(3, "0") + '</span>' : '';
   el.innerHTML =
-    stjarna + hage + statusPrick + infoKn +
+    stjarna + hage + statusPrick + infoKn + dolj +
     '<span class="ikon">' + esc(a.ikon) + (val.nytt ? '<span class="ny-prick" aria-hidden="true"></span>' : '') + '</span>' +
     '<span class="namn">' + esc(a.namn) + '</span>' + idBadge +
     '<span class="desc">' + esc(a.desc) + '</span>' +
@@ -1101,12 +1123,22 @@ function tileFor(a, senast){
     favbar: !redigerar,
     infobar: !redigerar,
     fav: arFavorit(a.id),
+    doljbar: redigerar,
+    dold: arDold(a.id),
     status: STATUS[a.id] ? statusObj(STATUS[a.id]) : null
   });
+  if(arDold(a.id)) el.classList.add("ar-dold");
   el.addEventListener("click", (e) => {
     if(redigerar){ e.preventDefault(); oppnaEditor(a.id); return; }
     try{ localStorage.setItem("centralen-senast", a.id); }catch(err){}
   });
+  // Dölj-öga (i redigeringsläge) – ska inte öppna editorn
+  const oga = el.querySelector(".dolj-oga");
+  if(oga){
+    const togglaD = (e) => { e.preventDefault(); e.stopPropagation(); vaxlaDold(a.id); rita(); };
+    oga.addEventListener("click", togglaD);
+    oga.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " ") togglaD(e); });
+  }
   // Favoritstjärna – ska inte öppna appen
   const stj = el.querySelector(".fav-stj");
   if(stj){
@@ -1229,9 +1261,11 @@ function rita(){
   }
 
   // ----- Originalvyn: favoriter + sektioner -----
-  const finns = APPS.map(medAndringar).filter(a => a.mobil || a.desktop);
+  const alla = APPS.map(medAndringar).filter(a => a.mobil || a.desktop);
+  const finns = redigerar ? alla : (allaFilter === "dolda" ? allaFiltrera(alla) : allaFiltrera(alla).filter(a => !arDold(a.id)));
   if(!redigerar){
     ritaSnabbstart(wrap);
+    ritaAllaFilter(wrap);
     const favs = finns.filter(a => arFavorit(a.id));
     if(favs.length){
       wrap.appendChild(sekRubrik("⭐ Favoriter"));
@@ -1245,6 +1279,88 @@ function rita(){
     wrap.appendChild(sekRubrik(s));
     wrap.appendChild(byggGrid(appar, senast));
   });
+  if(!finns.length && !redigerar){
+    const t = document.createElement("div");
+    t.className = "tomt-litet";
+    t.textContent = allaFilter === "alla" ? "Inga appar att visa." : "Inga appar matchar filtret.";
+    wrap.appendChild(t);
+  }
+  if(!redigerar && allaFilter === "alla") ritaKommande(wrap);
+}
+
+// ----- Dölj appar -----
+let DOLDA = {}; try{ DOLDA = JSON.parse(localStorage.getItem("centralen-dolda") || "{}"); }catch(e){ DOLDA = {}; }
+function arDold(id){ return !!DOLDA[id]; }
+function vaxlaDold(id){
+  if(DOLDA[id]) delete DOLDA[id]; else DOLDA[id] = true;
+  try{ localStorage.setItem("centralen-dolda", JSON.stringify(DOLDA)); }catch(e){}
+}
+
+// ----- Filter (taggar/favoriter) i Alla appar -----
+let allaFilter = "alla";
+function allaFiltrera(apps){
+  if(allaFilter === "fav") return apps.filter(a => arFavorit(a.id));
+  if(allaFilter === "dolda") return apps.filter(a => arDold(a.id));
+  if(allaFilter.indexOf("tag:") === 0){ const ids = TAGGAR[allaFilter.slice(4)] || []; return apps.filter(a => ids.indexOf(a.id) >= 0); }
+  return apps;
+}
+function ritaAllaFilter(wrap){
+  const namnen = Object.keys(TAGGAR);
+  const dolt = Object.keys(DOLDA).filter(id => DOLDA[id]).length;
+  if(!namnen.length && !dolt && allaFilter === "alla") return;   // inget att filtrera på än
+  const box = document.createElement("div");
+  box.className = "alla-filter";
+  function chip(val, txt){
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = txt;
+    if(allaFilter === val) b.classList.add("on");
+    b.addEventListener("click", () => { allaFilter = val; rita(); });
+    return b;
+  }
+  box.appendChild(chip("alla", "Alla"));
+  box.appendChild(chip("fav", "★ Favoriter"));
+  namnen.forEach(n => box.appendChild(chip("tag:" + n, "#" + n)));
+  if(dolt) box.appendChild(chip("dolda", "🙈 Dolda (" + dolt + ")"));
+  wrap.appendChild(box);
+}
+
+// ----- Kommande appar (finns i Appkollen men inte i Centralen) -----
+function kommandeAppar(){
+  if(!appkollenData || !Array.isArray(appkollenData.apps)) return [];
+  const harFil = {};
+  APPS.forEach(a => {
+    [a.mobil, a.desktop].forEach(f => { if(f) harFil[String(f).toLowerCase().replace(/^.*\//, "")] = 1; });
+  });
+  return appkollenData.apps.filter(a => {
+    if(a.appNo == null) return false;
+    if(a.arkiverad || a.archived) return false;
+    const f = (a.file || "").toLowerCase().replace(/^.*\//, "");
+    return !f || !harFil[f];
+  }).sort((x, y) => x.appNo - y.appNo);
+}
+function ritaKommande(wrap){
+  const komm = kommandeAppar();
+  if(!komm.length) return;
+  wrap.appendChild(sekRubrik("🚧 Kommande"));
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  komm.forEach(a => {
+    const el = document.createElement("div");
+    el.className = "tile kommande";
+    el.style.setProperty("--t-bg", "#FBF9F5");
+    el.style.setProperty("--t-line", "#E5DFD5");
+    el.style.setProperty("--t-ink", "#8A847C");
+    el.style.setProperty("--t-muted", "#A9A29A");
+    el.style.setProperty("--t-iconbg", "#EFEBE4");
+    const namn = String(a.name || a.file || "").replace(/^\d+\.\s*/, "");
+    el.innerHTML =
+      '<span class="ikon">🚧</span>' +
+      '<span class="namn">' + esc(namn) + '</span>' +
+      '<span class="app-id">APP-' + String(a.appNo).padStart(3, "0") + '</span>' +
+      '<span class="desc">' + esc(a.mognad ? String(a.mognad) : "Under utveckling") + '</span>';
+    grid.appendChild(el);
+  });
+  wrap.appendChild(grid);
 }
 
 // ----- Redigeringspanelen -----
@@ -1776,14 +1892,20 @@ const CENTRALEN_LOGG = {
   icon: "🎛️",
   description: "Startsida och appöversikt – hubben för alla dina appar, med arbetsyta, översikt, insikt och synk.",
   audience: "För dig som har många egna appar och vill ha en samlad startsida med översikt, snabb åtkomst och synk mellan enheter.",
-  version: "3.5",
-  updated: "2026-06-16",
+  version: "3.6",
+  updated: "2026-07-14",
   latest: [
-    "Centralen läser apparnas metadata (namn, ikon, färger) från changeloggen",
-    "Appar med changelog dyker upp automatiskt även om de saknas i listan",
-    "Beskrivning är en egen flik först i app-infon"
+    "Feedback/test-formulär med namn – skickas till Appkollen",
+    "Kommande appar från Appkollen visas i Centralen",
+    "Dölj appar och egna vyer (taggar) även under Alla appar"
   ],
   changelog: [
+    { version: "3.6", date: "2026-07-14", changes: [
+      "Feedback/test i rapportformuläret: välj typ Feedback och ange ditt namn – hamnar i Appkollens backlogg",
+      "Kommande appar: appar som finns i Appkollen men inte i Centralen visas som Kommande med App-ID",
+      "Dölj appar (öga i Redigera) och filtrera Alla appar på favoriter, taggar eller dolda",
+      "Desktop-appens mobilvy är helt vänsterställd med större arbetsyta"
+    ]},
     { version: "3.5", date: "2026-06-16", changes: [
       "Korten speglar appens egen metadata (namn, ikon, färger) från dess changelog-fil",
       "Appar som har en changelog men saknas i listan läggs till automatiskt (sektion Övrigt)",
@@ -2690,6 +2812,7 @@ async function oppnaRapport(){
   const skicka = document.getElementById("rap-skicka");
   document.getElementById("rap-status").hidden = true;
   document.getElementById("rap-txt").value = "";
+  document.getElementById("rap-namn").value = localStorage.getItem("centralen-rap-namn") || "";
   document.getElementById("rap-typ").value = "bugg";
   skal.hidden = false;
 
@@ -2723,12 +2846,14 @@ async function skickaRapport(){
   const appNoVal = document.getElementById("rap-app").value;
   const typ = document.getElementById("rap-typ").value;
   const txt = document.getElementById("rap-txt").value.trim();
+  const namn = document.getElementById("rap-namn").value.trim();
   if(!appNoVal){ rapStatus("Välj en app.", true); return; }
   if(!txt){ rapStatus("Skriv vad det gäller.", true); return; }
   if(!synkPa()){ rapStatus("GitHub-synk krävs.", true); return; }
   const appNo = parseInt(appNoVal, 10);
   const ak = ((appkollenData && appkollenData.apps) || []).find(a => a.appNo === appNo) || {};
-  const item = { id: rapUid(), appNo: appNo, file: ak.file || "", name: ak.name || "", typ: typ, txt: txt, d: rapIdag(), ts: new Date().toISOString(), kalla: "Centralen" };
+  if(namn){ try{ localStorage.setItem("centralen-rap-namn", namn); }catch(e){} }
+  const item = { id: rapUid(), appNo: appNo, file: ak.file || "", name: ak.name || "", typ: typ, txt: txt, av: namn, d: rapIdag(), ts: new Date().toISOString(), kalla: "Centralen" };
   document.getElementById("rap-skicka").disabled = true;
   rapStatus("Skickar…", false);
   try{

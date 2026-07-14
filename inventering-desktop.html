@@ -313,6 +313,8 @@ html[data-theme=dark]{
   <div class="card-panel">
     <label>Tröskel för liten/stor avvikelse (±)</label>
     <input type="number" id="set-threshold" min="0" step="1" value="3">
+    <button class="btn" id="clean-dupes" style="width:100%;margin-top:14px">🧹 Rensa dubbletter</button>
+    <div class="soft" style="margin-top:8px">Slår ihop avdelningar med samma namn och flyttar artiklarna till en av dem.</div>
     <button class="btn danger" id="reset-counts" style="width:100%;margin-top:14px">↺ Påbörja ny inventering (nollställ räkning)</button>
     <div class="soft" style="margin-top:8px">Nollställer alla antal men behåller avdelningar och artiklar.</div>
   </div>
@@ -402,8 +404,8 @@ function nowts(){return Date.now();}
 // ── Changelog / nyheter (inbäddad konstant) ───────────
 var APPINFO={
   id:'inventering',
-  version:'1.1.0',
-  updated:'2026-06-18',
+  version:'1.1.1',
+  updated:'2026-07-14',
   tagline:'Håll koll på vad som är inventerat – och vad som är kvar – i butiken.',
   audience:'För dig som inventerar en butik och vill se vad som är räknat, vad som är kvar och var antalen avviker.',
   functions:[
@@ -437,6 +439,13 @@ var APPINFO={
     ]}
   ],
   changelog:[
+    {v:'1.1.1',d:'2026-07-14',items:[
+      'Fixat: startavdelningarna dubblerades vid varje ny enhet (slumpade id:n gjorde att synken såg dem som nya). De har nu fasta id:n.',
+      'Fixat: appen kunde hänga sig i desktopvyn när dubbletterna hunnit växa till hundratals rader.',
+      'Ny enhet med synk seedar inte längre egna avdelningar — den hämtar dem från repot.',
+      'Ny knapp "Rensa dubbletter" under Hantera som slår ihop avdelningar med samma namn och behåller artiklarna. Körs även automatiskt vid start.',
+      'Synken sparar nu med fördröjning (~1,2 s) i stället för en uppladdning per knapptryck.'
+    ]},
     {v:'1.1.0',d:'2026-06-18',items:[
       'Ny vy "Nyheter & funktioner" med changelog och funktionslista.',
       'Changelog-filer (inventering-changelog.json + changelog-inventering.md) i Centralens format.',
@@ -465,15 +474,52 @@ var CENTRALEN_META={
 };
 
 var state={depts:[],threshold:3,theme:'auto',seenVersion:''};
+// Startavdelningar har FASTA id:n (seed-1…) så att union-mergen ser dem som
+// samma avdelning på alla enheter. Slumpade id:n gav dubbletter vid varje ny enhet.
+var SEED=[
+  {id:'seed-1',name:'Frukt & grönt'},
+  {id:'seed-2',name:'Mejeri & kyl'},
+  {id:'seed-3',name:'Torrvaror'},
+  {id:'seed-4',name:'Frys'},
+  {id:'seed-5',name:'Dryck'},
+  {id:'seed-6',name:'Kassa & övrigt'}
+];
 function seed(){
-  var names=['Frukt & grönt','Mejeri & kyl','Torrvaror','Frys','Dryck','Kassa & övrigt'];
-  state.depts=names.map(function(n){return {id:uid(),name:n,ts:nowts(),articles:[]};});
+  state.depts=SEED.map(function(x){return {id:x.id,name:x.name,ts:0,articles:[]};});
 }
-try{var s=localStorage.getItem(KEY);if(s){state=Object.assign(state,JSON.parse(s));}else{seed();}}catch(e){seed();}
+try{var s=localStorage.getItem(KEY);if(s){state=Object.assign(state,JSON.parse(s));}else if(!syncSaved()){seed();}}catch(e){}
 if(!Array.isArray(state.depts))state.depts=[];
 if(typeof state.threshold!=='number')state.threshold=3;
+
+// Slår ihop avdelningar som blivit dubbletter (samma namn, olika id) och
+// flyttar artiklarna till den äldsta. Städar även upp gammal skadad data.
+function dedupeDepts(){
+  var seen={},keep=[],changed=false;
+  state.depts.forEach(function(d){
+    var k=(d.name||'').trim().toLowerCase();
+    var first=seen[k];
+    if(first&&!d.del&&!first.del){
+      (d.articles||[]).forEach(function(a){
+        var dup=(first.articles||[]).some(function(b){return b.id===a.id||(b.name===a.name&&!b.del&&!a.del);});
+        if(!dup){first.articles=first.articles||[];first.articles.push(a);}
+      });
+      changed=true;return; // hoppa över dubbletten
+    }
+    if(!seen[k])seen[k]=d;
+    keep.push(d);
+  });
+  if(changed){state.depts=keep;save();}
+  return changed;
+}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
-function persist(){save();if(syncOn())ghPush().catch(function(){});}
+var pushTimer=null;
+function persist(){
+  save();
+  if(!syncOn())return;
+  // Debounce ~1200ms: annars blev det en PUT per knapptryck vid räkning.
+  if(pushTimer)clearTimeout(pushTimer);
+  pushTimer=setTimeout(function(){pushTimer=null;ghPush().catch(function(){});},1200);
+}
 
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
 var liveDepts=function(){return state.depts.filter(function(d){return !d.del;});};
@@ -483,6 +529,9 @@ function variance(a){if(!isCounted(a)||a.expected==null||a.expected==='')return 
 function varClass(a){var v=variance(a);if(v==null)return isCounted(a)?'ok':'todo';if(v===0)return 'ok';return Math.abs(v)<=state.threshold?'warn':'bad';}
 
 // ── GitHub-synk (union-merge, samma motor som övriga appar) ──
+// Hoistad: används redan vid inläsningen ovan för att INTE seeda på en synkad
+// enhet (då hämtas avdelningarna från repot i stället).
+function syncSaved(){try{var s=localStorage.getItem(SYNC_KEY);if(!s)return false;var d=JSON.parse(s);return !!(d.owner&&d.repo&&d.token);}catch(e){return false;}}
 var sync={owner:'',repo:'',token:'',sha:null};
 function loadSync(){try{var s=localStorage.getItem(SYNC_KEY);if(s){var d=JSON.parse(s);sync.owner=d.owner||'';sync.repo=d.repo||'';sync.token=d.token||'';}}catch(e){}}
 function saveSync(){try{localStorage.setItem(SYNC_KEY,JSON.stringify({owner:sync.owner,repo:sync.repo,token:sync.token}));}catch(e){}}
@@ -533,7 +582,12 @@ function ghPull(){
   if(!syncOn())return Promise.resolve();
   setBadge('load','Hämtar…');
   return ghGet().then(function(data){
-    if(data){mergeRemote(data);save();renderAll();}
+    if(data&&Array.isArray(data.depts)&&data.depts.length){
+      mergeRemote(data);dedupeDepts();save();renderAll();
+    }else if(!state.depts.length){
+      // Tomt repo och tom enhet: lägg upp startavdelningarna en enda gång.
+      seed();save();renderAll();
+    }
     setBadge('ok','Synkad');
   }).catch(function(){setBadge('err','Synkfel');});
 }
@@ -793,6 +847,13 @@ document.getElementById('dept-add').onclick=function(){
 };
 document.getElementById('dept-in').onkeydown=function(e){if(e.key==='Enter')document.getElementById('dept-add').onclick();};
 document.getElementById('set-threshold').onchange=function(){var v=parseInt(this.value,10);state.threshold=isNaN(v)||v<0?0:v;persist();renderAll();};
+document.getElementById('clean-dupes').onclick=function(){
+  var before=liveDepts().length;
+  var changed=dedupeDepts();
+  var after=liveDepts().length;
+  if(changed){persist();renderAll();alert('Slog ihop '+(before-after)+' dubblerade avdelningar.');}
+  else alert('Inga dubbletter hittades.');
+};
 document.getElementById('reset-counts').onclick=function(){
   if(!confirm('Nollställa alla räknade antal? Avdelningar och artiklar behålls.'))return;
   state.depts.forEach(function(d){(d.articles||[]).forEach(function(a){a.counted=null;a.ts=nowts();});});
@@ -904,8 +965,9 @@ loadSync();
 setBadge(syncOn()?'ok':'','Lokal');
 if(syncOn())setBadge('','GitHub');
 applyTheme();setInterval(applyTheme,60000);
+var hadDupes=dedupeDepts(); // städa upp redan dubblerad data vid start
 renderAll();
-if(syncOn())ghPull();
+if(syncOn())ghPull().then(function(){if(hadDupes)ghPush().catch(function(){});});
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
 </script>
 </body>
