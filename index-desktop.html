@@ -316,7 +316,17 @@ body.desktop .dash-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
 .alla-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .dolj-oga{position:absolute;top:8px;left:8px;font-size:13px;line-height:1;cursor:pointer;opacity:.75;z-index:2}
 .tile.ar-dold{opacity:.45}
-.tile.kommande{border-style:dashed;cursor:default}
+.tile.kommande{border-style:dashed;cursor:pointer}
+.tile.kommande:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.komm-rad{display:flex;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}
+.komm-rad:last-child{border-bottom:none}
+.komm-rad .et{color:var(--ink-soft);flex:0 0 96px}
+.komm-rad .va{color:var(--ink);min-width:0}
+.komm-punkter{margin-top:10px}
+.komm-punkter .etikett{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px}
+.komm-punkter ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.komm-punkter li{font-size:13px;line-height:1.45;color:var(--ink);padding-left:14px;position:relative}
+.komm-punkter li:before{content:"›";position:absolute;left:0;color:var(--ink-soft)}
 /* ===== Kompakt läge: endast ikon + namn ===== */
 body.kompakt .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
 body.desktop.kompakt .grid{grid-template-columns:repeat(auto-fill,minmax(116px,1fr))}
@@ -660,6 +670,23 @@ body.desktopfil:not(.desktop) .insikt-vy iframe{height:86vh}
 </div>
 
 <!-- Changelog / nyheter per app -->
+<div class="skal" id="skal-kommande" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="komm-titel">
+    <div class="logg-kopf">
+      <span class="ikon">🚧</span>
+      <div>
+        <h2 id="komm-titel">Kommande app</h2>
+        <div class="logg-meta" id="komm-meta"></div>
+      </div>
+    </div>
+    <div id="komm-kropp"></div>
+    <div class="rap-status" id="komm-status" hidden></div>
+    <div class="sheet-knappar">
+      <button class="kn" id="komm-stang" type="button">Stäng</button>
+      <button class="kn primar" id="komm-oppna" type="button" hidden>Öppna appen</button>
+    </div>
+  </div>
+</div>
 <div class="skal" id="skal-snabb" hidden>
   <div class="sheet" role="dialog" aria-modal="true">
     <h2>Snabbstart</h2>
@@ -1353,6 +1380,82 @@ function kommandeAppar(){
     return !f || !harFil[f];
   }).sort((x, y) => x.appNo - y.appNo);
 }
+// ----- Kommande app: detaljvy -----
+let kommAppNo = null;
+let kommFil = "";
+
+function stangKommande(){ document.getElementById("skal-kommande").hidden = true; kommAppNo = null; }
+
+function oppnaKommande(appNo){
+  const a = ((appkollenData && appkollenData.apps) || []).find(x => x.appNo === appNo);
+  if(!a) return;
+  kommAppNo = appNo;
+  kommFil = String(a.file || "").replace(/^.*\//, "");
+  const namn = String(a.name || a.file || "").replace(/^\d+\.\s*/, "");
+  document.getElementById("komm-titel").textContent = namn;
+  document.getElementById("komm-meta").textContent = "APP-" + String(appNo).padStart(3, "0") + (a.mognad ? " · " + a.mognad : "");
+
+  const rader = [];
+  function rad(et, va){ if(va) rader.push('<div class="komm-rad"><span class="et">' + esc(et) + '</span><span class="va">' + esc(String(va)) + '</span></div>'); }
+  rad("Fil", a.file);
+  rad("Mognad", a.mognad);
+  rad("Kategori", a.cat);
+  rad("Familj", a.family);
+  rad("Status", a.status);
+  rad("Anteckning", a.note);
+
+  let punkter = "";
+  const oppna = (a.items || []).filter(p => p && p.st !== "klar");
+  if(oppna.length){
+    punkter = '<div class="komm-punkter"><div class="etikett">Backlogg (' + oppna.length + ')</div><ul>' +
+      oppna.slice(0, 6).map(p => '<li>' + esc(String(p.txt || "")) + '</li>').join("") + '</ul></div>';
+  }
+  document.getElementById("komm-kropp").innerHTML = (rader.join("") || '<div class="logg-tom">Ingen extra information.</div>') + punkter;
+
+  const st = document.getElementById("komm-status");
+  const knOppna = document.getElementById("komm-oppna");
+  knOppna.hidden = true;
+  st.hidden = false; st.className = "rap-status"; st.textContent = "Kollar om appen finns i repot…";
+  document.getElementById("skal-kommande").hidden = false;
+
+  if(!kommFil){ st.textContent = "Ingen fil angiven i Appkollen ännu."; return; }
+  fetch(kommFil, {method:"GET", cache:"no-store"}).then(r => {
+    if(kommAppNo !== appNo) return;
+    if(r.ok){
+      st.textContent = "Appen finns uppladdad – du kan öppna den.";
+      knOppna.hidden = false;
+    } else {
+      st.textContent = "Appen är inte uppladdad ännu (" + kommFil + ").";
+    }
+  }).catch(() => {
+    if(kommAppNo !== appNo) return;
+    st.textContent = "Kunde inte nå filen (" + kommFil + ").";
+  });
+}
+
+// Öppna en kommande app i arbetsytan
+function oppnaKommandeApp(){
+  if(!kommFil) return;
+  const id = kommFil.replace(/\.html?$/i, "").toLowerCase();
+  const a = ((appkollenData && appkollenData.apps) || []).find(x => x.appNo === kommAppNo) || {};
+  if(!APPS.some(x => x.id === id)){
+    APPS.push({
+      id: id,
+      namn: String(a.name || id).replace(/^\d+\.\s*/, ""),
+      ikon: "🚧",
+      desc: a.mognad ? String(a.mognad) : "",
+      sektion: "Kommande",
+      mobil: kommFil,
+      desktop: kommFil.replace(/\.html?$/i, "-desktop.html"),
+      farger: {bg:"#FBF9F5", line:"#E5DFD5", ink:"#3A3633", muted:"#8A847C", accent:"#7A8B6F", iconbg:"#EFEBE4"},
+      upptackt: true
+    });
+  }
+  stangKommande();
+  visa("arbetsyta");
+  valjWsApp(id);
+}
+
 function ritaKommande(wrap){
   const komm = kommandeAppar();
   if(!komm.length) return;
@@ -1362,6 +1465,8 @@ function ritaKommande(wrap){
   komm.forEach(a => {
     const el = document.createElement("div");
     el.className = "tile kommande";
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
     el.style.setProperty("--t-bg", "#FBF9F5");
     el.style.setProperty("--t-line", "#E5DFD5");
     el.style.setProperty("--t-ink", "#8A847C");
@@ -1373,6 +1478,9 @@ function ritaKommande(wrap){
       '<span class="namn">' + esc(namn) + '</span>' +
       '<span class="app-id">APP-' + String(a.appNo).padStart(3, "0") + '</span>' +
       '<span class="desc">' + esc(a.mognad ? String(a.mognad) : "Under utveckling") + '</span>';
+    const oppna = (e) => { e.preventDefault(); oppnaKommande(a.appNo); };
+    el.addEventListener("click", oppna);
+    el.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " ") oppna(e); });
     grid.appendChild(el);
   });
   wrap.appendChild(grid);
@@ -1730,6 +1838,10 @@ btnKompakt.addEventListener("click", () => {
   applyKompakt();
 });
 applyKompakt();
+
+document.getElementById("komm-stang").addEventListener("click", stangKommande);
+document.getElementById("komm-oppna").addEventListener("click", oppnaKommandeApp);
+document.getElementById("skal-kommande").addEventListener("click", e => { if(e.target.id === "skal-kommande") stangKommande(); });
 document.getElementById("set-done").addEventListener("click", stangInstallningar);
 skalSet.addEventListener("click", (e) => { if(e.target === skalSet) stangInstallningar(); });
 
@@ -1922,14 +2034,18 @@ const CENTRALEN_LOGG = {
   icon: "🎛️",
   description: "Startsida och appöversikt – hubben för alla dina appar, med arbetsyta, översikt, insikt och synk.",
   audience: "För dig som har många egna appar och vill ha en samlad startsida med översikt, snabb åtkomst och synk mellan enheter.",
-  version: "3.7",
-  updated: "2026-07-18",
+  version: "3.8",
+  updated: "2026-07-19",
   latest: [
+    "Kommande appar går att klicka – visar detaljer och kan öppnas",
     "Kompakt läge – korten visar bara ikon och namn",
-    "Feedback/test-formulär med namn – skickas till Appkollen",
-    "Kommande appar från Appkollen visas i Centralen"
+    "Feedback/test-formulär med namn – skickas till Appkollen"
   ],
   changelog: [
+    { version: "3.8", date: "2026-07-19", changes: [
+      "Kommande appar är klickbara: visar mognad, kategori, familj, anteckning och öppna backloggpunkter från Appkollen",
+      "Är appen redan uppladdad i repot kan den öppnas direkt i arbetsytan"
+    ]},
     { version: "3.7", date: "2026-07-18", changes: [
       "Nytt kompakt läge: knappen Kompakt visar korten som bara ikon och namn i ett tätare rutnät",
       "Valet sparas per enhet och gäller alla vyer med appkort"
@@ -3045,6 +3161,7 @@ document.getElementById("skal-taggar").addEventListener("click", e => { if(e.tar
 wsSokInput.addEventListener("input", () => { wsSok = wsSokInput.value; byggWsLista(); });
 document.addEventListener("keydown", e => {
   if(e.key !== "Escape") return;
+  if(!document.getElementById("skal-kommande").hidden){ stangKommande(); return; }
   if(visarArbetsyta || visarDash || visarFlode || visarFavoriter || visarInsikt) visa("alla");
 });
 
