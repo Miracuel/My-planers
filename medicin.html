@@ -81,6 +81,7 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .med-row .top{display:flex;align-items:center;gap:9px}
 .med-row .top b{font-family:Georgia,serif;font-weight:400;font-size:15px;flex:1}
 .med-row .meta{font-size:11px;color:var(--muted);margin:5px 0 0 22px;line-height:1.6}
+.med-actions{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 0 22px}
 .icon-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px}
 
 /* Historik */
@@ -794,6 +795,14 @@ function clearFelt(doseId,which){
   }
   persist();renderNow();renderLog();
 }
+function markNoEffect(medId,btn){
+  var dose=latestDose(medId);
+  if(!dose){alert('Ingen registrerad dos att märka ännu. Ta eller registrera en dos först.');return;}
+  dose.rating='ingen';dose.ratedAt=Date.now();persist();
+  if(navigator.vibrate)navigator.vibrate(40);
+  renderNow();renderStats();
+  if(btn){btn.textContent='✓ Noterat';setTimeout(renderMeds,900);}
+}
 function setRating(doseId,ratingId){
   for(var i=0;i<state.doses.length;i++)if(state.doses[i].id===doseId){state.doses[i].rating=ratingId;if(ratingId==null)state.doses[i].ratedAt=null;}
   persist();
@@ -842,11 +851,17 @@ function renderMeds(){
   for(var i=0;i<state.meds.length;i++){
     var m=state.meds[i];
     html+='<div class="med-row"><div class="top"><span class="med-dot" style="background:'+m.color+'"></span><b>'+esc(m.name)+'</b><button class="icon-btn" data-edit="'+m.id+'">&#9998;</button></div>';
-    html+='<div class="meta">Kommer igång: '+m.onset+' min · Börjar gå ur: '+m.wear+' h · Ny dos: '+m.next+' h · Ur kroppen: '+m.clear+' h'+((m.maxPerDay&&m.maxPerDay>0)?' · Max '+m.maxPerDay+'/dygn':'')+(m.track?' · Spårar: '+esc(m.track):'')+(hasStock(m)?' · Lager: '+m.stock:'')+'</div></div>';
+    html+='<div class="meta">Kommer igång: '+m.onset+' min · Börjar gå ur: '+m.wear+' h · Ny dos: '+m.next+' h · Ur kroppen: '+m.clear+' h'+((m.maxPerDay&&m.maxPerDay>0)?' · Max '+m.maxPerDay+'/dygn':'')+(m.track?' · Spårar: '+esc(m.track):'')+(hasStock(m)?' · Lager: '+m.stock:'')+'</div>';
+    html+='<div class="med-actions"><button class="btn ghost" data-quickeff="'+m.id+'">+ Biverkning</button><button class="btn ghost" data-noeffect="'+m.id+'">Märker ingen effekt</button></div>';
+    html+='</div>';
   }
   el.innerHTML=html;
   var btns=el.querySelectorAll('[data-edit]');
   for(var b=0;b<btns.length;b++)btns[b].onclick=function(){openMedSheet(+this.getAttribute('data-edit'));};
+  var qe=el.querySelectorAll('[data-quickeff]');
+  for(var q=0;q<qe.length;q++)qe[q].onclick=function(){openEffSheet(+this.getAttribute('data-quickeff'),midnight(Date.now()));};
+  var ne=el.querySelectorAll('[data-noeffect]');
+  for(var n=0;n<ne.length;n++)ne[n].onclick=function(){markNoEffect(+this.getAttribute('data-noeffect'),this);};
 }
 
 var editId=null,pickColor=COLORS[0];
@@ -1018,16 +1033,18 @@ document.getElementById('dz-save').onclick=function(){
 // Logga biverkning
 var effSev='lindrig';
 (function(){var sb=document.querySelectorAll('#ef-sev button');for(var i=0;i<sb.length;i++)sb[i].onclick=function(){effSev=this.getAttribute('data-sev');for(var j=0;j<sb.length;j++)sb[j].classList.remove('active');this.classList.add('active');};})();
-document.getElementById('add-eff-day').onclick=function(){
+function openEffSheet(prefillMedId,dayTs){
   fillMedSelect('ef-med',true);
+  if(prefillMedId!=null)document.getElementById('ef-med').value=prefillMedId;
   effSev='lindrig';
   var sb=document.querySelectorAll('#ef-sev button');for(var i=0;i<sb.length;i++)sb[i].classList.toggle('active',sb[i].getAttribute('data-sev')==='lindrig');
   var now=new Date();
-  document.getElementById('ef-date').value=dateInputVal(selDay);
+  document.getElementById('ef-date').value=dateInputVal(dayTs!=null?dayTs:selDay);
   document.getElementById('ef-time').value=pad2(now.getHours())+':'+pad2(now.getMinutes());
   document.getElementById('ef-text').value='';
   openSheet('eff-sheet');
-};
+}
+document.getElementById('add-eff-day').onclick=function(){openEffSheet(null,selDay);};
 document.getElementById('ef-cancel').onclick=closeSheets;
 document.getElementById('ef-save').onclick=function(){
   var ts=parseTs(document.getElementById('ef-date').value,document.getElementById('ef-time').value);
@@ -1297,7 +1314,7 @@ document.getElementById('ai-key-clear').onclick=function(){
 
 // ── Nyheter & funktioner ──────────────────────────────
 var CHANGELOG={
-  appId:'medicin',version:'2.2.1',updated:'2026-06-18',
+  appId:'medicin',version:'2.3.0',updated:'2026-06-18',
   tagline:'Se hur medicinen verkar, om den hjälper, och håll koll på lager och mönster.',
   description:'Medicinkollen är ett minnesstöd som visar i realtid hur din medicin verkar, låter dig skatta om och hur mycket den hjälpte, följa symtom före och efter dos, hålla koll på medicinlagret och se mönster över tid. Allt sparas på din enhet och kan synkas mellan telefon och dator via ditt eget privata GitHub-repo. Medicinkollen ersätter inte ordination eller bipacksedel.',
   audience:'Dig som tar medicin med bestämda tidsintervall och vill ha ett enkelt, privat verktyg för dos, effekt och uppföljning — inte minst inför ett vårdbesök.',
@@ -1316,6 +1333,7 @@ var CHANGELOG={
     'AI-sammanställning (Claude eller ChatGPT), GitHub-synk och desktop-version'
   ],
   changelog:[
+    {v:'2.3.0',d:'2026-06-18',items:['Snabbknappar per medicin i Mediciner-fliken: "+ Biverkning" (öppnar förifyllt formulär och sparar) och "Märker ingen effekt" (markerar senaste dosen som ingen effekt)']},
     {v:'2.2.1',d:'2026-06-18',items:['PNG-favicon (inbäddad) i stället för SVG-emoji, samma motiv och accentfärg']},
     {v:'2.2.0',d:'2026-06-18',items:['Synken slår nu ihop data per id (union-merge) i stället för att skriva över, och tar med biverkningar och faktorer','Egen app-ikon (favicon/apple-touch-icon) och manifest med matchande färg','Förinställd Centralen-kortmetadata så appen kan synkas in automatiskt']},
     {v:'2.1.0',d:'2026-06-17',items:['Snabbknappar "Känns som den verkar nu" och "Känns som den gått ur" som loggar tiden på dosen','Effektskattningen "Har medicinen hjälpt än?" är nu kollapsbar och visas först vid klick','Statistik visar upplevd anslagstid och verkningstid jämfört med inställd tid','Känns-tider syns i historiken och ingår i AI-sammanställningen']},

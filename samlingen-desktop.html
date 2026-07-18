@@ -79,10 +79,15 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .inv-today.on{background:var(--have);color:#fff}
 .buy-btn{font-family:inherit;font-size:11px;border-radius:9px;border:1px solid var(--have);background:var(--panel);color:var(--have);padding:6px 11px;cursor:pointer;flex:none}
 .buy-btn:hover{background:var(--have);color:#fff}
+#ql-text{width:100%;min-height:120px;resize:vertical;line-height:1.5}
+.ql-opts{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.ql-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);text-transform:none;letter-spacing:0;margin:0}
+.ql-check input{width:auto}
 .wish-group{font-size:12px;color:var(--muted);font-weight:600;margin:12px 0 4px;letter-spacing:.02em}
 .flag-chip{font-size:10px;border-radius:8px;padding:2px 7px;color:#fff;white-space:nowrap}
 .flag-chip.first{background:var(--flag)}
 .flag-chip.proj{background:var(--proj)}
+.flag-chip.gift{background:var(--wish)}
 .usage-chip{font-size:10px;border-radius:8px;padding:2px 7px;background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
 .exp-chip{font-size:10px;border-radius:8px;padding:2px 7px;background:var(--panel2);color:var(--expire);border:1px solid var(--expire)}
 .exp-chip.past{background:var(--expire);color:#fff}
@@ -335,6 +340,7 @@ h1.brand{display:none}
     </div>
     <div class="detail-title" id="detail-title"></div>
     <button class="btn fill full" id="add-item" style="margin:6px 0 10px">+ Lägg till sak</button>
+    <button class="btn ghost full" id="quicklist-btn" style="margin:0 0 10px">≡ Snabblista — lägg in/inventera flera</button>
     <div class="sumbar" id="sumbar"></div>
     <div class="toolbar">
       <input type="text" id="search-in" placeholder="Sök i samlingen…">
@@ -534,6 +540,11 @@ h1.brand{display:none}
     <div><label>Såld / given till</label><input type="text" id="f-soldto" placeholder="Namn (frivilligt)"></div>
     <div><label>Datum</label><input type="date" id="f-solddate"></div>
   </div>
+  <label>Gåva</label>
+  <div class="flag-pick">
+    <button type="button" id="f-gift">🎁 Fick i present</button>
+  </div>
+  <input type="text" id="f-giftfrom" placeholder="Från vem? (frivilligt)">
   <div class="row2">
     <div><label>Antal</label><input type="number" id="f-qty" min="0" step="1" value="1"></div>
     <div><label>Inköpspris (kr)</label><input type="number" id="f-value" min="0" step="1" placeholder="–"></div>
@@ -607,6 +618,27 @@ h1.brand{display:none}
   <button class="sheet-close" id="sold-save">Spara</button>
 </div>
 
+<!-- Snabblista-sheet -->
+<div class="sheet" id="quicklist-sheet">
+  <h3>Snabblista</h3>
+  <div class="hint">Skriv eller klistra in en sak per rad. Alla läggs till i samlingen på en gång. Bra för att mata in många eller inventera av en lista.</div>
+  <textarea id="ql-text" rows="7" placeholder="En sak per rad, t.ex.:&#10;Röd lyftare&#10;Blå penna&#10;Anteckningsbok A5"></textarea>
+  <div class="row2">
+    <div><label>Status för alla</label><select id="ql-status"></select></div>
+    <div><label>Gemensam tagg (frivilligt)</label><input type="text" id="ql-tag" list="ql-taglist" placeholder="–"><datalist id="ql-taglist"></datalist></div>
+  </div>
+  <div class="row2">
+    <div><label>Gemensamt märke (frivilligt)</label><input type="text" id="ql-brand" list="ql-brandlist" placeholder="–"><datalist id="ql-brandlist"></datalist></div>
+    <div><label>Plats (frivilligt)</label><input type="text" id="ql-location" list="loc-list" placeholder="–"></div>
+  </div>
+  <div class="ql-opts">
+    <label class="ql-check"><input type="checkbox" id="ql-inv"> Stämpla som inventerade idag</label>
+    <label class="ql-check"><input type="checkbox" id="ql-skip" checked> Hoppa över namn som redan finns i samlingen</label>
+  </div>
+  <div id="ql-status-msg" style="font-size:11px;color:var(--muted);margin:6px 0"></div>
+  <button class="sheet-close" id="ql-add">Lägg till sakerna</button>
+</div>
+
 <!-- Inventera-sheet -->
 <div class="sheet" id="inv-sheet">
   <h3 id="inv-sheet-title">Inventera</h3>
@@ -652,12 +684,12 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.16.0',
+  version:'1.18.0',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
     {area:'Samlingar',items:['Skapa egna samlingar med namn, färg och valfri ikon','Ta bort en samling (och allt i den) via Ändra-knappen','Se inköpsvärde och försäljningsvärde per samling','Duplicera en sak för att snabbt lägga till en liknande']},
-    {area:'Sak-fält',items:['Märke, Typ, inköpspris, inköpsdatum och försäljningsvärde','Butik/köpställe och ordernummer (bra för beställda/förbeställda)','Flera taggar/kategorier per sak — t.ex. Förbrukningsvara','Färgplupp (hexkod) eller emoji som markör']},
+    {area:'Sak-fält',items:['Gåva-markering: om saken fick i present och från vem','Märke, Typ, inköpspris, inköpsdatum och försäljningsvärde','Butik/köpställe och ordernummer (bra för beställda/förbeställda)','Flera taggar/kategorier per sak — t.ex. Förbrukningsvara','Färgplupp (hexkod) eller emoji som markör']},
     {area:'Set & delar',items:['Lägg delar i ett set — varje del blir en egen sak','Lägg även till en befintlig vara i settet via sökning','Settets inköpspris fördelas automatiskt på delarna (om settet har ett pris)','Öppna en del och se vilket set den ingår i']},
     {area:'Använd & läs',items:['Användningsstatus per sak — orden anpassas efter samlingens typ (Läst \/ Läser för böcker, Oöppnad \/ Använd \/ Slut för smink & färg)','Utgångsdatum med varning när något går ut snart eller redan gått ut','Flaggorna Använd först och Projekt (gör slut på) — med egna filter']},
     {area:'Stämplar',items:['Stämpla saker som Inventerad, Använd eller Decluttrad med dagens datum','Växla stämpel i genomgångsläget: antal, filter för ej stämplade och nollställ runda per stämpel']},
@@ -665,12 +697,20 @@ var APPINFO={
     {area:'Familjer',items:['Ge varor en familj — t.ex. en serie eller färgmatch','Klicka på familjeetiketten för att filtrera fram alla i samma familj','Matcha flera varor till en familj samtidigt via Markera → Familj']},
     {area:'Declutter & värde',items:['Declutter-läge: markera till salu eller ta bort direkt i listan','Filtret Till salu samlar allt du flaggat','Översikt med inköpsvärde och försäljningsvärde']},
     {area:'Massredigera',items:['Markera-läge: bocka i flera saker på en gång','Ge dem gemensam tagg, typ, märke eller status','Eller ta bort flera markerade i ett svep']},
+    {area:'Snabblista',items:['Lägg in eller inventera av många saker på en gång — en per rad','Sätt gemensam status, tagg, märke och plats för hela listan','Stämpla allt som inventerat direkt, och hoppa över namn som redan finns']},
     {area:'Inventering',items:['Inventeringsläge: bocka av saker som inventerade med dagens datum','Sätt plats / var den finns (med förslag på platser du använt)','Se hur många som är inventerade, filtrera på ej inventerade och nollställ en ny runda']},
     {area:'Palett',items:['Alla saker med färgplupp som rutor på en färgskala','Gruppera i färgfamiljer (röda, blåa, neutrala osv.)','Hitta snarlika / nästan identiska färger genom att jämföra hexkoder','Klicka eller hovra på en färg för att se vilken sak den tillhör']},
     {area:'Planera & önska',items:['Två flikar: Önskar och På väg / förbeställt','Lägg till önskan eller förbeställning direkt med samling och info','"✓ Köpt" respektive "✓ Klar" flyttar saken till Äger med dagens datum']},
     {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
   ],
   changelog:[
+    {v:'1.18.0',d:'2026-07-16',items:[
+      'Gåva-markering: flagga en sak som "Fick i present" och ange från vem. Visas på raden, går att söka på, filtrera fram och sätta på flera via Markera.'
+    ]},
+    {v:'1.17.0',d:'2026-07-16',items:[
+      'Snabblista: skriv eller klistra in en sak per rad och lägg till alla på en gång — bra för att mata in många eller inventera av en lista.',
+      'Sätt gemensam status, tagg, märke och plats för hela listan, stämpla allt som inventerat direkt och hoppa över dubbletter.'
+    ]},
     {v:'1.16.0',d:'2026-07-13',items:[
       'Flaggorna Använd först och Projekt (gör slut på) — sätt dem per sak eller på flera samtidigt via Markera.',
       'Användningsstatus som anpassar sig efter samlingens typ: Inte läst \/ Läser \/ Läst för böcker, Oöppnad \/ Använd \/ Slut för smink & färg.',
@@ -851,6 +891,8 @@ function migrateItems(){
     if(it.declutteredOn==null)it.declutteredOn='';
     if(it.soldTo==null)it.soldTo='';
     if(it.soldDate==null)it.soldDate='';
+    if(it.gift==null)it.gift=false;
+    if(it.giftFrom==null)it.giftFrom='';
   }
   if(!Array.isArray(state.collections))state.collections=[];
   for(var ci=0;ci<state.collections.length;ci++){if(state.collections[ci].kind==null)state.collections[ci].kind='general';}
@@ -931,7 +973,7 @@ function closeSheets(){bg.classList.remove('open');var sh=document.querySelector
 bg.onclick=closeSheets;
 
 // ── Navigationstillstånd ───────────────────────────────
-var tmpUseFirst=false,tmpProject=false,tmpStamps={inventoried:'',usedOn:'',declutteredOn:''},extraFilter='';
+var tmpUseFirst=false,tmpProject=false,tmpGift=false,tmpStamps={inventoried:'',usedOn:'',declutteredOn:''},extraFilter='';
 var currentColl=null,tagFilter='',brandFilter={},familyFilter='',search='',sortBy='new',statusFilter='all',declutter=false,selectMode=false,selected={},bulkAction='',bulkStatus='',inventoryMode=false,invPending=false,invEditId=null,tmpInv='',invStamp='inventoried';
 
 // ── Hem / samlingsrutnät ───────────────────────────────
@@ -985,7 +1027,7 @@ function renderFilterChips(){
 }
 function renderExtraChips(){
   var f2=el('filter-chips2');
-  var opts=[['','Inget extrafilter'],['usefirst','⚡ Använd först'],['project','🎯 Projekt'],['expiring','⏳ Går ut snart']];
+  var opts=[['','Inget extrafilter'],['usefirst','⚡ Använd först'],['project','🎯 Projekt'],['gift','🎁 Gåva'],['expiring','⏳ Går ut snart']];
   var uo=usageOpts(currentColl);
   for(var i=0;i<uo.length;i++)opts.push(['usage:'+uo[i][0],uo[i][1]]);
   var h='';
@@ -1005,13 +1047,14 @@ function filteredItems(){
     if(familyFilter&&it.family!==familyFilter)continue;
     if(extraFilter==='usefirst'&&!it.useFirst)continue;
     if(extraFilter==='project'&&!it.project)continue;
+    if(extraFilter==='gift'&&!it.gift)continue;
     if(extraFilter==='expiring'&&!expiringSoon(it))continue;
     if(extraFilter.indexOf('usage:')===0&&it.usage!==extraFilter.slice(6))continue;
     if(inventoryMode&&invPending&&it[invStamp])continue;
     if(statusFilter==='sale'){if(!isForSale(it))continue;}
     else if(statusFilter!=='all'&&it.status!==statusFilter)continue;
     if(search){
-      var hay=((it.name||'')+' '+(it.type||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.store||'')+' '+(it.order||'')+' '+(it.location||'')+' '+(it.family||'')+' '+(it.soldTo||'')+' '+(it.note||'')).toLowerCase();
+      var hay=((it.name||'')+' '+(it.type||'')+' '+((it.tags||[]).join(' '))+' '+(it.brand||'')+' '+(it.barcode||'')+' '+(it.store||'')+' '+(it.order||'')+' '+(it.location||'')+' '+(it.family||'')+' '+(it.soldTo||'')+' '+(it.giftFrom||'')+' '+(it.note||'')).toLowerCase();
       if(hay.indexOf(search.toLowerCase())<0)continue;
     }
     arr.push(it);
@@ -1040,6 +1083,7 @@ function itemRow(it){
   if(it.family)sub+='<span class="tag fam" data-fam="'+esc(it.family)+'">❖ '+esc(it.family)+'</span>';
   if(it.useFirst)sub+='<span class="flag-chip first">⚡ Använd först</span>';
   if(it.project)sub+='<span class="flag-chip proj">🎯 Projekt</span>';
+  if(it.gift)sub+='<span class="flag-chip gift">🎁 Gåva'+(it.giftFrom?' · '+esc(it.giftFrom):'')+'</span>';
   var ul=usageLabel(it);
   if(ul)sub+='<span class="usage-chip">'+esc(ul)+'</span>';
   if(it.expiry){var dd=daysUntil(it.expiry);
@@ -1374,6 +1418,8 @@ function openBulk(action){
     fh+='<button class="chip" data-f="first-off">Ta bort Använd först</button>';
     fh+='<button class="chip" data-f="proj-on">🎯 Sätt Projekt</button>';
     fh+='<button class="chip" data-f="proj-off">Ta bort Projekt</button>';
+    fh+='<button class="chip" data-f="gift-on">🎁 Sätt Gåva</button>';
+    fh+='<button class="chip" data-f="gift-off">Ta bort Gåva</button>';
     chips.innerHTML=fh;
     var fb=chips.querySelectorAll('.chip');
     for(var fi=0;fi<fb.length;fi++){fb[fi].onclick=function(){bulkStatus=this.getAttribute('data-f');var all=chips.querySelectorAll('.chip');for(var x=0;x<all.length;x++)all[x].classList.remove('sel');this.classList.add('sel');};}
@@ -1418,6 +1464,8 @@ el('bulk-apply').onclick=function(){
       else if(bulkStatus==='first-off')it.useFirst=false;
       else if(bulkStatus==='proj-on')it.project=true;
       else if(bulkStatus==='proj-off')it.project=false;
+      else if(bulkStatus==='gift-on')it.gift=true;
+      else if(bulkStatus==='gift-off')it.gift=false;
     }
   }
   else if(bulkAction==='status'){if(!bulkStatus){return;}for(i=0;i<ids.length;i++){it=itemById(ids[i]);if(it)it.status=bulkStatus;}}
@@ -1546,6 +1594,8 @@ function openItem(id){
   renderStampRow();
   el('f-soldto').value=it&&it.soldTo?it.soldTo:'';
   el('f-solddate').value=it&&it.soldDate?it.soldDate:'';
+  tmpGift=it?!!it.gift:false;el('f-gift').classList.toggle('on',tmpGift);
+  el('f-giftfrom').value=it&&it.giftFrom?it.giftFrom:'';
   setHexMark(it&&it.hex?it.hex:'');
   el('f-emoji').value=it&&it.emoji?it.emoji:'';
   el('f-qty').value=it&&it.qty!=null?it.qty:1;
@@ -1592,6 +1642,7 @@ el('f-st-declutteredOn').onclick=function(){toggleStamp('declutteredOn');};
 el('f-st-clear').onclick=function(){tmpStamps={inventoried:'',usedOn:'',declutteredOn:''};renderStampRow();};
 el('f-usefirst').onclick=function(){tmpUseFirst=!tmpUseFirst;this.classList.toggle('on',tmpUseFirst);};
 el('f-project').onclick=function(){tmpProject=!tmpProject;this.classList.toggle('on',tmpProject);};
+el('f-gift').onclick=function(){tmpGift=!tmpGift;this.classList.toggle('on',tmpGift);};
 el('f-sale').onclick=function(){tmpForSale=!tmpForSale;this.classList.toggle('sel',tmpForSale);};
 el('p-add').onclick=function(){
   if(!editItemId)return;
@@ -1601,7 +1652,7 @@ el('p-add').onclick=function(){
   var part={id:uid(),coll:set.coll,name:nm,tags:ptags,brand:set.brand||'',type:'',
     barcode:'',link:el('p-link').value.trim(),hex:el('p-hex').value||'',emoji:el('p-emoji').value.trim(),
     store:'',order:'',location:'',inventoried:'',usedOn:'',declutteredOn:'',family:'',
-    usage:'',expiry:'',useFirst:false,project:false,soldTo:'',soldDate:'',parent:set.id,status:set.status,qty:1,value:'',sell:'',bought:'',forSale:false,rating:0,note:'',created:Date.now()};
+    usage:'',expiry:'',useFirst:false,project:false,gift:false,giftFrom:'',soldTo:'',soldDate:'',parent:set.id,status:set.status,qty:1,value:'',sell:'',bought:'',forSale:false,rating:0,note:'',created:Date.now()};
   state.items.push(part);
   distributeSet(set.id);
   save();
@@ -1663,6 +1714,7 @@ el('item-save').onclick=function(){
     family:el('f-family').value.trim(),
     usage:el('f-usage').value,expiry:el('f-expiry').value||'',
     useFirst:tmpUseFirst,project:tmpProject,
+    gift:tmpGift,giftFrom:el('f-giftfrom').value.trim(),
     soldTo:el('f-soldto').value.trim(),soldDate:el('f-solddate').value||'',
     hex:tmpHex,emoji:el('f-emoji').value.trim(),
     status:tmpStatus,qty:el('f-qty').value===''?1:+el('f-qty').value,
@@ -1691,6 +1743,39 @@ el('item-del').onclick=function(){
   save();closeSheets();if(currentColl)renderItems();refreshAll();
 };
 el('add-item').onclick=function(){openItem(null);};
+function openQuickList(){
+  var sh='';for(var i=0;i<STATUS.length;i++)sh+='<option value="'+STATUS[i][0]+'">'+esc(STATUS[i][1])+'</option>';
+  el('ql-status').innerHTML=sh;el('ql-status').value='have';
+  el('ql-text').value='';el('ql-tag').value='';el('ql-brand').value='';el('ql-location').value='';
+  el('ql-inv').checked=false;el('ql-skip').checked=true;el('ql-status-msg').textContent='';
+  var tl='',tags=tagsInColl(currentColl);for(var t=0;t<tags.length;t++)tl+='<option value="'+esc(tags[t])+'"></option>';el('ql-taglist').innerHTML=tl;
+  var bl='',br=brandsInColl(currentColl);for(var b=0;b<br.length;b++)bl+='<option value="'+esc(br[b])+'"></option>';el('ql-brandlist').innerHTML=bl;
+  fillLocList();
+  openSheet('quicklist-sheet');
+}
+el('quicklist-btn').onclick=openQuickList;
+el('ql-add').onclick=function(){
+  var lines=el('ql-text').value.split('\n').map(function(s){return s.trim();}).filter(function(s){return s;});
+  if(!lines.length){el('ql-status-msg').textContent='Skriv minst en rad först.';return;}
+  var st=el('ql-status').value||'have';
+  var tag=el('ql-tag').value.trim(),brand=el('ql-brand').value.trim(),loc=el('ql-location').value.trim();
+  var inv=el('ql-inv').checked?todayKey():'';
+  var skip=el('ql-skip').checked;
+  var existing={};
+  if(skip){for(var e=0;e<state.items.length;e++){if(state.items[e].coll===currentColl)existing[state.items[e].name.toLowerCase()]=1;}}
+  var added=0,skipped=0,seen={};
+  for(var i=0;i<lines.length;i++){
+    var nm=lines[i];var key=nm.toLowerCase();
+    if(skip&&(existing[key]||seen[key])){skipped++;continue;}
+    seen[key]=1;
+    state.items.push({id:uid(),coll:currentColl,name:nm,tags:tag?[tag]:[],brand:brand,type:'',
+      barcode:'',link:'',store:'',order:'',location:loc,inventoried:inv,usedOn:'',declutteredOn:'',
+      family:'',usage:'',expiry:'',useFirst:false,project:false,gift:false,giftFrom:'',soldTo:'',soldDate:'',
+      hex:'',emoji:'',parent:'',status:st,qty:1,value:'',sell:'',bought:'',forSale:false,rating:0,note:'',created:Date.now()+i});
+    added++;
+  }
+  save();closeSheets();renderItems();refreshAll();
+};
 el('add-wish').onclick=function(){openItem(null);tmpStatus=(wishSeg==='incoming'?'preorder':'wish');buildStatusChips();};
 (function(){var segBtns=el('wish-seg').querySelectorAll('button');for(var i=0;i<segBtns.length;i++){segBtns[i].onclick=function(){wishSeg=this.getAttribute('data-seg');for(var j=0;j<segBtns.length;j++)segBtns[j].classList.toggle('on',segBtns[j]===this);renderWishlist();};}})();
 function duplicateItem(srcId,openAfter){
@@ -1698,7 +1783,7 @@ function duplicateItem(srcId,openAfter){
   var copy={id:uid(),coll:src.coll,name:(src.name||'')+' (kopia)',
     tags:(src.tags||[]).slice(),brand:src.brand||'',type:src.type||'',barcode:'',link:src.link||'',
     store:src.store||'',order:'',location:src.location||'',inventoried:'',usedOn:'',declutteredOn:'',family:src.family||'',
-    usage:src.usage||'',expiry:src.expiry||'',useFirst:!!src.useFirst,project:!!src.project,soldTo:'',soldDate:'',
+    usage:src.usage||'',expiry:src.expiry||'',useFirst:!!src.useFirst,project:!!src.project,gift:!!src.gift,giftFrom:src.giftFrom||'',soldTo:'',soldDate:'',
     hex:src.hex||'',emoji:src.emoji||'',parent:src.parent||'',status:src.status,
     qty:src.qty,value:src.value,sell:src.sell||'',bought:'',forSale:false,
     rating:src.rating,note:src.note||'',created:Date.now()};
