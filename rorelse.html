@@ -51,6 +51,9 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
 .chip{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
 .chip:active{background:var(--accent-soft)}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.gym-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);text-transform:none;letter-spacing:0;margin:12px 0 4px}
+.gym-check input{width:auto;accent-color:var(--accent)}
 
 /* Pass-typer */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -256,7 +259,8 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
 <!-- GYM -->
 <div class="view" id="view-gym">
   <div class="card-panel">
-    <div class="gym-name"><span id="gym-name">Mitt gym</span><button id="edit-name">byt namn</button></div>
+    <div class="chips" id="gym-chips"></div>
+    <div class="gym-name" style="margin-top:12px"><span id="gym-name">Mitt gym</span><button id="edit-name">ändra</button></div>
     <div class="section-title" style="margin:14px 0 6px">Öppettider <button class="btn ghost" id="edit-hours">Ändra</button></div>
     <div id="hours-list"></div>
     <div class="status" id="gym-status"></div>
@@ -264,7 +268,8 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
 
   <div class="section-title">När är det folk?</div>
   <div class="card-panel">
-    <div class="soft">Tryck på en ruta för att markera hur det brukar vara — så hittar du de lugna tiderna. Varje ruta är en timme, hela dygnet 00–23. Bygger på dina egna iakttagelser.</div>
+    <div class="chips" id="zone-chips" style="margin-bottom:10px"></div>
+    <div class="soft">Tryck på en ruta för att markera hur det brukar vara — så hittar du de lugna tiderna. Varje ruta är en timme, hela dygnet 00–23. Bygger på dina egna iakttagelser och på hur fullt du upplevt det när du loggat pass.</div>
     <div class="heat" id="heat"></div>
     <div class="legend">
       <span><i style="background:var(--panel2)"></i>okänt</span>
@@ -334,6 +339,27 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
       <input type="date" id="lg-date">
     </div>
   </div>
+  <div class="row2">
+    <div>
+      <label>Tid</label>
+      <input type="time" id="lg-time">
+    </div>
+    <div id="lg-gym-wrap">
+      <label>Vilket gym</label>
+      <select id="lg-gym"></select>
+    </div>
+  </div>
+  <div id="lg-zone-wrap">
+    <label>Del av gymmet</label>
+    <div class="seg" id="lg-zone"></div>
+  </div>
+  <label>Hur fullt upplevdes det?</label>
+  <div class="seg" id="lg-full">
+    <button type="button" data-f="1">Lugnt</button>
+    <button type="button" data-f="2">En del</button>
+    <button type="button" data-f="3">Fullt</button>
+  </div>
+  <div class="soft" style="margin-top:5px">Frivilligt. Det du fyller i uppdaterar belastningsschemat för den timmen.</div>
   <label>Energi innan (frivilligt)</label>
   <div class="dotpick" id="lg-before"></div>
   <label>Energi efteråt (frivilligt)</label>
@@ -376,9 +402,13 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
 </div>
 
 <div class="sheet" id="name-sheet">
-  <h3>Namn på gymmet</h3>
+  <h3 id="gym-sheet-title">Gym</h3>
+  <label>Namn</label>
   <input type="text" id="name-in" placeholder="Mitt gym">
+  <label class="gym-check"><input type="checkbox" id="gym-tjej"> Gymmet har en tjejdel</label>
+  <div class="soft">Med tjejdel kan du hålla koll på belastningen separat för allmänna gymmet och tjejdelen.</div>
   <button class="sheet-close" id="name-save">Spara</button>
+  <button class="btn ghost" id="gym-del" style="width:100%;margin-top:8px">Ta bort det här gymmet</button>
 </div>
 
 <div class="sheet" id="sync-sheet">
@@ -444,7 +474,9 @@ var state={
     {icon:'⏱',name:'5-minuters-start',min:5}
   ],
   planned:{},
-  gym:{name:'Mitt gym',hours:null,crowd:null},
+  gyms:null,
+  activeGym:'',
+  activeZone:'allmant',
   theme:'auto',
   palette:'mossa'
 };
@@ -461,36 +493,50 @@ var TIMES=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]; // he
 var wd=function(d){return (d.getDay()+6)%7;}; // Mån=0 .. Sön=6
 
 // ── Säkerställ gym-data ───────────────────────────────
-function ensureGym(){
-  state.gym=state.gym||{name:'Mitt gym'};
-  if(!state.gym.hours){
-    state.gym.hours={};
-    for(var i=0;i<7;i++){
-      if(i<5)state.gym.hours[i]={open:'06:00',close:'22:00',closed:false};
-      else state.gym.hours[i]={open:'08:00',close:'20:00',closed:false};
-    }
-  }
-  if(!state.gym.crowd){
-    state.gym.crowd={};
-    for(var j=0;j<7;j++){state.gym.crowd[j]=new Array(TIMES.length).fill(0);}
-  }
-  // Migrera gamla scheman till timme-för-timme (24 block).
-  // 8 block  = gammalt 06–22 i tvåtimmarssteg
-  // 12 block = 00–24 i tvåtimmarssteg
+var ZONES=[{id:'allmant',namn:'Allmänna gymmet',kort:'Allmänt'},{id:'tjej',namn:'Tjejdelen',kort:'Tjejdelen'}];
+var uid=function(){return 'g'+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36);};
+function blankDays(){var o={};for(var i=0;i<7;i++){o[i]=new Array(TIMES.length).fill(0);}return o;}
+function defaultHours(){var o={};for(var i=0;i<7;i++){o[i]=i<5?{open:'06:00',close:'22:00',closed:false}:{open:'08:00',close:'20:00',closed:false};}return o;}
+// Migrerar ett dygnsschema till timme-för-timme (24 block).
+// 8 block = gammalt 06–22 i tvåtimmarssteg, 12 block = 00–24 i tvåtimmarssteg
+function fixDays(days){
+  var out={};
   for(var k=0;k<7;k++){
-    var arr=state.gym.crowd[k];
-    if(!arr){state.gym.crowd[k]=new Array(TIMES.length).fill(0);continue;}
-    if(arr.length===TIMES.length)continue;
+    var arr=(days&&days[k])||null;
+    if(!arr){out[k]=new Array(TIMES.length).fill(0);continue;}
+    if(arr.length===TIMES.length){out[k]=arr;continue;}
     var nw=new Array(TIMES.length).fill(0);
-    if(arr.length===8){
-      for(var m=0;m<8;m++){var h8=6+2*m;nw[h8]=arr[m];nw[h8+1]=arr[m];}
-    }else if(arr.length===12){
-      for(var p=0;p<12;p++){var h12=2*p;nw[h12]=arr[p];nw[h12+1]=arr[p];}
-    }else{
-      for(var n=0;n<Math.min(arr.length,TIMES.length);n++){nw[n]=arr[n];}
-    }
-    state.gym.crowd[k]=nw;
+    if(arr.length===8){for(var m=0;m<8;m++){var h8=6+2*m;nw[h8]=arr[m];nw[h8+1]=arr[m];}}
+    else if(arr.length===12){for(var p=0;p<12;p++){var h12=2*p;nw[h12]=arr[p];nw[h12+1]=arr[p];}}
+    else{for(var n=0;n<Math.min(arr.length,TIMES.length);n++){nw[n]=arr[n];}}
+    out[k]=nw;
   }
+  return out;
+}
+function gymById(id){for(var i=0;i<(state.gyms||[]).length;i++){if(state.gyms[i].id===id)return state.gyms[i];}return null;}
+function curGym(){return gymById(state.activeGym)||state.gyms[0];}
+function curCrowd(){var g=curGym();return g.crowd[state.activeZone]||g.crowd.allmant;}
+function zoneNamn(z){for(var i=0;i<ZONES.length;i++){if(ZONES[i].id===z)return ZONES[i].namn;}return 'Allmänna gymmet';}
+function ensureGym(){
+  if(!Array.isArray(state.gyms)){
+    var old=state.gym||{};
+    state.gyms=[{id:uid(),name:old.name||'Mitt gym',tjej:true,hours:old.hours||defaultHours(),crowd:{allmant:fixDays(old.crowd),tjej:blankDays()}}];
+    state.gym=null;
+  }
+  if(!state.gyms.length)state.gyms.push({id:uid(),name:'Mitt gym',tjej:true,hours:defaultHours(),crowd:{allmant:blankDays(),tjej:blankDays()}});
+  state.gyms.forEach(function(g){
+    if(!g.id)g.id=uid();
+    if(!g.name)g.name='Mitt gym';
+    if(typeof g.tjej!=='boolean')g.tjej=true;
+    if(!g.hours)g.hours=defaultHours();
+    else{for(var i=0;i<7;i++){if(!g.hours[i])g.hours[i]=i<5?{open:'06:00',close:'22:00',closed:false}:{open:'08:00',close:'20:00',closed:false};}}
+    if(!g.crowd)g.crowd={};
+    if(g.crowd[0]&&!g.crowd.allmant)g.crowd={allmant:fixDays(g.crowd),tjej:blankDays()};
+    ZONES.forEach(function(z){g.crowd[z.id]=fixDays(g.crowd[z.id]);});
+  });
+  if(!state.activeGym||!gymById(state.activeGym))state.activeGym=state.gyms[0].id;
+  if(state.activeZone!=='tjej'&&state.activeZone!=='allmant')state.activeZone='allmant';
+  if(state.activeZone==='tjej'&&!curGym().tjej)state.activeZone='allmant';
 }
 ensureGym();
 saveLocal();
@@ -600,18 +646,20 @@ function renderGymToday(){
   ensureGym();
   var el=document.getElementById('gym-today');
   var w=wd(new Date());
-  var hrs=state.gym.hours[w];
+  var g=curGym();
+  var hrs=g.hours[w];
   var now=new Date();var nowMin=now.getHours()*60+now.getMinutes();
   var statusHtml='';
-  if(hrs.closed){statusHtml='<b>'+esc(state.gym.name)+'</b> håller stängt idag.';}
+  if(hrs.closed){statusHtml='<b>'+esc(g.name)+'</b> håller stängt idag.';}
   else{
     var o=hmToMin(hrs.open),c=hmToMin(hrs.close);
-    if(nowMin<o)statusHtml='<b>'+esc(state.gym.name)+'</b> öppnar '+hrs.open+' idag.';
-    else if(nowMin>=c)statusHtml='<b>'+esc(state.gym.name)+'</b> har stängt för idag (öppnar igen imorgon).';
-    else statusHtml='<b>'+esc(state.gym.name)+'</b> är öppet nu — stänger '+hrs.close+'.';
+    if(nowMin<o)statusHtml='<b>'+esc(g.name)+'</b> öppnar '+hrs.open+' idag.';
+    else if(nowMin>=c)statusHtml='<b>'+esc(g.name)+'</b> har stängt för idag (öppnar igen imorgon).';
+    else statusHtml='<b>'+esc(g.name)+'</b> är öppet nu — stänger '+hrs.close+'.';
   }
   // lugnaste tiden
-  var crowd=state.gym.crowd[w];
+  var crowd=curCrowd()[w];
+  var zonTxt=curGym().tjej?' ('+zoneNamn(state.activeZone).toLowerCase()+')':'';
   var calm='';
   if(!hrs.closed){
     var o2=hmToMin(hrs.open),c2=hmToMin(hrs.close);
@@ -635,7 +683,7 @@ function renderGymToday(){
       }
     }else if(best>=0){
       var t=bestLvl===1?'lugnast':'lugnaste';
-      calm='Det brukar vara '+t+' runt <b>'+pad(TIMES[best])+':00</b> idag.';
+      calm='Det brukar vara '+t+' runt <b>'+pad(TIMES[best])+':00</b> idag'+zonTxt+'.';
     }else{
       calm='Markera hur det brukar vara under <b>Gym</b> så visas den lugnaste tiden här.';
     }
@@ -650,9 +698,46 @@ function openLog(type){
   document.getElementById('lg-name').value=type&&type.name?type.name:'';
   document.getElementById('lg-min').value=type&&type.min?type.min:'';
   document.getElementById('lg-date').value=todayKey();
+  document.getElementById('lg-time').value=new Date().toTimeString().slice(0,5);
   setDots('lg-before',0);setDots('lg-after',0);
   document.getElementById('lg-note').value='';
+  renderLogGym();
   openSheet('log-sheet');
+}
+function renderLogGym(){
+  var sel=document.getElementById('lg-gym');
+  sel.innerHTML=state.gyms.map(function(g){return '<option value="'+g.id+'">'+esc(g.name)+'</option>';}).join('');
+  sel.value=state.activeGym;
+  document.getElementById('lg-gym-wrap').style.display=state.gyms.length>1?'':'none';
+  sel.onchange=renderLogZones;
+  renderLogZones();
+  var f=document.getElementById('lg-full');
+  f.dataset.val='';
+  f.querySelectorAll('button').forEach(function(b){b.classList.remove('sel');});
+}
+function bindFullPick(){
+  var f=document.getElementById('lg-full');
+  f.querySelectorAll('button').forEach(function(b){
+    b.onclick=function(){
+      if(f.dataset.val===b.dataset.f){f.dataset.val='';b.classList.remove('sel');return;}
+      f.dataset.val=b.dataset.f;
+      f.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel');
+    };
+  });
+}
+function renderLogZones(){
+  var g=gymById(document.getElementById('lg-gym').value)||curGym();
+  var wrap=document.getElementById('lg-zone-wrap');
+  var el=document.getElementById('lg-zone');
+  if(!g.tjej){wrap.style.display='none';el.dataset.val='allmant';return;}
+  wrap.style.display='';
+  var cur=el.dataset.val||state.activeZone||'allmant';
+  el.dataset.val=cur;
+  el.innerHTML=ZONES.map(function(z){return '<button type="button" data-z="'+z.id+'"'+(z.id===cur?' class="sel"':'')+'>'+z.kort+'</button>';}).join('');
+  el.querySelectorAll('button').forEach(function(b){
+    b.onclick=function(){el.dataset.val=b.dataset.z;el.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');};
+  });
 }
 document.getElementById('log-now').onclick=function(){openLog(null);};
 document.getElementById('lg-save').onclick=function(){
@@ -660,17 +745,32 @@ document.getElementById('lg-save').onclick=function(){
   if(!name){document.getElementById('lg-name').focus();return;}
   var min=parseInt(document.getElementById('lg-min').value,10);
   var date=document.getElementById('lg-date').value||todayKey();
+  var time=document.getElementById('lg-time').value||new Date().toTimeString().slice(0,5);
   var before=document.getElementById('lg-before').dataset.val;
   var after=document.getElementById('lg-after').dataset.val;
   var note=document.getElementById('lg-note').value.trim();
+  var gymId=document.getElementById('lg-gym').value||state.activeGym;
+  var zone=document.getElementById('lg-zone').dataset.val||'allmant';
+  var full=document.getElementById('lg-full').dataset.val;
   state.sessions.push({
     id:Date.now(),icon:logCtx.icon||'🌿',name:name,
-    min:isNaN(min)?null:min,date:date,time:new Date().toTimeString().slice(0,5),
-    before:before?+before:null,after:after?+after:null,note:note
+    min:isNaN(min)?null:min,date:date,time:time,
+    before:before?+before:null,after:after?+after:null,note:note,
+    gymId:gymId,zone:zone,full:full?+full:null
   });
+  if(full)applyFullToCrowd(gymId,zone,date,time,+full);
   save();closeSheets();
-  renderToday();renderPass();renderStats();
+  renderToday();renderPass();renderStats();renderHeat();renderCalmHint();
 };
+// Upplevd trängsel matar belastningsschemat
+function applyFullToCrowd(gymId,zone,date,time,full){
+  var g=gymById(gymId);if(!g)return;
+  var p=date.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  var day=wd(d);var hour=parseInt((time||'').split(':')[0],10);
+  if(isNaN(hour)||hour<0||hour>23)return;
+  var days=g.crowd[zone]||g.crowd.allmant;
+  if(days&&days[day])days[day][hour]=full;
+}
 
 // ── Pass-vy ───────────────────────────────────────────
 function renderTypeTiles(){
@@ -695,7 +795,11 @@ function renderRecent(){
     var when=relDate(x.date);
     var arrow='';
     if(x.before&&x.after){arrow='<div class="arrow">'+x.before+'→'+x.after+'</div>';}
-    var meta=when+(x.min?' · '+x.min+' min':'')+(x.note?' · '+esc(x.note):'');
+    var FT=['','lugnt','en del folk','fullt'];
+    var gz='';
+    if(x.gymId){var gg=gymById(x.gymId);if(gg&&state.gyms.length>1)gz=' · '+esc(gg.name);}
+    if(x.zone==='tjej')gz+=' · tjejdelen';
+    var meta=when+(x.min?' · '+x.min+' min':'')+gz+(x.full?' · '+FT[x.full]:'')+(x.note?' · '+esc(x.note):'');
     return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+meta+'</div></div>'+arrow+'<button data-id="'+x.id+'">×</button></div>';
   }).join('');
   el.querySelectorAll('button').forEach(function(b){
@@ -789,25 +893,81 @@ function relDateFull(iso){
 }
 
 // ── Gym-vy: namn, tider, heatmap ──────────────────────
-function renderGymName(){document.getElementById('gym-name').textContent=state.gym.name;}
-document.getElementById('edit-name').onclick=function(){
-  document.getElementById('name-in').value=state.gym.name;openSheet('name-sheet');
+function renderGymUI(){
+  ensureGym();
+  var chips=document.getElementById('gym-chips');
+  if(chips){
+    chips.innerHTML=state.gyms.map(function(g){
+      return '<button class="chip'+(g.id===state.activeGym?' sel':'')+'" data-g="'+g.id+'">'+esc(g.name)+'</button>';
+    }).join('')+'<button class="chip" data-add="1">+ Lägg till gym</button>';
+    chips.querySelectorAll('button').forEach(function(b){
+      b.onclick=function(){
+        if(b.dataset.add){openGymSheet(null);return;}
+        state.activeGym=b.dataset.g;
+        if(state.activeZone==='tjej'&&!curGym().tjej)state.activeZone='allmant';
+        save();renderGymUI();renderHours();renderHeat();renderCalmHint();renderGymToday();
+      };
+    });
+  }
+  var nm=document.getElementById('gym-name');
+  if(nm)nm.textContent=curGym().name;
+  var zc=document.getElementById('zone-chips');
+  if(zc){
+    if(!curGym().tjej){zc.style.display='none';state.activeZone='allmant';}
+    else{
+      zc.style.display='';
+      zc.innerHTML=ZONES.map(function(z){
+        return '<button class="chip'+(z.id===state.activeZone?' sel':'')+'" data-z="'+z.id+'">'+z.namn+'</button>';
+      }).join('');
+      zc.querySelectorAll('button').forEach(function(b){
+        b.onclick=function(){state.activeZone=b.dataset.z;save();renderGymUI();renderHeat();renderCalmHint();renderGymToday();};
+      });
+    }
+  }
+}
+var gymEdit=null;
+function openGymSheet(id){
+  gymEdit=id;
+  var g=id?gymById(id):null;
+  document.getElementById('gym-sheet-title').textContent=g?'Ändra gym':'Nytt gym';
+  document.getElementById('name-in').value=g?g.name:'';
+  document.getElementById('gym-tjej').checked=g?!!g.tjej:true;
+  document.getElementById('gym-del').style.display=(g&&state.gyms.length>1)?'':'none';
+  openSheet('name-sheet');
+}
+document.getElementById('edit-name').onclick=function(){openGymSheet(state.activeGym);};
+document.getElementById('gym-del').onclick=function(){
+  if(!gymEdit||state.gyms.length<2)return;
+  if(!confirm('Ta bort gymmet och dess belastningsschema?'))return;
+  state.gyms=state.gyms.filter(function(g){return g.id!==gymEdit;});
+  state.activeGym=state.gyms[0].id;ensureGym();
+  save();closeSheets();renderGymUI();renderHours();renderHeat();renderCalmHint();renderGymToday();
 };
 document.getElementById('name-save').onclick=function(){
-  var v=document.getElementById('name-in').value.trim();if(v)state.gym.name=v;
-  save();renderGymName();renderGymToday();closeSheets();
+  var v=document.getElementById('name-in').value.trim();
+  var tjej=document.getElementById('gym-tjej').checked;
+  if(gymEdit){
+    var g=gymById(gymEdit);
+    if(g){if(v)g.name=v;g.tjej=tjej;}
+  }else{
+    if(!v)v='Nytt gym';
+    var ny={id:uid(),name:v,tjej:tjej,hours:defaultHours(),crowd:{allmant:blankDays(),tjej:blankDays()}};
+    state.gyms.push(ny);state.activeGym=ny.id;
+  }
+  ensureGym();save();closeSheets();
+  renderGymUI();renderHours();renderHeat();renderCalmHint();renderGymToday();
 };
 function renderHours(){
   ensureGym();
   var el=document.getElementById('hours-list');
   var today=wd(new Date());
   el.innerHTML=DAYS.map(function(d,i){
-    var h=state.gym.hours[i];
+    var h=curGym().hours[i];
     var txt=h.closed?'stängt':h.open+' – '+h.close;
     return '<div class="hours-row'+(i===today?' today':'')+'"><div class="d">'+d+'</div><div class="h'+(h.closed?' closed':'')+'">'+txt+'</div></div>';
   }).join('');
   // status
-  var w=today,hrs=state.gym.hours[w];
+  var w=today,hrs=curGym().hours[w];
   var now=new Date();var nm=now.getHours()*60+now.getMinutes();
   var st='';
   if(hrs.closed){st='<span class="dot-now" style="background:var(--red)"></span>Stängt idag';}
@@ -825,7 +985,7 @@ document.getElementById('edit-hours').onclick=function(){renderHoursEdit();openS
 function renderHoursEdit(){
   var el=document.getElementById('hours-edit');
   el.innerHTML=DAYSL.map(function(d,i){
-    var h=state.gym.hours[i];
+    var h=curGym().hours[i];
     return '<div class="hours-edit"><div class="d">'+DAYS[i]+'</div>'+
       '<input type="time" data-i="'+i+'" data-f="open" value="'+h.open+'"'+(h.closed?' disabled':'')+'>'+
       '<input type="time" data-i="'+i+'" data-f="close" value="'+h.close+'"'+(h.closed?' disabled':'')+'>'+
@@ -834,8 +994,8 @@ function renderHoursEdit(){
   el.querySelectorAll('input').forEach(function(inp){
     inp.onchange=function(){
       var i=+inp.dataset.i,f=inp.dataset.f;
-      if(f==='closed'){state.gym.hours[i].closed=inp.checked;renderHoursEdit();}
-      else state.gym.hours[i][f]=inp.value;
+      if(f==='closed'){curGym().hours[i].closed=inp.checked;renderHoursEdit();}
+      else curGym().hours[i][f]=inp.value;
     };
   });
 }
@@ -850,7 +1010,7 @@ function renderHeat(){
   for(var b=0;b<TIMES.length;b++){
     html+='<div class="hl'+((TIMES[b]<6||TIMES[b]>=22)?' night':'')+'">'+pad(TIMES[b])+'</div>';
     for(var dd2=0;dd2<7;dd2++){
-      var lvl=state.gym.crowd[dd2][b];
+      var lvl=curCrowd()[dd2][b];
       var cls='hc'+(lvl?' l'+lvl:'')+(dd2===today&&b===nb?' now':'');
       html+='<div class="'+cls+'" data-d="'+dd2+'" data-b="'+b+'"></div>';
     }
@@ -859,14 +1019,14 @@ function renderHeat(){
   el.querySelectorAll('.hc').forEach(function(c){
     c.onclick=function(){
       var d=+c.dataset.d,b=+c.dataset.b;
-      state.gym.crowd[d][b]=(state.gym.crowd[d][b]+1)%4;
+      var days=curCrowd();days[d][b]=(days[d][b]+1)%4;
       save();renderHeat();renderCalmHint();renderGymToday();
     };
   });
 }
 function renderCalmHint(){
   var el=document.getElementById('calm-hint');
-  var w=wd(new Date());var crowd=state.gym.crowd[w];
+  var w=wd(new Date());var crowd=curCrowd()[w];
   var any=crowd.some(function(x){return x>0;});
   if(!any){el.textContent='Tips: lugna tider (grönt) är ofta sköna om ljud och folk tar energi.';return;}
   var calmBlocks=[];
@@ -1003,16 +1163,33 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setSyncBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.dataset.s=stt;b.textContent=msg;}
 function refreshSyncBadge(){if(syncOn())setSyncBadge('ok','Synkad');else setSyncBadge('off','Lokal');}
-function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,gym:state.gym,updated:new Date().toISOString()};}
+function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,gyms:state.gyms,updated:new Date().toISOString()};}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergeByName(local,remote){var m={};(local||[]).forEach(function(x){m[x.name]=x;});(remote||[]).forEach(function(x){if(!m[x.name])m[x.name]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergePlanned(local,remote){var out=Object.assign({},local);Object.keys(remote||{}).forEach(function(k){var seen={};var arr=[];(out[k]||[]).concat(remote[k]||[]).forEach(function(p){var key=(p.name||'')+'|'+(p.time||'');if(!seen[key]){seen[key]=1;arr.push(p);}});out[k]=arr;});return out;}
-function mergeGym(local,remote){if(!remote)return local;if(!local)return remote;var g=Object.assign({},remote,local);g.hours=local.hours||remote.hours;var c={};for(var dd=0;dd<7;dd++){var lc=(local.crowd&&local.crowd[dd])||[];var rc=(remote.crowd&&remote.crowd[dd])||[];var n=Math.max(lc.length,rc.length);var a=[];for(var i=0;i<n;i++){a[i]=lc[i]?lc[i]:(rc[i]||0);}c[dd]=a;}g.crowd=c;return g;}
+function mergeDays(la,ra){var o={};for(var d=0;d<7;d++){var l=(la&&la[d])||[],r=(ra&&ra[d])||[];var n=Math.max(l.length,r.length,TIMES.length);var a=[];for(var i=0;i<n;i++){a[i]=l[i]?l[i]:(r[i]||0);}o[d]=a;}return o;}
+function mergeGyms(local,remote){
+  var m={};(local||[]).forEach(function(g){m[g.id]=g;});
+  (remote||[]).forEach(function(rg){
+    var lg=m[rg.id];
+    if(!lg){m[rg.id]=rg;return;}
+    var g=Object.assign({},rg,lg);
+    g.hours=lg.hours||rg.hours;
+    g.crowd={};
+    ZONES.forEach(function(z){g.crowd[z.id]=mergeDays(lg.crowd&&lg.crowd[z.id],rg.crowd&&rg.crowd[z.id]);});
+    m[rg.id]=g;
+  });
+  return Object.keys(m).map(function(k){return m[k];});
+}
 function applyData(d){
   if(Array.isArray(d.sessions))state.sessions=mergeById(state.sessions,d.sessions);
   if(Array.isArray(d.passTypes))state.passTypes=mergeByName(state.passTypes,d.passTypes);
   if(d.planned&&typeof d.planned==='object')state.planned=mergePlanned(state.planned,d.planned);
-  if(d.gym&&typeof d.gym==='object')state.gym=mergeGym(state.gym,d.gym);
+  if(Array.isArray(d.gyms))state.gyms=mergeGyms(state.gyms,d.gyms);
+  else if(d.gym&&typeof d.gym==='object'&&Array.isArray(state.gyms)&&state.gyms.length){
+    var lg0=state.gyms[0];
+    lg0.crowd.allmant=mergeDays(lg0.crowd.allmant,fixDays(d.gym.crowd));
+  }
   ensureGym();
 }
 function ghGet(){
@@ -1128,8 +1305,8 @@ var ai={provider:'claude',claude:'',openai:''};
 function loadAI(){try{var s=localStorage.getItem(AI_KEY);if(s){var d=JSON.parse(s);ai.provider=d.provider||'claude';ai.claude=d.claude||'';ai.openai=d.openai||'';}}catch(e){}}
 function saveAI(){try{localStorage.setItem(AI_KEY,JSON.stringify(ai));}catch(e){}}
 function calmestTodayText(){
-  var w=wd(new Date());var hrs=state.gym.hours[w];if(hrs.closed)return 'gymmet är stängt idag';
-  var o=hmToMin(hrs.open),c=hmToMin(hrs.close);var crowd=state.gym.crowd[w];
+  var w=wd(new Date());var hrs=curGym().hours[w];if(hrs.closed)return 'gymmet är stängt idag';
+  var o=hmToMin(hrs.open),c=hmToMin(hrs.close);var crowd=curCrowd()[w];
   var nowMin=new Date().getHours()*60+new Date().getMinutes();
   var best=-1,bestLvl=9;
   for(var i=0;i<TIMES.length;i++){var bs=TIMES[i]*60,be=(TIMES[i]+1)*60;if(be<=o||bs>=c)continue;if(be<=nowMin)continue;var l=crowd[i];if(l===0)continue;if(l<bestLvl){bestLvl=l;best=i;}}
@@ -1189,14 +1366,16 @@ document.getElementById('ai-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.4.0',
+  version:'1.5.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
     'Senast i rörelse — visar hur länge sedan utan skuld',
-    'Logga pass med längd, energi före/efter och anteckning',
+    'Logga pass med längd, tid, energi före/efter, anteckning och hur fullt det upplevdes',
     'Egna passtyper som snabbval',
     'Lös planering framåt',
+    'Flera gym — lägg till, byt mellan och ta bort gym, var och en med egna öppettider och belastningsschema',
+    'Zoner per gym: allmänna gymmet och tjejdelen, med separata belastningsscheman',
     'Öppettider per veckodag med status öppet/stängt',
     'Belastningsschema timme för timme, hela dygnet (00–23), med lugnaste tiden',
     'Översikt: pass/vecka & 30 dagar, kalender, energimönster, vanligaste passtyper',
@@ -1207,6 +1386,13 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.5.0',d:'2026-07-19',items:[
+      'Flera gym: lägg till hur många gym du vill, byt mellan dem med ett tryck och ge varje gym egna öppettider och eget belastningsschema.',
+      'Zoner per gym — allmänna gymmet och tjejdelen har separata belastningsscheman, eftersom det sällan är lika fullt i båda.',
+      'Upplevd trängsel när du loggar ett pass (lugnt / en del / fullt) tillsammans med tid och vilket gym och vilken del du var i.',
+      'Det du upplevt fyller i belastningsschemat automatiskt för just den timmen — schemat byggs alltså upp av sig självt när du loggar.',
+      'Senaste passen visar gym, tjejdel och hur fullt det var.'
+    ]},
     {v:'1.4.0',d:'2026-07-19',items:[
       'Belastningsschemat visar nu varje enskild timme i stället för tvåtimmarsblock — alla 24 timmar på dygnet går att markera var för sig.',
       'Befintliga markeringar migreras automatiskt: ett gammalt tvåtimmarsblock fyller i båda sina timmar.',
@@ -1253,7 +1439,7 @@ document.querySelectorAll('.nav button').forEach(function(b){
     b.classList.add('active');
     document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
     document.getElementById('view-'+b.dataset.v).classList.add('active');
-    if(b.dataset.v==='gym'){renderHours();renderHeat();renderCalmHint();}
+    if(b.dataset.v==='gym'){renderGymUI();renderHours();renderHeat();renderCalmHint();}
     if(b.dataset.v==='stats')renderStats();
     if(b.dataset.v==='pass')renderPass();
     if(b.dataset.v==='today')renderToday();
@@ -1264,12 +1450,12 @@ document.querySelectorAll('.nav button').forEach(function(b){
 // ── Render-grupper ────────────────────────────────────
 function renderToday(){renderLast();renderQuickChips();renderPlanToday();renderGymToday();}
 function renderPass(){renderTypeTiles();renderPlanList();renderRecent();}
-function renderAll(){renderToday();renderPass();renderGymName();renderHours();renderHeat();renderCalmHint();renderStats();renderNyheter();}
+function renderAll(){renderToday();renderPass();renderGymUI();renderHours();renderHeat();renderCalmHint();renderStats();renderNyheter();}
 
 // ── Init ──────────────────────────────────────────────
-buildDots('lg-before');buildDots('lg-after');
+buildDots('lg-before');buildDots('lg-after');bindFullPick();
 loadSync();refreshSyncBadge();loadAI();
-renderGymName();
+renderGymUI();
 renderToday();
 renderPass();
 applyTheme();
