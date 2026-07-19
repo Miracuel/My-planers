@@ -152,7 +152,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;padding:9px 2px;cursor:pointer;font-family:inherit}
 .nav button.active{color:var(--accent);font-weight:600}
 .nav button span{display:block;font-size:16px;margin-bottom:2px}
-.nav button[data-v=butiken],.nav button[data-v=sondag],.nav button[data-v=trofeer],.nav button[data-v=nyheter],.nav button[data-v=installningar]{display:none}
+.nav button[data-v=butiken],.nav button[data-v=sondag],.nav button[data-v=trofeer],.nav button[data-v=radgivare],.nav button[data-v=nyheter],.nav button[data-v=installningar]{display:none}
 .view{display:none}
 .view.active{display:block}
 .fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(74px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:25px;cursor:pointer;z-index:41;box-shadow:0 6px 20px rgba(0,0,0,.22)}
@@ -168,6 +168,41 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .sub-h{font-family:Georgia,serif;font-size:15px;margin:14px 0 7px}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .tag{font-size:11px;border:1px solid var(--line);border-radius:20px;padding:5px 10px;color:var(--muted)}
+
+/* Frihetsindex */
+.idx-lbl{position:relative;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.idx-num{position:relative;font-family:Georgia,serif;font-size:66px;line-height:1;color:var(--accent);margin:6px 0 2px}
+.idx-num small{font-size:20px;color:var(--muted)}
+.blocks{position:relative;display:flex;gap:3px;margin:14px 4px 10px}
+.blocks i{flex:1;height:15px;border-radius:3px;background:var(--panel2);transition:background .4s}
+.blocks i.on{background:var(--accent)}
+.blocks i.half{background:linear-gradient(90deg,var(--accent) 50%,var(--panel2) 50%)}
+.idx-delta{position:relative;font-size:15px;font-weight:600}
+.idx-delta.up{color:var(--frihet)}.idx-delta.down{color:var(--dopamin)}.idx-delta.flat{color:var(--muted)}
+.idx-next{position:relative;font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+.win-h{font-family:Georgia,serif;font-size:15px;margin-bottom:8px}
+.win{border-left:3px solid var(--frihet)}
+.seger{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.55;padding:5px 0}
+.seger b{color:var(--frihet)}
+.task{border-left:3px solid var(--accent)}
+.task-row{display:flex;gap:12px;align-items:center}
+.task-row b{display:block;font-size:15px;line-height:1.45;margin-bottom:3px}
+.tick{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);background:var(--panel);color:var(--accent);font-size:19px;cursor:pointer;font-family:inherit}
+.tick.done{background:var(--accent);color:#fff}
+.streak{display:flex;gap:4px;margin-top:10px}
+.streak i{width:11px;height:11px;border-radius:3px;background:var(--panel2)}
+.streak i.on{background:var(--gold)}
+.mal-num{font-family:Georgia,serif;font-size:22px}
+.flow{display:flex;height:22px;border-radius:8px;overflow:hidden;background:var(--panel2);margin:10px 0 10px}
+.flow i{height:100%}
+.milstolpe{display:flex;gap:11px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.milstolpe:last-child{border-bottom:none}
+.milstolpe b{font-size:22px}
+.milstolpe .mid{flex:1}
+.milstolpe .mid span{display:block;font-size:11px;color:var(--muted)}
+.milstolpe.on .mid b{color:var(--accent)}
+.milstolpe.off{opacity:.45}
+.ai-out{background:var(--panel2);border-radius:14px;padding:13px;font-size:14px;line-height:1.65;margin-top:11px;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -184,29 +219,50 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 <!-- ÖVERSIKT -->
 <div class="view active" id="view-oversikt">
   <div class="hero">
-    <div class="gauge" id="gauge" style="--p:0"><div class="gauge-in"><div class="gauge-num" id="g-num">0 %</div><div class="gauge-lbl">Frihetsmätaren</div></div></div>
-    <div class="hero-note" id="g-note">Fyll i din plan så räknar jag ut din frihet.</div>
-    <div class="free-box">
-      <div class="free-lbl">Fritt att spendera utan att påverka din plan</div>
-      <div class="free-num" id="free-num">0 <small>kr</small></div>
-      <div class="tiny" id="free-sub" style="margin-top:4px"></div>
+    <div class="idx-lbl">Frihetsindex</div>
+    <div class="idx-num" id="idx-num">0<small>/100</small></div>
+    <div class="blocks" id="idx-blocks"></div>
+    <div class="idx-delta flat" id="idx-delta">&plusmn;0 idag</div>
+    <div class="idx-next" id="idx-next"></div>
+  </div>
+
+  <div class="section-title">Dagens seger</div>
+  <div class="card-panel win"><div id="dagens-seger"></div></div>
+
+  <div class="section-title">Dagens viktigaste sak</div>
+  <div class="card-panel task">
+    <div class="task-row">
+      <button class="tick" id="task-tick" type="button">&#9675;</button>
+      <div><b id="task-text">&nbsp;</b><span class="tiny" id="task-sub"></span></div>
     </div>
+    <div class="streak" id="streak-vis"></div>
+    <div class="tiny" id="streak-line" style="margin-top:6px"></div>
   </div>
 
-  <div class="section-title">Vad köpte du idag?</div>
+  <div class="section-title">M&aring;nadens m&aring;l<span style="float:right"><button class="btn ghost" type="button" onclick="openMal()">&Auml;ndra</button></span></div>
+  <div class="card-panel" id="mal-card"></div>
+
+  <div class="section-title">Vad k&ouml;pte du idag?</div>
   <div class="three">
-    <button class="tri f" type="button" onclick="snabbKop('frihet')"><b>🟢</b><span>Frihet</span></button>
-    <button class="tri g" type="button" onclick="snabbKop('gladje')"><b>🟡</b><span>Glädje</span></button>
-    <button class="tri d" type="button" onclick="snabbKop('dopamin')"><b>🔴</b><span>Dopamin</span></button>
+    <button class="tri f" type="button" onclick="snabbKop('frihet')"><b>&#128994;</b><span>Frihet</span></button>
+    <button class="tri g" type="button" onclick="snabbKop('gladje')"><b>&#128993;</b><span>Gl&auml;dje</span></button>
+    <button class="tri d" type="button" onclick="snabbKop('dopamin')"><b>&#128308;</b><span>Dopamin</span></button>
   </div>
 
-  <div class="section-title">Den här månaden</div>
-  <div class="card-panel"><div id="man-split"></div></div>
+  <div class="section-title">Prognos</div>
+  <div class="card-panel" id="prognos"></div>
 
-  <div class="section-title">Vad frihetsmätaren består av</div>
+  <div class="section-title">Fritt att spendera</div>
+  <div class="card-panel">
+    <div class="free-lbl">Utan att p&aring;verka din plan</div>
+    <div class="free-num" id="free-num">0 <small>kr</small></div>
+    <div class="tiny" id="free-sub" style="margin-top:4px"></div>
+  </div>
+
+  <div class="section-title">Vad indexet best&aring;r av</div>
   <div class="card-panel"><div class="bars" id="delmatare"></div></div>
 
-  <div class="section-title">Närmast i tiden</div>
+  <div class="section-title">N&auml;rmast i tiden</div>
   <div class="card-panel"><div id="tl-mini"></div></div>
 </div>
 
@@ -217,6 +273,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
   <div class="card-panel">
     <div class="kpi" id="kop-kpi"></div>
   </div>
+  <div class="section-title">Var tog pengarna vägen?</div>
+  <div class="card-panel"><div id="flow-viz"></div></div>
   <div class="section-title">Vad du försöker lösa</div>
   <div class="card-panel"><div id="orsak-stat"></div></div>
   <div class="section-title">Historik</div>
@@ -271,6 +329,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
     <label>Buffert idag (kr)</label><input id="e-buffert" type="number" inputmode="decimal">
     <label>Buffertmål (kr)</label><input id="e-buffertmal" type="number" inputmode="decimal">
     <label>Referenskostnad el per månad (kr)</label><input id="e-elref" type="number" inputmode="decimal">
+    <label>Övriga tillgångar (sparande, fonder, bil…)</label><input id="e-tillgangar" type="number" inputmode="decimal">
     <div class="btn-row"><button class="btn fill" type="button" id="buf-save">Spara buffert</button></div>
   </div>
   <div class="section-title">Skulder</div>
@@ -321,9 +380,38 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 
 <!-- TROFÉER -->
 <div class="view" id="view-trofeer">
-  <div class="page-h">Troféer</div>
-  <div class="page-sub">Bevis på att det faktiskt rör sig.</div>
+  <div class="page-h">Milstolpar</div>
+  <div class="page-sub">Bevis på att det faktiskt rör sig framåt.</div>
+  <div class="card-panel">
+    <div class="win-h">Streak</div>
+    <div class="kpi" id="streak-kpi"></div>
+    <div class="streak" id="streak-vis2" style="margin-top:12px"></div>
+  </div>
+  <div class="section-title">Uppnådda och kommande</div>
+  <div class="card-panel"><div id="milstolpar"></div></div>
+  <div class="section-title">Troféer</div>
   <div class="trofegrid" id="trofe-grid"></div>
+</div>
+
+<!-- RÅDGIVARE -->
+<div class="view" id="view-radgivare">
+  <div class="page-h">Rådgivaren</div>
+  <div class="page-sub">Ställ en fråga om din ekonomi. Svaret översätts alltid till frihet – aldrig till skuldbeläggning.</div>
+  <div class="card-panel">
+    <label>Tjänst</label><div class="chips" id="ai-prov"></div>
+    <label>Din fråga</label>
+    <textarea id="ai-q" rows="3" placeholder="Om jag lägger 5 000 kr extra på kreditkortet – vad köper jag?"></textarea>
+    <div class="chips" id="ai-snabb"></div>
+    <div class="btn-row"><button class="btn fill" type="button" id="ai-ask">Fråga</button></div>
+    <div id="ai-out"></div>
+  </div>
+  <div class="card-panel">
+    <div class="tiny">Nycklarna sparas bara i den här enhetens localStorage och synkas aldrig.</div>
+    <label>Claude API-nyckel</label><input id="ai-key-in" type="password">
+    <label>OpenAI API-nyckel</label><input id="oai-key-in" type="password">
+    <div class="btn-row"><button class="btn" type="button" id="ai-key-save">Spara nycklar</button></div>
+    <div class="soft" id="ai-key-status" style="margin-top:8px"></div>
+  </div>
 </div>
 
 <!-- NYHETER -->
@@ -371,7 +459,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
   <button type="button" data-v="plan"><span>🛡️</span>Plan</button>
   <button type="button" data-v="butiken"><span>🏪</span>Butiken</button>
   <button type="button" data-v="sondag"><span>🗓️</span>Söndag</button>
-  <button type="button" data-v="trofeer"><span>🏆</span>Troféer</button>
+  <button type="button" data-v="trofeer"><span>🏆</span>Milstolpar</button>
+  <button type="button" data-v="radgivare"><span>🤖</span>Rådgivaren</button>
   <button type="button" data-v="nyheter"><span>✨</span>Nyheter</button>
   <button type="button" data-v="installningar"><span>⚙️</span>Inställningar</button>
 </nav>
@@ -382,7 +471,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
   <h3>Mer</h3>
   <button class="menu-btn" type="button" data-go="butiken">🏪 Magishoppen</button>
   <button class="menu-btn" type="button" data-go="sondag">🗓️ Söndagschecken</button>
-  <button class="menu-btn" type="button" data-go="trofeer">🏆 Troféer</button>
+  <button class="menu-btn" type="button" data-go="trofeer">🏆 Milstolpar &amp; streaks</button>
+  <button class="menu-btn" type="button" data-go="radgivare">🤖 Rådgivaren</button>
   <button class="menu-btn" type="button" data-go="nyheter">✨ Nyheter &amp; funktioner</button>
   <button class="menu-btn" type="button" data-go="installningar">⚙️ Inställningar</button>
   <button class="sheet-close" type="button" onclick="closeSheets()">Stäng</button>
@@ -425,19 +515,32 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
   <button class="sheet-close" type="button" id="am-save">Registrera</button>
 </div>
 
+<div class="sheet" id="mal-sheet">
+  <h3>Månadens mål</h3>
+  <div class="soft">Inte "betala 15 000". Utan ett läge du vill nå.</div>
+  <label>Vad ska hända?</label><div class="chips" id="mal-typ"></div>
+  <label>Målvärde (kr eller indexpoäng)</label><input id="mal-varde" type="number" inputmode="decimal">
+  <label>Egen formulering (valfritt)</label><input id="mal-text" placeholder="Kom under 200 000 i skulder">
+  <button class="sheet-close" type="button" id="mal-save">Spara mål</button>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
-var APPINFO={version:'1.0.0',tagline:'Pengar översatt till trygghet – en ekonomiapp byggd för en ADHD-hjärna.',audience:'Privat',functions:['Frihetsmätaren – ett enda tal på hur fri du är','Fritt att spendera istället för saldo','Dagens fråga: Frihet, Glädje eller Dopamin','ADHD-läge: vad försöker du lösa med köpet?','Perspektivräknaren "Om jag köper detta…"','30-dagarslistan för impulsköp','Tidslinje istället för kalender','Lönefördelning som skyddar dig från dig själv','Skulder med dopaminkick vid varje amortering','Magishoppen separat med egen mätare','Söndagschecken med humör och oro','Troféer och achievements','Synk mot GitHub, export och import','Sex färgteman, auto mörkt läge, mobil och desktop'],changelog:[{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.','Frihetsmätaren räknar buffert, månader du klarar dig, skuldminskning, fasta kostnader, butikens hälsa och täckta framtida utgifter.','Fritt att spendera visas istället för kontosaldo.','Köploggen delar in i Frihet, Glädje och Dopamin och frågar vad du försöker lösa.','Perspektivräknaren översätter ett belopp till dagar, ränta och frihet.','30-dagarslistan med automatisk nedräkning.','Tidslinje med sparprogress per kommande utgift.','Söndagschecken, troféer och Magishoppens egen mätare.','GitHub-synk, export/import och egen PNG-favicon.']}]};
+var APPINFO={version:'2.0.0',tagline:'Frihetsindex 0–100 – ekonomi som ett spel du faktiskt vinner.',audience:'Privat',functions:['Frihetsindex 0–100 högst upp – ett enda tal','Daglig förändring: +0,3 idag','Dagens seger istället för betalda kronor','Dagens viktigaste sak – en enda uppgift','Streaks och milstolpar','Månadens mål som ett läge, inte ett belopp','Prognos: när du blir skuldfri och var indexet står nästa månad','Var tog pengarna vägen – månadens flöde visualiserat','AI-rådgivare (Claude och ChatGPT) som räknar om kronor till veckor av frihet','Köpen delade i Frihet, Glädje och Dopamin','ADHD-läge: vad försöker du lösa med köpet?','Perspektivräknaren och 30-dagarslistan','Tidslinje istället för kalender','Magishoppen separat, söndagschecken, synk, export och desktop'],changelog:[{v:'2.0.0',d:'2026-07-19',items:['Fokus flyttat från skulder till Frihetsindex 0–100 högst upp i appen.','Indexet räknas på buffert, skuldbörda, sparkvot, nettoförmögenhet och konsumtionsgrad.','Daglig förändring visas: +0,3 idag, med indexhistorik sparad per dag.','Dagens seger – varje amortering och insättning översätts till dagar mer frihet.','Dagens viktigaste sak: en enda uppgift, med streak och veckovisualisering.','Månadens mål formuleras som ett läge att nå, med framsteg i procent.','Prognos: skuldfri om X år och Y månader, indexet nästa månad och vägen till 70.','Var tog pengarna vägen – månadens flöde som staplar.','Milstolpar med progress, plus de gamla troféerna.','AI-rådgivare med Claude och ChatGPT som räknar om belopp till veckor av frihet.','Övriga tillgångar tillagt i planen för nettoförmögenheten.']},{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.','Frihetsmätaren, fritt att spendera, köploggen, perspektivräknaren, 30-dagarslistan, tidslinjen, planen, Magishoppen, söndagschecken och troféerna.','GitHub-synk, export/import och egen PNG-favicon.']}]};
 
 // ── State ──────────────────────────────────────────────
 var KEY='frihet_v1';
 var SYNC_KEY='frihet_sync_v1';
-var state={eko:{inkomst:0,fasta:0,minimi:0,butik:0,sparande:0,frihet:0,buffert:0,buffertmal:30000,elref:0},
+var EKO0={inkomst:0,fasta:0,minimi:0,butik:0,sparande:0,frihet:0,buffert:0,buffertmal:30000,elref:0,tillgangar:0};
+var state={eko:Object.assign({},EKO0),
   butik:{forsaljning:0,lager:0,hyra:0,ovrigt:0,moms:0,lan:0},
-  skulder:[],kop:[],vantelista:[],tidslinje:[],sondag:[],
+  skulder:[],kop:[],vantelista:[],tidslinje:[],sondag:[],segrar:[],idxhist:[],
+  mal:{typ:'skuld',varde:0,text:'',start:0,m:''},uppgifter:{},
   updated:'',theme:'auto',skin:'skog'};
-try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){state=Object.assign(state,o);state.eko=Object.assign({inkomst:0,fasta:0,minimi:0,butik:0,sparande:0,frihet:0,buffert:0,buffertmal:30000,elref:0},o.eko||{});state.butik=Object.assign({forsaljning:0,lager:0,hyra:0,ovrigt:0,moms:0,lan:0},o.butik||{});}}}catch(e){}
-['skulder','kop','vantelista','tidslinje','sondag'].forEach(function(k){if(!Array.isArray(state[k]))state[k]=[];});
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){state=Object.assign(state,o);state.eko=Object.assign({},EKO0,o.eko||{});state.butik=Object.assign({forsaljning:0,lager:0,hyra:0,ovrigt:0,moms:0,lan:0},o.butik||{});}}}catch(e){}
+['skulder','kop','vantelista','tidslinje','sondag','segrar','idxhist'].forEach(function(k){if(!Array.isArray(state[k]))state[k]=[];});
+if(!state.mal||typeof state.mal!=='object')state.mal={typ:'skuld',varde:0,text:'',start:0,m:''};
+if(!state.uppgifter||typeof state.uppgifter!=='object')state.uppgifter={};
 
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
 var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
@@ -464,24 +567,126 @@ function manadskostnad(){return num(state.eko.fasta)+num(state.eko.minimi);}
 function butikKostnad(){var b=state.butik;return num(b.hyra)+num(b.ovrigt);}
 function fritt(){var e=state.eko;return num(e.inkomst)-num(e.fasta)-num(e.minimi)-num(e.butik)-num(e.sparande)-num(e.frihet);}
 
-function delmatare(){
-  var e=state.eko,d=[];
-  d.push({n:'Buffert',v:clamp01(num(e.buffert)/Math.max(1,num(e.buffertmal))),t:kr(e.buffert)+' av '+kr(e.buffertmal),w:.22});
-  var mk=manadskostnad();
-  var man=mk>0?num(e.buffert)/mk:0;
-  d.push({n:'Månader du klarar dig',v:clamp01(man/3),t:(Math.round(man*10)/10)+' av 3 mån',w:.20});
-  var st=skuldStart();
-  d.push({n:'Minskade krediter',v:st>0?clamp01(1-skuldTot()/st):(state.skulder.length?1:0),t:st>0?kr(skuldTot())+' kvar av '+kr(st):'Ingen skuld registrerad',w:.22});
-  var kv=num(e.inkomst)>0?num(e.fasta)/num(e.inkomst):1;
-  d.push({n:'Låga fasta kostnader',v:clamp01(1-kv/0.6),t:num(e.inkomst)>0?pct(kv)+' av inkomsten':'Fyll i inkomst',w:.14});
-  var bk=butikKostnad();
-  d.push({n:'Magishoppen på egna ben',v:bk>0?clamp01(num(state.butik.forsaljning)/bk):(num(state.butik.forsaljning)>0?1:0),t:bk>0?kr(state.butik.forsaljning)+' mot '+kr(bk):'Fyll i butiken',w:.10});
-  var tot=0,spa=0,idag=todayKey();
-  for(var i=0;i<state.tidslinje.length;i++){var h=state.tidslinje[i];if(h.datum>=idag){tot+=num(h.belopp);spa+=Math.min(num(h.sparat),num(h.belopp));}}
-  d.push({n:'Kommande utgifter täckta',v:tot>0?clamp01(spa/tot):1,t:tot>0?kr(spa)+' av '+kr(tot):'Inget kommande inlagt',w:.12});
+function snittKop(){
+  var m={},idag=new Date();
+  for(var i=0;i<state.kop.length;i++){var k=state.kop[i];if(dagarMellan(k.d,todayKey())<=92)m[(k.d||'').slice(0,7)]=(m[(k.d||'').slice(0,7)]||0)+num(k.belopp);}
+  var ks=Object.keys(m);if(!ks.length)return 0;
+  var s2=0;for(var j=0;j<ks.length;j++)s2+=m[ks[j]];
+  return s2/ks.length;
+}
+function netto(){return num(state.eko.tillgangar)+num(state.eko.buffert)-skuldTot();}
+
+function delmatareFor(e,skuld,konsum){
+  var d=[],ink=num(e.inkomst),mk=num(e.fasta)+num(e.minimi);
+  d.push({n:'Buffert',v:clamp01(num(e.buffert)/Math.max(1,num(e.buffertmal))),
+    t:kr(e.buffert)+' av '+kr(e.buffertmal)+(mk>0?(' · '+(Math.round(num(e.buffert)/mk*10)/10)+' mån att leva på'):''),w:.25});
+  d.push({n:'Skuldbörda',v:ink>0?clamp01(1-skuld/(ink*6)):(skuld>0?0:1),
+    t:skuld>0?(kr(skuld)+(ink>0?(' · '+(Math.round(skuld/ink*10)/10)+' månadsinkomster'):'')):'Ingen skuld kvar',w:.25});
+  var kvot=ink>0?(num(e.sparande)+num(e.frihet)+skuldManad())/ink:0;
+  d.push({n:'Sparkvot',v:clamp01(kvot/0.20),t:ink>0?(Math.round(kvot*100)+' % av inkomsten sparas eller amorteras (mål 20 %)'):'Fyll i inkomst',w:.20});
+  var nv=num(e.tillgangar)+num(e.buffert)-skuld;
+  d.push({n:'Nettoförmögenhet',v:ink>0?clamp01((nv+ink*6)/(ink*18)):(nv>0?1:0),
+    t:(nv<0?'Minus ':'Plus ')+kr(Math.abs(nv)),w:.15});
+  var kg=ink>0?(num(e.fasta)+konsum)/ink:1;
+  d.push({n:'Konsumtionsgrad',v:clamp01((1-kg)/0.45),
+    t:ink>0?(Math.round(kg*100)+' % av inkomsten går till boende och köp'):'Fyll i inkomst',w:.15});
   return d;
 }
-function frihetsProcent(){var d=delmatare(),s=0,w=0;for(var i=0;i<d.length;i++){s+=d[i].v*d[i].w;w+=d[i].w;}return Math.round((w?s/w:0)*100);}
+function delmatare(){return delmatareFor(state.eko,skuldTot(),snittKop());}
+function indexAv(d){var s2=0,w=0;for(var i=0;i<d.length;i++){s2+=d[i].v*d[i].w;w+=d[i].w;}return (w?s2/w:0)*100;}
+function frihetsIndex(){return indexAv(delmatare());}
+function frihetsProcent(){return Math.round(frihetsIndex());}
+
+// Simulering: hur ser indexet ut om n månader om planen följs?
+function simIndex(n){
+  var e=Object.assign({},state.eko),skuld=skuldTot(),sm=skuldManad(),ks=snittKop();
+  for(var i=0;i<n;i++){
+    var tillBuf=num(e.sparande);
+    var kvar=Math.max(0,num(e.buffertmal)-num(e.buffert));
+    var b=Math.min(tillBuf,kvar);
+    e.buffert=num(e.buffert)+b;
+    e.tillgangar=num(e.tillgangar)+(tillBuf-b)+num(e.frihet);
+    skuld=Math.max(0,skuld-sm);
+  }
+  return indexAv(delmatareFor(e,skuld,ks));
+}
+function manaderText(m){
+  if(m===null)return 'okänt';
+  var ar=Math.floor(m/12),r=Math.round(m%12);
+  if(ar&&r)return ar+' år och '+r+' mån';
+  if(ar)return ar+' år';
+  return r+' mån';
+}
+function skuldfriOm(){var sm=skuldManad(),sk=skuldTot();if(!sk)return 0;if(sm<=0)return null;return Math.ceil(sk/sm);}
+function nar(target){for(var i=1;i<=180;i++){if(simIndex(i)>=target)return i;}return null;}
+
+// ── Indexhistorik och daglig delta ────────────────────
+function snapshot(){
+  var v=Math.round(frihetsIndex()*10)/10,d=todayKey();
+  var h=state.idxhist;
+  if(h.length&&h[h.length-1].d===d)h[h.length-1].v=v;
+  else h.push({d:d,v:v});
+  if(h.length>400)state.idxhist=h.slice(-400);
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+}
+function delta(){
+  var h=state.idxhist;if(h.length<2)return 0;
+  return Math.round((h[h.length-1].v-h[h.length-2].v)*10)/10;
+}
+
+// ── Dagens seger ──────────────────────────────────────
+function loggaSeger(txt){state.segrar.push({id:uid(),d:todayKey(),text:txt});if(state.segrar.length>300)state.segrar=state.segrar.slice(-300);}
+function dagarFrihet(belopp){var mk=manadskostnad();if(mk<=0)return 0;return Math.round(belopp/(mk/30));}
+
+// ── Dagens viktigaste sak ─────────────────────────────
+function dagensUppgift(){
+  var e=state.eko,idag=todayKey();
+  if(!num(e.inkomst))return {t:'Fyll i din inkomst och dina fasta kostnader.',s:'Utan dem kan indexet inte räknas.',v:'plan'};
+  for(var i=0;i<state.vantelista.length;i++){var w=state.vantelista[i];
+    if(!w.kopt&&!w.slopad&&dagarMellan(w.skapad,idag)>=30)return {t:'Bestäm dig om ' + w.namn + '.',s:'30 dagar har gått. Vill du fortfarande ha den?',v:'perspektiv'};}
+  if(new Date().getDay()===0){
+    var har=false;for(var j=0;j<state.sondag.length;j++)if(dagarMellan(state.sondag[j].d,idag)<6)har=true;
+    if(!har)return {t:'Gör söndagschecken.',s:'Två frågor. Inget mer.',v:'sondag'};
+  }
+  if(num(e.buffert)<10000)return {t:'Flytta ' + kr(Math.max(200,Math.round(num(e.sparande)/30))) + ' till bufferten.',s:'Bufferten är den enskilt tyngsta delen av indexet.',v:'plan'};
+  for(var k=0;k<state.tidslinje.length;k++){var h=state.tidslinje[k];
+    if(h.datum>=idag&&dagarMellan(idag,h.datum)<=30&&num(h.sparat)<num(h.belopp))
+      return {t:'Lägg undan till ' + h.namn + '.',s:'Om ' + dagarMellan(idag,h.datum) + ' dagar behövs ' + kr(num(h.belopp)-num(h.sparat)) + ' till.',v:'tidslinje'};}
+  if(state.skulder.length){
+    var dyr=state.skulder[0];for(var m=1;m<state.skulder.length;m++)if(num(state.skulder[m].ranta)>num(dyr.ranta))dyr=state.skulder[m];
+    return {t:'Lägg 300 kr extra på ' + dyr.namn + '.',s:'Högst ränta först – ' + num(dyr.ranta) + ' %.',v:'plan'};
+  }
+  return {t:'Logga dagens köp.',s:'Mönstret är värt mer än siffran.',v:'kop'};
+}
+function streakDagar(){
+  var n=0,d=new Date();
+  if(!state.uppgifter[todayKey()])d.setDate(d.getDate()-1);
+  for(var i=0;i<400;i++){if(state.uppgifter[toISO(d)]){n++;d.setDate(d.getDate()-1);}else break;}
+  return n;
+}
+function streakHtml(){
+  var h='',d=new Date();d.setDate(d.getDate()-13);
+  for(var i=0;i<14;i++){h+='<i class="'+(state.uppgifter[toISO(d)]?'on':'')+'"></i>';d.setDate(d.getDate()+1);}
+  return h;
+}
+
+// ── Månadens mål ──────────────────────────────────────
+var MALTYPER=[['skuld','Kom under X i skulder'],['buffert','Nå X i buffert'],['index','Nå indexpoäng X'],['netto','Nå X i nettoförmögenhet']];
+function malNu(t){return t==='skuld'?skuldTot():t==='buffert'?num(state.eko.buffert):t==='index'?frihetsIndex():netto();}
+function malText(){
+  var m=state.mal;if(m.text)return m.text;
+  if(m.typ==='skuld')return 'Kom under ' + kr(m.varde) + ' i skulder';
+  if(m.typ==='buffert')return 'Nå ' + kr(m.varde) + ' i buffert';
+  if(m.typ==='index')return 'Nå ' + Math.round(m.varde) + ' i frihetsindex';
+  return 'Nå ' + kr(m.varde) + ' i nettoförmögenhet';
+}
+function malProgress(){
+  var m=state.mal,nu=malNu(m.typ),st=num(m.start);
+  if(!num(m.varde))return 0;
+  if(m.typ==='skuld'){if(st<=num(m.varde))return 1;return clamp01((st-nu)/(st-num(m.varde)));}
+  if(st>=num(m.varde))return 1;
+  return clamp01((nu-st)/(num(m.varde)-st));
+}
 
 function manadKop(){
   var m=todayKey().slice(0,7),r={frihet:0,gladje:0,dopamin:0,antal:0};
@@ -495,40 +700,86 @@ var OROR=['Skulderna','Att pengarna tar slut','Magishoppen','Oväntade utgifter'
 
 // ── Render: översikt ───────────────────────────────────
 function renderDash(){
-  var p=frihetsProcent();
-  var g=document.getElementById('gauge');g.style.setProperty('--p',p);
-  document.getElementById('g-num').textContent=p+' %';
-  var note=p<25?'Du är i början. Varje krona som stannar kvar flyttar mätaren.':p<50?'Det rör sig. Bufferten är din bästa hävstång just nu.':p<75?'Stabilt. Nu är det skulderna som håller tillbaka dig.':'Du är fri på riktigt snart. Håll planen.';
-  document.getElementById('g-note').textContent=note;
+  var idx=frihetsIndex(),vis=Math.round(idx);
+  document.getElementById('idx-num').innerHTML=vis+'<small>/100</small>';
+  var bl='',fyllda=idx/100*18;
+  for(var i=0;i<18;i++)bl+='<i class="'+(i+1<=fyllda?'on':(i<fyllda?'half':''))+'"></i>';
+  document.getElementById('idx-blocks').innerHTML=bl;
+  var dl=delta(),de=document.getElementById('idx-delta');
+  de.textContent=(dl>0?'+':dl<0?'':'\u00B1')+String(dl).replace('.',',')+' idag';
+  de.className='idx-delta '+(dl>0?'up':dl<0?'down':'flat');
+  var nx=document.getElementById('idx-next');
+  if(!num(state.eko.inkomst)){nx.innerHTML='Fyll i din plan under <b>Plan</b> så blir indexet meningsfullt.';}
+  else{
+    var nm=Math.round(simIndex(1));
+    var till70=nar(70);
+    nx.innerHTML='Nästa månad: <b>'+nm+'/100</b>'+(till70&&idx<70?(' · 70/100 om '+esc(manaderText(till70))):'');
+  }
+
+  var idag=todayKey(),seg=state.segrar.filter(function(x){return x.d===idag;});
+  var hs='';
+  if(!seg.length)hs='<div class="soft">Ingen seger loggad idag än. Amortera, spara eller låt bli ett köp – så dyker den upp här.</div>';
+  else for(var j=seg.length-1;j>=0;j--)hs+='<div class="seger"><b>&#10004;</b><span>'+esc(seg[j].text)+'</span></div>';
+  document.getElementById('dagens-seger').innerHTML=hs;
+
+  var u=dagensUppgift(),klar=!!state.uppgifter[idag];
+  document.getElementById('task-text').textContent=u.t;
+  document.getElementById('task-sub').textContent=u.s;
+  var tk=document.getElementById('task-tick');
+  tk.textContent=klar?'\u2713':'\u25CB';tk.className='tick'+(klar?' done':'');
+  document.getElementById('streak-vis').innerHTML=streakHtml();
+  var sd=streakDagar();
+  document.getElementById('streak-line').textContent=sd?(sd+' dagar i rad.'):'Ingen streak igång. Idag kan bli dag ett.';
+
+  var mc=document.getElementById('mal-card');
+  if(!num(state.mal.varde))mc.innerHTML='<div class="soft">Inget mål satt. Ett mål är ett läge du vill nå – inte ett belopp du ska betala.</div>';
+  else{
+    var p=malProgress();
+    mc.innerHTML='<div class="mal-num">'+esc(malText())+'</div>'+
+      '<div class="bar" style="margin-top:10px"><i style="width:'+(p*100)+'%"></i></div>'+
+      '<div class="tiny" style="margin-top:6px">'+Math.round(p*100)+' % av vägen · nu '+esc(state.mal.typ==='index'?Math.round(malNu(state.mal.typ))+' poäng':kr(malNu(state.mal.typ)))+'</div>'+
+      (p>=1?'<div class="seger" style="margin-top:8px"><b>&#127881;</b><span>Målet är nått.</span></div>':'');
+  }
+
+  var sf=skuldfriOm();
+  var ph='<div class="seger"><b>&#128200;</b><span>'+(sf===0?'Du är skuldfri.':sf===null?'Lägg in hur mycket du betalar per månad så räknar jag ut när du är skuldfri.':('Du blir skuldfri om <b>'+esc(manaderText(sf))+'</b>.'))+'</span></div>';
+  ph+='<div class="seger"><b>&#128640;</b><span>Om tolv månader: <b>'+Math.round(simIndex(12))+'/100</b>.</span></div>';
+  var t100=nar(100);
+  if(t100)ph+='<div class="seger"><b>&#127942;</b><span>100/100 om '+esc(manaderText(t100))+'.</span></div>';
+  document.getElementById('prognos').innerHTML=ph;
+
   var f=fritt();
   document.getElementById('free-num').innerHTML=esc(kr(f).replace(' kr',''))+' <small>kr</small>';
   var per=f>0?Math.floor(f/30):0;
-  document.getElementById('free-sub').textContent=num(state.eko.inkomst)>0?('Det är ungefär '+kr(per)+' per dag fram till nästa lön.'):'Fyll i din plan under Plan.';
-
-  var mk=manadKop(),tot=mk.frihet+mk.gladje+mk.dopamin;
-  var h='';
-  if(!tot){h='<div class="empty-msg">Inga köp loggade den här månaden.</div>';}
-  else{
-    h='<div class="split">';
-    h+='<i style="width:'+(mk.frihet/tot*100)+'%;background:var(--frihet)"></i>';
-    h+='<i style="width:'+(mk.gladje/tot*100)+'%;background:var(--gladje)"></i>';
-    h+='<i style="width:'+(mk.dopamin/tot*100)+'%;background:var(--dopamin)"></i></div>';
-    h+='<div class="legend">';
-    h+='<span><b style="background:var(--frihet)"></b>Frihet '+Math.round(mk.frihet/tot*100)+' %</span>';
-    h+='<span><b style="background:var(--gladje)"></b>Glädje '+Math.round(mk.gladje/tot*100)+' %</span>';
-    h+='<span><b style="background:var(--dopamin)"></b>Dopamin '+Math.round(mk.dopamin/tot*100)+' %</span></div>';
-    h+='<div class="tiny" style="margin-top:8px">'+mk.antal+' köp, totalt '+esc(kr(tot))+'.</div>';
-  }
-  document.getElementById('man-split').innerHTML=h;
+  document.getElementById('free-sub').textContent=num(state.eko.inkomst)>0?('Ungefär '+kr(per)+' per dag fram till nästa lön.'):'Fyll i din plan under Plan.';
 
   var d=delmatare(),h2='';
-  for(var i=0;i<d.length;i++){
-    h2+='<div class="barrow"><span class="nm">'+esc(d[i].n)+'</span><span class="vl">'+Math.round(d[i].v*100)+' %</span>';
-    h2+='<span class="bar"><i style="width:'+(d[i].v*100)+'%"></i></span>';
-    h2+='<span class="tiny" style="grid-column:1/-1">'+esc(d[i].t)+'</span></div>';
+  for(var a=0;a<d.length;a++){
+    h2+='<div class="barrow"><span class="nm">'+esc(d[a].n)+'</span><span class="vl">'+Math.round(d[a].v*100)+' %</span>';
+    h2+='<span class="bar"><i style="width:'+(d[a].v*100)+'%"></i></span>';
+    h2+='<span class="tiny" style="grid-column:1/-1">'+esc(d[a].t)+'</span></div>';
   }
   document.getElementById('delmatare').innerHTML=h2;
   document.getElementById('tl-mini').innerHTML=tidslinjeHtml(3);
+}
+document.getElementById('task-tick').onclick=function(){
+  var idag=todayKey();
+  if(state.uppgifter[idag]){delete state.uppgifter[idag];}
+  else{state.uppgifter[idag]=true;loggaSeger('Klarade dagens viktigaste sak.');toast('&#10004; ' + streakDagar() + ' dagar i rad.');}
+  persist();renderDash();
+};
+function openMal(){
+  var m=state.mal;
+  document.getElementById('mal-varde').value=m.varde||'';
+  document.getElementById('mal-text').value=m.text||'';
+  valdMalTyp=m.typ||'skuld';renderMalForm();openSheet('mal-sheet');
+}
+var valdMalTyp='skuld';
+function renderMalForm(){
+  var el=document.getElementById('mal-typ'),h='';
+  for(var i=0;i<MALTYPER.length;i++)h+='<button type="button" class="chip'+(valdMalTyp===MALTYPER[i][0]?' sel':'')+'" data-t="'+MALTYPER[i][0]+'">'+esc(MALTYPER[i][1])+'</button>';
+  el.innerHTML=h;
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){valdMalTyp=b.dataset.t;renderMalForm();};});
 }
 
 function snabbKop(typ){
@@ -568,6 +819,8 @@ function renderKop(){
     '<div><b>'+esc(kr(d30))+'</b><span>Dopamin senaste 30 dagarna</span></div>'+
     '<div><b>'+(utan===null?'–':utan+' dgr')+'</b><span>Utan impulsköp</span></div>';
 
+  renderFlow();
+
   var stat={},totO=0;
   for(var a=0;a<state.kop.length;a++){var kx=state.kop[a];if(!kx.orsak)continue;stat[kx.orsak]=(stat[kx.orsak]||0)+num(kx.belopp);totO+=num(kx.belopp);}
   var keys=Object.keys(stat).sort(function(x,y){return stat[y]-stat[x];});
@@ -586,6 +839,34 @@ function renderKop(){
     h3+='<div class="row"><span class="dot" style="background:'+typFarg(k2.typ)+'"></span><span class="mid"><b>'+esc(k2.namn||typNamn(k2.typ))+'</b><span>'+esc(fmtDate(k2.d))+(k2.orsak?' · '+esc(k2.orsak):'')+'</span></span><span class="amt">'+esc(kr(k2.belopp))+'</span><button class="btn ghost" type="button" onclick="raderaKop(\''+k2.id+'\')">✕</button></div>';
   }
   document.getElementById('kop-lista').innerHTML=h3;
+}
+function renderFlow(){
+  var e=state.eko,mk=manadKop();
+  var poster=[
+    {n:'Fasta kostnader',v:num(e.fasta),c:'var(--muted)'},
+    {n:'Minimibetalningar',v:num(e.minimi),c:'var(--dopamin)'},
+    {n:'Magishoppen',v:num(e.butik),c:'var(--gladje)'},
+    {n:'Buffert',v:num(e.sparande),c:'var(--frihet)'},
+    {n:'Frihetskontot',v:num(e.frihet),c:'var(--accent)'},
+    {n:'Köp: Frihet',v:mk.frihet,c:'var(--frihet)'},
+    {n:'Köp: Glädje',v:mk.gladje,c:'var(--gladje)'},
+    {n:'Köp: Dopamin',v:mk.dopamin,c:'var(--dopamin)'}
+  ];
+  var tot=0;for(var i=0;i<poster.length;i++)tot+=poster[i].v;
+  var kvar=Math.max(0,num(e.inkomst)-tot);
+  if(kvar>0)poster.push({n:'Kvar',v:kvar,c:'var(--panel2)'});
+  tot+=kvar;
+  var el=document.getElementById('flow-viz');if(!el)return;
+  if(!tot){el.innerHTML='<div class="empty-msg">Fyll i planen och logga köp så visas flödet här.</div>';return;}
+  var h='<div class="flow">';
+  for(var j=0;j<poster.length;j++)if(poster[j].v>0)h+='<i style="width:'+(poster[j].v/tot*100)+'%;background:'+poster[j].c+'"></i>';
+  h+='</div>';
+  var srt=poster.slice().sort(function(a,b){return b.v-a.v;});
+  for(var k=0;k<srt.length;k++){
+    if(!srt[k].v)continue;
+    h+='<div class="row"><span class="dot" style="background:'+srt[k].c+'"></span><span class="mid"><b>'+esc(srt[k].n)+'</b><span>'+Math.round(srt[k].v/tot*100)+' % av flödet</span></span><span class="amt">'+esc(kr(srt[k].v))+'</span></div>';
+  }
+  el.innerHTML=h;
 }
 function raderaKop(id){if(!confirm('Radera köpet?'))return;state.kop=state.kop.filter(function(k){return k.id!==id;});persist();renderActive();}
 
@@ -627,7 +908,7 @@ function renderVanta(){
 function vantaKlar(id,kopt){
   for(var i=0;i<state.vantelista.length;i++){var v=state.vantelista[i];if(v.id===id){
     if(kopt){v.kopt=true;state.kop.push({id:uid(),d:todayKey(),namn:v.namn,belopp:num(v.belopp),typ:'gladje',orsak:'Väntade 30 dagar',ts:Date.now()});}
-    else{v.slopad=true;toast('🎉 Du sparade ' + esc(kr(v.belopp)) + '<br>genom att bara vänta.');}
+    else{v.slopad=true;loggaSeger('Lät bli ett köp på '+kr(v.belopp)+' efter 30 dagars väntan.');toast('&#127881; Du sparade ' + esc(kr(v.belopp)) + '<br>genom att bara vänta.');}
   }}
   persist();renderActive();
 }
@@ -673,6 +954,7 @@ function renderPlan(){
   document.getElementById('e-buffert').value=e.buffert||'';
   document.getElementById('e-buffertmal').value=e.buffertmal||'';
   document.getElementById('e-elref').value=e.elref||'';
+  document.getElementById('e-tillgangar').value=e.tillgangar||'';
   var f=fritt();
   document.getElementById('plan-out').innerHTML='Av '+esc(kr(e.inkomst))+' är '+esc(kr(num(e.inkomst)-f))+' redan lovat bort.<br><b style="color:var(--accent)">Fritt att spendera: '+esc(kr(f))+'</b>';
   var h='';
@@ -769,10 +1051,102 @@ function trofeer(){
     {i:'🟢',t:'Frihetsmätaren över 50 %',on:frihetsProcent()>=50}
   ];
 }
+function milstolpar(){
+  var e=state.eko,sk=skuldTot(),st=skuldStart(),mk=manadskostnad(),idx=frihetsIndex(),nv=netto();
+  var m=[];
+  m.push({i:'💰',n:'Första bufferten 10 000',p:clamp01(num(e.buffert)/10000),s:kr(e.buffert)+' av 10 000 kr'});
+  m.push({i:'🛟',n:'Tre månader att leva på',p:mk>0?clamp01(num(e.buffert)/(mk*3)):0,s:mk>0?((Math.round(num(e.buffert)/mk*10)/10)+' av 3 månader'):'Fyll i planen'});
+  m.push({i:'✂️',n:'100 000 kr mindre skuld',p:st>0?clamp01((st-sk)/100000):0,s:kr(Math.max(0,st-sk))+' betalat av totalt'});
+  m.push({i:'💳',n:'Under 100 000 i skuld',p:sk>0?clamp01((Math.max(sk,100000)-sk)/Math.max(1,Math.max(sk,100000)-100000)):1,s:kr(sk)+' kvar'});
+  m.push({i:'⚖️',n:'Nettoförmögenhet över noll',p:nv>=0?1:clamp01(1-Math.abs(nv)/Math.max(1,st||Math.abs(nv))),s:(nv<0?'Minus ':'Plus ')+kr(Math.abs(nv))});
+  m.push({i:'🟢',n:'Frihetsindex 50',p:clamp01(idx/50),s:Math.round(idx)+' av 50 poäng'});
+  m.push({i:'🏆',n:'Frihetsindex 75',p:clamp01(idx/75),s:Math.round(idx)+' av 75 poäng'});
+  m.push({i:'🕊️',n:'Skuldfri',p:st>0?clamp01(1-sk/st):(sk?0:1),s:sk?(kr(sk)+' kvar'):'Uppnått'});
+  return m;
+}
+function renderMilstolpar(){
+  var m=milstolpar(),h='';
+  for(var i=0;i<m.length;i++){
+    var on=m[i].p>=1;
+    h+='<div class="milstolpe '+(on?'on':'off')+'"><b>'+m[i].i+'</b><span class="mid"><b>'+esc(m[i].n)+'</b><span>'+esc(m[i].s)+'</span>';
+    h+='<span class="bar" style="margin-top:6px"><i style="width:'+(m[i].p*100)+'%"></i></span></span><span class="amt">'+Math.round(m[i].p*100)+' %</span></div>';
+  }
+  document.getElementById('milstolpar').innerHTML=h;
+  var sd=streakDagar(),best=0,cur=0,d=new Date();d.setDate(d.getDate()-120);
+  for(var j=0;j<121;j++){if(state.uppgifter[toISO(d)]){cur++;if(cur>best)best=cur;}else cur=0;d.setDate(d.getDate()+1);}
+  var klara=Object.keys(state.uppgifter).length;
+  document.getElementById('streak-kpi').innerHTML=
+    '<div><b>'+sd+'</b><span>Dagar i rad</span></div>'+
+    '<div><b>'+best+'</b><span>Längsta streak</span></div>'+
+    '<div><b>'+klara+'</b><span>Dagar avklarade</span></div>'+
+    '<div><b>'+state.segrar.length+'</b><span>Segrar loggade</span></div>';
+  document.getElementById('streak-vis2').innerHTML=streakHtml();
+}
 function renderTrofeer(){
+  renderMilstolpar();
   var t=trofeer(),h='';
   for(var i=0;i<t.length;i++)h+='<div class="trofe'+(t[i].on?' on':'')+'"><b>'+t[i].i+'</b><span>'+esc(t[i].t)+'</span></div>';
   document.getElementById('trofe-grid').innerHTML=h;
+}
+
+// ── AI-rådgivare ───────────────────────────────────────
+var AI_KEY='frihet_ai_key',OAI_KEY='frihet_oai_key',AI_PROV='frihet_ai_prov';
+var aiProvider='claude';
+try{aiProvider=localStorage.getItem(AI_PROV)||'claude';}catch(e){}
+var AI_SNABB=['Vad är min viktigaste ekonomiska handling den här månaden?','Om jag lägger 5 000 kr extra på den dyraste skulden – vad köper jag?','Vad håller tillbaka mitt frihetsindex mest?','Hur når jag 70 i index snabbast?'];
+function renderRadgivare(){
+  var p=document.getElementById('ai-prov');
+  if(p){var h='';[['claude','Claude'],['chatgpt','ChatGPT']].forEach(function(x){h+='<button type="button" class="chip'+(aiProvider===x[0]?' sel':'')+'" data-p="'+x[0]+'">'+x[1]+'</button>';});
+    p.innerHTML=h;p.querySelectorAll('button').forEach(function(b){b.onclick=function(){aiProvider=b.dataset.p;try{localStorage.setItem(AI_PROV,aiProvider);}catch(e){}renderRadgivare();};});}
+  var sn=document.getElementById('ai-snabb');
+  if(sn){var h2='';for(var i=0;i<AI_SNABB.length;i++)h2+='<button type="button" class="chip" data-q="'+esc(AI_SNABB[i])+'">'+esc(AI_SNABB[i])+'</button>';
+    sn.innerHTML=h2;sn.querySelectorAll('button').forEach(function(b){b.onclick=function(){document.getElementById('ai-q').value=b.dataset.q;};});}
+  try{document.getElementById('ai-key-in').value=localStorage.getItem(AI_KEY)||'';
+      document.getElementById('oai-key-in').value=localStorage.getItem(OAI_KEY)||'';}catch(e){}
+}
+function ekoSammanfattning(){
+  var e=state.eko,d=delmatare(),rader=[];
+  rader.push('Frihetsindex: '+Math.round(frihetsIndex())+'/100. Nästa månad: '+Math.round(simIndex(1))+'.');
+  for(var i=0;i<d.length;i++)rader.push(d[i].n+': '+Math.round(d[i].v*100)+' % ('+d[i].t+')');
+  rader.push('Inkomst '+kr(e.inkomst)+', fasta '+kr(e.fasta)+', minimibetalningar '+kr(e.minimi)+', Magishoppen '+kr(e.butik)+'.');
+  rader.push('Till buffert '+kr(e.sparande)+', till frihetskonto '+kr(e.frihet)+'. Fritt att spendera '+kr(fritt())+'.');
+  rader.push('Buffert '+kr(e.buffert)+' av mål '+kr(e.buffertmal)+'. Övriga tillgångar '+kr(e.tillgangar)+'.');
+  for(var j=0;j<state.skulder.length;j++){var sk=state.skulder[j];
+    rader.push('Skuld: '+sk.namn+', saldo '+kr(sk.saldo)+', ränta '+num(sk.ranta)+' %, betalar '+kr(sk.manad)+' per månad.');}
+  var mk=manadKop();
+  rader.push('Köp denna månad: Frihet '+kr(mk.frihet)+', Glädje '+kr(mk.gladje)+', Dopamin '+kr(mk.dopamin)+'.');
+  if(num(state.mal.varde))rader.push('Månadens mål: '+malText()+' ('+Math.round(malProgress()*100)+' % klart).');
+  var sf=skuldfriOm();
+  rader.push('Skuldfri om: '+(sf===0?'redan skuldfri':sf===null?'okänt':manaderText(sf))+'.');
+  return rader.join('\n');
+}
+function aiPrompt(fraga){
+  return 'Du är en ekonomisk rådgivare i appen Frihet. Användaren har ADHD och behöver få kronor översatta till frihet, tid och trygghet - aldrig skuldbeläggning, aldrig moralisering. Svara på svenska, max 200 ord, konkret och varmt. Ge alltid ett enda tydligt nästa steg, och översätt belopp till ungefär hur många veckor eller dagar tidigare ekonomisk frihet det ger.\n\nSituation:\n'+ekoSammanfattning()+'\n\nFråga: '+fraga;
+}
+async function askAI(fraga){
+  var out=document.getElementById('ai-out');
+  out.innerHTML='<div class="ai-out">Tänker…</div>';
+  var key='';
+  try{key=localStorage.getItem(aiProvider==='chatgpt'?OAI_KEY:AI_KEY)||'';}catch(e){}
+  if(!key){out.innerHTML='<div class="ai-out">Spara en API-nyckel längre ner först.</div>';return;}
+  try{
+    var txt='';
+    if(aiProvider==='chatgpt'){
+      var r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+        body:JSON.stringify({model:'gpt-4o-mini',max_tokens:700,messages:[{role:'user',content:aiPrompt(fraga)}]})});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var j=await r.json();txt=j.choices[0].message.content;
+    }else{
+      var r2=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:aiPrompt(fraga)}]})});
+      if(!r2.ok)throw new Error('HTTP '+r2.status);
+      var j2=await r2.json();
+      txt=(j2.content||[]).map(function(b){return b.type==='text'?b.text:'';}).join('\n');
+    }
+    out.innerHTML='<div class="ai-out">'+esc(txt)+'</div>';
+  }catch(e){out.innerHTML='<div class="ai-out">Kunde inte fråga just nu: '+esc(e.message)+'</div>';}
 }
 
 // ── Changelog ──────────────────────────────────────────
@@ -799,15 +1173,19 @@ var ghHeaders=function(){return{'Authorization':'Bearer '+sync.token,'Accept':'a
 var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)return;b.textContent=msg;b.className='sp-badge'+(st==='ok'?'':st==='err'?' err':' offline');}
+function mergeDagar(a,b){var m={};(b||[]).forEach(function(x){m[x.d]=x;});(a||[]).forEach(function(x){m[x.d]=x;});
+  return Object.keys(m).sort().map(function(k){return m[k];});}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
-function payload(){return {eko:state.eko,butik:state.butik,skulder:state.skulder,kop:state.kop,vantelista:state.vantelista,tidslinje:state.tidslinje,sondag:state.sondag,updated:state.updated||new Date().toISOString()};}
+function payload(){return {eko:state.eko,butik:state.butik,skulder:state.skulder,kop:state.kop,vantelista:state.vantelista,tidslinje:state.tidslinje,sondag:state.sondag,segrar:state.segrar,idxhist:state.idxhist,mal:state.mal,uppgifter:state.uppgifter,updated:state.updated||new Date().toISOString()};}
 async function ghGet(){var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null;}if(!r.ok)throw new Error('HTTP '+r.status);var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));}
 async function ghPull(){
   if(!syncOn())return;
   try{setBadge('load','Hämtar…');var d=await ghGet();
     if(d){
-      ['skulder','kop','vantelista','tidslinje','sondag'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
-      if(d.updated&&(!state.updated||d.updated>state.updated)){if(d.eko)state.eko=Object.assign(state.eko,d.eko);if(d.butik)state.butik=Object.assign(state.butik,d.butik);}
+      ['skulder','kop','vantelista','tidslinje','sondag','segrar'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
+      if(Array.isArray(d.idxhist))state.idxhist=mergeDagar(state.idxhist,d.idxhist);
+      if(d.uppgifter)state.uppgifter=Object.assign({},d.uppgifter,state.uppgifter);
+      if(d.updated&&(!state.updated||d.updated>state.updated)){if(d.eko)state.eko=Object.assign(state.eko,d.eko);if(d.butik)state.butik=Object.assign(state.butik,d.butik);if(d.mal)state.mal=d.mal;}
       save();renderActive();
     }
     setBadge('ok','Synkad');
@@ -858,6 +1236,7 @@ function renderView(v){
   else if(v==='butiken')renderButik();
   else if(v==='sondag')renderSondag();
   else if(v==='trofeer')renderTrofeer();
+  else if(v==='radgivare')renderRadgivare();
   else if(v==='nyheter')renderChangelog();
   else if(v==='installningar')renderAppearance();
 }
@@ -884,7 +1263,7 @@ document.getElementById('k-save').onclick=function(){
   var n=document.getElementById('k-namn').value.trim();
   if(!b&&!n){closeSheets();return;}
   state.kop.push({id:uid(),d:document.getElementById('k-datum').value||todayKey(),namn:n,belopp:b,typ:valdTyp,orsak:valdOrsak,ts:Date.now()});
-  persist();closeSheets();renderActive();
+  persist();snapshot();closeSheets();renderActive();
   if(valdTyp==='dopamin')toast('Loggat. Nästa gång: prova 30-dagarslistan först.');
   else toast('Loggat som '+typNamn(valdTyp)+'.');
 };
@@ -912,8 +1291,11 @@ document.getElementById('am-save').onclick=function(){
     s.saldo=Math.max(0,num(s.saldo)-b);
     var dagar=num(s.manad)>0?Math.round(b/(num(s.manad)/30)):0;
     var sank=num(s.ranta)>0?Math.round(b*num(s.ranta)/100/12):0;
-    persist();closeSheets();renderActive();
-    toast('🎉 Du köpte<br><b>'+dagar+' dagar mindre skuld.</b>'+(sank?'<br>Månadsräntan sjönk med '+esc(kr(sank))+'.':''));
+    loggaSeger('Köpte '+dagar+' dagar mer frihet – amorterade '+kr(b)+' på '+s.namn+'.');
+    var fore2=frihetsIndex();
+    persist();snapshot();closeSheets();renderActive();
+    var vinst=Math.round((frihetsIndex()-fore2)*10)/10;
+    toast('&#127881; Du köpte<br><b>'+dagar+' dagar mer frihet.</b>'+(sank?'<br>Månadsräntan sjönk med '+esc(kr(sank))+'.':''));
     return;}}
   closeSheets();
 };
@@ -925,14 +1307,20 @@ document.getElementById('plan-save').onclick=function(){
   e.butik=num(document.getElementById('e-butik').value);
   e.sparande=num(document.getElementById('e-sparande').value);
   e.frihet=num(document.getElementById('e-frihet').value);
-  persist();renderPlan();toast('Planen är sparad. Fritt att spendera: '+esc(kr(fritt())));
+  persist();snapshot();renderPlan();toast('Planen är sparad. Fritt att spendera: '+esc(kr(fritt())));
 };
 document.getElementById('buf-save').onclick=function(){
   var e=state.eko;
+  var fore=num(e.buffert),foreIdx=frihetsIndex();
   e.buffert=num(document.getElementById('e-buffert').value);
   e.buffertmal=num(document.getElementById('e-buffertmal').value)||30000;
   e.elref=num(document.getElementById('e-elref').value);
-  persist();renderPlan();toast('Sparat. Frihetsmätaren är nu '+frihetsProcent()+' %.');
+  e.tillgangar=num(document.getElementById('e-tillgangar').value);
+  var okning=num(e.buffert)-fore;
+  if(okning>0){var dg=dagarFrihet(okning);loggaSeger('Köpte '+(dg?dg+' dagar':kr(okning))+' mer frihet till bufferten.');}
+  persist();snapshot();renderPlan();
+  var diff=Math.round((frihetsIndex()-foreIdx)*10)/10;
+  toast('Sparat. Frihetsindex ' + Math.round(frihetsIndex()) + '/100' + (diff?(' (' + (diff>0?'+':'') + String(diff).replace('.',',') + ')'):'') + '.');
 };
 document.getElementById('butik-save').onclick=function(){
   var b=state.butik;
@@ -988,7 +1376,10 @@ document.getElementById('import-file').onchange=function(e){
   var f=e.target.files[0];if(!f)return;var r=new FileReader();
   r.onload=function(){try{var d=JSON.parse(r.result);
     if(d&&typeof d==='object'){
-      ['skulder','kop','vantelista','tidslinje','sondag'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
+      ['skulder','kop','vantelista','tidslinje','sondag','segrar'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
+      if(Array.isArray(d.idxhist))state.idxhist=mergeDagar(state.idxhist,d.idxhist);
+      if(d.uppgifter)state.uppgifter=Object.assign({},d.uppgifter,state.uppgifter);
+      if(d.mal&&d.mal.varde)state.mal=d.mal;
       if(d.eko)state.eko=Object.assign(state.eko,d.eko);
       if(d.butik)state.butik=Object.assign(state.butik,d.butik);
       persist();renderActive();alert('Importerat.');
@@ -1003,11 +1394,32 @@ document.getElementById('wipe-btn').onclick=function(){
   location.reload();
 };
 
+document.getElementById('mal-save').onclick=function(){
+  var v=num(document.getElementById('mal-varde').value);
+  state.mal={typ:valdMalTyp,varde:v,text:document.getElementById('mal-text').value.trim(),
+    start:malNu(valdMalTyp),m:todayKey().slice(0,7)};
+  persist();closeSheets();renderDash();toast('Målet är satt: '+esc(malText()));
+};
+document.getElementById('ai-ask').onclick=function(){
+  var q=document.getElementById('ai-q').value.trim();
+  if(!q){toast('Skriv en fråga först.');return;}
+  askAI(q);
+};
+document.getElementById('ai-key-save').onclick=function(){
+  var k=document.getElementById('ai-key-in').value.trim(),ok=document.getElementById('oai-key-in').value.trim();
+  try{if(k)localStorage.setItem(AI_KEY,k);else localStorage.removeItem(AI_KEY);
+      if(ok)localStorage.setItem(OAI_KEY,ok);else localStorage.removeItem(OAI_KEY);
+      localStorage.setItem(AI_PROV,aiProvider);}catch(e){}
+  document.getElementById('ai-key-status').textContent='✓ Sparat lokalt. Aktiv tjänst: '+(aiProvider==='chatgpt'?'ChatGPT':'Claude')+'.';
+};
+
 // ── Start ──────────────────────────────────────────────
 loadSync();
 applyTheme();
 renderAppearance();
 renderChangelog();
+renderRadgivare();
+snapshot();
 var av=document.getElementById('app-ver');if(av)av.textContent=APPINFO.version;
 var av2=document.getElementById('app-ver2');if(av2)av2.textContent=APPINFO.version;
 if(syncOn()){setBadge('load','Hämtar…');ghPull();}else setBadge('off','Lokalt');
