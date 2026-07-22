@@ -484,6 +484,18 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
 .cal .d .dsum.kredit{color:var(--gladje)}
 .fakt{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
 
+/* v9.2 – plusmenyn */
+.plusgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.plusgrid button{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel2);border-radius:16px;padding:14px 12px;font-size:14px;color:var(--ink);cursor:pointer;font-family:inherit;text-align:left}
+.plusgrid button b{font-size:20px;line-height:1}
+.plusgrid button.bred{grid-column:1/-1}
+.plusgrid button:active{background:var(--accent-soft)}
+
+/* v9.3 */
+.agare.klarna{border-color:var(--lila);color:var(--lila)}
+.senast{background:var(--panel2);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.55;color:var(--muted)}
+.senast b{color:var(--ink)}
+
 /* ── DESKTOP-LAGER (endast CSS, JS oförändrad) ─── */
 @media (min-width:0px){
   .app{max-width:1040px;margin:0 0 0 212px;padding:32px 40px 70px}
@@ -503,8 +515,8 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
        font-size:14px;padding:11px 12px;border-radius:12px;color:var(--muted)}
   .nav button span{display:inline;margin:0;font-size:17px}
   .nav button.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
-  .nav button[data-v=butiken],.nav button[data-v=sondag],.nav button[data-v=trofeer],
-  .nav button[data-v=nyheter],.nav button[data-v=installningar]{display:flex}
+  .nav button[data-v]{display:flex}
+  .nav button span{width:22px;text-align:center}
 
   .fab{left:auto;right:38px;bottom:32px;transform:none}
 
@@ -1062,7 +1074,6 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
   <button type="button" data-v="perspektiv"><span>🎯</span>Beslut</button>
   <button type="button" data-v="siffror"><span>🔢</span>Dashboard</button>
 
-  <button type="button" data-v="perspektiv"><span>⚖️</span>Perspektiv</button>
   <button type="button" data-v="tidslinje"><span>🛤️</span>Tidslinje</button>
   <button type="button" data-v="plan"><span>🛡️</span>Planering</button>
   <button type="button" data-v="larande"><span>📚</span>Lär dig</button>
@@ -1132,10 +1143,14 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
 </div>
 
 <div class="sheet" id="amort-sheet">
-  <h3>Amortera</h3>
+  <h3>Betalning</h3>
   <div class="soft" id="am-info"></div>
   <label>Belopp (kr)</label><input id="am-belopp" type="number" inputmode="decimal">
-  <button class="sheet-close" type="button" id="am-save">Registrera</button>
+  <label>Vem betalar?</label><div class="chips" id="am-betalare"></div>
+  <label>Fr&aring;n konto (valfritt)</label><div class="chips" id="am-konto"></div>
+  <label>Datum</label><input id="am-datum" type="date">
+  <div class="soft" id="am-effekt" style="margin-top:10px"></div>
+  <button class="sheet-close" type="button" id="am-save">Registrera betalning</button>
 </div>
 
 <div class="sheet" id="mal-sheet">
@@ -1258,6 +1273,53 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
   <button class="sheet-close" type="button" id="fo-save">Spara</button>
 </div>
 
+<div class="sheet" id="plus-sheet">
+  <h3>L&auml;gg till</h3>
+  <div class="soft">Allt matas in h&auml;rifr&aring;n. En post, en g&aring;ng.</div>
+  <div class="plusgrid" style="margin-top:12px">
+    <button type="button" data-p="nodvandigt"><b>&#128995;</b>N&ouml;dv&auml;ndigt k&ouml;p</button>
+    <button type="button" data-p="onodigt"><b>&#129293;</b>Inte planerat</button>
+    <button type="button" data-p="nobuy" class="bred"><b>&#128994;</b>No buy day idag</button>
+    <button type="button" data-p="ut"><b>&#10134;</b>Pengar ut</button>
+    <button type="button" data-p="in"><b>&#10133;</b>Pengar in</button>
+    <button type="button" data-p="rakning"><b>&#129534;</b>Ny r&auml;kning</button>
+    <button type="button" data-p="extra"><b>&#128176;</b>Extra inkomst</button>
+    <button type="button" data-p="overforing"><b>&#128260;</b>&Ouml;verf&ouml;ring</button>
+    <button type="button" data-p="skuldbet"><b>&#128179;</b>Betala p&aring; skuld</button>
+    <button type="button" data-p="punkt"><b>&#128197;</b>Punkt i kalendern</button>
+    <button type="button" data-p="beslut"><b>&#127919;</b>Funderar p&aring; ett k&ouml;p</button>
+  </div>
+  <button class="sheet-close" type="button" onclick="closeSheets()">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="flow-sheet">
+  <h3 id="fl-h">Pengar ut</h3>
+  <div class="soft" id="fl-info"></div>
+  <label>Belopp (kr)</label><input id="fl-belopp" type="number" inputmode="decimal">
+  <label>Vad</label><input id="fl-namn" placeholder="Tandl&auml;kare, l&ouml;n, present&hellip;">
+  <label>Kategori</label><div class="chips" id="fl-kat"></div>
+  <label>Konto</label><div class="chips" id="fl-konto"></div>
+  <label>Datum</label><input id="fl-datum" type="date">
+  <button class="sheet-close" type="button" id="fl-save">Spara</button>
+</div>
+
+<div class="sheet" id="over-sheet">
+  <h3>&Ouml;verf&ouml;ring mellan konton</h3>
+  <div class="soft">Flyttar pengar utan att det r&auml;knas som en utgift.</div>
+  <label>Fr&aring;n</label><div class="chips" id="ov-fran"></div>
+  <label>Till</label><div class="chips" id="ov-till"></div>
+  <label>Belopp (kr)</label><input id="ov-belopp" type="number" inputmode="decimal">
+  <label>Datum</label><input id="ov-datum" type="date">
+  <button class="sheet-close" type="button" id="ov-save">Flytta pengarna</button>
+</div>
+
+<div class="sheet" id="skuldbet-sheet">
+  <h3>Betala p&aring; en skuld</h3>
+  <div class="soft">V&auml;lj vilken skuld du vill betala p&aring;.</div>
+  <div class="chips" id="sb-val" style="margin-top:10px"></div>
+  <button class="sheet-close" type="button" onclick="closeSheets()">St&auml;ng</button>
+</div>
+
 <div class="sheet" id="snabb-sheet">
   <h3 id="sn-h">Handlat idag</h3>
   <div class="soft" id="sn-info"></div>
@@ -1322,7 +1384,7 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
 
 <div class="toast" id="toast"></div>
 <script>
-var APPINFO={version:'9.1.0',tagline:'Planering per månad, mjuka varningar och en app som håller saker ur huvudet.',audience:'Privat',functions:['Planering med en egen plan för varje månad, framåt och bakåt','Extra inkomst med status: planerad, möjlig, bekräftad eller mottagen','Förslag på vad de extra pengarna ska göra – med motivering','Mjuka varningar med Visa konsekvensen, Pausa 24 timmar, Justera planen eller Allt är okej','Snabbknappar: Nödvändigt, Inte planerat och No buy day','Kategori, betalningstyp och konto på varje köp – tre olika saker','Egna kategorier och betalningstyper med emoji, arkivering och radering','Kalendern visar köp, status på dragningar och fyra summor för månaden','Kontoprognos: saldot efter månadens kvarvarande dragningar','Kreditköp med eget betaldatum i kalendern eller på månadsfaktura','På väg mot noll: varje skuld som eget kort med ränta, framsteg och slutdatum','Betalningar delas upp i vad som går till skulden och vad som går till ränta','Bedömning av köp: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning','Beslutsmotor, räkningar, dashboard, Frihetsresan och mikrolärande','Synk, export, sex färgteman, mobil och desktop'],changelog:[{v:'9.1.0',d:'2026-07-19',items:['Kreditköp kan nu få ett eget betaldatum – då dyker dragningen upp i kalendern på den dagen, i gult.','Alternativt markeras köpet som Månadsfaktura. Då hamnar det inte i kalendern som en egen dragning, utan syns på fakturan i Räkningarna.','Räkningen visar hur många köp och hur mycket som ligger på den fakturan den månaden.','I dagvyn kan en kreditbetalning bockas av som betald – då minskar skulden och kontot med samma summa.','Konton kan markeras som Kredit, så att appen vet att köp där ökar en skuld istället för att minska ett saldo.']},{v:'9.0.0',d:'2026-07-19',items:['Plan heter nu Planering – något levande, inte ett prov man kan misslyckas med.','Månadsväljare med pilar högst upp: varje månad har sin egen plan, som kan kopieras från föregående månad.','Extra inkomst per månad med status planerad, möjlig, bekräftad eller mottagen. Möjliga pengar räknas aldrig som pengar du har.','Förslag på fördelning av extra pengar: räkningar, buffert, dyraste skulden, kommande utgifter och tio procent till något roligt – med motivering till varje rad.','Rådgivaren kan tycka till om just den summan.','Mjuka varningar istället för alarm: de utgår från din egen takt och kommer med knapparna Visa konsekvensen, Pausa köp i 24 timmar, Justera planen och Allt är okej.','Onödigt heter nu Inte planerat – samma data, mindre skam.','Köp registreras med kategori, betalningstyp och konto. Betalningstyp och konto är två olika saker.','Egna kategorier och betalningstyper med emoji, som kan arkiveras istället för att raderas så att historiken överlever.','Kalendern visar status på dragningar: kommande, dras snart, betald och försenad, plus fyra summor – köp hittills, räkningar betalda, kvar att betala och totalt planerat.','Konton visar nu saldot efter månadens kvarvarande dragningar.','Skulder heter På väg mot noll. Varje skuld har ett eget kort med startbelopp, betalat av, betald ränta, ränta denna månad och beräknat slutdatum.','En betalning delas upp i vad som går till skulden och vad som går till ränta.','Beslut och Perspektiv ger nu en bedömning: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning – plus förslag på bättre tajming.','Snabbknappen finns även som flytande knapp längst ner, alltid nära tummen.']},{v:'8.0.0',d:'2026-07-19',items:['Snabbknappar, no buy day och kalender med belopp per dag.']},{v:'7.0.0',d:'2026-07-19',items:['Räkningarna, skuldflikar och Magishoppens skuld till dig.']},{v:'6.0.0',d:'2026-07-19',items:['Ekonomiskt väder, fyra siffror, AI-coach, frihetspoäng och simulator.']},{v:'5.0.0',d:'2026-07-19',items:['Beslutsmotorn och Frihetsresan.']},{v:'4.0.0',d:'2026-07-19',items:['Trygg månadsinkomst, Levnadskonto, tre mål och mikrolärandet.']},{v:'3.0.0',d:'2026-07-19',items:['Nedräkningskalender, dashboard, konton och budget per månad.']},{v:'2.0.0',d:'2026-07-19',items:['Frihetsindex 0–100, prognos och milstolpar.']},{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.']}]};
+var APPINFO={version:'9.3.0',tagline:'Planering per månad, mjuka varningar och en app som håller saker ur huvudet.',audience:'Privat',functions:['Planering med en egen plan för varje månad, framåt och bakåt','Extra inkomst med status: planerad, möjlig, bekräftad eller mottagen','Förslag på vad de extra pengarna ska göra – med motivering','Mjuka varningar med Visa konsekvensen, Pausa 24 timmar, Justera planen eller Allt är okej','Snabbknappar: Nödvändigt, Inte planerat och No buy day','Kategori, betalningstyp och konto på varje köp – tre olika saker','Egna kategorier och betalningstyper med emoji, arkivering och radering','Kalendern visar köp, status på dragningar och fyra summor för månaden','Kontoprognos: saldot efter månadens kvarvarande dragningar','Kreditköp med eget betaldatum i kalendern eller på månadsfaktura','Betalningar med vem som betalar – avräknas mot Magishoppens skuld till dig','Plusknappen matar in allt: köp, räkning, inkomst, utgift, överföring och betalning','På väg mot noll: varje skuld som eget kort med ränta, framsteg och slutdatum','Betalningar delas upp i vad som går till skulden och vad som går till ränta','Bedömning av köp: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning','Beslutsmotor, räkningar, dashboard, Frihetsresan och mikrolärande','Synk, export, sex färgteman, mobil och desktop'],changelog:[{v:'9.3.0',d:'2026-07-19',items:['Betalningsrutan frågar nu vem som betalar: Privat, Klarna, Magishoppen eller Annat – och från vilket konto.','Betalar Magishoppen en privat skuld räknas hela beloppet av mot vad butiken är skyldig dig, ränta inkluderad.','Betalar du privat på en butiksskuld ökar butikens skuld till dig med samma summa.','Rutan visar effekten innan du sparar, så det aldrig blir en överraskning.','Skuldkortet visar senaste betalningen: belopp, datum, vem som betalade, från vilket konto och hur mycket som gick till skulden respektive räntan.','Betalningshistoriken visar också vem som betalade.','Klarna är nu en egen ägare under Räkningarna, i skuldflikarna och på köp – med egen färg.','Betalningen kan dateras och dras från valt konto direkt.']},{v:'9.2.0',d:'2026-07-19',items:['Plusknappen är nu en inmatningshubb: köp, no buy day, pengar ut, pengar in, ny räkning, extra inkomst, överföring, betalning på skuld, punkt i kalendern och nytt beslut – allt från samma ställe.','Pengar in och Pengar ut för kostnader och inkomster som inte är vanliga köp, med kategori, konto och datum.','Överföring mellan konton flyttar pengar utan att räknas som utgift – och går den till ett buffertkonto ökar bufferten automatiskt.','Alla poster uppdaterar kontosaldot direkt och bokförs en enda gång.','Desktopmenyn visar nu alla vyer, så På väg mot noll, Räkningarna, Konton och Lär dig går att nå direkt från sidomenyn.']},{v:'9.1.0',d:'2026-07-19',items:['Kreditköp kan nu få ett eget betaldatum – då dyker dragningen upp i kalendern på den dagen, i gult.','Alternativt markeras köpet som Månadsfaktura. Då hamnar det inte i kalendern som en egen dragning, utan syns på fakturan i Räkningarna.','Räkningen visar hur många köp och hur mycket som ligger på den fakturan den månaden.','I dagvyn kan en kreditbetalning bockas av som betald – då minskar skulden och kontot med samma summa.','Konton kan markeras som Kredit, så att appen vet att köp där ökar en skuld istället för att minska ett saldo.']},{v:'9.0.0',d:'2026-07-19',items:['Plan heter nu Planering – något levande, inte ett prov man kan misslyckas med.','Månadsväljare med pilar högst upp: varje månad har sin egen plan, som kan kopieras från föregående månad.','Extra inkomst per månad med status planerad, möjlig, bekräftad eller mottagen. Möjliga pengar räknas aldrig som pengar du har.','Förslag på fördelning av extra pengar: räkningar, buffert, dyraste skulden, kommande utgifter och tio procent till något roligt – med motivering till varje rad.','Rådgivaren kan tycka till om just den summan.','Mjuka varningar istället för alarm: de utgår från din egen takt och kommer med knapparna Visa konsekvensen, Pausa köp i 24 timmar, Justera planen och Allt är okej.','Onödigt heter nu Inte planerat – samma data, mindre skam.','Köp registreras med kategori, betalningstyp och konto. Betalningstyp och konto är två olika saker.','Egna kategorier och betalningstyper med emoji, som kan arkiveras istället för att raderas så att historiken överlever.','Kalendern visar status på dragningar: kommande, dras snart, betald och försenad, plus fyra summor – köp hittills, räkningar betalda, kvar att betala och totalt planerat.','Konton visar nu saldot efter månadens kvarvarande dragningar.','Skulder heter På väg mot noll. Varje skuld har ett eget kort med startbelopp, betalat av, betald ränta, ränta denna månad och beräknat slutdatum.','En betalning delas upp i vad som går till skulden och vad som går till ränta.','Beslut och Perspektiv ger nu en bedömning: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning – plus förslag på bättre tajming.','Snabbknappen finns även som flytande knapp längst ner, alltid nära tummen.']},{v:'8.0.0',d:'2026-07-19',items:['Snabbknappar, no buy day och kalender med belopp per dag.']},{v:'7.0.0',d:'2026-07-19',items:['Räkningarna, skuldflikar och Magishoppens skuld till dig.']},{v:'6.0.0',d:'2026-07-19',items:['Ekonomiskt väder, fyra siffror, AI-coach, frihetspoäng och simulator.']},{v:'5.0.0',d:'2026-07-19',items:['Beslutsmotorn och Frihetsresan.']},{v:'4.0.0',d:'2026-07-19',items:['Trygg månadsinkomst, Levnadskonto, tre mål och mikrolärandet.']},{v:'3.0.0',d:'2026-07-19',items:['Nedräkningskalender, dashboard, konton och budget per månad.']},{v:'2.0.0',d:'2026-07-19',items:['Frihetsindex 0–100, prognos och milstolpar.']},{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.']}]};
 
 // ── State ──────────────────────────────────────────────
 var KEY='frihet_v1';
@@ -1369,18 +1431,24 @@ function persist(){save();pushSoon();}
 function toast(msg){var t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},3400);}
 
 // ── Beräkningar ────────────────────────────────────────
-function agareAv(x){return (x&&x.agare)==='butik'?'butik':(x&&x.agare)==='annat'?'annat':'privat';}
-function skulderFor(ag){return state.skulder.filter(function(s){return ag==='alla'||agareAv(s)===ag;});}
-function skuldTot(ag){var l=skulderFor(ag||'privat'),s=0;for(var i=0;i<l.length;i++)s+=num(l[i].saldo);return s;}
+var AGARE_ALLA=['privat','klarna','butik','annat'];
+function agareAv(x){var a=(x&&x.agare)||'privat';return AGARE_ALLA.indexOf(a)>=0?a:'privat';}
+function agareNamn(a){return a==='butik'?'Magishoppen':a==='klarna'?'Klarna':a==='annat'?'Annat':'Privat';}
+function agareKlass(a){return a==='butik'?'butik':a==='klarna'?'klarna':a==='annat'?'annat':'';}
+function skulderFor(ag){return state.skulder.filter(function(s){
+  if(ag==='alla')return true;
+  if(ag==='privatgrupp'||!ag)return agareAv(s)!=='butik';
+  return agareAv(s)===ag;});}
+function skuldTot(ag){var l=skulderFor(ag||'privatgrupp'),s=0;for(var i=0;i<l.length;i++)s+=num(l[i].saldo);return s;}
 function fordranButik(){
   var s=0;
   for(var i=0;i<state.butikSkuld.length;i++){var p=state.butikSkuld[i];
     s+=(p.typ==='aterbetalning'?-1:1)*num(p.belopp);}
   return Math.max(0,s);
 }
-function skuldStart(ag){var l=skulderFor(ag||'privat'),s=0;for(var i=0;i<l.length;i++)s+=num(l[i].start||l[i].saldo);return s;}
-function skuldManad(ag){var l=skulderFor(ag||'privat'),s=0;for(var i=0;i<l.length;i++)s+=num(l[i].manad);return s;}
-function dagligRanta(ag){var l=skulderFor(ag||'privat'),s=0;for(var i=0;i<l.length;i++){var d=l[i];s+=num(d.saldo)*num(d.ranta)/100/365;}return s;}
+function skuldStart(ag){var l=skulderFor(ag||'privatgrupp'),s=0;for(var i=0;i<l.length;i++)s+=num(l[i].start||l[i].saldo);return s;}
+function skuldManad(ag){var l=skulderFor(ag||'privatgrupp'),s=0;for(var i=0;i<l.length;i++)s+=num(l[i].manad);return s;}
+function dagligRanta(ag){var l=skulderFor(ag||'privatgrupp'),s=0;for(var i=0;i<l.length;i++){var d=l[i];s+=num(d.saldo)*num(d.ranta)/100/365;}return s;}
 function manadskostnad(){return num(state.eko.fasta)+num(state.eko.minimi);}
 var manadKey=function(d){return (d||todayKey()).slice(0,7);};
 function fmtManad(m){try{var d=new Date(m+'-01T00:00:00');return d.toLocaleDateString('sv-SE',{month:'long',year:'numeric'});}catch(e){return m;}}
@@ -2479,11 +2547,12 @@ function renderPlan(){
 }
 
 // ── Skulder som egen vy ───────────────────────────────
-var skuldFlik='privat';
-function rantaBetald(namn){
+var skuldFlik='privatgrupp';
+function rantaBetald(namn,id){
   var s2=0;
   for(var i=0;i<state.trans.length;i++){var t=state.trans[i];
-    if(t.kat==='Kreditränta'&&(t.namn||'').indexOf(namn)===0)s2+=num(t.belopp);}
+    if(t.kat!=='Kreditränta')continue;
+    if((id&&t.skuldId===id)||(!t.skuldId&&(t.namn||'').indexOf(namn)===0))s2+=num(t.belopp);}
   return s2;
 }
 function klarManader(s2,extra){
@@ -2502,8 +2571,8 @@ function klarDatum(s2){
 }
 function skuldKort(s2){
   var start=num(s2.start||s2.saldo),kvar=num(s2.saldo),amort=Math.max(0,start-kvar);
-  var ranta=rantaBetald(s2.namn),tot=Math.max(1,start);
-  var h='<div class="skuldkort"><h4>'+esc(s2.namn)+'<span class="agare '+(agareAv(s2)==='butik'?'butik':agareAv(s2)==='annat'?'annat':'')+'">'+esc(agareAv(s2)==='butik'?'Magishoppen':agareAv(s2)==='annat'?'Annat':'Privat')+'</span></h4>';
+  var ranta=rantaBetald(s2.namn,s2.id),tot=Math.max(1,start);
+  var h='<div class="skuldkort"><h4>'+esc(s2.namn)+'<span class="agare '+agareKlass(agareAv(s2))+'">'+esc(agareNamn(agareAv(s2)))+'</span></h4>';
   h+='<div class="kvar">'+esc(kr(kvar))+'</div><div class="tiny">kvar av '+esc(kr(start))+'</div>';
   h+='<div class="stapel"><i style="width:'+(amort/tot*100)+'%;background:var(--frihet)"></i><i style="width:'+(Math.min(ranta,tot)/tot*100)+'%;background:var(--dopamin)"></i><i style="width:'+(kvar/tot*100)+'%;background:var(--panel2)"></i></div>';
   h+='<div class="rad"><span>Startbelopp</span><b>'+esc(kr(start))+'</b></div>';
@@ -2512,6 +2581,17 @@ function skuldKort(s2){
   h+='<div class="rad"><span>Ränta denna månad</span><b>'+esc(kr(kvar*num(s2.ranta)/100/12))+'</b></div>';
   h+='<div class="rad"><span>Betalar per månad</span><b>'+esc(kr(s2.manad))+'</b></div>';
   h+='<div class="rad"><span>Beräknat klar</span><b>'+esc(klarDatum(s2))+'</b></div>';
+  var sen=s2.senast;
+  if(!sen){
+    var kand=null;
+    for(var t3=0;t3<state.trans.length;t3++){var tt=state.trans[t3];
+      if(tt.kat==='Amortering'&&(tt.skuldId===s2.id||tt.namn===s2.namn))
+        if(!kand||(tt.d||'')>(kand.d||''))kand=tt;}
+    if(kand)sen={d:kand.d,belopp:num(kand.belopp),tillSkuld:num(kand.belopp),tillRanta:0,betalare:kand.betalare||'privat',konto:kand.konto||''};}
+  if(sen)h+='<div class="senast">Senaste betalning: <b>'+esc(kr(sen.belopp))+'</b> den '+esc(fmtDate(sen.d))+
+    ' &middot; betald av '+esc(agareNamn(sen.betalare||'privat'))+(sen.konto?(' fr&aring;n '+esc(sen.konto)):'')+
+    '<br>&#8594; till skulden '+esc(kr(sen.tillSkuld))+(num(sen.tillRanta)?(' &middot; till r&auml;nta '+esc(kr(sen.tillRanta))):'')+'</div>';
+  else h+='<div class="senast">Ingen betalning registrerad &auml;nnu.</div>';
   if(ranta>0)h+='<div class="tiny" style="margin-top:10px">Om räntan inte fanns hade skulden varit '+esc(kr(ranta))+' lägre idag.</div>';
   var utan=klarManader(s2,0),med=klarManader(s2,1000);
   if(utan&&med&&utan>med)h+='<div class="tiny">Nästa extra 1 000 kr gör dig klar ungefär '+esc(manaderText(utan-med))+' tidigare.</div>';
@@ -2520,7 +2600,7 @@ function skuldKort(s2){
 }
 function renderSkulder(){
   var tb=document.getElementById('skuld-tabs'),h='';
-  [['privat','Privat'],['butik','Magishoppen'],['annat','Annat'],['alla','Alla']].forEach(function(x){
+  [['privatgrupp','Privat'],['klarna','Klarna'],['butik','Magishoppen'],['annat','Annat'],['alla','Alla']].forEach(function(x){
     h+='<button type="button" class="'+(skuldFlik===x[0]?'sel':'')+'" data-f="'+x[0]+'">'+x[1]+'</button>';});
   tb.innerHTML=h;
   tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){skuldFlik=b.dataset.f;renderSkulder();};});
@@ -2528,7 +2608,7 @@ function renderSkulder(){
   var sk=skuldTot(skuldFlik),sm=skuldManad(skuldFlik),dr=dagligRanta(skuldFlik);
   var manader=sm>0&&sk>0?Math.ceil(sk/sm):(sk>0?null:0);
   document.getElementById('skuld-kpi').innerHTML=
-    '<div class="bignum neg"><span>Skuld '+(skuldFlik==='butik'?'Magishoppen':skuldFlik==='alla'?'totalt':skuldFlik==='annat'?'annat':'privat')+'</span><b>'+esc(kr(sk))+'</b></div>'+
+    '<div class="bignum neg"><span>Skuld '+esc(skuldFlik==='alla'?'totalt':skuldFlik==='privatgrupp'?'privat':agareNamn(skuldFlik).toLowerCase())+'</span><b>'+esc(kr(sk))+'</b></div>'+
     '<div class="bignum"><span>Betalas per månad</span><b>'+esc(kr(sm))+'</b></div>'+
     '<div class="bignum neg"><span>Ränta per dag</span><b>'+esc(kr(dr))+'</b></div>'+
     '<div class="bignum pos"><span>Skuldfri om</span><b>'+esc(manaderText(manader))+'</b></div>';
@@ -2541,7 +2621,7 @@ function renderSkulder(){
   var bet=state.trans.filter(function(t){return t.kat==='Amortering'||t.kat==='Kreditränta';}).sort(function(a,b){return (b.d||'').localeCompare(a.d||'');}).slice(0,20),h3='';
   if(!bet.length)h3='<div class="empty-msg">Varje amortering du gör i appen hamnar här.</div>';
   else for(var j=0;j<bet.length;j++)
-    h3+='<div class="row"><span class="dot" style="background:'+(bet[j].kat==='Amortering'?'var(--frihet)':'var(--dopamin)')+'"></span><span class="mid"><b>'+esc(bet[j].namn||bet[j].kat)+'</b><span>'+esc(fmtDate(bet[j].d))+' &middot; '+esc(bet[j].kat)+'</span></span><span class="amt">'+esc(kr(bet[j].belopp))+'</span></div>';
+    h3+='<div class="row"><span class="dot" style="background:'+(bet[j].kat==='Amortering'?'var(--frihet)':'var(--dopamin)')+'"></span><span class="mid"><b>'+esc(bet[j].namn||bet[j].kat)+'</b><span>'+esc(fmtDate(bet[j].d))+' &middot; '+esc(bet[j].kat)+' &middot; betald av '+esc(agareNamn(bet[j].betalare||'privat'))+'</span></span><span class="amt">'+esc(kr(bet[j].belopp))+'</span></div>';
   document.getElementById('skuld-hist').innerHTML=h3;
 }
 
@@ -2598,7 +2678,7 @@ function renderSkuldForm(){
   el.innerHTML=h;
   el.querySelectorAll('button').forEach(function(b){b.onclick=function(){valdSkuldAgare=b.dataset.a;renderSkuldForm();};});
 }
-function openSkuld(){redigerarS=null;['sk-namn','sk-saldo','sk-start','sk-ranta','sk-manad'].forEach(function(i){document.getElementById(i).value='';});valdSkuldAgare=skuldFlik==='alla'?'privat':skuldFlik;renderSkuldForm();openSheet('skuld-sheet');}
+function openSkuld(){redigerarS=null;['sk-namn','sk-saldo','sk-start','sk-ranta','sk-manad'].forEach(function(i){document.getElementById(i).value='';});valdSkuldAgare=(skuldFlik==='alla'||skuldFlik==='privatgrupp')?'privat':skuldFlik;renderSkuldForm();openSheet('skuld-sheet');}
 function redigeraSkuld(id){
   for(var i=0;i<state.skulder.length;i++){var s=state.skulder[i];if(s.id===id){redigerarS=id;
     document.getElementById('sk-namn').value=s.namn||'';document.getElementById('sk-saldo').value=s.saldo||'';
@@ -2608,12 +2688,38 @@ function redigeraSkuld(id){
 }
 function raderaSkuld(id){if(!confirm('Ta bort skulden?'))return;state.skulder=state.skulder.filter(function(s){return s.id!==id;});persist();renderActive();}
 var amortId=null;
+var valdBetalare='privat',amortKonto='';
+function amortSkuld(){for(var i=0;i<state.skulder.length;i++)if(state.skulder[i].id===amortId)return state.skulder[i];return null;}
+function renderAmortForm(){
+  var el=document.getElementById('am-betalare'),h='';
+  for(var i=0;i<RAK_AGARE.length;i++)h+='<button type="button" class="chip'+(valdBetalare===RAK_AGARE[i][0]?' sel':'')+'" data-b="'+RAK_AGARE[i][0]+'">'+RAK_AGARE[i][1]+'</button>';
+  el.innerHTML=h;
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){valdBetalare=b.dataset.b;renderAmortForm();};});
+  var ke=document.getElementById('am-konto'),h2='',l=kontoNamn();
+  h2+='<button type="button" class="chip'+(amortKonto===''?' sel':'')+'" data-o="">Inget konto</button>';
+  for(var j=0;j<l.length;j++)h2+='<button type="button" class="chip'+(amortKonto===l[j]?' sel':'')+'" data-o="'+esc(l[j])+'">'+esc(l[j])+'</button>';
+  ke.innerHTML=h2;
+  ke.querySelectorAll('button').forEach(function(b){b.onclick=function(){amortKonto=b.dataset.o;renderAmortForm();};});
+  var s2=amortSkuld(),eff=document.getElementById('am-effekt');
+  if(!s2){eff.innerHTML='';return;}
+  var ag=agareAv(s2);
+  var txt='';
+  if(valdBetalare==='butik'&&ag!=='butik')txt='Magishoppen betalar en '+agareNamn(ag).toLowerCase()+' skuld. Beloppet räknas av mot vad butiken är skyldig dig ('+kr(fordranButik())+').';
+  else if(valdBetalare!=='butik'&&ag==='butik')txt='Du betalar butikens skuld privat. Beloppet läggs till det Magishoppen är skyldig dig ('+kr(fordranButik())+').';
+  else txt='Betalningen bokförs på '+agareNamn(ag).toLowerCase()+' skuld.';
+  eff.textContent=txt;
+}
 function openAmort(id){
   amortId=id;
-  for(var i=0;i<state.skulder.length;i++){var s=state.skulder[i];if(s.id===id){
+  var s=amortSkuld();
+  if(s){
     var mR=num(s.saldo)*num(s.ranta)/100/12;
-    document.getElementById('am-info').innerHTML=esc(s.namn)+' &middot; saldo '+esc(kr(s.saldo))+'.<br>Av en betalning går ungefär '+esc(kr(mR))+' till ränta denna månad – resten minskar skulden.';}}
+    document.getElementById('am-info').innerHTML=esc(s.namn)+' &middot; '+esc(agareNamn(agareAv(s)))+' &middot; saldo '+esc(kr(s.saldo))+'.<br>Av en betalning går ungefär '+esc(kr(mR))+' till ränta denna månad – resten minskar skulden.';
+    valdBetalare=agareAv(s)==='butik'?'butik':'privat';}
   document.getElementById('am-belopp').value='';
+  document.getElementById('am-datum').value=todayKey();
+  amortKonto='';
+  renderAmortForm();
   openSheet('amort-sheet');
 }
 
@@ -2827,6 +2933,68 @@ function visaKonsekvens(){
   toast(txt);
 }
 
+// ── Plusmenyn: allt matas in från ett ställe ──────────
+function openPlus(){openSheet('plus-sheet');}
+var flowTyp='ut',flowKat='Mat',flowKonto='';
+function kontoNamn(){
+  var l=[];
+  for(var i=0;i<state.konton.length;i++)l.push(state.konton[i].namn);
+  if(!l.length)l=['Lönekonto'];
+  return l;
+}
+function renderFlowForm(){
+  var kt=document.getElementById('fl-kat'),h='',ak=aktiva(state.kategorier);
+  for(var i=0;i<ak.length;i++)h+='<button type="button" class="chip'+(flowKat===ak[i].namn?' sel':'')+'" data-k="'+esc(ak[i].namn)+'">'+esc(ak[i].emoji||'')+' '+esc(ak[i].namn)+'</button>';
+  kt.innerHTML=h;
+  kt.querySelectorAll('button').forEach(function(b){b.onclick=function(){flowKat=b.dataset.k;renderFlowForm();};});
+  var ke=document.getElementById('fl-konto'),h2='',l=kontoNamn();
+  for(var j=0;j<l.length;j++)h2+='<button type="button" class="chip'+(flowKonto===l[j]?' sel':'')+'" data-o="'+esc(l[j])+'">'+esc(l[j])+'</button>';
+  h2+='<button type="button" class="chip'+(flowKonto===''?' sel':'')+'" data-o="">Inget konto</button>';
+  ke.innerHTML=h2;
+  ke.querySelectorAll('button').forEach(function(b){b.onclick=function(){flowKonto=b.dataset.o;renderFlowForm();};});
+}
+function openFlow(typ){
+  flowTyp=typ;
+  document.getElementById('fl-h').textContent=typ==='in'?'➕ Pengar in':'➖ Pengar ut';
+  document.getElementById('fl-info').textContent=typ==='in'?
+    'Allt som kommer in och inte är ett köp: återbetalning, sålt något, ersättning.':
+    'Kostnader som inte är ett vanligt köp: tandläkare, reparation, avgift.';
+  document.getElementById('fl-belopp').value='';
+  document.getElementById('fl-namn').value='';
+  document.getElementById('fl-datum').value=todayKey();
+  flowKat=typ==='in'?'Annat':(aktiva(state.kategorier)[0]||{}).namn||'Mat';
+  flowKonto=state.senasteKonto||kontoNamn()[0]||'';
+  renderFlowForm();openSheet('flow-sheet');
+}
+var ovFran='',ovTill='';
+function renderOverForm(){
+  var l=kontoNamn();
+  function rita(id,vald,cb){
+    var el=document.getElementById(id),h='';
+    for(var i=0;i<l.length;i++)h+='<button type="button" class="chip'+(vald===l[i]?' sel':'')+'" data-o="'+esc(l[i])+'">'+esc(l[i])+'</button>';
+    el.innerHTML=h;
+    el.querySelectorAll('button').forEach(function(b){b.onclick=function(){cb(b.dataset.o);};});
+  }
+  rita('ov-fran',ovFran,function(v){ovFran=v;renderOverForm();});
+  rita('ov-till',ovTill,function(v){ovTill=v;renderOverForm();});
+}
+function openOver(){
+  var l=kontoNamn();
+  ovFran=l[0]||'';ovTill=l[1]||l[0]||'';
+  document.getElementById('ov-belopp').value='';
+  document.getElementById('ov-datum').value=todayKey();
+  renderOverForm();openSheet('over-sheet');
+}
+function openSkuldbet(){
+  var el=document.getElementById('sb-val'),h='';
+  if(!state.skulder.length)h='<div class="empty-msg">Inga skulder inlagda.</div>';
+  else for(var i=0;i<state.skulder.length;i++)
+    h+='<button type="button" class="chip" data-s="'+state.skulder[i].id+'">'+esc(state.skulder[i].namn)+' &middot; '+esc(kr(state.skulder[i].saldo))+'</button>';
+  el.innerHTML=h;
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){closeSheets();openAmort(b.dataset.s);};});
+  openSheet('skuldbet-sheet');
+}
+
 // ── Register: kategorier och betalningstyper ──────────
 var KAT0=[['Mat','🍎'],['Räkning','🧾'],['Smink','💄'],['Bil','🚗'],['Hus','🏠'],['Nöje','🎮'],['Magishoppen','🪄'],['Kläder','👗'],['Present','🎁'],['Annat','📦']];
 var BTYP0=[['Kort','💳'],['Konto','🏦'],['Swish','📱'],['Faktura','🧾'],['Klarna','🟣'],['Kontant','💵']];
@@ -3002,7 +3170,7 @@ function openDag(d){
   else for(var i=0;i<bet.length;i++){
     h+='<div class="dagrad"><span class="pt" style="background:'+(bet[i].betald?'var(--frihet)':'var(--dopamin)')+'"></span>';
     h+='<span class="mid"><b>'+esc(bet[i].namn)+'</b><span>'+
-      (bet[i].typ==='rakning'?('Räkning · '+esc(bet[i].agare==='butik'?'Magishoppen':bet[i].agare==='annat'?'Annat':'Privat')+(bet[i].betald?' · betald':'')):
+      (bet[i].typ==='rakning'?('Räkning · '+esc(agareNamn(bet[i].agare))+(bet[i].betald?' · betald':'')):
        bet[i].typ==='kredit'?('Kreditköp · '+esc(bet[i].konto||'kredit')+(bet[i].betald?' · betald':' · dras den här dagen')):
        ('Planerad utgift · '+esc(kr(bet[i].sparat))+' sparat'))+'</span></span>';
     h+='<span class="amt">'+esc(kr(bet[i].belopp))+'</span>';
@@ -3044,7 +3212,7 @@ function openDag(d){
 }
 
 // ── Räkningarna ───────────────────────────────────────
-var RAK_AGARE=[['privat','Privat'],['butik','Magishoppen'],['annat','Annat']];
+var RAK_AGARE=[['privat','Privat'],['klarna','Klarna'],['butik','Magishoppen'],['annat','Annat']];
 var RAK_KAT=['Boende','Lokal','El','Försäkring','Bil','Abonnemang','Lån','Klarna','Kreditkort','Moms','Skatt','Övrigt'];
 var valdRakManad=todayKey().slice(0,7),rakFilter='alla';
 function rakStatusFor(m){if(!state.rakStatus[m])state.rakStatus[m]={};return state.rakStatus[m];}
@@ -3100,7 +3268,7 @@ function renderRakningar(){
     var diff=num(r.belopp)&&b!==num(r.belopp)?(b-num(r.belopp)):0;
     h+='<div class="rak'+(st.betald?' betald':'')+(forsen?' forsen':'')+'">';
     h+='<button class="box'+(st.inkommen&&!st.betald?' in':'')+(st.betald?' on':'')+'" type="button" data-a="in" data-id="'+r.id+'">'+(st.betald?'&#10003;':st.inkommen?'&#9679;':'')+'</button>';
-    h+='<span class="mid"><b>'+esc(r.namn)+'<span class="agare '+(agareAv(r)==='butik'?'butik':agareAv(r)==='annat'?'annat':'')+'">'+esc(agareAv(r)==='butik'?'Magishoppen':agareAv(r)==='annat'?'Annat':'Privat')+'</span></b>';
+    h+='<span class="mid"><b>'+esc(r.namn)+'<span class="agare '+agareKlass(agareAv(r))+'">'+esc(agareNamn(agareAv(r)))+'</span></b>';
     h+='<span>'+esc(r.kategori||'Övrigt')+' &middot; förfaller den '+(num(r.dag)||28)+(forsen?' &middot; försenad':'')+(st.betald?' &middot; betald':st.inkommen?' &middot; inkommen':'')+'</span></span>';
     h+='<span class="bel"><b>'+esc(kr(b))+'</b><span>'+(diff?((diff>0?'+':'')+esc(kr(diff))+' mot normalt'):'normalt')+'</span></span>';
     var pf=kopPaFaktura(r.id,m),pfSum=0;
@@ -4079,7 +4247,7 @@ function closeSheets(){document.getElementById('sheet-bg').classList.remove('ope
 document.getElementById('sheet-bg').onclick=closeSheets;
 document.getElementById('more-btn').onclick=function(){openSheet('more-sheet');};
 document.querySelectorAll('#more-sheet .menu-btn').forEach(function(b){b.onclick=function(){go(b.dataset.go);};});
-document.getElementById('fab').onclick=function(){openSnabb('nodvandigt');};
+document.getElementById('fab').onclick=function(){openPlus();};
 document.getElementById('theme-btn').onclick=function(){state.theme=state.theme==='auto'?'dark':state.theme==='dark'?'light':'auto';save();applyTheme();};
 
 // ── Sparknappar ────────────────────────────────────────
@@ -4117,21 +4285,29 @@ document.getElementById('am-save').onclick=function(){
   var e2=state.eko;
   if(num(e2.buffert)>=num(e2.buffertmal)&&num(e2.buffert)-b<num(e2.buffertmal)){
     if(!confirm('Det här skulle minska din buffert under målet. Är du säker på att du vill göra det?')){closeSheets();return;}}
+  var d=document.getElementById('am-datum').value||todayKey();
   for(var i=0;i<state.skulder.length;i++){var s=state.skulder[i];if(s.id===amortId){
-    s.saldo=Math.max(0,num(s.saldo)-b);
     var manRanta=Math.round(num(s.saldo)*num(s.ranta)/100/12);
     var tillRanta=Math.min(b,manRanta);
     var tillSkuld=b-tillRanta;
-    s.saldo=num(s.saldo)+tillRanta;
+    s.saldo=Math.max(0,num(s.saldo)-tillSkuld);
+    var ag=agareAv(s);
     var dagar=num(s.manad)>0?Math.round(tillSkuld/(num(s.manad)/30)):0;
-    var sank=tillRanta;
-    loggaSeger('Köpte '+dagar+' dagar mer frihet – amorterade '+kr(b)+' på '+s.namn+'.');
-    state.trans.push({id:uid(),d:todayKey(),typ:'ut',kat:'Amortering',namn:s.namn,belopp:b});
-    if(sank)state.trans.push({id:uid(),d:todayKey(),typ:'ut',kat:'Kreditränta',namn:s.namn+' ränta',belopp:sank});
-    var fore2=frihetsIndex();
+    s.senast={d:d,belopp:b,tillSkuld:tillSkuld,tillRanta:tillRanta,betalare:valdBetalare,konto:amortKonto,ts:Date.now()};
+    loggaSeger('Betalade '+kr(b)+' på '+s.namn+' ('+agareNamn(valdBetalare).toLowerCase()+').');
+    state.trans.push({id:uid(),d:d,typ:'ut',kat:'Amortering',namn:s.namn,belopp:tillSkuld,betalare:valdBetalare,skuldId:s.id,konto:amortKonto});
+    if(tillRanta)state.trans.push({id:uid(),d:d,typ:'ut',kat:'Kreditränta',namn:s.namn+' ränta',belopp:tillRanta,betalare:valdBetalare,skuldId:s.id});
+    var fordranTxt='';
+    if(valdBetalare==='butik'&&ag!=='butik'){
+      state.butikSkuld.push({id:uid(),d:d,typ:'aterbetalning',belopp:b,notis:'Magishoppen betalade '+kr(b)+' på '+s.namn});
+      fordranTxt='<br>Avräknat mot Magishoppens skuld till dig: '+esc(kr(fordranButik()))+' kvar.';}
+    else if(valdBetalare!=='butik'&&ag==='butik'){
+      state.butikSkuld.push({id:uid(),d:d,typ:'tillskott',belopp:b,notis:'Du betalade '+kr(b)+' på butikens '+s.namn});
+      fordranTxt='<br>Magishoppen är nu skyldig dig '+esc(kr(fordranButik()))+'.';}
+    if(amortKonto)for(var q=0;q<state.konton.length;q++)if(state.konton[q].namn===amortKonto){
+      state.konton[q].saldo=num(state.konton[q].saldo)-b;state.konton[q].uppdaterad=todayKey();}
     persist();snapshot();closeSheets();renderActive();
-    var vinst=Math.round((frihetsIndex()-fore2)*10)/10;
-    toast('Din betalning '+esc(kr(b))+'<br>&#8594; till skulden <b>'+esc(kr(tillSkuld))+'</b>'+(tillRanta?('<br>&#8594; till ränta '+esc(kr(tillRanta))):'')+'<br>&#127881; '+dagar+' dagar mer frihet.');
+    toast('Din betalning '+esc(kr(b))+'<br>&#8594; till skulden <b>'+esc(kr(tillSkuld))+'</b>'+(tillRanta?('<br>&#8594; till ränta '+esc(kr(tillRanta))):'')+'<br>&#127881; '+dagar+' dagar mer frihet.'+fordranTxt);
     return;}}
   closeSheets();
 };
@@ -4535,6 +4711,58 @@ document.getElementById('kt-bort').onclick=function(){
   if(katTyp==='kategori')state.kategorier=state.kategorier.filter(function(x){return x.id!==redigerarKat;});
   else state.betaltyper=state.betaltyper.filter(function(x){return x.id!==redigerarKat;});
   redigerarKat=null;persist();closeSheets();renderRegister();
+};
+
+document.querySelectorAll('#plus-sheet .plusgrid button').forEach(function(b){b.onclick=function(){
+  var a=b.dataset.p;
+  closeSheets();
+  setTimeout(function(){
+    if(a==='nodvandigt'||a==='onodigt')openSnabb(a);
+    else if(a==='nobuy'){
+      var k=todayKey();
+      if(kopForDag(k).length){toast('Det finns köp loggade idag.');return;}
+      state.nobuy[k]=true;loggaSeger('No buy day.');persist();renderActive();toast('🟢 No buy day registrerad.');}
+    else if(a==='ut')openFlow('ut');
+    else if(a==='in')openFlow('in');
+    else if(a==='rakning')openRakning();
+    else if(a==='extra')openExtra();
+    else if(a==='overforing')openOver();
+    else if(a==='skuldbet')openSkuldbet();
+    else if(a==='punkt')openHandelse();
+    else if(a==='beslut'){go('perspektiv');}
+  },180);
+};});
+document.getElementById('fl-save').onclick=function(){
+  var b=num(document.getElementById('fl-belopp').value);
+  if(!b){closeSheets();return;}
+  var d=document.getElementById('fl-datum').value||todayKey();
+  var namn=document.getElementById('fl-namn').value.trim()||flowKat;
+  state.senasteKonto=flowKonto;
+  state.trans.push({id:uid(),d:d,typ:flowTyp,kat:flowKat,namn:namn,belopp:b,konto:flowKonto});
+  if(flowKonto){
+    for(var i=0;i<state.konton.length;i++)if(state.konton[i].namn===flowKonto){
+      state.konton[i].saldo=num(state.konton[i].saldo)+(flowTyp==='in'?b:-b);
+      state.konton[i].uppdaterad=todayKey();}}
+  if(flowTyp==='in')loggaSeger('Pengar in: ' + kr(b) + ' (' + namn + ').');
+  persist();snapshot();closeSheets();renderActive();
+  toast((flowTyp==='in'?'➕ ':'➖ ')+kr(b)+' &middot; '+flowKat+(flowKonto?(' &middot; '+flowKonto):''));
+};
+document.getElementById('ov-save').onclick=function(){
+  var b=num(document.getElementById('ov-belopp').value);
+  if(!b||!ovFran||!ovTill||ovFran===ovTill){closeSheets();return;}
+  var d=document.getElementById('ov-datum').value||todayKey();
+  for(var i=0;i<state.konton.length;i++){
+    if(state.konton[i].namn===ovFran){state.konton[i].saldo=num(state.konton[i].saldo)-b;state.konton[i].uppdaterad=todayKey();}
+    if(state.konton[i].namn===ovTill){state.konton[i].saldo=num(state.konton[i].saldo)+b;state.konton[i].uppdaterad=todayKey();}}
+  var tillBuffert=false;
+  for(var j=0;j<state.konton.length;j++)if(state.konton[j].namn===ovTill&&state.konton[j].ibuffert)tillBuffert=true;
+  if(tillBuffert){
+    state.eko.buffert=num(state.eko.buffert)+b;
+    var dg=dagarFrihet(b);
+    loggaSeger('Köpte '+(dg?dg+' dagar':kr(b))+' mer frihet till bufferten.');
+    state.trans.push({id:uid(),d:d,typ:'ut',kat:'Buffert',namn:'Till bufferten',belopp:b});}
+  persist();snapshot();closeSheets();renderActive();
+  toast('🔄 '+kr(b)+' flyttat från '+ovFran+' till '+ovTill+'.'+(tillBuffert?'<br>Bufferten är nu '+kr(state.eko.buffert)+'.':''));
 };
 
 // ── Start ──────────────────────────────────────────────
