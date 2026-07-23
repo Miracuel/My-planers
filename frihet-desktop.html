@@ -538,6 +538,21 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
 .arsval{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .arsval b{flex:1;text-align:center;font-family:Georgia,serif;font-size:19px}
 
+/* v10.1 – enklare månadsplan */
+.frad{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.frad:last-of-type{border-bottom:none}
+.frad .em{font-size:19px;line-height:1}
+.frad .mid{flex:1;min-width:0}
+.frad .mid b{display:block;font-size:14px;font-weight:600}
+.frad .mid span{display:block;font-size:11px;color:var(--muted);line-height:1.45;margin-top:2px}
+.frad input{width:98px;text-align:right;padding:9px 10px;font-size:14px;font-variant-numeric:tabular-nums}
+.frad.lock input{opacity:.75}
+.kvarrad{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
+.kvarrad b{font-family:Georgia,serif;font-size:26px;color:var(--accent)}
+.kvarrad b.neg{color:var(--dopamin)}
+.inkbox{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.inkbox label{margin-top:0}
+
 /* ── DESKTOP-LAGER (endast CSS, JS oförändrad) ─── */
 @media (min-width:0px){
   .app{max-width:1040px;margin:0 0 0 212px;padding:32px 40px 70px}
@@ -859,6 +874,230 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
       <input id="pl-manad" type="month">
       <button class="icon-btn" type="button" id="pl-next">&#8250;</button>
     </div>
+    <div class="tiny" id="pl-status" style="margin-bottom:12px"></div>
+
+    <div class="inkbox">
+      <div>
+        <label>Trygg inkomst</label>
+        <input id="e-inkomst" type="number" inputmode="decimal" placeholder="0">
+      </div>
+      <div>
+        <label>Extra denna m&aring;nad</label>
+        <input id="m-extra" type="number" inputmode="decimal" placeholder="0">
+      </div>
+    </div>
+    <div class="tiny" style="margin-top:6px">Skriv in vad som kommer in. Resten f&ouml;resl&aring;r jag utifr&aring;n dina r&auml;kningar, skulder och &aring;rspottar.</div>
+
+    <div class="btn-row">
+      <button class="btn fill" type="button" id="forslag-btn">Ge mig ett f&ouml;rslag</button>
+      <button class="btn ghost" type="button" id="pl-kopiera">Kopiera f&ouml;rra</button>
+    </div>
+  </div>
+
+  <div class="card-panel" id="forslag-box">
+    <div class="win-h" id="forslag-rubrik">F&ouml;rdelning</div>
+    <div class="tiny" style="margin-bottom:8px">Justera fritt &ndash; det h&auml;r &auml;r ett f&ouml;rslag, inte en regel.</div>
+
+    <div class="frad">
+      <span class="em">&#127968;</span>
+      <span class="mid"><b>Fasta kostnader</b><span id="hint-fasta"></span></span>
+      <input id="e-fasta" type="number" inputmode="decimal">
+    </div>
+    <div class="frad">
+      <span class="em">&#128179;</span>
+      <span class="mid"><b>Minimibetalningar</b><span id="hint-minimi"></span></span>
+      <input id="e-minimi" type="number" inputmode="decimal">
+    </div>
+    <div class="frad">
+      <span class="em">&#127978;</span>
+      <span class="mid"><b>Magishoppen</b><span id="hint-butik"></span></span>
+      <input id="e-butik" type="number" inputmode="decimal">
+    </div>
+    <div class="frad">
+      <span class="em">&#127880;</span>
+      <span class="mid"><b>Levnadskonto</b><span id="hint-vardag"></span></span>
+      <input id="e-vardag" type="number" inputmode="decimal">
+    </div>
+    <div class="frad">
+      <span class="em">&#128176;</span>
+      <span class="mid"><b>Till buffert</b><span id="hint-sparande"></span></span>
+      <input id="e-sparande" type="number" inputmode="decimal">
+    </div>
+    <div class="frad">
+      <span class="em">&#127919;</span>
+      <span class="mid"><b>Frihetskontot</b><span id="hint-frihet"></span></span>
+      <input id="e-frihet" type="number" inputmode="decimal">
+    </div>
+
+    <div class="kvarrad"><span class="lbl">Tryggt att anv&auml;nda</span><b id="forslag-kvar">0 kr</b></div>
+    <div class="tiny" id="forslag-not" style="margin-top:6px"></div>
+
+    <div class="btn-row">
+      <button class="btn fill" type="button" id="plan-save">Spara m&aring;naden</button>
+      <button class="btn ghost" type="button" id="plan-rensa">Rensa</button>
+    </div>
+  </div>
+  <div class="card-panel" id="plan-sum"></div>
+
+  <div class="section-title">Frihetsindex</div>
+  <div class="card-panel">
+    <div class="idx-num" id="idx-num" style="font-size:44px">0<small>/100</small></div>
+    <div class="blocks" id="idx-blocks"></div>
+    <div class="idx-delta flat" id="idx-delta">&plusmn;0 idag</div>
+    <div class="idx-next" id="idx-next"></div>
+    <div class="bars" id="delmatare" style="margin-top:14px"></div>
+  </div>
+
+  <div class="section-title">Nettof&ouml;rm&ouml;genhet &ouml;ver tid</div>
+  <div class="card-panel"><div id="netto-graf"></div></div>
+
+  <div class="section-title">Du f&ouml;r ett &aring;r sedan</div>
+  <div class="card-panel" id="ett-ar"></div>
+
+  <div class="section-title">Dagens seger</div>
+  <div class="card-panel win"><div id="dagens-seger"></div></div>
+
+  <div class="section-title">Prognos</div>
+  <div class="card-panel" id="prognos"></div>
+
+  <div class="section-title">N&auml;rmast i tiden</div>
+  <div class="card-panel"><div id="tl-mini"></div></div>
+
+  <div class="section-title">Sedan starten</div>
+  <div class="card-panel sedan"><div id="sedan-start"></div></div>
+
+  <div class="section-title">&Aring;rs&ouml;versikt</div>
+  <div class="card-panel">
+    <div class="ar-grid" id="ar-grid"></div>
+    <div class="legend" style="margin-top:10px">
+      <span><b style="background:var(--frihet)"></b>Inga impulsk&ouml;p</span>
+      <span><b style="background:#5590c0"></b>Planen f&ouml;ljdes</span>
+      <span><b style="background:var(--gold)"></b>Extra amortering</span>
+      <span><b style="background:var(--dopamin)"></b>&Ouml;ver plan</span>
+    </div>
+  </div>
+
+  <div class="section-title">M&ouml;nster</div>
+  <div class="card-panel"><div id="monster"></div></div>
+
+  <div class="section-title">Livsbalans</div>
+  <div class="card-panel"><div class="bars" id="balans"></div></div>
+
+  <div class="section-title">&Aring;ret <span id="ar-titel"></span><span style="float:right"><button class="btn ghost" type="button" id="ar-prev">&#8249;</button> <button class="btn ghost" type="button" id="ar-next">&#8250;</button></span></div>
+  <div class="grid2" id="ar-kpi"></div>
+  <div class="section-title">Vad har livet kostat?</div>
+  <div class="card-panel"><div id="ar-ut"></div></div>
+  <div class="section-title">Intj&auml;nat</div>
+  <div class="card-panel"><div id="ar-in"></div></div>
+  <div class="btn-row"><button class="btn fill" type="button" onclick="openTrans('ut')">Registrera betalning</button><button class="btn" type="button" onclick="openTrans('in')">Registrera inkomst</button></div>
+  <div class="section-title">Senast registrerat</div>
+  <div class="card-panel"><div id="trans-lista"></div></div>
+</div>
+
+<!-- KÖP -->
+<div class="view" id="view-kop">
+  <div class="page-h">Köpen</div>
+  <div class="page-sub">Inte för att skuldbelägga. För att se mönster.</div>
+  <div class="card-panel">
+    <div class="kpi" id="kop-kpi"></div>
+  </div>
+  <div class="section-title">Var tog pengarna vägen?</div>
+  <div class="card-panel"><div id="flow-viz"></div></div>
+  <div class="section-title">Vad du försöker lösa</div>
+  <div class="card-panel"><div id="orsak-stat"></div></div>
+  <div class="section-title">Historik</div>
+  <div class="card-panel"><div id="kop-lista"></div></div>
+  <div class="btn-row"><button class="btn ghost" type="button" onclick="openKop()">Logga köp</button></div>
+</div>
+
+<!-- PERSPEKTIV -->
+<div class="view" id="view-perspektiv">
+  <div class="page-h">Beslut</div>
+  <div class="page-sub">M&aring;let &auml;r inte att aldrig k&ouml;pa saker. M&aring;let &auml;r att k&ouml;pa dem medvetet.</div>
+  <div class="card-panel">
+    <label>Vad funderar du p&aring;?</label>
+    <input id="p-namn" placeholder="Nintendo Switch 2">
+    <label>Kostnad (kr)</label>
+    <input id="p-belopp" type="number" inputmode="decimal" placeholder="6995">
+    <label>Hur k&auml;nns det?</label><div class="chips" id="p-temp"></div>
+    <label>Visa kostnaden i</label><div class="chips" id="p-valuta"></div>
+    <div class="btn-row"><button class="btn fill" type="button" id="p-calc">R&auml;kna</button></div>
+    <div id="p-out"></div>
+    <div class="btn-row">
+      <button class="btn ghost" type="button" id="p-ja">&#9989; K&ouml;p nu</button>
+      <button class="btn ghost" type="button" id="p-vanta">&#8987; V&auml;nta</button>
+    </div>
+  </div>
+
+  <div class="section-title">V&auml;ntar p&aring; beslut</div>
+  <div id="bes-vantar"></div>
+
+  <div class="section-title">Vad m&ouml;nstret s&auml;ger</div>
+  <div class="card-panel"><div id="bes-monster"></div></div>
+
+  <div class="section-title">Kanske senare</div>
+  <div id="bes-kanske"></div>
+
+  <div class="section-title">Avgjorda</div>
+  <div id="bes-klara"></div>
+</div>
+
+<!-- TIDSLINJE -->
+<div class="view" id="view-tidslinje">
+  <div class="page-h">Tidslinjen</div>
+  <div class="page-sub">Inte en kalender. En väg framåt.</div>
+  <div class="card-panel"><div class="tl" id="tl-full"></div></div>
+  <div class="btn-row"><button class="btn ghost" type="button" onclick="openHandelse()">Lägg till händelse</button></div>
+</div>
+
+<!-- PLAN -->
+<div class="view" id="view-plan">
+  <div class="page-h">Livsplan</div>
+  <div class="page-sub">Du har inget m&aring;nadsproblem. Du har ett kassafl&ouml;desproblem. D&auml;rf&ouml;r planerar vi per &aring;r.</div>
+
+  <div class="card-panel">
+    <div class="arsval">
+      <button class="icon-btn" type="button" id="lp-prev">&#8249;</button>
+      <b id="lp-ar">2026</b>
+      <button class="icon-btn" type="button" id="lp-next">&#8250;</button>
+    </div>
+    <div id="lp-oversikt"></div>
+    <div class="manadsstrip" id="lp-strip"></div>
+    <div class="tiny" style="margin-top:8px">Staplarna visar vad du faktiskt gjort av med per m&aring;nad. Oj&auml;mnt &auml;r helt okej.</div>
+  </div>
+
+  <div class="section-title">Varningar &amp; r&aring;d</div>
+  <div id="varn-plan"></div>
+
+  <div class="niva-h"><b>1 &middot; Fasta kostnader</b><span id="sum-fast"></span></div>
+  <div class="tiny" style="margin-bottom:8px">Det som m&aring;ste betalas. H&auml;mtas fr&aring;n dina r&auml;kningar.</div>
+  <div id="pott-fast"></div>
+  <div class="btn-row"><button class="btn ghost" type="button" onclick="openPott('fast')">L&auml;gg till fast kostnad</button></div>
+
+  <div class="niva-h"><b>2 &middot; Livsstil</b><span id="sum-liv"></span></div>
+  <div class="tiny" style="margin-bottom:8px">Det h&auml;r &auml;r ditt liv. En &aring;rspott per omr&aring;de &ndash; anv&auml;nd den n&auml;r du vill.</div>
+  <div id="pott-liv"></div>
+  <div class="btn-row"><button class="btn fill" type="button" onclick="openPott('livsstil')">L&auml;gg till livsstilspott</button></div>
+
+  <div class="niva-h"><b>3 &middot; Projekt</b><span id="sum-proj"></span></div>
+  <div class="tiny" style="margin-bottom:8px">Har en b&ouml;rjan och ett slut. Inte samma sak som shopping.</div>
+  <div id="pott-proj"></div>
+  <div class="btn-row"><button class="btn fill" type="button" onclick="openPott('projekt')">Starta ett projekt</button></div>
+
+  <div class="section-title">S&auml;song</div>
+  <div class="card-panel">
+    <div class="soft">Budgeten ska f&ouml;lja livet, inte tv&auml;rtom. V&auml;lj s&auml;song s&aring; f&ouml;rdelas &aring;rspotten oj&auml;mnt &ouml;ver &aring;ret.</div>
+    <div class="sasong" id="sasong-val"></div>
+    <div class="tiny" id="sasong-info" style="margin-top:10px"></div>
+  </div>
+
+  <div class="section-title">M&aring;naden</div>
+  <div class="card-panel">
+    <div class="planbar">
+      <button class="icon-btn" type="button" id="pl-prev">&#8249;</button>
+      <input id="pl-manad" type="month">
+      <button class="icon-btn" type="button" id="pl-next">&#8250;</button>
+    </div>
     <div class="btn-row" style="margin-top:0"><button class="btn ghost" type="button" id="pl-kopiera">Kopiera f&ouml;rra m&aring;naden</button></div>
     <div class="tiny" id="pl-status"></div>
   </div>
@@ -937,6 +1176,16 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
 
   <div class="btn-row"><button class="btn" type="button" onclick="go('skulder')">&Ouml;ppna P&aring; v&auml;g mot noll</button><button class="btn" type="button" onclick="go('konton')">&Ouml;ppna Konton</button></div>
   <div class="btn-row"><button class="btn ghost" type="button" onclick="go('rakningar')">&Ouml;ppna R&auml;kningarna</button></div>
+
+  <div class="section-title">Rensa</div>
+  <div class="card-panel">
+    <div class="soft">B&ouml;rja om utan att r&ouml;ra k&ouml;p, r&auml;kningar eller skulder.</div>
+    <div class="btn-row"><button class="btn ghost" type="button" id="rens-manad">Rensa den h&auml;r m&aring;naden</button></div>
+    <div class="btn-row"><button class="btn ghost" type="button" id="rens-alla">Rensa alla m&aring;nadsplaner</button></div>
+    <div class="btn-row"><button class="btn ghost" type="button" id="rens-pottar">Rensa &aring;rspottar och projekt</button></div>
+    <div class="btn-row"><button class="btn danger" type="button" id="rens-allt">Rensa hela Livsplanen</button></div>
+    <div class="tiny" style="margin-top:8px">Ingenting h&auml;r r&ouml;r dina k&ouml;p, konton eller skulder.</div>
+  </div>
 </div>
 
 <!-- SKULDER -->
@@ -1498,7 +1747,7 @@ html[data-theme=dark]{--lila:#A98CD8;--rosa:#E29BC0;--nobuy:#6FC98F}
 
 <div class="toast" id="toast"></div>
 <script>
-var APPINFO={version:'10.0.0',tagline:'Livsplan istället för budget – årspottar, projekt och säsong, för den som inte lever i månader.',audience:'Privat',functions:['Livsplan: årspottar istället för månadsbudget','Tre nivåer: fasta kostnader, livsstil och projekt','Projekt med budget, start, mål och koppling till köp','Säsongsfördelning så att budgeten följer livet','Månadsplan kvar för den som vill ha detaljerna','Extra inkomst med status: planerad, möjlig, bekräftad eller mottagen','Förslag på vad de extra pengarna ska göra – med motivering','Mjuka varningar med Visa konsekvensen, Pausa 24 timmar, Justera planen eller Allt är okej','Snabbknappar: Nödvändigt, Inte planerat och No buy day','Kategori, betalningstyp och konto på varje köp – tre olika saker','Egna kategorier och betalningstyper med emoji, arkivering och radering','Kalendern visar köp, status på dragningar och fyra summor för månaden','Kontoprognos: saldot efter månadens kvarvarande dragningar','Kreditköp med eget betaldatum i kalendern eller på månadsfaktura','Betalningar med vem som betalar – avräknas mot Magishoppens skuld till dig','Plusknappen matar in allt: köp, räkning, inkomst, utgift, överföring och betalning','På väg mot noll: varje skuld som eget kort med ränta, framsteg och slutdatum','Betalningar delas upp i vad som går till skulden och vad som går till ränta','Bedömning av köp: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning','Beslutsmotor, räkningar, dashboard, Frihetsresan och mikrolärande','Synk, export, sex färgteman, mobil och desktop'],changelog:[{v:'10.0.0',d:'2026-07-19',items:['Planering heter nu Livsplan och bygger på år istället för månader – du har inget månadsproblem, du har ett kassaflödesproblem.','Tre nivåer: Fasta kostnader, Livsstil och Projekt.','Livsstilspottar är årspottar. Smink 12 000 kr per år istället för 500 kr i månaden – köp för 2 500 kr en månad och 0 kr nästa utan att ha spräckt något.','Projekt har en början och ett slut: Keratinutbildning, hemgym, ny garderob. Med budget, startdatum, måldatum och ett varför.','Köp kan kopplas till ett projekt. Då säger appen inte att du köpte hår för 3 000 kr, utan att 3 000 kr har lagts på projektet Keratinutbildning och att 9 000 kr är kvar.','Pottar kopplas till köpkategorier och räknar av sig själva när du loggar ett köp.','Säsongsfördelning: sommartung, hösttung, vintertung, tungt i början eller helt egen fördelning per månad. Budgeten följer livet istället för tvärtom.','Årsöversikt med planerat för hela året, hur stor andel av årsinkomsten det är, och en stapel per månad över vad som faktiskt gått åt.','Takten mäts mot säsongen, inte mot en tolftedel – varningen kommer först när potten faktiskt riskerar att ta slut i förtid.','Månadsplanen, bufferten, simulatorn och plan mot verklighet finns kvar längre ner för den som vill ha detaljerna.']},{v:'9.3.0',d:'2026-07-19',items:['Betalningsrutan frågar nu vem som betalar: Privat, Klarna, Magishoppen eller Annat – och från vilket konto.','Betalar Magishoppen en privat skuld räknas hela beloppet av mot vad butiken är skyldig dig, ränta inkluderad.','Betalar du privat på en butiksskuld ökar butikens skuld till dig med samma summa.','Rutan visar effekten innan du sparar, så det aldrig blir en överraskning.','Skuldkortet visar senaste betalningen: belopp, datum, vem som betalade, från vilket konto och hur mycket som gick till skulden respektive räntan.','Betalningshistoriken visar också vem som betalade.','Klarna är nu en egen ägare under Räkningarna, i skuldflikarna och på köp – med egen färg.','Betalningen kan dateras och dras från valt konto direkt.']},{v:'9.2.0',d:'2026-07-19',items:['Plusknappen är nu en inmatningshubb: köp, no buy day, pengar ut, pengar in, ny räkning, extra inkomst, överföring, betalning på skuld, punkt i kalendern och nytt beslut – allt från samma ställe.','Pengar in och Pengar ut för kostnader och inkomster som inte är vanliga köp, med kategori, konto och datum.','Överföring mellan konton flyttar pengar utan att räknas som utgift – och går den till ett buffertkonto ökar bufferten automatiskt.','Alla poster uppdaterar kontosaldot direkt och bokförs en enda gång.','Desktopmenyn visar nu alla vyer, så På väg mot noll, Räkningarna, Konton och Lär dig går att nå direkt från sidomenyn.']},{v:'9.1.0',d:'2026-07-19',items:['Kreditköp kan nu få ett eget betaldatum – då dyker dragningen upp i kalendern på den dagen, i gult.','Alternativt markeras köpet som Månadsfaktura. Då hamnar det inte i kalendern som en egen dragning, utan syns på fakturan i Räkningarna.','Räkningen visar hur många köp och hur mycket som ligger på den fakturan den månaden.','I dagvyn kan en kreditbetalning bockas av som betald – då minskar skulden och kontot med samma summa.','Konton kan markeras som Kredit, så att appen vet att köp där ökar en skuld istället för att minska ett saldo.']},{v:'9.0.0',d:'2026-07-19',items:['Plan heter nu Planering – något levande, inte ett prov man kan misslyckas med.','Månadsväljare med pilar högst upp: varje månad har sin egen plan, som kan kopieras från föregående månad.','Extra inkomst per månad med status planerad, möjlig, bekräftad eller mottagen. Möjliga pengar räknas aldrig som pengar du har.','Förslag på fördelning av extra pengar: räkningar, buffert, dyraste skulden, kommande utgifter och tio procent till något roligt – med motivering till varje rad.','Rådgivaren kan tycka till om just den summan.','Mjuka varningar istället för alarm: de utgår från din egen takt och kommer med knapparna Visa konsekvensen, Pausa köp i 24 timmar, Justera planen och Allt är okej.','Onödigt heter nu Inte planerat – samma data, mindre skam.','Köp registreras med kategori, betalningstyp och konto. Betalningstyp och konto är två olika saker.','Egna kategorier och betalningstyper med emoji, som kan arkiveras istället för att raderas så att historiken överlever.','Kalendern visar status på dragningar: kommande, dras snart, betald och försenad, plus fyra summor – köp hittills, räkningar betalda, kvar att betala och totalt planerat.','Konton visar nu saldot efter månadens kvarvarande dragningar.','Skulder heter På väg mot noll. Varje skuld har ett eget kort med startbelopp, betalat av, betald ränta, ränta denna månad och beräknat slutdatum.','En betalning delas upp i vad som går till skulden och vad som går till ränta.','Beslut och Perspektiv ger nu en bedömning: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning – plus förslag på bättre tajming.','Snabbknappen finns även som flytande knapp längst ner, alltid nära tummen.']},{v:'8.0.0',d:'2026-07-19',items:['Snabbknappar, no buy day och kalender med belopp per dag.']},{v:'7.0.0',d:'2026-07-19',items:['Räkningarna, skuldflikar och Magishoppens skuld till dig.']},{v:'6.0.0',d:'2026-07-19',items:['Ekonomiskt väder, fyra siffror, AI-coach, frihetspoäng och simulator.']},{v:'5.0.0',d:'2026-07-19',items:['Beslutsmotorn och Frihetsresan.']},{v:'4.0.0',d:'2026-07-19',items:['Trygg månadsinkomst, Levnadskonto, tre mål och mikrolärandet.']},{v:'3.0.0',d:'2026-07-19',items:['Nedräkningskalender, dashboard, konton och budget per månad.']},{v:'2.0.0',d:'2026-07-19',items:['Frihetsindex 0–100, prognos och milstolpar.']},{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.']}]};
+var APPINFO={version:'10.1.0',tagline:'Livsplan istället för budget – årspottar, projekt och säsong, för den som inte lever i månader.',audience:'Privat',functions:['Livsplan: årspottar istället för månadsbudget','Tre nivåer: fasta kostnader, livsstil och projekt','Projekt med budget, start, mål och koppling till köp','Säsongsfördelning så att budgeten följer livet','Skriv in inkomsten – appen föreslår hela fördelningen','Rensningsknappar för månad, pottar eller hela Livsplanen','Extra inkomst med status: planerad, möjlig, bekräftad eller mottagen','Förslag på vad de extra pengarna ska göra – med motivering','Mjuka varningar med Visa konsekvensen, Pausa 24 timmar, Justera planen eller Allt är okej','Snabbknappar: Nödvändigt, Inte planerat och No buy day','Kategori, betalningstyp och konto på varje köp – tre olika saker','Egna kategorier och betalningstyper med emoji, arkivering och radering','Kalendern visar köp, status på dragningar och fyra summor för månaden','Kontoprognos: saldot efter månadens kvarvarande dragningar','Kreditköp med eget betaldatum i kalendern eller på månadsfaktura','Betalningar med vem som betalar – avräknas mot Magishoppens skuld till dig','Plusknappen matar in allt: köp, räkning, inkomst, utgift, överföring och betalning','På väg mot noll: varje skuld som eget kort med ränta, framsteg och slutdatum','Betalningar delas upp i vad som går till skulden och vad som går till ränta','Bedömning av köp: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning','Beslutsmotor, räkningar, dashboard, Frihetsresan och mikrolärande','Synk, export, sex färgteman, mobil och desktop'],changelog:[{v:'10.1.0',d:'2026-07-23',items:['Månadsplanen är förenklad: skriv bara in trygg inkomst och eventuell extra inkomst, så föreslår appen fördelningen.','Förslaget räknas fram från dina räkningar, dina skulders månadsbetalning, Magishoppens räkningar och en månads andel av årspottarna enligt säsongen.','Varje rad har en motivering, och allt går att justera direkt i förslaget.','Tryggt att använda uppdateras medan du skriver.','Ny rensningssektion längst ner i Livsplanen: rensa den här månaden, alla månadsplaner, årspottar och projekt, eller hela Livsplanen.','Rensningen rör aldrig köp, räkningar, konton eller skulder.']},{v:'10.0.0',d:'2026-07-19',items:['Planering heter nu Livsplan och bygger på år istället för månader – du har inget månadsproblem, du har ett kassaflödesproblem.','Tre nivåer: Fasta kostnader, Livsstil och Projekt.','Livsstilspottar är årspottar. Smink 12 000 kr per år istället för 500 kr i månaden – köp för 2 500 kr en månad och 0 kr nästa utan att ha spräckt något.','Projekt har en början och ett slut: Keratinutbildning, hemgym, ny garderob. Med budget, startdatum, måldatum och ett varför.','Köp kan kopplas till ett projekt. Då säger appen inte att du köpte hår för 3 000 kr, utan att 3 000 kr har lagts på projektet Keratinutbildning och att 9 000 kr är kvar.','Pottar kopplas till köpkategorier och räknar av sig själva när du loggar ett köp.','Säsongsfördelning: sommartung, hösttung, vintertung, tungt i början eller helt egen fördelning per månad. Budgeten följer livet istället för tvärtom.','Årsöversikt med planerat för hela året, hur stor andel av årsinkomsten det är, och en stapel per månad över vad som faktiskt gått åt.','Takten mäts mot säsongen, inte mot en tolftedel – varningen kommer först när potten faktiskt riskerar att ta slut i förtid.','Månadsplanen, bufferten, simulatorn och plan mot verklighet finns kvar längre ner för den som vill ha detaljerna.']},{v:'9.3.0',d:'2026-07-19',items:['Betalningsrutan frågar nu vem som betalar: Privat, Klarna, Magishoppen eller Annat – och från vilket konto.','Betalar Magishoppen en privat skuld räknas hela beloppet av mot vad butiken är skyldig dig, ränta inkluderad.','Betalar du privat på en butiksskuld ökar butikens skuld till dig med samma summa.','Rutan visar effekten innan du sparar, så det aldrig blir en överraskning.','Skuldkortet visar senaste betalningen: belopp, datum, vem som betalade, från vilket konto och hur mycket som gick till skulden respektive räntan.','Betalningshistoriken visar också vem som betalade.','Klarna är nu en egen ägare under Räkningarna, i skuldflikarna och på köp – med egen färg.','Betalningen kan dateras och dras från valt konto direkt.']},{v:'9.2.0',d:'2026-07-19',items:['Plusknappen är nu en inmatningshubb: köp, no buy day, pengar ut, pengar in, ny räkning, extra inkomst, överföring, betalning på skuld, punkt i kalendern och nytt beslut – allt från samma ställe.','Pengar in och Pengar ut för kostnader och inkomster som inte är vanliga köp, med kategori, konto och datum.','Överföring mellan konton flyttar pengar utan att räknas som utgift – och går den till ett buffertkonto ökar bufferten automatiskt.','Alla poster uppdaterar kontosaldot direkt och bokförs en enda gång.','Desktopmenyn visar nu alla vyer, så På väg mot noll, Räkningarna, Konton och Lär dig går att nå direkt från sidomenyn.']},{v:'9.1.0',d:'2026-07-19',items:['Kreditköp kan nu få ett eget betaldatum – då dyker dragningen upp i kalendern på den dagen, i gult.','Alternativt markeras köpet som Månadsfaktura. Då hamnar det inte i kalendern som en egen dragning, utan syns på fakturan i Räkningarna.','Räkningen visar hur många köp och hur mycket som ligger på den fakturan den månaden.','I dagvyn kan en kreditbetalning bockas av som betald – då minskar skulden och kontot med samma summa.','Konton kan markeras som Kredit, så att appen vet att köp där ökar en skuld istället för att minska ett saldo.']},{v:'9.0.0',d:'2026-07-19',items:['Plan heter nu Planering – något levande, inte ett prov man kan misslyckas med.','Månadsväljare med pilar högst upp: varje månad har sin egen plan, som kan kopieras från föregående månad.','Extra inkomst per månad med status planerad, möjlig, bekräftad eller mottagen. Möjliga pengar räknas aldrig som pengar du har.','Förslag på fördelning av extra pengar: räkningar, buffert, dyraste skulden, kommande utgifter och tio procent till något roligt – med motivering till varje rad.','Rådgivaren kan tycka till om just den summan.','Mjuka varningar istället för alarm: de utgår från din egen takt och kommer med knapparna Visa konsekvensen, Pausa köp i 24 timmar, Justera planen och Allt är okej.','Onödigt heter nu Inte planerat – samma data, mindre skam.','Köp registreras med kategori, betalningstyp och konto. Betalningstyp och konto är två olika saker.','Egna kategorier och betalningstyper med emoji, som kan arkiveras istället för att raderas så att historiken överlever.','Kalendern visar status på dragningar: kommande, dras snart, betald och försenad, plus fyra summor – köp hittills, räkningar betalda, kvar att betala och totalt planerat.','Konton visar nu saldot efter månadens kvarvarande dragningar.','Skulder heter På väg mot noll. Varje skuld har ett eget kort med startbelopp, betalat av, betald ränta, ränta denna månad och beräknat slutdatum.','En betalning delas upp i vad som går till skulden och vad som går till ränta.','Beslut och Perspektiv ger nu en bedömning: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning – plus förslag på bättre tajming.','Snabbknappen finns även som flytande knapp längst ner, alltid nära tummen.']},{v:'8.0.0',d:'2026-07-19',items:['Snabbknappar, no buy day och kalender med belopp per dag.']},{v:'7.0.0',d:'2026-07-19',items:['Räkningarna, skuldflikar och Magishoppens skuld till dig.']},{v:'6.0.0',d:'2026-07-19',items:['Ekonomiskt väder, fyra siffror, AI-coach, frihetspoäng och simulator.']},{v:'5.0.0',d:'2026-07-19',items:['Beslutsmotorn och Frihetsresan.']},{v:'4.0.0',d:'2026-07-19',items:['Trygg månadsinkomst, Levnadskonto, tre mål och mikrolärandet.']},{v:'3.0.0',d:'2026-07-19',items:['Nedräkningskalender, dashboard, konton och budget per månad.']},{v:'2.0.0',d:'2026-07-19',items:['Frihetsindex 0–100, prognos och milstolpar.']},{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.']}]};
 
 // ── State ──────────────────────────────────────────────
 var KEY='frihet_v1';
@@ -2623,12 +2872,15 @@ function renderPlan(){
   renderPottar();
   renderSasongVal();
   document.getElementById('e-inkomst').value=e.inkomst||'';
+  document.getElementById('m-extra').value=extraSumma(valdPlanManad,'mottagen')+extraSumma(valdPlanManad,'bekraftad')||'';
   document.getElementById('e-fasta').value=e.fasta||'';
   document.getElementById('e-minimi').value=e.minimi||'';
   document.getElementById('e-butik').value=e.butik||'';
   document.getElementById('e-vardag').value=e.vardag||'';
   document.getElementById('e-sparande').value=e.sparande||'';
   document.getElementById('e-frihet').value=e.frihet||'';
+  document.getElementById('forslag-rubrik').textContent='Fördelning för '+fmtManad(valdPlanManad);
+  raknaKvar();
   document.getElementById('e-buffert').value=e.buffert||'';
   document.getElementById('e-buffertmal').value=e.buffertmal||'';
   document.getElementById('e-elref').value=e.elref||'';
@@ -3069,6 +3321,81 @@ function visaKonsekvens(){
   if(over>0&&num(e.sparande)>0)txt+='<br><br>Ett sätt: pausa buffertinsättningen ('+kr(e.sparande)+') den här månaden. Bufferten blir klar '+manaderText(1)+' senare, men ingenting hamnar på kredit.';
   if(!over&&!brist)txt+='<br>Det ryms fortfarande i planen.';
   toast(txt);
+}
+
+// ── Förslag på månadens fördelning ────────────────────
+function rakningarSumma(m,agare){
+  var s2=0;
+  for(var i=0;i<state.rakningar.length;i++){var r=state.rakningar[i];
+    if(r.borttagen||!rakGaller(r,m))continue;
+    var ag=agareAv(r);
+    if(agare==='butik'&&ag!=='butik')continue;
+    if(agare==='privat'&&ag==='butik')continue;
+    s2+=rakBelopp(r,m);}
+  return s2;
+}
+function pottarManad(niva,m){
+  var ar=parseInt(m.slice(0,4),10),mi=parseInt(m.slice(5,7),10)-1,s2=0;
+  var l=pottar(niva);
+  for(var i=0;i<l.length;i++)s2+=pottBelopp(l[i],mi);
+  return s2;
+}
+function foreslaPlan(m,inkomst,extra){
+  var tot=num(inkomst)+num(extra),e=state.eko;
+  var fasta=Math.round(rakningarSumma(m,'privat'));
+  var minimi=Math.round(skuldManad('privatgrupp'));
+  var butik=Math.round(rakningarSumma(m,'butik'));
+  var levnad=Math.round(pottarManad('livsstil',m)+pottarManad('projekt',m));
+  var kvar=tot-fasta-minimi-butik-levnad;
+  var buffertKvar=Math.max(0,num(e.buffertmal)-num(e.buffert));
+  var sparande=0,frihet=0;
+  if(kvar>0){
+    if(buffertKvar>0)sparande=Math.min(buffertKvar,Math.round(kvar*0.6/100)*100);
+    else sparande=Math.round(kvar*0.2/100)*100;
+    var rest=kvar-sparande;
+    frihet=Math.max(0,Math.round(rest*0.5/100)*100);
+  }
+  var motiv={
+    fasta:fasta?('Summan av dina räkningar i '+fmtManad(m)+'.'):'Inga räkningar inlagda för den här månaden.',
+    minimi:minimi?('Vad du betalar per månad på dina skulder.'):'Inga skulder med månadsbetalning.',
+    butik:butik?('Magishoppens räkningar den här månaden.'):'Inga butiksräkningar den här månaden.',
+    vardag:levnad?('En månads andel av dina årspottar och projekt, enligt säsongen.'):'Lägg till livsstilspottar så räknas det ut automatiskt.',
+    sparande:buffertKvar>0?('Bufferten saknar '+kr(buffertKvar)+' till målet. Sextio procent av det som blir över.'):'Bufferten är full – tjugo procent av överskottet ändå.',
+    frihet:'Hälften av det som är kvar efter bufferten.'
+  };
+  return {inkomst:num(inkomst),extra:num(extra),fasta:fasta,minimi:minimi,butik:butik,vardag:levnad,
+    sparande:sparande,frihet:frihet,motiv:motiv,tot:tot};
+}
+function skrivForslag(f){
+  document.getElementById('e-fasta').value=f.fasta||'';
+  document.getElementById('e-minimi').value=f.minimi||'';
+  document.getElementById('e-butik').value=f.butik||'';
+  document.getElementById('e-vardag').value=f.vardag||'';
+  document.getElementById('e-sparande').value=f.sparande||'';
+  document.getElementById('e-frihet').value=f.frihet||'';
+  if(f.motiv){
+    document.getElementById('hint-fasta').textContent=f.motiv.fasta;
+    document.getElementById('hint-minimi').textContent=f.motiv.minimi;
+    document.getElementById('hint-butik').textContent=f.motiv.butik;
+    document.getElementById('hint-vardag').textContent=f.motiv.vardag;
+    document.getElementById('hint-sparande').textContent=f.motiv.sparande;
+    document.getElementById('hint-frihet').textContent=f.motiv.frihet;
+  }
+  raknaKvar();
+}
+function raknaKvar(){
+  var ink=num(document.getElementById('e-inkomst').value)+num(document.getElementById('m-extra').value);
+  var ut=0;
+  ['e-fasta','e-minimi','e-butik','e-vardag','e-sparande','e-frihet'].forEach(function(id){
+    ut+=num(document.getElementById(id).value);});
+  var kvar=ink-ut;
+  var el=document.getElementById('forslag-kvar');
+  el.textContent=kr(kvar);
+  el.className=kvar<0?'neg':'';
+  var not=document.getElementById('forslag-not');
+  if(!ink)not.textContent='Skriv in månadens inkomst så räknar jag.';
+  else if(kvar<0)not.textContent='Fördelningen är '+kr(-kvar)+' större än inkomsten. Sänk något – frihetskontot först, sedan bufferten.';
+  else not.textContent='Av '+kr(ink)+' är '+kr(ut)+' lovat bort. Det här är siffran din hjärna behöver se.';
 }
 
 // ── Livsplan: årspottar, projekt och säsong ───────────
@@ -4764,7 +5091,8 @@ document.getElementById('plan-save').onclick=function(){
   sparaPlanFor(valdPlanManad,o);
   if(!num(state.eko.lonedag))state.eko.lonedag=25;
   persist();snapshot();renderPlan();
-  var t=num(o.inkomst)-(num(o.fasta)+num(o.minimi)+num(o.butik)+num(o.vardag)+num(o.sparande)+num(o.frihet));
+  var ex2=num(document.getElementById('m-extra').value);
+  var t=num(o.inkomst)+ex2-(num(o.fasta)+num(o.minimi)+num(o.butik)+num(o.vardag)+num(o.sparande)+num(o.frihet));
   toast('Planen för ' + fmtManad(valdPlanManad) + ' är sparad. Tryggt att använda: ' + kr(t) + '.');
 };
 document.getElementById('pl-manad').onchange=function(){valdPlanManad=this.value||todayKey().slice(0,7);renderPlan();};
@@ -5261,6 +5589,49 @@ document.getElementById('sa-save').onclick=function(){
 };
 document.getElementById('lp-prev').onclick=function(){visatLpAr--;renderPottar();};
 document.getElementById('lp-next').onclick=function(){visatLpAr++;renderPottar();};
+
+document.getElementById('forslag-btn').onclick=function(){
+  var ink=num(document.getElementById('e-inkomst').value);
+  if(!ink){toast('Skriv in månadens inkomst först.');return;}
+  var extra=num(document.getElementById('m-extra').value);
+  var f=foreslaPlan(valdPlanManad,ink,extra);
+  skrivForslag(f);
+  toast('Förslag för ' + fmtManad(valdPlanManad) + '.<br>Tryggt att använda: ' + kr(f.tot-f.fasta-f.minimi-f.butik-f.vardag-f.sparande-f.frihet) + '.');
+};
+['e-inkomst','m-extra','e-fasta','e-minimi','e-butik','e-vardag','e-sparande','e-frihet'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el)el.oninput=raknaKvar;
+});
+document.getElementById('plan-rensa').onclick=function(){
+  ['e-fasta','e-minimi','e-butik','e-vardag','e-sparande','e-frihet','m-extra'].forEach(function(id){
+    document.getElementById(id).value='';});
+  ['hint-fasta','hint-minimi','hint-butik','hint-vardag','hint-sparande','hint-frihet'].forEach(function(id){
+    document.getElementById(id).textContent='';});
+  raknaKvar();toast('Fälten är rensade. Inget är sparat än.');
+};
+document.getElementById('rens-manad').onclick=function(){
+  if(!confirm('Ta bort den sparade planen för ' + fmtManad(valdPlanManad) + '?'))return;
+  delete state.planer[valdPlanManad];
+  persist();renderPlan();toast('Planen för ' + fmtManad(valdPlanManad) + ' är borta.');
+};
+document.getElementById('rens-alla').onclick=function(){
+  if(!confirm('Ta bort alla sparade månadsplaner? Årspottar och projekt påverkas inte.'))return;
+  state.planer={};
+  persist();renderPlan();toast('Alla månadsplaner är borta.');
+};
+document.getElementById('rens-pottar').onclick=function(){
+  if(!confirm('Ta bort alla årspottar och projekt? Dina köp och kategorier finns kvar.'))return;
+  state.pottar=[];
+  persist();renderPlan();toast('Livsplanens pottar är borta.');
+};
+document.getElementById('rens-allt').onclick=function(){
+  if(!confirm('Rensa hela Livsplanen: månadsplaner, årspottar, projekt och budgetposter?'))return;
+  if(!confirm('Helt säker? Köp, räkningar, konton och skulder rörs inte.'))return;
+  state.planer={};state.pottar=[];state.budget={};state.laste={};
+  state.eko=Object.assign({},EKO0,{buffert:num(state.eko.buffert),buffertmal:num(state.eko.buffertmal),
+    tillgangar:num(state.eko.tillgangar),elref:num(state.eko.elref),lonedag:num(state.eko.lonedag)||25});
+  persist();snapshot();renderPlan();toast('Livsplanen är nollställd. Allt annat är kvar.');
+};
 
 // ── Start ──────────────────────────────────────────────
 loadSync();
