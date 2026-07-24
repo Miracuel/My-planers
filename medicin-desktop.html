@@ -82,6 +82,22 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .med-row .top b{font-family:Georgia,serif;font-weight:400;font-size:15px;flex:1}
 .med-row .meta{font-size:11px;color:var(--muted);margin:5px 0 0 22px;line-height:1.6}
 .med-actions{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 0 22px}
+
+/* Dagens rutin — fast högst upp i Nu-vyn */
+.checklist{position:sticky;top:8px;z-index:6;border:1px solid var(--accent-soft)}
+.chk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.chk-title{font-family:Georgia,serif;font-size:15px;color:var(--ink)}
+.chk-count{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:12px;padding:3px 9px}
+.chk-count.all{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.chk-rows{display:flex;flex-direction:column;gap:6px}
+.chk-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:14px;color:var(--ink);cursor:pointer;transition:background .2s}
+.chk-row:active{background:var(--accent-soft)}
+.chk-row.done .chk-name{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.chk-box{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0}
+.chk-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chk-n{font-size:11px;color:var(--muted)}
+.chk-praise{margin-top:9px;text-align:center;font-size:13px;color:var(--accent);background:var(--accent-soft);border-radius:12px;padding:8px 10px}
+.chk-praise.all{font-weight:600}
 .icon-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px}
 
 /* Historik */
@@ -410,6 +426,8 @@ h1.brand{display:none}
   <input type="number" id="m-clear" min="0" step="0.5" placeholder="8">
   <label>Max antal doser per dygn <span class="unit">(0 = ingen gräns)</span></label>
   <input type="number" id="m-max" min="0" step="1" placeholder="0">
+  <label>Daglig rutin <span class="unit">(antal per dag, 0 = ingen rutin)</span></label>
+  <input type="number" id="m-daily" min="0" step="1" placeholder="0">
   <label>Spåra symtom <span class="unit">(valfritt, t.ex. Smärta)</span></label>
   <input type="text" id="m-track" placeholder="Lämna tomt för att inte spåra">
   <div class="field-row">
@@ -733,6 +751,7 @@ function feltRowHtml(dose){
   else h+='<button class="btn felt-btn" data-felt="'+dose.id+'|onset">✨ Känns som den verkar nu</button>';
   if(dose.feltOut)h+='<div class="felt-done">⊖ Kändes ur '+fmtClock(dose.feltOut)+' <button class="felt-clear" data-felt-clear="'+dose.id+'|out">rensa</button></div>';
   else h+='<button class="btn felt-btn" data-felt="'+dose.id+'|out">⊖ Känns som den gått ur</button>';
+  h+='<button class="btn felt-btn" data-quickeff-now="'+dose.medId+'">&#9888; Logga biverkning</button>';
   h+='</div>';
   return h;
 }
@@ -745,6 +764,7 @@ function featuredCardHtml(med){
     html+=stockLineHtml(med);
     html+='<div class="no-dose">Ingen dos tagen ännu</div>';
     html+='<button class="btn fill wide" data-take="'+med.id+'">Ta dos</button>';
+    html+='<div class="felt-row"><button class="btn felt-btn" data-quickeff-now="'+med.id+'">&#9888; Logga biverkning</button></div>';
     html+='</div>';
     return html;
   }
@@ -793,6 +813,52 @@ function compactRowHtml(med){
   else{dotColor=st.info.color;word=st.info.label;timeTxt=st.ph.target!==null?fmtDur(st.ph.target-st.eSec)+' kvar':'';}
   return '<div class="cc-row" data-feature="'+med.id+'"><span class="med-dot" style="background:'+med.color+'"></span><span class="cc-name">'+esc(med.name)+'</span><span class="cc-status"><span class="cc-dot" style="background:'+dotColor+'"></span>'+word+'</span>'+(timeTxt?'<span class="cc-time">'+timeTxt+'</span>':'')+'</div>';
 }
+// ── Dagens rutin (checklista) ─────────────────────────
+var PRAISE=['Bra jobbat! 🌿','Fint — en sak avklarad ✨','Snyggt gjort! 💚','Där satt den 🙌','Bra där! ✓'];
+var praiseMsg='',praiseUntil=0;
+function dailyMeds(){return state.meds.filter(function(m){return m.dailyTarget&&m.dailyTarget>0;});}
+function dailyDone(med){return dosesOnDay(med.id,midnight(Date.now()))>=(med.dailyTarget||1);}
+function allDailyDone(){var l=dailyMeds();if(!l.length)return false;for(var i=0;i<l.length;i++)if(!dailyDone(l[i]))return false;return true;}
+function checklistHtml(){
+  var list=dailyMeds();if(!list.length)return '';
+  var dayStart=midnight(Date.now());var done=0;
+  var rows='';
+  for(var i=0;i<list.length;i++){
+    var m=list[i];var target=m.dailyTarget||1;var n=dosesOnDay(m.id,dayStart);var ok=n>=target;
+    if(ok)done++;
+    rows+='<button class="chk-row'+(ok?' done':'')+'" data-chk="'+m.id+'"><span class="chk-box" style="'+(ok?'background:'+m.color+';border-color:'+m.color:'')+'">'+(ok?'&#10003;':'')+'</span><span class="chk-name">'+esc(m.name)+'</span>'+(target>1?'<span class="chk-n">'+n+'/'+target+'</span>':'')+'</button>';
+  }
+  var allOk=done===list.length;
+  var h='<div class="card-panel checklist">';
+  h+='<div class="chk-head"><span class="chk-title">Dagens rutin</span><span class="chk-count'+(allOk?' all':'')+'">'+done+' av '+list.length+' klara</span></div>';
+  h+='<div class="chk-rows">'+rows+'</div>';
+  if(Date.now()<praiseUntil&&praiseMsg)h+='<div class="chk-praise">'+esc(praiseMsg)+'</div>';
+  else if(allOk)h+='<div class="chk-praise all">Allt klart för idag 🌿</div>';
+  h+='</div>';
+  return h;
+}
+function tickDaily(medId){
+  var med=medName(medId);if(!med)return;
+  var dayStart=midnight(Date.now());var target=med.dailyTarget||1;
+  var n=dosesOnDay(med.id,dayStart);
+  if(n>=target){
+    var last=null;
+    for(var i=0;i<state.doses.length;i++){var d=state.doses[i];if(d.medId===medId&&d.t0>=dayStart&&(!last||d.t0>last.t0))last=d;}
+    if(last){
+      state.doses=state.doses.filter(function(x){return x.id!==last.id;});
+      if(hasStock(med))med.stock=med.stock+1;
+    }
+    praiseMsg='';praiseUntil=0;
+  }else{
+    state.doses.push({id:Date.now()+Math.floor(Math.random()*1000),medId:medId,t0:Date.now(),before:null,after:null,rating:null,ratedAt:null,feltOnset:null,feltOut:null});
+    if(hasStock(med)&&med.stock>0)med.stock=Math.max(0,med.stock-1);
+    praiseMsg=allDailyDone()?'Allt klart för idag! 🌿 Bra jobbat.':PRAISE[Math.floor(Math.random()*PRAISE.length)];
+    praiseUntil=Date.now()+3000;
+    if(navigator.vibrate)navigator.vibrate(40);
+  }
+  persist();renderNow();renderLog();renderStats();
+}
+
 function renderNow(){
   var el=document.getElementById('now-list');
   if(!state.meds.length){
@@ -801,7 +867,7 @@ function renderNow(){
   }
   var fid=pickFeatured();var fmed=null;
   for(var i=0;i<state.meds.length;i++)if(state.meds[i].id===fid)fmed=state.meds[i];
-  var html='';
+  var html=checklistHtml();
   if(fmed)html+=featuredCardHtml(fmed);
   var others=state.meds.filter(function(m){return m.id!==fid;});
   if(others.length){
@@ -811,6 +877,8 @@ function renderNow(){
     html+='</div>';
   }
   el.innerHTML=html;
+  var ck=el.querySelectorAll('[data-chk]');
+  for(var k=0;k<ck.length;k++)ck[k].onclick=function(){tickDaily(+this.getAttribute('data-chk'));};
   var tk=el.querySelectorAll('[data-take]');
   for(var b=0;b<tk.length;b++)tk[b].onclick=function(){takeDose(+this.getAttribute('data-take'));};
   var fe=el.querySelectorAll('[data-feature]');
@@ -825,6 +893,8 @@ function renderNow(){
   for(var fz=0;fz<fl.length;fz++)fl[fz].onclick=function(){var p=this.getAttribute('data-felt').split('|');logFelt(+p[0],p[1]);};
   var fcl=el.querySelectorAll('[data-felt-clear]');
   for(var fk=0;fk<fcl.length;fk++)fcl[fk].onclick=function(){var p=this.getAttribute('data-felt-clear').split('|');clearFelt(+p[0],p[1]);};
+  var qn=el.querySelectorAll('[data-quickeff-now]');
+  for(var qz=0;qz<qn.length;qz++)qn[qz].onclick=function(){openEffSheet(+this.getAttribute('data-quickeff-now'),midnight(Date.now()));};
 }
 function logFelt(doseId,which){
   for(var i=0;i<state.doses.length;i++)if(state.doses[i].id===doseId){
@@ -894,7 +964,7 @@ function renderMeds(){
   for(var i=0;i<state.meds.length;i++){
     var m=state.meds[i];
     html+='<div class="med-row"><div class="top"><span class="med-dot" style="background:'+m.color+'"></span><b>'+esc(m.name)+'</b><button class="icon-btn" data-edit="'+m.id+'">&#9998;</button></div>';
-    html+='<div class="meta">Kommer igång: '+m.onset+' min · Börjar gå ur: '+m.wear+' h · Ny dos: '+m.next+' h · Ur kroppen: '+m.clear+' h'+((m.maxPerDay&&m.maxPerDay>0)?' · Max '+m.maxPerDay+'/dygn':'')+(m.track?' · Spårar: '+esc(m.track):'')+(hasStock(m)?' · Lager: '+m.stock:'')+'</div>';
+    html+='<div class="meta">Kommer igång: '+m.onset+' min · Börjar gå ur: '+m.wear+' h · Ny dos: '+m.next+' h · Ur kroppen: '+m.clear+' h'+((m.maxPerDay&&m.maxPerDay>0)?' · Max '+m.maxPerDay+'/dygn':'')+((m.dailyTarget&&m.dailyTarget>0)?' · Daglig rutin: '+m.dailyTarget+'/dag':'')+(m.track?' · Spårar: '+esc(m.track):'')+(hasStock(m)?' · Lager: '+m.stock:'')+'</div>';
     html+='<div class="med-actions"><button class="btn ghost" data-quickeff="'+m.id+'">+ Biverkning</button><button class="btn ghost" data-noeffect="'+m.id+'">Märker ingen effekt</button></div>';
     html+='</div>';
   }
@@ -928,6 +998,7 @@ function openMedSheet(id){
     document.getElementById('m-next').value=m.next;
     document.getElementById('m-clear').value=m.clear;
     document.getElementById('m-max').value=m.maxPerDay||0;
+    document.getElementById('m-daily').value=m.dailyTarget||0;
     document.getElementById('m-track').value=m.track||'';
     document.getElementById('m-stock').value=(m.stock!=null&&m.stock!=='')?m.stock:'';
     document.getElementById('m-low').value=m.lowDays||7;
@@ -940,6 +1011,7 @@ function openMedSheet(id){
     document.getElementById('m-next').value='6';
     document.getElementById('m-clear').value='8';
     document.getElementById('m-max').value='0';
+    document.getElementById('m-daily').value='0';
     document.getElementById('m-track').value='';
     document.getElementById('m-stock').value='';
     document.getElementById('m-low').value='7';
@@ -953,7 +1025,7 @@ document.getElementById('m-save').onclick=function(){
   if(!name){alert('Ge medicinen ett namn.');return;}
   var num=function(id,def){var v=parseFloat(document.getElementById(id).value);return isNaN(v)||v<0?def:v;};
   var stockRaw=document.getElementById('m-stock').value.trim();
-  var rec={name:name,color:pickColor,onset:num('m-onset',30),wear:num('m-wear',4),next:num('m-next',6),clear:num('m-clear',8),maxPerDay:Math.round(num('m-max',0)),track:document.getElementById('m-track').value.trim(),stock:(stockRaw===''?null:Math.round(num('m-stock',0))),lowDays:Math.round(num('m-low',7))};
+  var rec={name:name,color:pickColor,onset:num('m-onset',30),wear:num('m-wear',4),next:num('m-next',6),clear:num('m-clear',8),maxPerDay:Math.round(num('m-max',0)),dailyTarget:Math.round(num('m-daily',0)),track:document.getElementById('m-track').value.trim(),stock:(stockRaw===''?null:Math.round(num('m-stock',0))),lowDays:Math.round(num('m-low',7))};
   if(editId){
     for(var i=0;i<state.meds.length;i++)if(state.meds[i].id===editId)Object.assign(state.meds[i],rec);
   }else{
@@ -1357,12 +1429,13 @@ document.getElementById('ai-key-clear').onclick=function(){
 
 // ── Nyheter & funktioner ──────────────────────────────
 var CHANGELOG={
-  appId:'medicin',version:'2.3.0',updated:'2026-06-18',
+  appId:'medicin',version:'2.5.0',updated:'2026-06-18',
   tagline:'Se hur medicinen verkar, om den hjälper, och håll koll på lager och mönster.',
   description:'Medicinkollen är ett minnesstöd som visar i realtid hur din medicin verkar, låter dig skatta om och hur mycket den hjälpte, följa symtom före och efter dos, hålla koll på medicinlagret och se mönster över tid. Allt sparas på din enhet och kan synkas mellan telefon och dator via ditt eget privata GitHub-repo. Medicinkollen ersätter inte ordination eller bipacksedel.',
   audience:'Dig som tar medicin med bestämda tidsintervall och vill ha ett enkelt, privat verktyg för dos, effekt och uppföljning — inte minst inför ett vårdbesök.',
   functions:[
     'Lugnare Nu-sida: ett stort aktivt kort + kompakta kort för övriga mediciner',
+    'Dagens rutin: fast checklista högst upp för dagliga mediciner (p-piller, vitaminer)',
     'Snabbknappar: "Känns som den verkar nu" och "Känns som den gått ur" som loggar tiden',
     'Kollapsbar effektskattning ("Har medicinen hjälpt än?")',
     'Effektstatistik per medicin: hur ofta och hur mycket den hjälper',
@@ -1376,6 +1449,8 @@ var CHANGELOG={
     'AI-sammanställning (Claude eller ChatGPT), GitHub-synk och desktop-version'
   ],
   changelog:[
+    {v:'2.5.0',d:'2026-06-18',items:['Knappen "Logga biverkning" finns nu direkt på Nu-kortet, förifylld med den medicin kortet visar']},
+    {v:'2.4.0',d:'2026-06-18',items:['Dagens rutin: fast checklista högst upp i Nu-vyn för dagliga mediciner som p-piller och vitaminer','Ett tryck bockar av, loggar dosen och ger en liten uppmuntran — tryck igen för att ångra','Nytt fält "Daglig rutin" per medicin (antal per dag)']},
     {v:'2.3.0',d:'2026-06-18',items:['Snabbknappar per medicin i Mediciner-fliken: "+ Biverkning" (öppnar förifyllt formulär och sparar) och "Märker ingen effekt" (markerar senaste dosen som ingen effekt)']},
     {v:'2.2.1',d:'2026-06-18',items:['PNG-favicon (inbäddad) i stället för SVG-emoji, samma motiv och accentfärg']},
     {v:'2.2.0',d:'2026-06-18',items:['Synken slår nu ihop data per id (union-merge) i stället för att skriva över, och tar med biverkningar och faktorer','Egen app-ikon (favicon/apple-touch-icon) och manifest med matchande färg','Förinställd Centralen-kortmetadata så appen kan synkas in automatiskt']},
