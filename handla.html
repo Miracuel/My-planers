@@ -203,6 +203,26 @@ html[data-theme=dark] .sp-badge.err{background:#3A2D29;color:#D49C8C}
 .scan-btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:10px;padding:0 14px;cursor:pointer;font-size:17px;flex-shrink:0}
 .scan-btn:active{background:var(--accent-soft)}
 .scan-wide{width:100%;margin-bottom:10px;padding:11px;font-size:14px;font-weight:500;font-family:inherit}
+/* Kvitto */
+.kv-thumb{width:100%;max-height:190px;object-fit:contain;border-radius:12px;border:1px solid var(--line);margin-top:8px;background:var(--panel2)}
+.kv-item{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--panel);border:1px solid var(--line);border-radius:11px;margin-bottom:6px}
+.kv-item.av{opacity:.42}
+.kv-chk{width:24px;height:24px;border-radius:7px;border:2px solid var(--accent);background:transparent;flex-shrink:0;cursor:pointer;color:#fff;font-size:13px;line-height:1;padding:0}
+.kv-chk.on{background:var(--accent);border-color:var(--accent)}
+.kv-item input.kv-namn{flex:1;min-width:0;border:none;background:transparent;padding:4px 2px;font-size:14px;color:var(--ink)}
+.kv-item input.kv-namn:focus{border-bottom:1px solid var(--line)}
+.kv-ant{font-size:12px;color:var(--muted);flex-shrink:0}
+.kv-palist{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--green-soft);color:var(--green);flex-shrink:0}
+.chk{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink);margin:8px 0;cursor:pointer}
+.chk input{width:auto;margin:0}
+.kv-spin{display:inline-block;width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:kvspin .8s linear infinite;vertical-align:-3px;margin-right:7px}
+@keyframes kvspin{to{transform:rotate(360deg)}}
+#kv-textarea{width:100%;min-height:150px;resize:vertical;line-height:1.5}
+.kv-key-prov{display:flex;gap:6px;margin:8px 0}
+.kv-key-prov button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:9px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit}
+.kv-key-prov button.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+details#kv-keybox{margin-top:10px;border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+details#kv-keybox summary{cursor:pointer;font-size:12px;color:var(--muted)}
 html{background:var(--bg)}
 body{transition:background .4s,color .4s}
 html[data-theme=dark]{
@@ -286,6 +306,7 @@ html[data-theme=dark]{
     <button id="seg-svinn">🗑 Svinn</button>
   </div>
   <button class="btn scan-wide" id="scan-skaf">📷 Skanna en vara</button>
+  <button class="btn scan-wide" id="kvitto-open" style="margin-top:-2px">🧾 Läs av kvitto</button>
   <div id="skaf-body"></div>
   <div class="card-panel" id="skaf-add-card" style="margin-top:14px">
     <label>Lägg till direkt i skafferiet</label>
@@ -397,6 +418,47 @@ html[data-theme=dark]{
   <button class="btn ghost" id="sk-tolist" style="width:100%;margin-top:8px">+ Lägg i inköpslistan</button>
 </div>
 
+<div class="sheet" id="kvitto-sheet">
+  <h3>Läs av kvitto</h3>
+  <div class="seg">
+    <button id="kv-foto" class="on">📷 Foto</button>
+    <button id="kv-text">📋 Klistra in text</button>
+  </div>
+
+  <div id="kv-foto-box">
+    <input type="file" id="kv-file" accept="image/*" capture="environment" style="display:none">
+    <button class="btn scan-wide" id="kv-pick">📷 Ta foto / välj bild</button>
+    <img id="kv-thumb" class="kv-thumb" style="display:none" alt="">
+    <button class="btn fill" id="kv-run" style="width:100%;display:none">Läs av kvittot</button>
+    <details id="kv-keybox">
+      <summary>⚙ AI-nyckel (krävs för foto)</summary>
+      <div class="kv-key-prov">
+        <button id="kv-prov-claude" class="on">Claude</button>
+        <button id="kv-prov-openai">ChatGPT</button>
+      </div>
+      <input type="password" id="kv-key" placeholder="API-nyckel" autocomplete="off">
+      <button class="btn ghost" id="kv-key-save" style="width:100%;margin-top:8px">Spara nyckel</button>
+      <div class="soft" style="margin-top:6px">Nyckeln sparas bara lokalt på den här enheten och synkas aldrig. Fotot skickas till vald leverantör för att läsas av.</div>
+    </details>
+  </div>
+
+  <div id="kv-text-box" style="display:none">
+    <textarea id="kv-textarea" placeholder="Klistra in kvittotexten här (t.ex. från ett e-kvitto)…"></textarea>
+    <button class="btn fill" id="kv-parse" style="width:100%;margin-top:8px">Tolka texten</button>
+    <div class="soft" style="margin-top:6px">Funkar helt offline — ingen nyckel behövs.</div>
+  </div>
+
+  <div id="kv-status" class="soft" style="margin-top:10px"></div>
+  <div id="kv-result" style="margin-top:8px"></div>
+
+  <div id="kv-actions" style="display:none">
+    <label class="chk"><input type="checkbox" id="kv-toskaf" checked> Lägg varorna i skafferiet</label>
+    <label class="chk"><input type="checkbox" id="kv-tolist" checked> Bocka av dem i inköpslistan</label>
+    <button class="sheet-close" id="kv-add">Lägg till valda</button>
+  </div>
+  <button class="btn ghost" id="kv-close" style="width:100%;margin-top:8px">Stäng</button>
+</div>
+
 <div class="sheet" id="scan-sheet">
   <h3 id="scan-title">Skanna streckkod</h3>
   <div class="scan-box" id="scan-box"><video id="scan-video" playsinline muted autoplay></video><div class="scan-line"></div></div>
@@ -491,7 +553,7 @@ var APPMETA={
 };
 // ── Inb\u00e4ddad changelog & funktioner ──
 var APPINFO={
-  version:'1.7.0',
+  version:'1.8.0',
   updated:'2026-07-25',
   tagline:'En lugn ink\u00f6pslista som h\u00e5ller ordning p\u00e5 avdelningar, recept och vanor.',
   audience:'F\u00f6r dig som vill ha en snabb, prydlig ink\u00f6pslista som synkar mellan telefon och dator i hush\u00e5llet.',
@@ -537,6 +599,12 @@ var APPINFO={
       'Automatisk uträkning av kalorier, protein, fett och socker per matlåda och per portion.',
       'Redigera namn, datum, antal portioner och innehåll.'
     ]},
+    {area:'Kvitto',items:[
+      'L\u00e4s av ett helt kvitto p\u00e5 en g\u00e5ng \u2014 fota det (via AI med egen nyckel) eller klistra in kvittotext (offline).',
+      'Granska de hittade varorna, avmarkera fel och r\u00e4tta namn innan de l\u00e4ggs till.',
+      'Valen kan p\u00e5 en g\u00e5ng l\u00e4ggas i skafferiet och bockas av i ink\u00f6pslistan.',
+      'AI-nyckeln sparas bara lokalt och synkas aldrig.'
+    ]},
     {area:'Streckkoder',items:[
       'Skanna med kameran fr\u00e5n b\u00e5de ink\u00f6pslistan och skafferiet.',
       'Skanning i listan l\u00e4gger till varan; skanning i skafferiet \u00f6ppnar direkt \u201dAnv\u00e4nd\u201d.',
@@ -563,6 +631,11 @@ var APPINFO={
     ]}
   ],
   changelog:[
+    {v:'1.8.0',d:'2026-07-25',items:[
+      'Kvittol\u00e4sning: fota ett kvitto s\u00e5 l\u00e4ses alla varor av p\u00e5 en g\u00e5ng (via AI med din egen nyckel, som bara sparas lokalt).',
+      'Offline-alternativ: klistra in kvittotext s\u00e5 tolkas varorna utan nyckel.',
+      'Granskningslista d\u00e4r du bockar av fel och r\u00e4ttar namn, och l\u00e4gger allt i skafferiet och/eller bockar av i ink\u00f6pslistan.'
+    ]},
     {v:'1.7.0',d:'2026-07-25',items:[
       'Antal per vara i skafferiet: s\u00e4tt t.ex. 4 st och justera med \u2212/+ direkt p\u00e5 raden.',
       'N\u00e4r antalet r\u00e4knas ned till noll tas varan ur skafferiet och hamnar p\u00e5 ink\u00f6pslistan.'
@@ -1801,6 +1874,204 @@ document.getElementById('sk-scan').onclick=function(){
 var _closeSheetsUtanSkanner=closeSheets;
 closeSheets=function(){stoppaSkanner();_closeSheetsUtanSkanner();};
 
+// ── Kvittoläsning ──────────────────────────────
+var AI_KEY='handlaai_v1';
+var ai={provider:'claude',key:''};
+var kvBild=null,kvittoItems=[],kvLage='foto';
+function loadAi(){try{var s=localStorage.getItem(AI_KEY);if(s){var d=JSON.parse(s);ai.provider=d.provider||'claude';ai.key=d.key||'';}}catch(e){}}
+function saveAi(){try{localStorage.setItem(AI_KEY,JSON.stringify({provider:ai.provider,key:ai.key}));}catch(e){}}
+function aiOn(){return !!ai.key;}
+function kvStatus(html){var e=document.getElementById('kv-status');if(e)e.innerHTML=html||'';}
+
+var KV_PROMPT='Här är ett foto av ett svenskt matkvitto. Extrahera varje köpt vara. Svara ENDAST med en giltig JSON-array och inget annat, på formen [{"namn":"Mellanmjölk","antal":1}]. Använd rena, läsbara varunamn på svenska (ingen artikelkod). Sätt antal till hur många av varan som köpts (default 1). Hoppa över totalsummor, moms, rabatter, pant, betalning och butiksinfo.';
+
+function chkResp(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+function laesKvittoAI(dataUri){
+  var b64=dataUri.split(',')[1];
+  if(ai.provider==='openai'){
+    return fetch('https://api.openai.com/v1/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+ai.key},
+      body:JSON.stringify({model:'gpt-4o-mini',max_tokens:1500,messages:[{role:'user',content:[{type:'text',text:KV_PROMPT},{type:'image_url',image_url:{url:dataUri}}]}]})})
+      .then(chkResp).then(function(j){return j.choices[0].message.content;});
+  }
+  return fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':ai.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:KV_PROMPT}]}]})})
+    .then(chkResp).then(function(j){return j.content[0].text;});
+}
+function parseJSONArr(text){
+  var bt=String.fromCharCode(96);
+  var t=String(text||'').split(bt).join('').trim();
+  var a=t.indexOf('['),b=t.lastIndexOf(']');
+  if(a>=0&&b>a)t=t.slice(a,b+1);
+  var arr=JSON.parse(t);
+  if(!Array.isArray(arr))return [];
+  return arr.map(function(o){return {namn:String((o&&(o.namn||o.name))||'').trim(),antal:parseInt((o&&o.antal)||1,10)||1};}).filter(function(o){return o.namn;});
+}
+
+function parseKvittoText(text){
+  var rader=String(text||'').split(/\r?\n/),ut=[];
+  var skip=/(tot(al|alt)|moms|summa|att betala|^betala|kontant|\bkort\b|bankkort|kreditkort|v[aä]xel|mottaget|[aå]terb[aä]ring|bonus|medlem|\bspara\b|kvitto|org\.?nr|\btel\b|telefon|datum|kassa|kass[oö]r|\bbutik|\bmvh\b|\btack\b|[oö]ppet|adress|kortk[oö]p|avrund|delsumma|kampanj)/i;
+  rader.forEach(function(rad){
+    var r=rad.trim();
+    if(r.length<3)return;
+    if(skip.test(r))return;
+    var m=r.match(/(-?\d{1,4}[.,]\d{2})\s*(kr)?\.?\s*\**\s*$/i);
+    if(!m)return;
+    if(m[1].charAt(0)==='-')return;
+    var namn=r.slice(0,m.index),antal=1;
+    var am=r.match(/\b(\d{1,2})\s*(st|x)\b/i);
+    if(am)antal=parseInt(am[1],10)||1;
+    namn=namn.replace(/\d+[.,]?\d*\s*(kg|g|st|l|dl|ml|pkt)\b.*$/i,' ');
+    namn=namn.replace(/\bx\b.*$/i,' ').replace(/kr\/kg.*$/i,' ');
+    namn=namn.replace(/[*=_]{2,}/g,' ').replace(/\s{2,}/g,' ').trim();
+    namn=namn.replace(/^[-\d\s.,:]+/,'').trim();
+    var bok=(namn.match(/[a-zA-ZåäöÅÄÖ]/g)||[]).length;
+    if(bok<2)return;
+    if(namn.length>40)namn=namn.slice(0,40).trim();
+    ut.push({namn:namn,antal:antal});
+  });
+  return ut;
+}
+
+function matchaListrad(namn){
+  var n=namn.toLowerCase();
+  return state.items.filter(function(i){
+    if(i.bought)return false;
+    var nm=i.name.toLowerCase();
+    return nm===n||nm.indexOf(n)>=0||n.indexOf(nm)>=0;
+  });
+}
+function renderKvittoResult(items){
+  kvittoItems=items.map(function(o){return {namn:o.namn,antal:o.antal||1,inkl:true};});
+  var el=document.getElementById('kv-result');
+  if(!kvittoItems.length){
+    el.innerHTML='<div class="empty-msg">Hittade inga varor. Prova ett tydligare foto eller klistra in texten.</div>';
+    document.getElementById('kv-actions').style.display='none';
+    return;
+  }
+  var h='<div class="grp-title">Hittade '+kvittoItems.length+' varor — avmarkera det som inte ska med</div>';
+  kvittoItems.forEach(function(it,idx){
+    var pa=matchaListrad(it.namn).length?'<span class="kv-palist">på listan</span>':'';
+    h+='<div class="kv-item" data-row="'+idx+'">'
+      +'<button class="kv-chk on" data-toggle="'+idx+'">✓</button>'
+      +'<input class="kv-namn" data-namn="'+idx+'" value="'+esc(it.namn)+'">'
+      +pa
+      +(it.antal>1?'<span class="kv-ant">×'+it.antal+'</span>':'')
+      +'</div>';
+  });
+  el.innerHTML=h;
+  var tg=el.querySelectorAll('[data-toggle]');
+  for(var i=0;i<tg.length;i++){tg[i].onclick=function(){
+    var ix=+this.dataset.toggle;kvittoItems[ix].inkl=!kvittoItems[ix].inkl;
+    this.className='kv-chk'+(kvittoItems[ix].inkl?' on':'');this.textContent=kvittoItems[ix].inkl?'✓':'';
+    this.parentNode.className='kv-item'+(kvittoItems[ix].inkl?'':' av');
+  };}
+  var nm=el.querySelectorAll('[data-namn]');
+  for(var j=0;j<nm.length;j++){nm[j].oninput=function(){kvittoItems[+this.dataset.namn].namn=this.value;};}
+  document.getElementById('kv-actions').style.display='block';
+}
+
+function kvSattLage(l){
+  kvLage=l;
+  document.getElementById('kv-foto').className=(l==='foto')?'on':'';
+  document.getElementById('kv-text').className=(l==='text')?'on':'';
+  document.getElementById('kv-foto-box').style.display=(l==='foto')?'block':'none';
+  document.getElementById('kv-text-box').style.display=(l==='text')?'block':'none';
+}
+function oppnaKvitto(){
+  kvBild=null;kvittoItems=[];
+  document.getElementById('kv-thumb').style.display='none';
+  document.getElementById('kv-run').style.display='none';
+  document.getElementById('kv-result').innerHTML='';
+  document.getElementById('kv-actions').style.display='none';
+  document.getElementById('kv-textarea').value='';
+  kvStatus('');
+  kvSattLage('foto');
+  document.getElementById('kv-prov-claude').className=(ai.provider==='claude')?'on':'';
+  document.getElementById('kv-prov-openai').className=(ai.provider==='openai')?'on':'';
+  document.getElementById('kv-key').value=ai.key;
+  openSheet('kvitto-sheet');
+}
+function bildTillDataUri(file,cb){
+  var img=new Image();
+  img.onload=function(){
+    var max=1600,w=img.width,h=img.height;
+    if(w>=h&&w>max){h=Math.round(h*max/w);w=max;}
+    else if(h>w&&h>max){w=Math.round(w*max/h);h=max;}
+    var c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    try{cb(c.toDataURL('image/jpeg',0.72));}catch(e){cb(null);}
+  };
+  img.onerror=function(){cb(null);};
+  var fr=new FileReader();fr.onload=function(){img.src=fr.result;};fr.onerror=function(){cb(null);};
+  fr.readAsDataURL(file);
+}
+
+document.getElementById('kvitto-open').onclick=oppnaKvitto;
+document.getElementById('kv-close').onclick=function(){closeSheets();};
+document.getElementById('kv-foto').onclick=function(){kvSattLage('foto');};
+document.getElementById('kv-text').onclick=function(){kvSattLage('text');};
+document.getElementById('kv-prov-claude').onclick=function(){ai.provider='claude';this.className='on';document.getElementById('kv-prov-openai').className='';};
+document.getElementById('kv-prov-openai').onclick=function(){ai.provider='openai';this.className='on';document.getElementById('kv-prov-claude').className='';};
+document.getElementById('kv-key-save').onclick=function(){ai.key=document.getElementById('kv-key').value.trim();saveAi();kvStatus(ai.key?'✓ Nyckel sparad.':'Nyckeln rensad.');};
+document.getElementById('kv-pick').onclick=function(){document.getElementById('kv-file').click();};
+document.getElementById('kv-file').onchange=function(e){
+  var f=e.target.files&&e.target.files[0];if(!f)return;
+  kvStatus('Förbereder bild…');
+  bildTillDataUri(f,function(uri){
+    if(!uri){kvStatus('Kunde inte läsa bilden.');return;}
+    kvBild=uri;
+    var t=document.getElementById('kv-thumb');t.src=uri;t.style.display='block';
+    document.getElementById('kv-run').style.display='block';
+    kvStatus('');
+  });
+  e.target.value='';
+};
+document.getElementById('kv-run').onclick=function(){
+  if(!kvBild){kvStatus('Välj en bild först.');return;}
+  if(!aiOn()){kvStatus('Lägg in en API-nyckel under ⚙ för fotoavläsning — eller använd ”Klistra in text” som funkar utan nyckel.');var kb=document.getElementById('kv-keybox');if(kb)kb.open=true;return;}
+  kvStatus('<span class="kv-spin"></span>Läser av kvittot…');
+  document.getElementById('kv-result').innerHTML='';
+  document.getElementById('kv-actions').style.display='none';
+  laesKvittoAI(kvBild).then(function(text){
+    var items;
+    try{items=parseJSONArr(text);}catch(e){kvStatus('Kunde inte tolka svaret. Försök igen eller använd textläget.');return;}
+    kvStatus('');renderKvittoResult(items);
+  }).catch(function(err){
+    var m=String(err&&err.message||err);
+    kvStatus('Fel vid avläsning: '+m+'. Kontrollera nyckeln, eller använd textläget.');
+  });
+};
+document.getElementById('kv-parse').onclick=function(){
+  var txt=document.getElementById('kv-textarea').value;
+  if(!txt.trim()){kvStatus('Klistra in kvittotexten först.');return;}
+  var items=parseKvittoText(txt);
+  kvStatus('');renderKvittoResult(items);
+};
+document.getElementById('kv-add').onclick=function(){
+  var toskaf=document.getElementById('kv-toskaf').checked;
+  var tolist=document.getElementById('kv-tolist').checked;
+  var nu=todayKey(),n=0;
+  kvittoItems.forEach(function(it){
+    if(!it.inkl)return;
+    var namn=(it.namn||'').trim();if(!namn)return;
+    if(tolist){
+      matchaListrad(namn).forEach(function(li){
+        state.history[li.name]=(state.history[li.name]||0)+1;
+        state.items=state.items.filter(function(z){return z.id!==li.id;});
+      });
+    }
+    if(toskaf){
+      var x=nySkafVara(namn,'',autoCat(namn),nu);
+      x.antal=it.antal||1;
+      state.skafferi.push(x);
+    }
+    n++;
+  });
+  save();closeSheets();renderAll();
+};
+
 // ── Export / Import ───────────────────────────────────
 document.getElementById('export-btn').onclick=function(){
   var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
@@ -1933,7 +2204,7 @@ function renderAll(){renderList();renderSkafferi();renderMatlada();renderPantry(
 renderAll();
 applyTheme();
 setInterval(applyTheme,60000);
-loadSync();
+loadSync();loadAi();
 if(syncOn()){setBadge('ok','Synkad');ghPull();}else{setBadge('off','Lokal');}
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
 </script>
