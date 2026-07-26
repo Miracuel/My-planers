@@ -42,6 +42,9 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .plan-q{display:flex;align-items:center;gap:10px}
 .plan-q .ic{font-size:20px}
 .plan-q b{font-family:Georgia,serif;font-weight:400;font-size:15px}
+.plan-q .plan-edit{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;align-self:flex-start}
+.body.pl-open{cursor:pointer}
+.sess-row .pl-edit{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
 .plan-q .meta{font-size:12px;color:var(--muted);margin-top:1px}
 .plan-ask .btn{padding:8px 12px}
 .exrow{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:8px;margin-bottom:8px}
@@ -893,14 +896,18 @@ function renderPlanToday(){
   el.innerHTML=items.map(function(it,idx){
     var extra=(it.items&&it.items.length?' · '+it.items.length+' övn':'')+(it.failPlan?' · ⚡':'');
     var sub=(it.recur?'löpande schema':'planerat')+(it.time?' · '+it.time:'')+extra;
+    var editBtn=it.recur?'':'<button class="plan-edit" data-idx="'+idx+'" title="Ändra">✎</button>';
     return '<div class="plan-ask"><div class="plan-q"><span class="ic">'+(it.icon||'•')+'</span>'+
-      '<div><b>'+esc(it.name)+'</b><div class="meta">'+sub+' — har du gjort det?</div></div></div>'+
+      '<div style="flex:1"><b>'+esc(it.name)+'</b><div class="meta">'+sub+' — har du gjort det?</div></div>'+editBtn+'</div>'+
       '<div class="btn-row" style="margin-top:8px"><button class="btn fill" data-idx="'+idx+'" data-y="1">Ja, gjort</button>'+
       '<button class="btn" data-idx="'+idx+'" data-y="0">Nej</button></div></div>';
   }).join('');
   var snapshot=items;
-  el.querySelectorAll('button').forEach(function(b){
+  el.querySelectorAll('.plan-ask .btn-row button').forEach(function(b){
     b.onclick=function(){doPlanned(snapshot[+b.dataset.idx], b.dataset.y==='1');};
+  });
+  el.querySelectorAll('.plan-edit').forEach(function(b){
+    b.onclick=function(){var it=snapshot[+b.dataset.idx];openPlanSheet({date:todayKey(),index:it.i,orig:(state.planned[todayKey()]||[])[it.i]});};
   });
 }
 
@@ -1218,15 +1225,36 @@ function renderPlanTypeOptions(){
   var sel=document.getElementById('pl-type');
   sel.innerHTML=state.passTypes.map(function(t,i){return '<option value="'+i+'">'+t.icon+' '+esc(t.name)+'</option>';}).join('');
 }
-document.getElementById('open-plan').onclick=function(){
+var planEdit=null;
+function selectPlType(name){
+  var sel=document.getElementById('pl-type');var found=-1;
+  state.passTypes.forEach(function(t,i){if(t.name===name)found=i;});
+  if(found>=0){sel.value=String(found);}
+  else{var opt=document.createElement('option');opt.value='custom';opt.textContent=name;sel.appendChild(opt);sel.value='custom';}
+}
+function openPlanSheet(editRef){
+  planEdit=editRef||null;
   renderPlanTypeOptions();
   renderExDatalist();renderTmplOptions('pl-tmpl');
-  document.getElementById('pl-date').value=todayKey();
-  document.getElementById('pl-time').value='';
   document.getElementById('pl-ex-list').innerHTML='';
   resetFail('pl');
+  var h3=document.querySelector('#plan-sheet h3');var saveBtn=document.getElementById('pl-save');
+  if(planEdit&&planEdit.orig){
+    var p=planEdit.orig;
+    selectPlType(p.name);
+    document.getElementById('pl-date').value=planEdit.date;
+    document.getElementById('pl-time').value=p.time||'';
+    (p.items||[]).forEach(function(it){addExRow('pl-ex-list',it);});
+    if(p.failPlan){var o=document.getElementById('pl-fout');o.style.display='block';o.className='ai-out';o.textContent=p.failPlan;}
+    if(h3)h3.textContent='Ändra pass';saveBtn.textContent='Spara ändringar';
+  }else{
+    document.getElementById('pl-date').value=todayKey();
+    document.getElementById('pl-time').value='';
+    if(h3)h3.textContent='Planera ett pass';saveBtn.textContent='Lägg till i planen';
+  }
   openSheet('plan-sheet');
-};
+}
+document.getElementById('open-plan').onclick=function(){openPlanSheet(null);};
 document.getElementById('pl-ex-add').onclick=function(){addExRow('pl-ex-list',null);};
 document.getElementById('pl-tmpl').onchange=function(){
   var t=tmplById(this.value);if(!t)return;
@@ -1235,14 +1263,23 @@ document.getElementById('pl-tmpl').onchange=function(){
 };
 wireFail('pl',function(){return firstRowName('pl-ex-list')||(state.passTypes[+document.getElementById('pl-type').value]||{}).name||'';});
 document.getElementById('pl-save').onclick=function(){
-  var i=+document.getElementById('pl-type').value;
-  var t=state.passTypes[i];if(!t)return;
+  var val=document.getElementById('pl-type').value;
+  var name,icon,min;
+  if(val==='custom'&&planEdit&&planEdit.orig){name=planEdit.orig.name;icon=planEdit.orig.icon;min=planEdit.orig.min;}
+  else{var t=state.passTypes[+val];if(!t)return;name=t.name;icon=t.icon;min=t.min;}
   var date=document.getElementById('pl-date').value||todayKey();
   var time=document.getElementById('pl-time').value;
   var items=collectItems('pl-ex-list');
   var fp=failText('pl');
+  var obj={icon:icon,name:name,min:min,time:time,items:items.length?items:null,failPlan:fp};
+  if(planEdit){
+    var arr=state.planned[planEdit.date]||[];
+    arr.splice(planEdit.index,1);
+    if(!arr.length)delete state.planned[planEdit.date];
+  }
   state.planned[date]=state.planned[date]||[];
-  state.planned[date].push({icon:t.icon,name:t.name,min:t.min,time:time,items:items.length?items:null,failPlan:fp});
+  state.planned[date].push(obj);
+  planEdit=null;
   save();closeSheets();renderPlanList();renderPlanToday();
 };
 function renderPlanList(){
@@ -1253,11 +1290,14 @@ function renderPlanList(){
   keys.forEach(function(k){
     var label=relDateFull(k);
     state.planned[k].forEach(function(p,i){
-      html+='<div class="sess-row"><div class="ic">'+(p.icon||'•')+'</div><div class="body"><b>'+esc(p.name)+'</b><div class="meta">'+label+(p.time?' · '+p.time:'')+'</div></div><button data-k="'+k+'" data-i="'+i+'">×</button></div>';
+      var extra=(p.items&&p.items.length?' · '+p.items.length+' övn':'')+(p.failPlan?' · ⚡':'');
+      html+='<div class="sess-row"><div class="ic">'+(p.icon||'•')+'</div><div class="body pl-open" data-k="'+k+'" data-i="'+i+'"><b>'+esc(p.name)+'</b><div class="meta">'+label+(p.time?' · '+p.time:'')+extra+' · tryck för att öppna</div></div><button class="pl-edit" data-k="'+k+'" data-i="'+i+'" title="Ändra">✎</button><button class="pl-del" data-k="'+k+'" data-i="'+i+'" title="Ta bort">×</button></div>';
     });
   });
   el.innerHTML=html;
-  el.querySelectorAll('button').forEach(function(b){
+  function openRef(b){return {date:b.dataset.k,index:+b.dataset.i,orig:(state.planned[b.dataset.k]||[])[+b.dataset.i]};}
+  el.querySelectorAll('.pl-open,.pl-edit').forEach(function(b){b.onclick=function(){openPlanSheet(openRef(b));};});
+  el.querySelectorAll('.pl-del').forEach(function(b){
     b.onclick=function(){
       var k=b.dataset.k,i=+b.dataset.i;
       state.planned[k].splice(i,1);if(!state.planned[k].length)delete state.planned[k];
@@ -2200,7 +2240,7 @@ document.getElementById('td-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.14.0',
+  version:'1.15.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
@@ -2213,7 +2253,7 @@ var APPINFO={
     'Egna passtyper som snabbval',
     'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
-    'Lös planering framåt, plus löpande schema för återkommande pass (t.ex. gång måndag och lördag)',
+    'Lös planering framåt (öppna, se och redigera ett planerat pass), plus löpande schema för återkommande pass',
     '"Planerat idag"-avstämning med Ja/Nej — Ja loggar passet automatiskt',
     'Flera gym — lägg till, byt mellan och ta bort gym, var och en med egna öppettider och belastningsschema',
     'Zoner per gym: allmänna gymmet och tjejdelen, med separata belastningsscheman',
@@ -2231,6 +2271,11 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.15.0',d:'2026-07-19',items:[
+      'Öppna ett planerat pass för att se detaljerna — tid, övningar med vikt/reps/set och failure-planer.',
+      'Redigera ett planerat pass: ändra tid, dag, övningar och failure-plan och spara — det uppdateras på plats istället för att dubbleras.',
+      'Öppna/ändra från listan under Planera framåt (tryck på passet eller ✎) och direkt från avstämningen på Idag.'
+    ]},
     {v:'1.14.0',d:'2026-07-19',items:[
       'Failure-plan per övning: varje övningsrad (i planering och loggning) har nu en ⚡-knapp som ger uppvärmning + fördelning för just den övningen utifrån topvikten.',
       'Fungerar med AI eller enkelt upplägg, och topvikten förifylls från radens kg.',

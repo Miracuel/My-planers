@@ -191,6 +191,20 @@ h3{font-size:16.5px;margin:0 0 10px}
 ul.tight{margin:2px 0 4px;padding-left:19px}
 ul.tight li{margin-bottom:3px;font-size:13.5px}
 
+/* ── Birthchart ── */
+.h-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.editlink{background:none;border:0;color:var(--accent);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:0}
+.you-house{display:flex;gap:9px;align-items:baseline;padding:8px 2px 2px}
+.you-house .g{font-family:Georgia,serif;font-size:19px;color:var(--accent);width:24px;text-align:center;flex:none}
+.you-house .hn{font-weight:600;font-size:14.5px}
+.you-txt{font-size:12.5px;color:var(--muted);margin:0 0 7px 33px;padding-bottom:7px;border-bottom:1px dashed var(--line)}
+.you-txt.last{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.you-hit{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:10px}
+.you-note{font-size:12px;color:var(--muted);margin-top:9px}
+.p-you{font-size:12px;color:var(--accent);margin-top:4px}
+.chart-sum{display:flex;flex-wrap:wrap;gap:7px}
+.chart-sum .chip{cursor:default}
+
 /* ── Planeter ── */
 .planetrow{margin:0 0 14px}
 .planetrow .chip .g{font-family:Georgia,serif;margin-right:6px}
@@ -233,7 +247,7 @@ ul.tight li{margin-bottom:3px;font-size:13.5px}
 .sheet h3{margin-bottom:14px}
 .f-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;
   letter-spacing:.05em;margin:13px 0 6px}
-input[type=date],textarea{width:100%;border:1px solid var(--line);border-radius:12px;
+input[type=date],textarea,select{width:100%;border:1px solid var(--line);border-radius:12px;
   background:var(--bg);color:var(--ink);font:inherit;padding:11px 12px}
 textarea{min-height:74px;resize:vertical}
 .chiprow{display:flex;flex-wrap:wrap;gap:7px}
@@ -275,6 +289,11 @@ textarea{min-height:74px;resize:vertical}
       <div class="baro-chip" id="baro2"><span class="e">&#128064;</span>Vaksamt läge</div>
       <div class="baro-chip" id="baro3"><span class="e">&#127744;</span>Full beredskap</div>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="h-row"><h3>Så träffar den dig</h3><button class="editlink" onclick="openChart()">Ändra</button></div>
+    <div id="youBox"></div>
   </div>
 
   <div class="card">
@@ -371,6 +390,12 @@ textarea{min-height:74px;resize:vertical}
   </div>
 
   <div class="card">
+    <h3>&#127968; Så funkar husanalysen</h3>
+    <p style="margin:0 0 8px">Appen använder helteckenhus: ditt ascendenttecken är 1:a huset, nästa tecken 2:a huset och så vidare. Retrogradens tecken pekar då ut vilket livsområde som berörs – och går den dessutom över en av dina natala placeringar brukar den kännas extra tydligt.</p>
+    <p class="mut" style="margin:0">Utan ascendent används en soltavla (solens tecken som 1:a hus) – en klassisk metod, men lite grövre.</p>
+  </div>
+
+  <div class="card">
     <h3>&#128172; Ärligt talat</h3>
     <p class="mut" style="margin:0">Astronomiskt påverkar retrograden ingenting här nere, och vetenskapligt stöd saknas. Men som rytm för eftertanke fungerar den fint: tre veckor av backup, dubbelkoll och lägre tempo skadar aldrig.</p>
   </div>
@@ -395,6 +420,11 @@ textarea{min-height:74px;resize:vertical}
       <button class="skin" onclick="setSkin('nebulosa')" data-s="nebulosa"><span class="dot" style="background:#C24F9B"></span>Nebulosa</button>
       <button class="skin" onclick="setSkin('gryning')" data-s="gryning"><span class="dot" style="background:#B9822F"></span>Gryning</button>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="h-row"><h3>Min birthchart</h3><button class="editlink" onclick="openChart()">Ändra</button></div>
+    <div id="chartSummary"></div>
   </div>
 
   <div class="card">
@@ -444,12 +474,33 @@ textarea{min-height:74px;resize:vertical}
   <button class="btn ghost" onclick="closeSheets()">Avbryt</button>
 </div>
 
+<div class="sheet" id="chartSheet">
+  <h3>Min birthchart</h3>
+  <p class="mut small" style="margin:0 0 4px">Välj tecken för dina placeringar. Ascendenten ger exakta hus – utan den används en soltavla utifrån din sol.</p>
+  <div class="f-lbl">Ascendent</div>
+  <select id="cAsc"></select>
+  <div class="f-lbl">Solen</div>
+  <select id="cSol"></select>
+  <div class="f-lbl">Månen</div>
+  <select id="cMane"></select>
+  <div class="f-lbl">Merkurius</div>
+  <select id="cMerkurius"></select>
+  <div class="f-lbl">Venus</div>
+  <select id="cVenus"></select>
+  <div class="f-lbl">Mars</div>
+  <select id="cMars"></select>
+  <p class="mut small" style="margin:12px 0 0">Osäker på din karta? Räkna ut den gratis på t.ex. astro.com – du behöver datum, klockslag och födelseort.</p>
+  <div style="height:14px"></div>
+  <button class="btn" onclick="saveChart()">Spara</button>
+  <button class="btn ghost" onclick="closeSheets()">Avbryt</button>
+</div>
+
 </div>
 <script>
 /* ══════════ RETROGRADEN ══════════ */
 
 var APPINFO={
-  version:'1.1.0',
+  version:'1.2.0',
   tagline:'Överlev Merkurius retrograd med stil',
   audience:'För häxor, astrointresserade och alla vars teknik strular var tredje månad',
   functions:[
@@ -478,6 +529,13 @@ var APPINFO={
       'Häxans hörna: onsdagar, kristaller, örter och ritual',
       'Övriga planeter: frekvens, längd och teman för Venus till Pluto',
       'Nykter fotnot: ingen evidens – men en fin paus']},
+    {area:'Birthchart',items:[
+      'Spara ascendent, sol, måne samt natala Merkurius, Venus och Mars',
+      'Så träffar den dig: retrogradens hus i din karta (helteckenhus)',
+      'Soltavla som reserv när ascendenten är okänd',
+      'Träffvarning när en retrograd går över dina natala placeringar',
+      'Personliga husrader i Perioder och Himlen just nu',
+      'Birthchart följer med i export och import']},
     {area:'Appen',items:[
       'Tema auto/ljus/mörk (mörkt 20–07) och fyra färgskins',
       'Export och import av data som JSON (union-merge per id)',
@@ -485,6 +543,13 @@ var APPINFO={
       'Fungerar helt offline – all data lagras lokalt']}
   ],
   changelog:[
+    {v:'1.2.0',d:'2026-07-26',items:[
+      'Birthchart: spara ascendent, sol, måne och natala Merkurius, Venus och Mars',
+      'Nytt kort i Nu-vyn – Så träffar den dig: vilka hus retrograden rör i just din karta',
+      'Träffvarning när retrograden går rakt över en natal placering',
+      'Personliga husmarkeringar i Perioder och i Himlen just nu',
+      'Birthchart följer med i export/import (nyaste versionen vinner)',
+      'Nytt guideavsnitt om helteckenhus och soltavla']},
     {v:'1.1.0',d:'2026-07-22',items:[
       'Sju planeter till: Venus, Mars, Jupiter, Saturnus, Uranus, Neptunus och Pluto (2025–2030)',
       'Nytt kort i Nu-vyn: Himlen just nu – allt som är retrogradt i dag, plus planeter som vänder inom 14 dagar',
@@ -504,7 +569,7 @@ var CENTRALEN_META={
   id:'retrograden',
   namn:'Retrograden',
   ikon:'\uD83E\uDE90',
-  desc:'Koll på Merkurius retrograd – och Venus till Pluto. Livestatus, perioder, strullogg och guide.',
+  desc:'Koll på Merkurius retrograd – och Venus till Pluto. Birthchart, livestatus, perioder, strullogg och guide.',
   mobil:'retrograden.html',
   desktop:'retrograden-desktop.html',
   farger:{bg:'#F4F2FB',line:'#E2DCF3',ink:'#26204B',muted:'#6F6894',accent:'#7C6CD0',iconbg:'#EEE9FB'}
@@ -586,6 +651,36 @@ var OTHER_PERIODS=[
 ];
 var selPlanet='merkurius';
 
+/* Zodiak & helteckenhus */
+var SIGNS=[
+  {id:'vaduren',n:'Väduren',g:'\u2648\uFE0E'},
+  {id:'oxen',n:'Oxen',g:'\u2649\uFE0E'},
+  {id:'tvillingarna',n:'Tvillingarna',g:'\u264A\uFE0E'},
+  {id:'kraftan',n:'Kräftan',g:'\u264B\uFE0E'},
+  {id:'lejonet',n:'Lejonet',g:'\u264C\uFE0E'},
+  {id:'jungfrun',n:'Jungfrun',g:'\u264D\uFE0E'},
+  {id:'vagen',n:'Vågen',g:'\u264E\uFE0E'},
+  {id:'skorpionen',n:'Skorpionen',g:'\u264F\uFE0E'},
+  {id:'skytten',n:'Skytten',g:'\u2650\uFE0E'},
+  {id:'stenbocken',n:'Stenbocken',g:'\u2651\uFE0E'},
+  {id:'vattumannen',n:'Vattumannen',g:'\u2652\uFE0E'},
+  {id:'fiskarna',n:'Fiskarna',g:'\u2653\uFE0E'}
+];
+var HOUSES=[
+  {rub:'Jaget',txt:'identitet, kropp och hur du möter världen'},
+  {rub:'Resurser',txt:'ekonomi, ägodelar och självkänsla'},
+  {rub:'Kommunikation',txt:'samtal, syskon, korta resor och vardagsteknik'},
+  {rub:'Hemmet',txt:'familj, bostad och rötter'},
+  {rub:'Skapande',txt:'kreativitet, romantik, lek och nöje'},
+  {rub:'Vardagen',txt:'rutiner, hälsa och arbetet i det lilla'},
+  {rub:'Relationer',txt:'partnerskap, avtal och nära samarbeten'},
+  {rub:'Det delade',txt:'gemensam ekonomi, lån, intimitet och transformation'},
+  {rub:'Horisonten',txt:'långresor, studier, publicering och livsåskådning'},
+  {rub:'Karriären',txt:'yrke, rykte och riktning'},
+  {rub:'Nätverket',txt:'vänner, grupper och framtidsplaner'},
+  {rub:'Det inre',txt:'vila, det undermedvetna och avslut'}
+];
+
 var CATS=[
   {id:'teknik',e:'\uD83D\uDCBB',n:'Teknik'},
   {id:'komm',e:'\uD83D\uDCAC',n:'Kommunikation'},
@@ -601,7 +696,7 @@ var SEVS=[
 ];
 
 var STORE_KEY='retrograden_v1';
-var state={log:[],theme:'auto',skin:'kvicksilver'};
+var state={log:[],theme:'auto',skin:'kvicksilver',chart:null,chartUpdated:0};
 var editingId=null;
 var selCat='teknik';
 var selSev=1;
@@ -681,7 +776,7 @@ function renderSky(){
        '<span class="pn">'+esc(r.pl.namn)+'</span>'+
        '<span class="until">vänder '+fmtD(r.p.end,yDiff)+'</span></div>'+
        '<div class="sky-tema'+(ix===rows.length-1&&!soon.length?' last':'')+'">'+
-       esc(r.pl.tema)+' · retrograd sedan '+fmtD(r.p.start,false)+'</div>';
+       esc(r.pl.tema)+' · retrograd sedan '+fmtD(r.p.start,false)+skyHouse(r.p)+'</div>';
   });
   if(!h)h='<p class="sky-empty">Alla andra planeter går framåt just nu. Ovanligt lugnt däruppe.</p>';
   if(soon.length)h+='<div class="sky-soon">'+esc(soon.join(' · '))+'</div>';
@@ -698,6 +793,114 @@ function renderPlanetRow(){
   g('planetRow').innerHTML=h;
 }
 function pickPlanet(id){selPlanet=id;renderPlanetRow();renderPerioder()}
+
+/* ── Birthchart ── */
+function signByName(nm){nm=nm.replace(/^\s+|\s+$/g,'');for(var i=0;i<SIGNS.length;i++){if(SIGNS[i].n===nm)return i}return -1}
+function signById(id){for(var i=0;i<SIGNS.length;i++){if(SIGNS[i].id===id)return SIGNS[i]}return null}
+function idxById(id){for(var i=0;i<SIGNS.length;i++){if(SIGNS[i].id===id)return i}return -1}
+function parseSigns(str){
+  if(!str)return [];
+  var out=[];
+  str.split('→').forEach(function(part){var ix=signByName(part);if(ix>-1)out.push(ix)});
+  return out;
+}
+function ordv(hu){return hu+(hu<3?':a':':e')}
+function hasChart(){var c=state.chart;return !!(c&&(c.asc||c.sol))}
+function houseOf(signIx){
+  var c=state.chart;
+  var base=c.asc?idxById(c.asc):idxById(c.sol);
+  return ((signIx-base+12)%12)+1;
+}
+function chartHits(signIxs){
+  var c=state.chart,hits=[];
+  var pts=[{k:'sol',n:'Sol'},{k:'mane',n:'Måne'},{k:'merkurius',n:'Merkurius'},{k:'venus',n:'Venus'},{k:'mars',n:'Mars'}];
+  pts.forEach(function(pt){
+    if(!c[pt.k])return;
+    var ix=idxById(c[pt.k]);
+    if(ix>-1&&signIxs.indexOf(ix)>-1)hits.push({n:pt.n,sign:SIGNS[ix]});
+  });
+  return hits;
+}
+function skyHouse(p){
+  if(!hasChart())return '';
+  var s=parseSigns(p.sign);
+  if(!s.length)return '';
+  var hs=[];
+  s.forEach(function(ix){hs.push(ordv(houseOf(ix)))});
+  return hs.length>1?' · dina '+hs.join('→')+' hus':' · ditt '+hs[0]+' hus';
+}
+function renderYou(){
+  var box=g('youBox');if(!box)return;
+  if(!hasChart()){
+    box.innerHTML='<p class="mut" style="margin:0 0 12px">Lägg till din birthchart så visar appen vilka hus och natala placeringar varje retrograd rör – alltså var den påverkar just dig mest.</p>'+
+      '<button class="btn ghost" onclick="openChart()">Lägg till din birthchart</button>';
+    return;
+  }
+  var t=todayKey(),inf=phaseInfo(t),p=inf.p;
+  if(!p){box.innerHTML='<p class="mut" style="margin:0">Ingen kommande period inlagd.</p>';return}
+  var lead=inf.phase==='retro'?'Pågående retrograd':(inf.phase==='post'?'Nyss avslutad retrograd':'Nästa retrograd');
+  var h='<p class="mut small" style="margin:0 0 2px">'+lead+' · '+fmtRange(p.start,p.end)+'</p>';
+  var signs=parseSigns(p.sign);
+  if(!signs.length){
+    h+='<p class="mut" style="margin:8px 0 0">Tecken saknas för den här perioden, så husanalysen får vänta till nästa.</p>';
+    box.innerHTML=h;return;
+  }
+  signs.forEach(function(ix,k){
+    var hu=houseOf(ix),H=HOUSES[hu-1],S=SIGNS[ix];
+    h+='<div class="you-house"><span class="g">'+S.g+'</span>'+
+       '<span class="hn">'+esc(S.n)+' – ditt '+ordv(hu)+' hus: '+esc(H.rub)+'</span></div>'+
+       '<div class="you-txt'+(k===signs.length-1?' last':'')+'">'+esc(H.txt)+'</div>';
+  });
+  var hits=chartHits(signs);
+  if(hits.length){
+    hits.forEach(function(x){
+      h+='<div class="you-hit">\u263F\uFE0E Retrograden går rakt över din '+esc(x.n)+' i '+esc(x.sign.n)+
+         (x.n==='Merkurius'?' – klassisk dubbelsmäll, var extra snäll mot dig själv.':' – den här perioden är personlig.')+'</div>';
+    });
+  }else{
+    h+='<div class="you-note">Ingen av dina sparade placeringar träffas direkt den här gången.</div>';
+  }
+  if(!state.chart.asc)h+='<div class="you-note">Husen räknas som soltavla utifrån din sol. Lägg till ascendent för exakta hus.</div>';
+  box.innerHTML=h;
+}
+function renderChartSummary(){
+  var el=g('chartSummary');if(!el)return;
+  var c=state.chart;
+  if(!c||(!c.asc&&!c.sol&&!c.mane&&!c.merkurius&&!c.venus&&!c.mars)){
+    el.innerHTML='<p class="mut" style="margin:0">Ingen birthchart sparad ännu. Den används för att visa var retrograderna träffar dig.</p>';
+    return;
+  }
+  var pts=[{k:'asc',n:'ASC'},{k:'sol',n:'Sol'},{k:'mane',n:'Måne'},{k:'merkurius',n:'Merkurius'},{k:'venus',n:'Venus'},{k:'mars',n:'Mars'}];
+  var h='<div class="chart-sum">';
+  pts.forEach(function(pt){
+    var s=c[pt.k]?signById(c[pt.k]):null;
+    if(s)h+='<span class="chip">'+esc(pt.n)+' '+s.g+' '+esc(s.n)+'</span>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+function fillChartSelects(){
+  var c=state.chart||{};
+  var flds=[['cAsc','asc','– Vet inte –'],['cSol','sol','– Välj –'],['cMane','mane','– Vet inte –'],
+            ['cMerkurius','merkurius','– Vet inte –'],['cVenus','venus','– Vet inte –'],['cMars','mars','– Vet inte –']];
+  flds.forEach(function(f){
+    var h='<option value="">'+f[2]+'</option>';
+    SIGNS.forEach(function(s){
+      h+='<option value="'+s.id+'"'+(c[f[1]]===s.id?' selected':'')+'>'+s.g+' '+esc(s.n)+'</option>';
+    });
+    g(f[0]).innerHTML=h;
+  });
+}
+function openChart(){fillChartSelects();openSheet('chartSheet')}
+function saveChart(){
+  var asc=g('cAsc').value,sol=g('cSol').value;
+  if(!asc&&!sol){alert('Välj åtminstone din sol (eller ascendent) så husen kan räknas.');return}
+  state.chart={asc:asc,sol:sol,mane:g('cMane').value,
+    merkurius:g('cMerkurius').value,venus:g('cVenus').value,mars:g('cMars').value};
+  state.chartUpdated=Date.now();
+  persist();closeSheets();
+  renderYou();renderSky();renderPerioder();renderChartSummary();
+}
 
 /* ── Nu-vyn ── */
 function renderNu(){
@@ -796,10 +999,24 @@ function renderPerioder(){
     }else{
       extra='<div class="p-dur">'+diffDays(p.start,p.end)+' dagar</div>';
     }
+    var you='';
+    if(hasChart()&&p.sign){
+      var six=parseSigns(p.sign);
+      if(six.length){
+        var hs=[];six.forEach(function(ix){hs.push(ordv(houseOf(ix)))});
+        you=hs.length>1?'Dina '+hs.join(' & ')+' hus':'Ditt '+hs[0]+' hus';
+        var phits=chartHits(six);
+        if(phits.length){
+          var nn=[];phits.forEach(function(x){nn.push(x.n)});
+          you+=' · träffar din '+nn.join(', din ');
+        }
+        you='<div class="p-you">'+you+'</div>';
+      }
+    }
     h+='<div class="period '+cls+'">'+badge+
        '<div class="p-dates">'+fmtRange(p.start,p.end)+'</div>'+
        (p.sign?'<div class="p-sign">'+esc(p.sign)+'</div>':'')+
-       extra+'</div>';
+       you+extra+'</div>';
   });
   g('periodList').innerHTML=h;
 }
@@ -921,7 +1138,8 @@ function paintSettings(){
 /* ── Export / import ── */
 function doExport(){
   var payload={app:'retrograden',version:APPINFO.version,
-    exported:new Date().toISOString(),log:state.log};
+    exported:new Date().toISOString(),log:state.log,
+    chart:state.chart,chartUpdated:state.chartUpdated||0};
   var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
@@ -944,6 +1162,10 @@ function doImport(file){
         if(!ex||(e.updated||0)>(ex.updated||0))map[e.id]=e;
       });
       state.log=Object.keys(map).map(function(k){return map[k]});
+      if(obj.chart&&(obj.chartUpdated||0)>(state.chartUpdated||0)){
+        state.chart=obj.chart;state.chartUpdated=obj.chartUpdated||Date.now();
+        renderYou();renderSky();renderPerioder();renderChartSummary();
+      }
       persist();renderLogg();
       alert('Import klar. Loggen innehåller nu '+state.log.length+' poster.');
     }catch(err){alert('Kunde inte läsa filen – är det en giltig export?')}
@@ -986,13 +1208,13 @@ function go(v){
 }
 
 /* ── Init ── */
-function renderAll(){renderNu();renderSky();renderPlanetRow();renderPerioder();renderLogg();renderNews();paintSettings()}
+function renderAll(){renderNu();renderYou();renderSky();renderPlanetRow();renderPerioder();renderLogg();renderNews();paintSettings();renderChartSummary()}
 load();
 applySkin();
 applyTheme();
 renderAll();
 setInterval(applyTheme,60000);
-setInterval(function(){renderNu();renderSky();renderPlanetRow()},3600000);
+setInterval(function(){renderNu();renderYou();renderSky();renderPlanetRow()},3600000);
 </script>
 </body>
 </html>
