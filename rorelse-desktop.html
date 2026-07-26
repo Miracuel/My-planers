@@ -44,6 +44,13 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .plan-q b{font-family:Georgia,serif;font-weight:400;font-size:15px}
 .plan-q .meta{font-size:12px;color:var(--muted);margin-top:1px}
 .plan-ask .btn{padding:8px 12px}
+.exrow{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:8px;margin-bottom:8px}
+.exrow .exr-name{margin-bottom:6px}
+.exrow .exr-nums{display:flex;gap:6px;align-items:center}
+.exrow .exr-nums input{padding:7px 6px;text-align:center}
+.exrow .exr-del{flex:0 0 auto;width:34px;background:none;border:1px solid var(--line);border-radius:9px;color:var(--muted);font-size:16px;cursor:pointer}
+.exrow .exr-del:active{background:var(--panel)}
+.sess-row .items{font-size:11px;color:var(--accent);margin-top:2px;line-height:1.5}
 .section-sub{font-family:Georgia,serif;font-size:13px;color:var(--ink);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
 .soft{font-size:12px;color:var(--muted);line-height:1.6}
 .view{display:none}
@@ -418,6 +425,11 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <div class="dotpick" id="lg-before"></div>
   <label>Energi efteråt (frivilligt)</label>
   <div class="dotpick" id="lg-after"></div>
+  <label>Övningar du använde (frivilligt)</label>
+  <div class="soft" style="margin-bottom:6px">Bra för styrkepass — lägg övning/maskin med vikt, reps och set.</div>
+  <div id="lg-ex-list"></div>
+  <datalist id="ex-datalist"></datalist>
+  <button type="button" class="btn" id="lg-ex-add" style="width:100%">+ Lägg till övning</button>
   <label>Anteckning (frivilligt)</label>
   <textarea id="lg-note" rows="2" placeholder="Hur kändes det? Behöver inte vara något."></textarea>
   <button class="sheet-close" id="lg-save">Spara passet</button>
@@ -881,6 +893,46 @@ function renderGymToday(){
 
 // ── Logga pass (sheet) ────────────────────────────────
 var logCtx={};
+function exById(id){for(var i=0;i<state.exercises.length;i++){if(state.exercises[i].id===id)return state.exercises[i];}return null;}
+function renderExDatalist(){
+  var dl=document.getElementById('ex-datalist');if(!dl)return;
+  dl.innerHTML=state.exercises.map(function(e){return '<option value="'+esc(e.name)+'">';}).join('');
+}
+function addExRow(pref){
+  var wrap=document.getElementById('lg-ex-list');
+  var row=document.createElement('div');row.className='exrow';
+  row.innerHTML='<input class="exr-name" list="ex-datalist" placeholder="Övning / maskin">'
+    +'<div class="exr-nums">'
+    +'<input class="exr-kg" type="number" inputmode="decimal" step="2.5" placeholder="kg">'
+    +'<input class="exr-rep" type="number" inputmode="numeric" placeholder="reps">'
+    +'<input class="exr-set" type="number" inputmode="numeric" placeholder="set">'
+    +'<button type="button" class="exr-del" title="Ta bort">\u00d7</button></div>';
+  if(pref){row.querySelector('.exr-name').value=pref.name||'';row.querySelector('.exr-kg').value=(pref.weight!=null?pref.weight:'');row.querySelector('.exr-rep').value=(pref.reps!=null?pref.reps:'');row.querySelector('.exr-set').value=(pref.sets!=null?pref.sets:'');}
+  row.querySelector('.exr-del').onclick=function(){row.parentNode.removeChild(row);};
+  wrap.appendChild(row);
+}
+function collectLogItems(){
+  var items=[];
+  document.getElementById('lg-ex-list').querySelectorAll('.exrow').forEach(function(row){
+    var name=row.querySelector('.exr-name').value.trim();if(!name)return;
+    var kg=parseFloat(row.querySelector('.exr-kg').value);
+    var rp=parseInt(row.querySelector('.exr-rep').value,10);
+    var st=parseInt(row.querySelector('.exr-set').value,10);
+    var ex=null;state.exercises.forEach(function(e){if(e.name.toLowerCase()===name.toLowerCase())ex=e;});
+    items.push({name:name,exId:ex?ex.id:null,weight:isNaN(kg)?null:kg,reps:isNaN(rp)?null:rp,sets:isNaN(st)?null:st});
+  });
+  return items;
+}
+function itemsSummary(items){
+  if(!items||!items.length)return '';
+  return items.map(function(it){
+    var seg=[];
+    if(it.weight!=null)seg.push(it.weight+' kg');
+    if(it.reps!=null)seg.push(it.reps+' rep');
+    if(it.sets!=null)seg.push(it.sets+' set');
+    return esc(it.name)+(seg.length?' ('+seg.join(' \u00d7 ')+')':'');
+  }).join(', ');
+}
 function openLog(type,dateStr){
   logCtx={icon:(type&&type.icon)||'🌿'};
   document.getElementById('lg-name').value=type&&type.name?type.name:'';
@@ -889,6 +941,8 @@ function openLog(type,dateStr){
   document.getElementById('lg-time').value=new Date().toTimeString().slice(0,5);
   setDots('lg-before',0);setDots('lg-after',0);
   document.getElementById('lg-note').value='';
+  document.getElementById('lg-ex-list').innerHTML='';
+  renderExDatalist();
   renderLogGym();
   openSheet('log-sheet');
 }
@@ -928,6 +982,7 @@ function renderLogZones(){
   });
 }
 document.getElementById('log-now').onclick=function(){openLog(null);};
+document.getElementById('lg-ex-add').onclick=function(){addExRow(null);};
 document.getElementById('lg-save').onclick=function(){
   var name=document.getElementById('lg-name').value.trim();
   if(!name){document.getElementById('lg-name').focus();return;}
@@ -940,11 +995,13 @@ document.getElementById('lg-save').onclick=function(){
   var gymId=document.getElementById('lg-gym').value||state.activeGym;
   var zone=document.getElementById('lg-zone').dataset.val||'allmant';
   var full=document.getElementById('lg-full').dataset.val;
+  var items=collectLogItems();
   state.sessions.push({
     id:Date.now(),icon:logCtx.icon||'🌿',name:name,
     min:isNaN(min)?null:min,date:date,time:time,
     before:before?+before:null,after:after?+after:null,note:note,
-    gymId:gymId,zone:zone,full:full?+full:null
+    gymId:gymId,zone:zone,full:full?+full:null,
+    items:items.length?items:null
   });
   if(full)applyFullToCrowd(gymId,zone,date,time,+full);
   save();closeSheets();
@@ -988,7 +1045,8 @@ function renderRecent(){
     if(x.gymId){var gg=gymById(x.gymId);if(gg&&state.gyms.length>1)gz=' · '+esc(gg.name);}
     if(x.zone==='tjej')gz+=' · tjejdelen';
     var meta=when+(x.min?' · '+x.min+' min':'')+gz+(x.full?' · '+FT[x.full]:'')+(x.note?' · '+esc(x.note):'');
-    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+meta+'</div></div>'+arrow+'<button data-id="'+x.id+'">×</button></div>';
+    var itx=(x.items&&x.items.length)?'<div class="items">'+itemsSummary(x.items)+'</div>':'';
+    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+meta+'</div>'+itx+'</div>'+arrow+'<button data-id="'+x.id+'">×</button></div>';
   }).join('');
   el.querySelectorAll('button').forEach(function(b){
     b.onclick=function(){
@@ -1302,7 +1360,8 @@ function openDay(iso){
     var gz='';if(x.gymId){var gg=gymById(x.gymId);if(gg&&state.gyms.length>1)gz=' · '+esc(gg.name);}
     if(x.zone==='tjej')gz+=' · tjejdelen';
     var bits=[(x.time||''),(x.min?x.min+' min':''),gz.replace(/^ · /,''),(x.full?FT[x.full]:''),(x.before&&x.after?'energi '+x.before+'→'+x.after:''),(x.note?esc(x.note):'')].filter(Boolean).join(' · ');
-    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+bits+'</div></div><button data-id="'+x.id+'" title="Ta bort">×</button></div>';
+    var itx=(x.items&&x.items.length)?'<div class="items">'+itemsSummary(x.items)+'</div>':'';
+    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+bits+'</div>'+itx+'</div><button data-id="'+x.id+'" title="Ta bort">×</button></div>';
   }).join('');}
   el.querySelectorAll('button[data-id]').forEach(function(b){b.onclick=function(){
     state.sessions=state.sessions.filter(function(z){return String(z.id)!==b.dataset.id;});
@@ -1555,6 +1614,11 @@ function recentMuscles(days){
     var nm=(s.name||'').toLowerCase();
     state.exercises.forEach(function(e){
       if(e.name&&nm.indexOf(e.name.toLowerCase())>=0&&e.muskler){e.muskler.forEach(function(m){found[m]=1;});}
+    });
+    (s.items||[]).forEach(function(it){
+      var ex=it.exId?exById(it.exId):null;
+      if(!ex){state.exercises.forEach(function(e){if(e.name.toLowerCase()===(it.name||'').toLowerCase())ex=e;});}
+      if(ex&&ex.muskler)ex.muskler.forEach(function(m){found[m]=1;});
     });
   });
   return Object.keys(found);
@@ -1814,12 +1878,13 @@ document.getElementById('td-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.8.0',
+  version:'1.9.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
     'Senast i rörelse — visar hur länge sedan utan skuld',
     'Logga pass med längd, tid, energi före/efter, anteckning och hur fullt det upplevdes',
+    'Lägg till övningarna du använt i passet — med vikt, reps och set (bra för styrkepass)',
     'Egna passtyper som snabbval',
     'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
@@ -1839,6 +1904,12 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.9.0',d:'2026-07-19',items:[
+      'När du loggar ett pass kan du nu lägga till övningarna du använt, med vikt (kg), reps och set per övning.',
+      'Övningsfältet föreslår automatiskt namn från ditt övningsbibliotek, men du kan skriva fritt.',
+      'De loggade övningarna visas i Senaste passen och när du öppnar en dag i kalendern — så du ser exakt hur styrkepasset såg ut.',
+      'Muskelgrupperna för förslag hämtas nu även från de loggade övningarna, inte bara passets namn.'
+    ]},
     {v:'1.8.0',d:'2026-07-19',items:[
       'Avstämning på Idag: planerade och schemalagda pass frågar "har du gjort det?" med Ja/Nej. Ja loggar passet automatiskt för idag, Nej hoppar över det.',
       'Löpande schema: lägg återkommande pass på valda veckodagar, t.ex. gång måndag och lördag. De dyker upp automatiskt under Planerat varje sådan dag.',
