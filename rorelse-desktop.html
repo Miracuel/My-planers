@@ -37,6 +37,14 @@ h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--in
 label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
 input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
 .empty-msg{font-size:12px;color:var(--muted);padding:8px 0;text-align:center;line-height:1.6}
+.plan-ask{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:12px;margin-bottom:8px}
+.plan-ask:last-child{margin-bottom:0}
+.plan-q{display:flex;align-items:center;gap:10px}
+.plan-q .ic{font-size:20px}
+.plan-q b{font-family:Georgia,serif;font-weight:400;font-size:15px}
+.plan-q .meta{font-size:12px;color:var(--muted);margin-top:1px}
+.plan-ask .btn{padding:8px 12px}
+.section-sub{font-family:Georgia,serif;font-size:13px;color:var(--ink);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
 .soft{font-size:12px;color:var(--muted);line-height:1.6}
 .view{display:none}
 .view.active{display:block}
@@ -182,7 +190,8 @@ html[data-theme=dark][data-palette=rost]{--accent:#CE9275;--accent-soft:#46342B}
 html[data-theme=dark][data-palette=hav]{--accent:#8AA8C8;--accent-soft:#2C3A48}
 html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D}
 
-.seg{display:flex;gap:6px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 auto;min-width:56px}
 .seg button{flex:1;border:1.5px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px;cursor:pointer;font-family:inherit;color:var(--muted);font-size:13px}
 .seg button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
 .swatches{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
@@ -247,6 +256,7 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
       </div>
     </div>
     <button class="btn fill" id="log-now" style="width:100%;margin-top:12px">Logga ett pass</button>
+    <button class="btn" id="open-today" style="width:100%;margin-top:8px">✨ Förslag för idag</button>
     <div class="chips" id="quick-chips"></div>
   </div>
 
@@ -279,6 +289,10 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <div class="soft" style="margin-bottom:8px">Lägg en lös plan — huvudet slipper hålla den. Inget måste.</div>
     <button class="btn" id="open-plan" style="width:100%">+ Planera ett pass</button>
     <div id="plan-list" style="margin-top:10px"></div>
+    <div class="section-sub">Löpande schema</div>
+    <div class="soft" style="margin-bottom:8px">Återkommande pass, t.ex. gång måndag och lördag. De dyker upp under "Planerat" på Idag med Ja/Nej.</div>
+    <button class="btn" id="open-recur" style="width:100%">+ Schemalägg löpande pass</button>
+    <div id="recur-list" style="margin-top:10px"></div>
   </div>
 
   <div class="section-title">Övningar &amp; maskiner</div>
@@ -288,6 +302,7 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
       <button class="btn" id="add-ex">+ Lägg till övning</button>
       <button class="btn" id="open-fail">⚡ Failure-plan</button>
     </div>
+    <div class="soft" style="margin-top:8px">Vill du fylla i ett pass i efterhand? Öppna en dag i kalendern under <b>Översikt</b> och tryck "Logga pass den här dagen".</div>
     <div id="ex-list" style="margin-top:10px"></div>
   </div>
 
@@ -433,6 +448,21 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <button class="sheet-close" id="pl-save">Lägg till i planen</button>
 </div>
 
+<div class="sheet" id="recur-sheet">
+  <h3 id="rc-title">Löpande pass</h3>
+  <div class="soft">Ett återkommande pass på valda veckodagar.</div>
+  <label>Vad?</label>
+  <input type="text" id="rc-name" placeholder="T.ex. Gång">
+  <label>Veckodagar</label>
+  <div class="chips" id="rc-days"></div>
+  <div class="row2">
+    <div><label>Tid (frivilligt)</label><input type="time" id="rc-time"></div>
+    <div><label>Längd (min, frivilligt)</label><input type="number" id="rc-min" min="1" step="5" placeholder="30"></div>
+  </div>
+  <button class="sheet-close" id="rc-save">Spara</button>
+  <button class="btn ghost" id="rc-del2" style="width:100%;margin-top:8px">Ta bort</button>
+</div>
+
 <div class="sheet" id="hours-sheet">
   <h3>Öppettider</h3>
   <div class="soft">Bocka i stängt för dagar gymmet håller stängt.</div>
@@ -460,6 +490,8 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   </div>
   <label>Vad tycker du om övningen?</label>
   <div class="dotpick" id="ex-rating"></div>
+  <label>Muskelgrupper</label>
+  <div class="chips" id="ex-musk"></div>
   <label>Anteckning (frivilligt)</label>
   <textarea id="ex-note" rows="2" placeholder="Känsla, inställning, vad du vill minnas…"></textarea>
   <div id="ex-gym-wrap"><label>Vilket gym</label><select id="ex-gym"></select></div>
@@ -481,6 +513,44 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   </div>
   <div id="fail-out" class="ai-out" style="display:none"></div>
   <button class="sheet-close" id="fail-done">Stäng</button>
+</div>
+
+<div class="sheet" id="day-sheet">
+  <h3 id="day-title">Dag</h3>
+  <div id="day-list"></div>
+  <button class="btn" id="day-add" style="width:100%;margin-top:10px">+ Logga pass den här dagen</button>
+  <button class="sheet-close" id="day-done" style="display:none"></button>
+</div>
+
+<div class="sheet" id="today-sheet">
+  <h3>✨ Förslag för idag</h3>
+  <div class="soft">Ställ in hur du har det just nu, så föreslås ett pass som passar — utifrån din tid, dagsform och lust, och vad du gjort tidigare.</div>
+  <label>Hur mycket tid har du?</label>
+  <div class="seg" id="td-tid">
+    <button type="button" data-v="10">10 min</button>
+    <button type="button" data-v="20">20</button>
+    <button type="button" data-v="30">30</button>
+    <button type="button" data-v="45">45</button>
+    <button type="button" data-v="60">60+</button>
+  </div>
+  <label>Hur känns dagsformen?</label>
+  <div class="seg" id="td-form">
+    <button type="button" data-v="pigg">Pigg</button>
+    <button type="button" data-v="okej">Okej</button>
+    <button type="button" data-v="trott">Trött</button>
+  </div>
+  <label>Är du pepp på att träna?</label>
+  <div class="seg" id="td-pepp">
+    <button type="button" data-v="pepp">Pepp</button>
+    <button type="button" data-v="sadar">Sådär</button>
+    <button type="button" data-v="jobbigt">Känns jobbigt</button>
+  </div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="td-ai">Föreslå med AI</button>
+    <button class="btn" id="td-local">Enkelt förslag</button>
+  </div>
+  <div id="td-out" class="ai-out" style="display:none"></div>
+  <button class="sheet-close" id="td-done">Stäng</button>
 </div>
 
 <div class="sheet" id="sync-sheet">
@@ -547,6 +617,8 @@ var state={
   ],
   planned:{},
   exercises:null,
+  recurring:null,
+  recurDone:null,
   gyms:null,
   activeGym:'',
   activeZone:'allmant',
@@ -592,6 +664,8 @@ function curCrowd(){var g=curGym();return g.crowd[state.activeZone]||g.crowd.all
 function zoneNamn(z){for(var i=0;i<ZONES.length;i++){if(ZONES[i].id===z)return ZONES[i].namn;}return 'Allmänna gymmet';}
 function ensureGym(){
   if(!Array.isArray(state.exercises))state.exercises=[];
+  if(!Array.isArray(state.recurring))state.recurring=[];
+  if(!state.recurDone||typeof state.recurDone!=='object')state.recurDone={};
   if(!Array.isArray(state.gyms)){
     var old=state.gym||{};
     state.gyms=[{id:uid(),name:old.name||'Mitt gym',tjej:true,hours:old.hours||defaultHours(),crowd:{allmant:fixDays(old.crowd),tjej:blankDays()}}];
@@ -693,19 +767,59 @@ function renderQuickChips(){
 }
 
 // ── Planerat idag ─────────────────────────────────────
+function iconForName(name){
+  var t=null;(state.passTypes||[]).forEach(function(x){if(x.name.toLowerCase()===(name||'').toLowerCase())t=x;});
+  return t?t.icon:'🌿';
+}
+function sessionDoneToday(name){
+  var tk=todayKey();
+  return state.sessions.some(function(s){return s.date===tk&&(s.name||'').toLowerCase()===(name||'').toLowerCase();});
+}
+// Dagens poster = manuellt planerade + löpande schema för idag
+function todaysItems(){
+  var tk=todayKey();var td=wd(new Date());var items=[];
+  (state.planned[tk]||[]).forEach(function(p,i){items.push({src:'plan',i:i,icon:p.icon,name:p.name,min:p.min,time:p.time});});
+  var done=state.recurDone[tk]||[];
+  (state.recurring||[]).forEach(function(r){
+    if((r.days||[]).indexOf(td)<0)return;
+    if(done.indexOf(r.id)>=0)return;
+    if(sessionDoneToday(r.name))return;
+    items.push({src:'recur',id:r.id,icon:r.icon||iconForName(r.name),name:r.name,min:r.min,time:r.time,recur:true});
+  });
+  return items;
+}
+function clearItem(it){
+  if(it.src==='plan'){
+    var tk=todayKey();var list=state.planned[tk]||[];list.splice(it.i,1);
+    if(!list.length)delete state.planned[tk];
+  }else{
+    var tk2=todayKey();state.recurDone[tk2]=state.recurDone[tk2]||[];
+    if(state.recurDone[tk2].indexOf(it.id)<0)state.recurDone[tk2].push(it.id);
+  }
+}
+function doPlanned(it,didIt){
+  if(didIt){
+    state.sessions.push({id:Date.now(),icon:it.icon||'🌿',name:it.name,min:it.min||null,
+      date:todayKey(),time:it.time||new Date().toTimeString().slice(0,5),
+      before:null,after:null,note:'',gymId:state.activeGym||'',zone:'allmant',full:null});
+  }
+  clearItem(it);
+  save();renderPlanToday();renderPass();renderStats();renderToday();
+}
 function renderPlanToday(){
   var el=document.getElementById('plan-today');
-  var list=(state.planned[todayKey()]||[]);
-  if(!list.length){el.innerHTML='<div class="empty-msg">Inget planerat idag — och det är helt okej.</div>';return;}
-  el.innerHTML=list.map(function(p,i){
-    return '<div class="sess-row"><div class="ic">'+(p.icon||'•')+'</div><div class="body"><b>'+esc(p.name)+'</b><div class="meta">'+(p.time?p.time:'när det passar')+'</div></div><button data-a="log" data-i="'+i+'" style="color:var(--accent);font-size:13px">logga</button><button data-a="del" data-i="'+i+'">×</button></div>';
+  var items=todaysItems();
+  if(!items.length){el.innerHTML='<div class="empty-msg">Inget planerat idag — och det är helt okej.</div>';return;}
+  el.innerHTML=items.map(function(it,idx){
+    var sub=(it.recur?'löpande schema':'planerat')+(it.time?' · '+it.time:'');
+    return '<div class="plan-ask"><div class="plan-q"><span class="ic">'+(it.icon||'•')+'</span>'+
+      '<div><b>'+esc(it.name)+'</b><div class="meta">'+sub+' — har du gjort det?</div></div></div>'+
+      '<div class="btn-row" style="margin-top:8px"><button class="btn fill" data-idx="'+idx+'" data-y="1">Ja, gjort</button>'+
+      '<button class="btn" data-idx="'+idx+'" data-y="0">Nej</button></div></div>';
   }).join('');
+  var snapshot=items;
   el.querySelectorAll('button').forEach(function(b){
-    b.onclick=function(){
-      var i=+b.dataset.i,p=list[i];
-      if(b.dataset.a==='log'){openLog({icon:p.icon,name:p.name,min:p.min||20});}
-      else{list.splice(i,1);if(!list.length)delete state.planned[todayKey()];save();renderPlanToday();}
-    };
+    b.onclick=function(){doPlanned(snapshot[+b.dataset.idx], b.dataset.y==='1');};
   });
 }
 
@@ -767,11 +881,11 @@ function renderGymToday(){
 
 // ── Logga pass (sheet) ────────────────────────────────
 var logCtx={};
-function openLog(type){
+function openLog(type,dateStr){
   logCtx={icon:(type&&type.icon)||'🌿'};
   document.getElementById('lg-name').value=type&&type.name?type.name:'';
   document.getElementById('lg-min').value=type&&type.min?type.min:'';
-  document.getElementById('lg-date').value=todayKey();
+  document.getElementById('lg-date').value=dateStr||todayKey();
   document.getElementById('lg-time').value=new Date().toTimeString().slice(0,5);
   setDots('lg-before',0);setDots('lg-after',0);
   document.getElementById('lg-note').value='';
@@ -1169,10 +1283,35 @@ function renderCal(){
   var todayNum=now.getDate();
   for(var day=1;day<=dim;day++){
     var has=counts[day];
-    html+='<div class="cd'+(has?' has':'')+(day===todayNum?' today':'')+'">'+day+'</div>';
+    var iso=y+'-'+pad(m+1)+'-'+pad(day);
+    html+='<div class="cd'+(has?' has':'')+(day===todayNum?' today':'')+'" data-date="'+iso+'">'+day+'</div>';
   }
   el.innerHTML=html;
+  el.querySelectorAll('.cd[data-date]').forEach(function(c){c.onclick=function(){openDay(c.dataset.date);};});
 }
+function fmtDateLong(iso){var p=iso.split('-');var dt=new Date(+p[0],+p[1]-1,+p[2]);return DAYSL[wd(dt)]+' '+(+p[2])+'/'+(+p[1]);}
+function sessionsOn(iso){return sortedSessions().filter(function(x){return x.date===iso;});}
+function openDay(iso){
+  dayCtx=iso;
+  document.getElementById('day-title').textContent=fmtDateLong(iso);
+  var ss=sessionsOn(iso);
+  var FT=['','lugnt','en del folk','fullt'];
+  var el=document.getElementById('day-list');
+  if(!ss.length){el.innerHTML='<div class="empty-msg">Inga pass loggade den här dagen.</div>';}
+  else{el.innerHTML=ss.map(function(x){
+    var gz='';if(x.gymId){var gg=gymById(x.gymId);if(gg&&state.gyms.length>1)gz=' · '+esc(gg.name);}
+    if(x.zone==='tjej')gz+=' · tjejdelen';
+    var bits=[(x.time||''),(x.min?x.min+' min':''),gz.replace(/^ · /,''),(x.full?FT[x.full]:''),(x.before&&x.after?'energi '+x.before+'→'+x.after:''),(x.note?esc(x.note):'')].filter(Boolean).join(' · ');
+    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+bits+'</div></div><button data-id="'+x.id+'" title="Ta bort">×</button></div>';
+  }).join('');}
+  el.querySelectorAll('button[data-id]').forEach(function(b){b.onclick=function(){
+    state.sessions=state.sessions.filter(function(z){return String(z.id)!==b.dataset.id;});
+    save();openDay(iso);renderToday();renderPass();renderStats();
+  };});
+  openSheet('day-sheet');
+}
+var dayCtx='';
+document.getElementById('day-add').onclick=function(){var iso=dayCtx;closeSheets();openLog(null,iso);};
 function renderEnergy(diffs){
   var el=document.getElementById('energy-card');
   if(diffs.length<3){
@@ -1237,7 +1376,7 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setSyncBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.dataset.s=stt;b.textContent=msg;}
 function refreshSyncBadge(){if(syncOn())setSyncBadge('ok','Synkad');else setSyncBadge('off','Lokal');}
-function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,gyms:state.gyms,updated:new Date().toISOString()};}
+function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,gyms:state.gyms,updated:new Date().toISOString()};}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergeByName(local,remote){var m={};(local||[]).forEach(function(x){m[x.name]=x;});(remote||[]).forEach(function(x){if(!m[x.name])m[x.name]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergePlanned(local,remote){var out=Object.assign({},local);Object.keys(remote||{}).forEach(function(k){var seen={};var arr=[];(out[k]||[]).concat(remote[k]||[]).forEach(function(p){var key=(p.name||'')+'|'+(p.time||'');if(!seen[key]){seen[key]=1;arr.push(p);}});out[k]=arr;});return out;}
@@ -1259,6 +1398,7 @@ function applyData(d){
   if(Array.isArray(d.sessions))state.sessions=mergeById(state.sessions,d.sessions);
   if(Array.isArray(d.passTypes))state.passTypes=mergeByName(state.passTypes,d.passTypes);
   if(Array.isArray(d.exercises))state.exercises=mergeById(state.exercises,d.exercises);
+  if(Array.isArray(d.recurring))state.recurring=mergeById(state.recurring,d.recurring);
   if(d.planned&&typeof d.planned==='object')state.planned=mergePlanned(state.planned,d.planned);
   if(Array.isArray(d.gyms))state.gyms=mergeGyms(state.gyms,d.gyms);
   else if(d.gym&&typeof d.gym==='object'&&Array.isArray(state.gyms)&&state.gyms.length){
@@ -1398,9 +1538,26 @@ function aiContext(){
   lines.push('Pass denna vecka: '+wk+'. Senaste 30 dagarna: '+mo+'.');
   var rec=ss.slice(0,5).map(function(x){return x.name+(x.min?' '+x.min+'min':'')+(x.before&&x.after?' (energi '+x.before+'\u2192'+x.after+')':'');});
   if(rec.length)lines.push('Senaste pass: '+rec.join('; ')+'.');
+  var mk=recentMuscles(14);
+  if(mk.length)lines.push('Muskelgrupper tränade senaste 14 dagarna: '+mk.join(', ')+'.');
   lines.push('Lugn tid på gymmet idag: '+calmestTodayText()+'.');
   lines.push('Passtyper personen har: '+state.passTypes.map(function(t){return t.name;}).join(', ')+'.');
+  if(state.exercises.length)lines.push('Övningar/maskiner: '+state.exercises.map(function(e){return e.name+(e.muskler&&e.muskler.length?' ['+e.muskler.join('/')+']':'');}).join('; ')+'.');
   return lines.join('\n');
+}
+// Muskelgrupper härledda ur senaste passens namn (matchar övningsbiblioteket)
+function recentMuscles(days){
+  var cut=new Date();cut.setDate(cut.getDate()-days);cut.setHours(0,0,0,0);
+  var found={};
+  state.sessions.forEach(function(s){
+    var p=s.date.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+    if(d<cut)return;
+    var nm=(s.name||'').toLowerCase();
+    state.exercises.forEach(function(e){
+      if(e.name&&nm.indexOf(e.name.toLowerCase())>=0&&e.muskler){e.muskler.forEach(function(m){found[m]=1;});}
+    });
+  });
+  return Object.keys(found);
 }
 function setAiOut(txt,loading){var el=document.getElementById('ai-out');el.style.display='block';el.className='ai-out'+(loading?' loading':'');el.textContent=txt;}
 function callAI(prompt,onResult,maxTok){
@@ -1440,6 +1597,7 @@ document.getElementById('ai-reflect').onclick=function(){setAiOut('Tänker…',t
 document.getElementById('ai-done').onclick=closeSheets;
 
 // ── Övningar / maskiner + failure-planerare ───────────
+var MUSKLER=['Ben','Rumpa','Rygg','Bröst','Axlar','Biceps','Triceps','Mage/Core','Vader','Helkropp','Kondition'];
 function round25(x){return Math.round(x/2.5)*2.5;}
 function fmtKg(x){return (Math.round(x)===x?String(x):x.toFixed(1))+' kg';}
 function ratingStars(r){var s='';for(var i=1;i<=5;i++){s+=i<=(r||0)?'★':'☆';}return s;}
@@ -1450,7 +1608,8 @@ function renderExercises(){
   el.innerHTML=state.exercises.map(function(x,i){
     var w=(x.minW||x.maxW)?((x.minW||'?')+'–'+(x.maxW||'?')+' kg'):'';
     var gg='';if(multi&&x.gymId){var g=gymById(x.gymId);if(g)gg=' · '+esc(g.name);}
-    var meta=[w,x.rating?ratingStars(x.rating):'',x.note?esc(x.note):''].filter(Boolean).join(' · ')+gg;
+    var mk=(x.muskler&&x.muskler.length)?x.muskler.join(', '):'';
+    var meta=[w,mk,x.rating?ratingStars(x.rating):'',x.note?esc(x.note):''].filter(Boolean).join(' · ')+gg;
     return '<div class="sess-row"><div class="ic">🏋️</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+(meta||'–')+'</div></div>'+
       '<button class="ex-fail" data-i="'+i+'" title="Failure-plan">⚡</button>'+
       '<button class="ex-edit" data-i="'+i+'" title="Ändra">✎</button></div>';
@@ -1468,12 +1627,20 @@ function openEx(i){
   document.getElementById('ex-max').value=x&&x.maxW?x.maxW:'';
   document.getElementById('ex-note').value=x?(x.note||''):'';
   setDots('ex-rating',x?x.rating:0);
+  renderMuskChips(x?x.muskler:null);
   var gw=document.getElementById('ex-gym-wrap'),gs=document.getElementById('ex-gym');
   if(state.gyms&&state.gyms.length>1){gw.style.display='';gs.innerHTML=state.gyms.map(function(g){return '<option value="'+g.id+'">'+esc(g.name)+'</option>';}).join('');gs.value=(x&&x.gymId)||state.activeGym;}
   else gw.style.display='none';
   document.getElementById('ex-del').style.display=x?'':'none';
   openSheet('ex-sheet');
 }
+function renderMuskChips(sel){
+  sel=sel||[];
+  var el=document.getElementById('ex-musk');
+  el.innerHTML=MUSKLER.map(function(m){return '<button type="button" class="chip'+(sel.indexOf(m)>=0?' sel':'')+'" data-m="'+m+'">'+m+'</button>';}).join('');
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){b.classList.toggle('sel');};});
+}
+function pickedMuskler(){return [].slice.call(document.getElementById('ex-musk').querySelectorAll('button.sel')).map(function(b){return b.dataset.m;});}
 document.getElementById('add-ex').onclick=function(){openEx(-1);};
 document.getElementById('ex-save').onclick=function(){
   var name=document.getElementById('ex-name').value.trim();
@@ -1483,7 +1650,7 @@ document.getElementById('ex-save').onclick=function(){
   var rating=+(document.getElementById('ex-rating').dataset.val||0)||null;
   var note=document.getElementById('ex-note').value.trim();
   var gymId=(state.gyms&&state.gyms.length>1)?document.getElementById('ex-gym').value:(state.activeGym||'');
-  var obj={id:exEdit>=0?state.exercises[exEdit].id:Date.now(),name:name,minW:isNaN(mn)?null:mn,maxW:isNaN(mx)?null:mx,rating:rating,note:note,gymId:gymId};
+  var obj={id:exEdit>=0?state.exercises[exEdit].id:Date.now(),name:name,minW:isNaN(mn)?null:mn,maxW:isNaN(mx)?null:mx,rating:rating,note:note,gymId:gymId,muskler:pickedMuskler()};
   if(exEdit>=0)state.exercises[exEdit]=obj;else state.exercises.push(obj);
   save();closeSheets();renderExercises();
 };
@@ -1548,23 +1715,123 @@ document.getElementById('fail-ai').onclick=function(){
 };
 document.getElementById('fail-done').onclick=closeSheets;
 
+// ── Löpande schema (återkommande pass) ───────────────
+function renderRecurList(){
+  var el=document.getElementById('recur-list');if(!el)return;
+  if(!state.recurring.length){el.innerHTML='<div class="empty-msg">Inget löpande schema. Lägg t.ex. gång måndag och lördag.</div>';return;}
+  el.innerHTML=state.recurring.map(function(r,i){
+    var d=(r.days||[]).slice().sort(function(a,b){return a-b;}).map(function(x){return DAYS[x];}).join(', ');
+    return '<div class="sess-row"><div class="ic">'+(r.icon||iconForName(r.name))+'</div><div class="body"><b>'+esc(r.name)+'</b><div class="meta">'+d+(r.time?' · '+r.time:'')+(r.min?' · '+r.min+' min':'')+'</div></div><button class="rc-edit" data-i="'+i+'" title="Ändra">✎</button><button class="rc-del" data-i="'+i+'" title="Ta bort">×</button></div>';
+  }).join('');
+  el.querySelectorAll('.rc-edit').forEach(function(b){b.onclick=function(){openRecur(+b.dataset.i);};});
+  el.querySelectorAll('.rc-del').forEach(function(b){b.onclick=function(){state.recurring.splice(+b.dataset.i,1);save();renderRecurList();renderPlanToday();};});
+}
+var recurEdit=-1;
+function renderRecurDays(sel){
+  sel=sel||[];
+  var el=document.getElementById('rc-days');
+  el.innerHTML=DAYS.map(function(d,i){return '<button type="button" class="chip'+(sel.indexOf(i)>=0?' sel':'')+'" data-d="'+i+'">'+d+'</button>';}).join('');
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){b.classList.toggle('sel');};});
+}
+function pickedDays(){return [].slice.call(document.getElementById('rc-days').querySelectorAll('button.sel')).map(function(b){return +b.dataset.d;});}
+function openRecur(i){
+  recurEdit=(typeof i==='number')?i:-1;
+  var r=recurEdit>=0?state.recurring[recurEdit]:null;
+  document.getElementById('rc-title').textContent=r?'Ändra löpande pass':'Nytt löpande pass';
+  document.getElementById('rc-name').value=r?r.name:'';
+  document.getElementById('rc-time').value=r?(r.time||''):'';
+  document.getElementById('rc-min').value=r&&r.min?r.min:'';
+  renderRecurDays(r?r.days:null);
+  document.getElementById('rc-del2').style.display=r?'':'none';
+  openSheet('recur-sheet');
+}
+document.getElementById('open-recur').onclick=function(){openRecur(-1);};
+document.getElementById('rc-save').onclick=function(){
+  var name=document.getElementById('rc-name').value.trim();
+  if(!name){document.getElementById('rc-name').focus();return;}
+  var days=pickedDays();
+  if(!days.length){return;}
+  var time=document.getElementById('rc-time').value;
+  var min=parseInt(document.getElementById('rc-min').value,10);
+  var obj={id:recurEdit>=0?state.recurring[recurEdit].id:Date.now(),name:name,days:days,time:time,min:isNaN(min)?null:min,icon:iconForName(name)};
+  if(recurEdit>=0)state.recurring[recurEdit]=obj;else state.recurring.push(obj);
+  save();closeSheets();renderRecurList();renderPlanToday();
+};
+document.getElementById('rc-del2').onclick=function(){
+  if(recurEdit<0)return;
+  state.recurring.splice(recurEdit,1);save();closeSheets();renderRecurList();renderPlanToday();
+};
+
+// ── Hjälp för idag (tid + dagsform + pepp) ────────────
+var todayPick={tid:'',form:'',pepp:''};
+function renderTodaySegs(){
+  [['td-tid','tid'],['td-form','form'],['td-pepp','pepp']].forEach(function(pair){
+    var el=document.getElementById(pair[0]);if(!el)return;
+    el.querySelectorAll('button').forEach(function(b){b.classList.toggle('sel',b.dataset.v===todayPick[pair[1]]);
+      b.onclick=function(){todayPick[pair[1]]=b.dataset.v;renderTodaySegs();};});
+  });
+}
+function setTodayOut(txt,loading){var el=document.getElementById('td-out');el.style.display='block';el.className='ai-out'+(loading?' loading':'');el.textContent=txt;}
+document.getElementById('open-today').onclick=function(){
+  todayPick={tid:'',form:'',pepp:''};renderTodaySegs();
+  document.getElementById('td-out').style.display='none';openSheet('today-sheet');
+};
+function lastSessionName(){var ss=sortedSessions();return ss.length?ss[0].name:'';}
+function localTodaySuggest(){
+  var t=parseInt(todayPick.tid,10)||20;
+  var pepp=todayPick.pepp,form=todayPick.form;
+  var last=lastSessionName();
+  var mk=recentMuscles(7);
+  var out=[];
+  if(last)out.push('Sist: '+last+'.');
+  if(pepp==='jobbigt'||form==='trott'){
+    out.push('Idag känns det tungt — då räknas det lilla mest. Förslag: '+(t<=10?'5–10 min lugn promenad eller mjuk stretch.':t+' min lugn promenad, gärna utomhus, i ditt eget tempo.'));
+    out.push('Du behöver inte till gymmet. Att röra dig alls är vinsten idag.');
+  }else if(pepp==='sadar'){
+    out.push('Sådär-dag: håll det enkelt och tydligt. Förslag: '+t+' min i lugnt tempo — kondition eller några få set på en maskin du gillar.');
+    if(mk.length)out.push('Du har nyligen kört '+mk.join(', ')+' — välj gärna något annat idag för variation.');
+  }else{ // pepp
+    if(t>=40)out.push('Pepp och '+t+' min: kör ett riktigt pass. Uppvärmning 5–10 min, sedan 3–4 övningar med några set var.');
+    else out.push('Pepp men '+t+' min: kör fokuserat — 1–2 övningar, lite tyngre, med god teknik.');
+    if(mk.length)out.push('Senast tränade du '+mk.join(', ')+'. Idag kan du variera med något annat för balans.');
+    else if(last)out.push('Sist gjorde du '+last+' — vi föreslår något som kompletterar det idag.');
+  }
+  out.push('Lugn tid på gymmet: '+calmestTodayText()+'.');
+  out.push('Kom ihåg: teknik och känsla före prestation.');
+  return out.join('\n');
+}
+function todayContext(){
+  var t=todayPick.tid||'okänt', f={pigg:'pigg',okej:'okej',trott:'trött'}[todayPick.form]||'okänt', p={pepp:'pepp och taggad',sadar:'sådär',jobbigt:'känns lite jobbigt'}[todayPick.pepp]||'okänt';
+  return 'Tid idag: '+t+' min. Dagsform: '+f+'. Motivation: '+p+'.\n'+aiContext();
+}
+document.getElementById('td-local').onclick=function(){setTodayOut(localTodaySuggest(),false);};
+document.getElementById('td-ai').onclick=function(){
+  setTodayOut('Tänker…',true);
+  var p=AI_SYS+'Föreslå ett pass för IDAG som passar personens tid, dagsform och motivation. Titta på tidigare pass och säg gärna "sist gjorde du X, idag föreslår vi Y". Anpassa storleken: om det känns jobbigt eller kroppen är trött, föreslå något litet och skonsamt och påminn om att vila räknas. Max 5 meningar, konkret men mjukt.\n\n'+todayContext();
+  callAI(p,function(t){setTodayOut(t,false);},450);
+};
+document.getElementById('td-done').onclick=closeSheets;
+
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.6.0',
+  version:'1.8.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
     'Senast i rörelse — visar hur länge sedan utan skuld',
     'Logga pass med längd, tid, energi före/efter, anteckning och hur fullt det upplevdes',
     'Egna passtyper som snabbval',
-    'Övnings- och maskinbibliotek med viktintervall, betyg och anteckning',
+    'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
-    'Lös planering framåt',
+    'Lös planering framåt, plus löpande schema för återkommande pass (t.ex. gång måndag och lördag)',
+    '"Planerat idag"-avstämning med Ja/Nej — Ja loggar passet automatiskt',
     'Flera gym — lägg till, byt mellan och ta bort gym, var och en med egna öppettider och belastningsschema',
     'Zoner per gym: allmänna gymmet och tjejdelen, med separata belastningsscheman',
     'Öppettider per veckodag med status öppet/stängt',
     'Belastningsschema timme för timme, hela dygnet (00–23), med lugnaste tiden',
-    'Översikt: pass/vecka & 30 dagar, kalender, energimönster, vanligaste passtyper',
+    'Översikt: pass/vecka & 30 dagar, kalender där du kan öppna en dag och se passets historik, energimönster, vanligaste passtyper',
+    'Förslag för idag: ställ in tid, dagsform och lust — appen tittar på tidigare pass och föreslår något lagom (AI eller enkelt förslag)',
+    'Efterregistrera pass bakåt via valfri dag i kalendern',
     'AI-förslag via Claude eller ChatGPT (nycklar bara på enheten)',
     'Flera färgteman + auto/ljust/mörkt',
     'Synk mellan enheter via privat GitHub-repo (union-merge per id)',
@@ -1572,6 +1839,18 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.8.0',d:'2026-07-19',items:[
+      'Avstämning på Idag: planerade och schemalagda pass frågar "har du gjort det?" med Ja/Nej. Ja loggar passet automatiskt för idag, Nej hoppar över det.',
+      'Löpande schema: lägg återkommande pass på valda veckodagar, t.ex. gång måndag och lördag. De dyker upp automatiskt under Planerat varje sådan dag.',
+      'Ett schemalagt pass slutar fråga när du svarat, och räknas som gjort om du redan loggat det samma dag (funkar även mellan enheter).'
+    ]},
+    {v:'1.7.0',d:'2026-07-19',items:[
+      'Muskelgrupper på varje övning — välj en eller flera (ben, rygg, bröst, core, kondition m.fl.).',
+      'Kalenderhistorik: tryck på en dag i Översikt för att se exakt hur passet såg ut då — tid, gym, del, upplevd trängsel, energi och anteckning.',
+      'Förslag för idag: ställ in hur mycket tid du har, hur dagsformen känns och om du är pepp, sådär eller om det känns jobbigt. Appen tittar på dina tidigare pass och föreslår något lagom — "sist gjorde du X, idag föreslår vi Y". Finns med AI och som enkelt förslag utan nyckel.',
+      'Efterregistrera pass bakåt: öppna vilken dag som helst i kalendern och logga ett pass för just den dagen.',
+      'När det känns tungt föreslås något litet och skonsamt, med påminnelsen att vila räknas.'
+    ]},
     {v:'1.6.0',d:'2026-07-19',items:[
       'Övningar & maskiner: spara en övning eller maskin med viktintervall (från–till), ett betyg på vad du tycker om den, och en anteckning. Kan knytas till ett visst gym.',
       'Failure-planerare: skriv in din högsta planerade vikt så föreslås en uppvärmningstrappa och en fördelning fram till ett failure-set på topvikten.',
@@ -1641,7 +1920,7 @@ document.querySelectorAll('.nav button').forEach(function(b){
 
 // ── Render-grupper ────────────────────────────────────
 function renderToday(){renderLast();renderQuickChips();renderPlanToday();renderGymToday();}
-function renderPass(){renderTypeTiles();renderPlanList();renderRecent();renderExercises();}
+function renderPass(){renderTypeTiles();renderPlanList();renderRecurList();renderRecent();renderExercises();}
 function renderAll(){renderToday();renderPass();renderGymUI();renderHours();renderHeat();renderCalmHint();renderStats();renderNyheter();}
 
 // ── Init ──────────────────────────────────────────────
