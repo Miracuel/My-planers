@@ -326,6 +326,10 @@ textarea{resize:vertical}
 .qchips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
 .qchips button{flex-shrink:0;border:1px solid var(--line);background:var(--panel2);border-radius:11px;padding:7px 11px;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit;white-space:nowrap}
 
+/* Anteckningar */
+.noteflag{color:var(--accent)}
+.notebox{background:var(--accent-soft);border-radius:13px;padding:11px 12px;font-size:13px;line-height:1.65;white-space:pre-wrap;margin-top:6px}
+
 /* Snabbvägar */
 .quick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .quick button{display:flex;align-items:center;gap:9px;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:15px;padding:12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
@@ -675,7 +679,10 @@ textarea{resize:vertical}
 <div class="sheet" id="log-sheet">
   <h3 id="lg-title">Sparat</h3>
   <div id="lg-body"></div>
-  <div class="btn-row" style="margin-top:12px">
+  <label>Din anteckning</label>
+  <textarea id="lg-note" rows="3" placeholder="Vad ser du själv? Skriv här – anteckningen sparas på posten."></textarea>
+  <button class="btn fill" id="lg-note-save" style="width:100%;margin-top:10px">Spara anteckningen</button>
+  <div class="btn-row" style="margin-top:8px">
     <button class="btn" id="lg-copy">Kopiera utkastet</button>
     <button class="btn danger" id="lg-del">Ta bort</button>
   </div>
@@ -697,7 +704,7 @@ textarea{resize:vertical}
    ══════════════════════════════════════════════════════ */
 
 var APPINFO={
-  version:'1.2.0',
+  version:'1.3.0',
   tagline:'Astrologisk relationsnavigator för dig och alla dina människor.',
   audience:'Privat',
   functions:[
@@ -707,13 +714,20 @@ var APPINFO={
     {area:'Områden',items:['Sex livsområden: kommunikation, kärlek, trygghet, vardag, konflikt, framtid','Egen poäng och egna aspekter per område','Konkreta navigeringsråd byggda på era aspekter']},
     {area:'Just nu',items:['Dagens himmel med månfas, månens tecken och retrograder','Aktuella transiter mot båda kartorna','Saturnuscykeln och Jupitercykeln med position i cykeln','Progressiv måne','Personlig månfas mot din egen sol','Nedräkning till soltillbakagång','Gemensamma transiter för er två']},
     {area:'Timing',items:['Klistra in ett utkast och f\u00e5 en bed\u00f6mning av l\u00e4get','Sju \u00e4renden: sv\u00e5rt samtal, konflikt, k\u00e4nslor, gr\u00e4ns, f\u00f6rsoning, pengar, vardag','Lokal po\u00e4ng med alla sk\u00e4l redovisade rad f\u00f6r rad','B\u00e4sta f\u00f6nstret de n\u00e4rmaste tio dagarna, ner till timmen','AI l\u00e4ser sj\u00e4lva texten och f\u00f6resl\u00e5r omskrivning']},
-    {area:'Sparat i relationen',items:['Spara matchen, AI-tolkningen och timingbed\u00f6mningen p\u00e5 personen','Historik per person i b\u00e5de Timing och kartvyn','\u00d6ppna en sparad post och l\u00e4s hela utkastet igen','Kopiera tillbaka ett sparat utkast','F\u00f6ljer med i synk, export och import']},
+    {area:'Sparat i relationen',items:['Egna anteckningar i matchningen, sparade i relationen','Anteckning kan l\u00e4ggas till och \u00e4ndras p\u00e5 varje sparad post i efterhand','Spara matchen, AI-tolkningen och timingbed\u00f6mningen p\u00e5 personen','Historik per person i b\u00e5de Timing och kartvyn','\u00d6ppna en sparad post och l\u00e4s hela utkastet igen','Kopiera tillbaka ett sparat utkast','F\u00f6ljer med i synk, export och import']},
     {area:'Vem passar b\u00e4st',items:['Rangordning av alla du lagt in, med de tre delpo\u00e4ngen','Dr\u00f6mpartner r\u00e4knad ur din egen karta','Datumf\u00f6nster f\u00f6r de soltecken som passar dig b\u00e4st','Hur n\u00e4ra dr\u00f6ml\u00e4get var och en ligger, i procent','Provmatcha ett f\u00f6delsedatum utan att spara personen']},
     {area:'K\u00e4rlek\u00e5r',items:['Tolv m\u00e5nader fram\u00e5t som staplar','L\u00e4ge f\u00f6r singel eller f\u00f6r en vald relation','Exakta datum f\u00f6r Venus-, Mars-, Jupiter- och Saturnustransiter','Kompositkarta n\u00e4r du v\u00e4ljer en partner','Venus retrograd-f\u00f6nster under \u00e5ret','B\u00e4sta och tyngsta m\u00e5naden utpekade']},
     {area:'AI-guiden',items:['Fr\u00e5ga fritt om matchningar, transiter och horoskop fram\u00e5t','All din data skickas med som underlag \u2013 kartor, transiter, k\u00e4rlek\u00e5r','Samtalstr\u00e5d med historik','F\u00e4rdiga fr\u00e5gor att trycka p\u00e5','Spara enskilda svar i relationen']},
     {area:'Övrigt',items:['AI-tolkning via Claude eller ChatGPT','Synk mot eget GitHub-repo','Export och import som JSON','Auto/ljust/mörkt läge plus sex färgteman','Mobil- och desktopversion','Ordlista över aspekter och planeter']}
   ],
   changelog:[
+    {v:'1.3.0',d:'2026-07-26',items:[
+      'Egen anteckning i matchvyn \u2013 skriv vad du sj\u00e4lv ser och spara det i relationen.',
+      'Anteckningen kan f\u00f6lja med n\u00e4r du sparar matchen, eller sparas helt f\u00f6r sig som en ren anteckning med matchpo\u00e4ngen som sammanhang.',
+      'Varje sparad post \u2013 match, timing och guidesvar \u2013 har nu ett anteckningsf\u00e4lt som kan fyllas i och \u00e4ndras i efterhand.',
+      'Poster med anteckning markeras i listan s\u00e5 du ser vilka du kommenterat.',
+      'Anteckningens \u00e4ndringstid v\u00e4gs in i synkens union-merge, s\u00e5 en anteckning skriven p\u00e5 en enhet inte skrivs \u00f6ver av en annan.'
+    ]},
     {v:'1.2.0',d:'2026-07-26',items:[
       'Ny vy Vem passar: rangordnar alla du lagt in och r\u00e4knar fram en dr\u00f6mpartner ur din egen karta.',
       'Dr\u00f6mpartnern byggs av din deskendent, din sol, din Venus, din Mars och din m\u00e5ne \u2013 och ger konkreta datumf\u00f6nster f\u00f6r vilka soltecken som passar dig.',
@@ -1983,11 +1997,25 @@ function renderMatch(){
     '<div class="soft">L\u00e5t Claude eller ChatGPT skriva en sammanh\u00e4ngande text utifr\u00e5n exakt de aspekter appen r\u00e4knat ut.</div>'+
     '<button class="btn fill" id="ai-run" style="width:100%;margin-top:10px">Tolka '+esc(pc.A.namn)+' &amp; '+esc(pc.B.namn)+'</button>'+
     '<div id="ai-out"></div></div>';
-  h+='<div class="btn-row" style="margin-top:12px"><button class="btn" id="m-save" style="width:100%">Spara matchen i relationen</button></div>';
+  var pk=pc.A.id+'|'+pc.B.id;
+  h+='<div class="section-title">Din anteckning</div><div class="card-panel">'+
+    '<div class="soft">Skriv vad du sj\u00e4lv ser \u2013 det aspekterna inte s\u00e4ger. Anteckningen f\u00f6ljer med n\u00e4r du sparar matchen, eller kan sparas f\u00f6r sig.</div>'+
+    '<textarea id="m-note" rows="3" placeholder="T.ex. hur det faktiskt k\u00e4nns, vad som h\u00e4nt senast, vad du vill komma ih\u00e5g."></textarea>'+
+    '<div class="btn-row" style="margin-top:10px">'+
+    '<button class="btn fill" id="m-save">Spara matchen</button>'+
+    '<button class="btn" id="m-note-save">Spara bara anteckningen</button></div></div>';
   h+='<div class="section-title">Sparat om '+esc(pc.B.kat!=='Jag'?pc.B.namn:pc.A.namn)+'</div><div id="m-log"></div>';
   el.innerHTML=h;
   document.getElementById('ai-run').onclick=function(){runAI(pc,m);};
-  document.getElementById('m-save').onclick=function(){saveMatch(pc,m);renderMatch();};
+  var nEl=document.getElementById('m-note');
+  nEl.value=MNOTE[pk]||'';
+  nEl.oninput=function(){MNOTE[pk]=this.value;};
+  document.getElementById('m-save').onclick=function(){saveMatch(pc,m,MNOTE[pk]||'');MNOTE[pk]='';renderMatch();};
+  document.getElementById('m-note-save').onclick=function(){
+    var v=(MNOTE[pk]||'').trim();
+    if(!v){toast('Skriv n\u00e5got f\u00f6rst.');return;}
+    saveNoteOnly(pc,m,v);MNOTE[pk]='';renderMatch();
+  };
   renderLogList(pc.B.kat!=='Jag'?pc.B.id:pc.A.id,'m-log');
 }
 function openMatch(id){
@@ -2292,7 +2320,7 @@ function renderChangelog(){
 
 
 /* ── Sparat i relationen ─────────────────────────────── */
-var LOGICON={timing:'\u23F3',match:'\u2727',guide:'\uD83D\uDCAC'};
+var LOGICON={timing:'\u23F3',match:'\u2727',guide:'\uD83D\uDCAC',note:'\uD83D\uDCDD'};
 function addLog(pid,e){
   var p=byId(pid);if(!p)return;
   if(!Array.isArray(p.logg))p.logg=[];
@@ -2318,6 +2346,7 @@ function logTitle(e){
   }
   if(e.typ==='match')return 'Match '+e.score+' \u2013 samklang '+e.samklang+', dragning '+e.dragning+', h\u00e5llbarhet '+e.hallbarhet;
   if(e.typ==='guide')return 'Guiden: '+(e.q?e.q.slice(0,60):'sparat svar');
+  if(e.typ==='note')return 'Anteckning: '+((e.note||'').slice(0,60)||'tom');
   return e.title||'Sparat';
 }
 function renderLogList(pid,elId){
@@ -2335,7 +2364,8 @@ function renderLogList(pid,elId){
     h+='<div class="logitem" onclick="openLog(\''+pid+'\',\''+e.id+'\')">'+
       '<div class="li">'+(LOGICON[e.typ]||'\u2727')+'</div><div class="lm">'+
       '<div class="lt">'+esc(logTitle(e))+'</div>'+
-      '<div class="ld">'+esc(fmtDT(e.date))+(e.ai?' \u00b7 med AI-tolkning':'')+'</div></div>'+
+      '<div class="ld">'+esc(fmtDT(e.date))+(e.ai?' \u00b7 med AI-tolkning':'')+
+      (e.note&&e.typ!=='note'?' \u00b7 <span class="noteflag">\uD83D\uDCDD anteckning</span>':'')+'</div></div>'+
       (e.score!=null?'<span class="scorepill '+scoreCls(e.score)+'">'+e.score+'</span>':'')+'</div>';
   }
   el.innerHTML=h;
@@ -2355,7 +2385,8 @@ function openLog(pid,eid){
   for(i=0;i<(p.logg||[]).length;i++)if(p.logg[i].id===eid)e=p.logg[i];
   if(!e)return;
   CURLOG={pid:pid,eid:eid};
-  document.getElementById('lg-title').textContent=(e.typ==='timing'?'Timing':e.typ==='guide'?'Guiden':'Match')+' \u00b7 '+(p.namn||'');
+  document.getElementById('lg-title').textContent=
+    (e.typ==='timing'?'Timing':e.typ==='guide'?'Guiden':e.typ==='note'?'Anteckning':'Match')+' \u00b7 '+(p.namn||'');
   var h='<div class="soft">'+esc(fmtDT(e.date))+(e.kindName?' \u00b7 '+esc(e.kindName):'')+(e.moon?' \u00b7 '+esc(e.moon):'')+'</div>';
   if(e.typ==='timing'){
     var V=VERDICT[e.level]||VERDICT.mid;
@@ -2376,8 +2407,22 @@ function openLog(pid,eid){
     }
   }
   if(e.typ==='guide'&&e.q)h+='<div class="sub-h">Fr\u00e5gan</div><div class="draftbox">'+esc(e.q)+'</div>';
+  if(e.typ==='note'){
+    h+='<div class="notebox">'+esc(e.note||'')+'</div>';
+    if(e.score!=null)h+='<div class="card-panel" style="margin-top:10px">'+
+      barRow('Samklang',e.samklang,'')+barRow('Dragningskraft',e.dragning,'')+barRow('H\u00e5llbarhet',e.hallbarhet,'')+
+      '</div><div class="soft" style="margin-top:8px">Matchen var '+e.score+' n\u00e4r anteckningen skrevs'+
+      (e.other?', mot '+esc(e.other):'')+'.</div>';
+    if(e.asps&&e.asps.length){
+      h+='<div class="sub-h">Aspekterna d\u00e5</div>';
+      for(i=0;i<e.asps.length;i++)
+        h+='<div class="asp '+esc(e.asps[i].k||'neu')+'"><div class="ag">'+esc(e.asps[i].g||'\u00b7')+'</div><div class="at">'+esc(e.asps[i].t)+'</div></div>';
+    }
+  }
   if(e.ai)h+='<div class="sub-h">AI-tolkning'+(e.prov?' \u00b7 '+esc(e.prov==='chatgpt'?'ChatGPT':'Claude'):'')+'</div><div class="ai-box">'+esc(e.ai)+'</div>';
+  if(e.note&&e.typ!=='note')h+='<div class="sub-h">Din anteckning</div><div class="notebox">'+esc(e.note)+'</div>';
   document.getElementById('lg-body').innerHTML=h;
+  document.getElementById('lg-note').value=e.note||'';
   document.getElementById('lg-copy').style.display=e.draft?'block':'none';
   openSheet('log-sheet');
 }
@@ -2387,6 +2432,19 @@ document.getElementById('lg-del').onclick=function(){
   if(!confirm('Ta bort den h\u00e4r sparade posten?'))return;
   delLog(CURLOG.pid,CURLOG.eid);
   closeSheets();renderActive();toast('Borttagen.');
+};
+document.getElementById('lg-note-save').onclick=function(){
+  if(!CURLOG)return;
+  var p=byId(CURLOG.pid);if(!p)return;
+  var e=null,i;
+  for(i=0;i<(p.logg||[]).length;i++)if(p.logg[i].id===CURLOG.eid)e=p.logg[i];
+  if(!e)return;
+  var v=document.getElementById('lg-note').value.trim();
+  e.note=v;e.noteAt=nowISO();
+  p.updated=nowISO();persist();
+  openLog(CURLOG.pid,CURLOG.eid);
+  renderActive();
+  toast(v?'Anteckningen sparad.':'Anteckningen rensad.');
 };
 document.getElementById('lg-copy').onclick=function(){
   if(!CURLOG)return;
@@ -2553,8 +2611,25 @@ document.getElementById('t-clear').onclick=function(){
 };
 
 /* ── Spara match i relationen ────────────────────────── */
-var LASTMATCHAI={pair:'',text:'',prov:''};
-function saveMatch(pc,m){
+var LASTMATCHAI={pair:'',text:'',prov:''},MNOTE={};
+function matchTarget(pc){return (pc.B.kat!=='Jag')?pc.B:pc.A;}
+function matchAsps(pc,m,n){
+  var out=[],i;
+  for(i=0;i<Math.min(n||8,m.list.length);i++){
+    var x=m.list[i];
+    out.push({k:x.kind,g:x.asp.g,
+      t:pc.A.namn+'s '+PL[x.a].p+' '+x.asp.v+' '+pc.B.namn+'s '+PL[x.b].p+' ('+x.asp.n.toLowerCase()+', '+x.orb.toFixed(1)+'\u00b0)'});
+  }
+  return out;
+}
+function saveNoteOnly(pc,m,note){
+  var target=matchTarget(pc),other=(target===pc.B)?pc.A:pc.B;
+  addLog(target.id,{id:uid(),typ:'note',date:nowISO(),note:note,noteAt:nowISO(),
+    score:m.total,samklang:m.samklang,dragning:m.dragning,hallbarhet:m.hallbarhet,
+    other:(other.kat==='Jag')?'':other.namn,asps:matchAsps(pc,m,4)});
+  toast('Anteckningen sparad hos '+target.namn+'.');
+}
+function saveMatch(pc,m,note){
   var target=(pc.B.kat!=='Jag')?pc.B:pc.A,other=(target===pc.B)?pc.A:pc.B;
   var asps=[],i;
   for(i=0;i<Math.min(8,m.list.length);i++){
@@ -2566,9 +2641,10 @@ function saveMatch(pc,m){
   var useAI=(LASTMATCHAI.pair===pairKey)?LASTMATCHAI.text:'';
   var e={id:uid(),typ:'match',date:nowISO(),score:m.total,
     samklang:m.samklang,dragning:m.dragning,hallbarhet:m.hallbarhet,
-    other:other.namn,asps:asps,ai:useAI,prov:useAI?LASTMATCHAI.prov:''};
+    other:(other.kat==='Jag')?'':other.namn,asps:asps,ai:useAI,prov:useAI?LASTMATCHAI.prov:''};
+  if((note||'').trim()){e.note=note.trim();e.noteAt=nowISO();}
   addLog(target.id,e);
-  toast('Matchen sparad hos '+target.namn+'.');
+  toast('Matchen sparad hos '+target.namn+(e.note?' med anteckning.':'.'));
 }
 
 
@@ -3000,9 +3076,10 @@ function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)retu
 function mergeLogg(a,b){
   var m={},i;
   for(i=0;i<(a||[]).length;i++)m[a[i].id]=a[i];
+  function stamp(x){return (x.noteAt||'')>(x.date||'')?x.noteAt:(x.date||'');}
   for(i=0;i<(b||[]).length;i++){
     var e=b[i];
-    if(!m[e.id]||(e.date||'')>(m[e.id].date||''))m[e.id]=e;
+    if(!m[e.id]||stamp(e)>stamp(m[e.id]))m[e.id]=e;
   }
   var out=Object.keys(m).map(function(k){return m[k];});
   out.sort(function(x,y){return (y.date||'').localeCompare(x.date||'');});
@@ -3136,7 +3213,10 @@ async function runAI(pc,m){
     LASTMATCHAI={pair:pc.A.id+'|'+pc.B.id,text:text,prov:aiProvider};
     out.innerHTML='<div class="ai-box"><span class="ai-lbl">'+(aiProvider==='chatgpt'?'ChatGPT':'Claude')+' om '+esc(pc.A.namn)+' &amp; '+esc(pc.B.namn)+'</span>'+esc(text)+
       '</div><button class="btn" id="ai-save" style="width:100%;margin-top:10px">Spara AI-tolkningen i relationen</button>';
-    document.getElementById('ai-save').onclick=function(){saveMatch(pc,m);toast('AI-tolkningen sparad.');};
+    document.getElementById('ai-save').onclick=function(){
+      var pk2=pc.A.id+'|'+pc.B.id;
+      saveMatch(pc,m,MNOTE[pk2]||'');MNOTE[pk2]='';renderMatch();
+    };
   }catch(e){
     out.innerHTML='<div class="ai-box"><span class="ai-lbl">Fel</span>Kunde inte h\u00e4mta tolkning: '+esc(e.message)+'</div>';
   }
