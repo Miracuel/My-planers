@@ -51,6 +51,21 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .exrow .exr-del{flex:0 0 auto;width:34px;background:none;border:1px solid var(--line);border-radius:9px;color:var(--muted);font-size:16px;cursor:pointer}
 .exrow .exr-del:active{background:var(--panel)}
 .sess-row .items{font-size:11px;color:var(--accent);margin-top:2px;line-height:1.5}
+.gt-head{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:8px}
+.gt-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+.gt-cell{height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#2f3a34;border:1px solid var(--line)}
+.gt-cell.l0{background:var(--panel2);color:var(--muted)}
+.gt-cell.l1{background:var(--green)}
+.gt-cell.l2{background:var(--yellow)}
+.gt-cell.l3{background:var(--red)}
+.gt-cell.now{outline:2px solid var(--ink);outline-offset:1px}
+.gt-cell.closed{opacity:.4}
+.gt-now{font-size:12px;line-height:1.6}
+.fail-mini{display:flex;gap:6px;align-items:center}
+.fail-mini input{flex:1}
+.fail-mini .btn{flex:0 0 auto;padding:9px 12px}
+.fail-block{white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12px;color:var(--ink);line-height:1.55;margin-top:6px}
+.fail-tag{color:var(--accent)}
 .section-sub{font-family:Georgia,serif;font-size:13px;color:var(--ink);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
 .soft{font-size:12px;color:var(--muted);line-height:1.6}
 .view{display:none}
@@ -129,6 +144,10 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .cal .cd.has::after{content:'';position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
 .cal .cd.head{background:none;color:var(--muted);font-size:10px}
 .cal .cd.today{outline:1.5px solid var(--accent)}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav #cal-label{font-family:Georgia,serif;font-size:15px;color:var(--ink)}
+.cal-nav button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:18px;cursor:pointer;font-family:inherit;line-height:1}
+.cal-nav button:active{background:var(--accent-soft)}
 .avg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
 .avg-row:first-child{border-top:none}
 .avg-row b{color:var(--accent)}
@@ -237,13 +256,14 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     </div>
     <button class="btn fill" id="log-now" style="width:100%;margin-top:12px">Logga ett pass</button>
     <button class="btn" id="open-today" style="width:100%;margin-top:8px">✨ Förslag för idag</button>
+    <button class="btn" id="open-coach" style="width:100%;margin-top:8px">🧑‍🏫 AI-coach</button>
     <div class="chips" id="quick-chips"></div>
   </div>
 
   <div class="section-title">Planerat</div>
   <div class="card-panel" id="plan-today"></div>
 
-  <div class="section-title">Lugnast på gymmet idag</div>
+  <div class="section-title">Belastning på gymmet</div>
   <div class="card-panel" id="gym-today"></div>
 
   <div class="foot">
@@ -273,6 +293,10 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <div class="soft" style="margin-bottom:8px">Återkommande pass, t.ex. gång måndag och lördag. De dyker upp under "Planerat" på Idag med Ja/Nej.</div>
     <button class="btn" id="open-recur" style="width:100%">+ Schemalägg löpande pass</button>
     <div id="recur-list" style="margin-top:10px"></div>
+    <div class="section-sub">Mallar</div>
+    <div class="soft" style="margin-bottom:8px">Spara ett upplägg (t.ex. "Benpass") och lägg det på ett pass när du planerar eller loggar.</div>
+    <button class="btn" id="open-tmpl" style="width:100%">+ Ny mall</button>
+    <div id="tmpl-list" style="margin-top:10px"></div>
   </div>
 
   <div class="section-title">Övningar &amp; maskiner</div>
@@ -326,11 +350,25 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     </div>
   </div>
 
-  <div class="section-title">Den här månaden</div>
-  <div class="card-panel"><div class="cal" id="cal"></div></div>
+  <div class="section-title">Kalender</div>
+  <div class="card-panel">
+    <div class="cal-nav">
+      <button id="cal-prev" aria-label="Föregående månad">‹</button>
+      <div id="cal-label">Månad</div>
+      <button id="cal-next" aria-label="Nästa månad">›</button>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="soft" id="cal-sum" style="margin-top:8px;text-align:center"></div>
+  </div>
 
   <div class="section-title">Rörelse gör ofta skillnad</div>
   <div class="card-panel" id="energy-card"></div>
+
+  <div class="section-title">Statistik per övning</div>
+  <div class="card-panel" id="ex-stats"></div>
+
+  <div class="section-title">Mer statistik</div>
+  <div class="card-panel" id="more-stats"></div>
 
   <div class="section-title">Vad du gör mest <span class="soft">(30 dagar)</span></div>
   <div class="card-panel" id="type-stats"></div>
@@ -400,9 +438,20 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <div class="dotpick" id="lg-after"></div>
   <label>Övningar du använde (frivilligt)</label>
   <div class="soft" style="margin-bottom:6px">Bra för styrkepass — lägg övning/maskin med vikt, reps och set.</div>
+  <select id="lg-tmpl" style="margin-bottom:8px"></select>
   <div id="lg-ex-list"></div>
   <datalist id="ex-datalist"></datalist>
-  <button type="button" class="btn" id="lg-ex-add" style="width:100%">+ Lägg till övning</button>
+  <div class="btn-row">
+    <button type="button" class="btn" id="lg-ex-add">+ Lägg till övning</button>
+    <button type="button" class="btn ghost" id="lg-tmpl-save">Spara som mall</button>
+  </div>
+  <label>⚡ Failure-plan (frivilligt)</label>
+  <div class="fail-mini">
+    <input type="number" id="lg-fz" min="1" step="2.5" placeholder="topvikt kg">
+    <button type="button" class="btn fill" id="lg-fai">AI</button>
+    <button type="button" class="btn" id="lg-flocal">Enkelt</button>
+  </div>
+  <div id="lg-fout" class="ai-out" style="display:none"></div>
   <label>Anteckning (frivilligt)</label>
   <textarea id="lg-note" rows="2" placeholder="Hur kändes det? Behöver inte vara något."></textarea>
   <button class="sheet-close" id="lg-save">Spara passet</button>
@@ -430,6 +479,17 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <div><label>Dag</label><input type="date" id="pl-date"></div>
     <div><label>Tid (frivilligt)</label><input type="time" id="pl-time"></div>
   </div>
+  <label>Övningar (frivilligt)</label>
+  <select id="pl-tmpl" style="margin-bottom:8px"></select>
+  <div id="pl-ex-list"></div>
+  <button type="button" class="btn" id="pl-ex-add" style="width:100%">+ Lägg till övning</button>
+  <label>⚡ Failure-plan (frivilligt)</label>
+  <div class="fail-mini">
+    <input type="number" id="pl-fz" min="1" step="2.5" placeholder="topvikt kg">
+    <button type="button" class="btn fill" id="pl-fai">AI</button>
+    <button type="button" class="btn" id="pl-flocal">Enkelt</button>
+  </div>
+  <div id="pl-fout" class="ai-out" style="display:none"></div>
   <button class="sheet-close" id="pl-save">Lägg till i planen</button>
 </div>
 
@@ -446,6 +506,19 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   </div>
   <button class="sheet-close" id="rc-save">Spara</button>
   <button class="btn ghost" id="rc-del2" style="width:100%;margin-top:8px">Ta bort</button>
+</div>
+
+<div class="sheet" id="tmpl-sheet">
+  <h3 id="tmpl-title">Mall</h3>
+  <label>Namn på mallen</label>
+  <input type="text" id="tmpl-name" placeholder="T.ex. Benpass">
+  <label>Standardlängd (min, frivilligt)</label>
+  <input type="number" id="tmpl-min" min="1" step="5" placeholder="45">
+  <label>Övningar</label>
+  <div id="tmpl-ex-list"></div>
+  <button type="button" class="btn" id="tmpl-ex-add" style="width:100%">+ Lägg till övning</button>
+  <button class="sheet-close" id="tmpl-save">Spara mall</button>
+  <button class="btn ghost" id="tmpl-del" style="width:100%;margin-top:8px">Ta bort mallen</button>
 </div>
 
 <div class="sheet" id="hours-sheet">
@@ -505,6 +578,21 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <div id="day-list"></div>
   <button class="btn" id="day-add" style="width:100%;margin-top:10px">+ Logga pass den här dagen</button>
   <button class="sheet-close" id="day-done" style="display:none"></button>
+</div>
+
+<div class="sheet" id="coach-sheet">
+  <h3>🧑‍🏫 AI-coach</h3>
+  <div class="soft">Välj ett fokus så föreslår coachen konkreta övningar — lugnt, i din takt.</div>
+  <label>Fokus</label>
+  <div class="chips" id="coach-cats"></div>
+  <label>Något särskilt? (frivilligt)</label>
+  <input type="text" id="coach-extra" placeholder="T.ex. skonsamt för knäna, hemma utan redskap">
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="coach-ai">Föreslå med AI</button>
+    <button class="btn" id="coach-local">Enkla förslag</button>
+  </div>
+  <div id="coach-out" class="ai-out" style="display:none"></div>
+  <button class="sheet-close" id="coach-done">Stäng</button>
 </div>
 
 <div class="sheet" id="today-sheet">
@@ -604,6 +692,7 @@ var state={
   exercises:null,
   recurring:null,
   recurDone:null,
+  templates:null,
   gyms:null,
   activeGym:'',
   activeZone:'allmant',
@@ -650,6 +739,7 @@ function zoneNamn(z){for(var i=0;i<ZONES.length;i++){if(ZONES[i].id===z)return Z
 function ensureGym(){
   if(!Array.isArray(state.exercises))state.exercises=[];
   if(!Array.isArray(state.recurring))state.recurring=[];
+  if(!Array.isArray(state.templates))state.templates=[];
   if(!state.recurDone||typeof state.recurDone!=='object')state.recurDone={};
   if(!Array.isArray(state.gyms)){
     var old=state.gym||{};
@@ -763,7 +853,7 @@ function sessionDoneToday(name){
 // Dagens poster = manuellt planerade + löpande schema för idag
 function todaysItems(){
   var tk=todayKey();var td=wd(new Date());var items=[];
-  (state.planned[tk]||[]).forEach(function(p,i){items.push({src:'plan',i:i,icon:p.icon,name:p.name,min:p.min,time:p.time});});
+  (state.planned[tk]||[]).forEach(function(p,i){items.push({src:'plan',i:i,icon:p.icon,name:p.name,min:p.min,time:p.time,items:p.items,failPlan:p.failPlan});});
   var done=state.recurDone[tk]||[];
   (state.recurring||[]).forEach(function(r){
     if((r.days||[]).indexOf(td)<0)return;
@@ -786,7 +876,8 @@ function doPlanned(it,didIt){
   if(didIt){
     state.sessions.push({id:Date.now(),icon:it.icon||'🌿',name:it.name,min:it.min||null,
       date:todayKey(),time:it.time||new Date().toTimeString().slice(0,5),
-      before:null,after:null,note:'',gymId:state.activeGym||'',zone:'allmant',full:null});
+      before:null,after:null,note:'',gymId:state.activeGym||'',zone:'allmant',full:null,
+      items:it.items||null,failPlan:it.failPlan||null});
   }
   clearItem(it);
   save();renderPlanToday();renderPass();renderStats();renderToday();
@@ -796,7 +887,8 @@ function renderPlanToday(){
   var items=todaysItems();
   if(!items.length){el.innerHTML='<div class="empty-msg">Inget planerat idag — och det är helt okej.</div>';return;}
   el.innerHTML=items.map(function(it,idx){
-    var sub=(it.recur?'löpande schema':'planerat')+(it.time?' · '+it.time:'');
+    var extra=(it.items&&it.items.length?' · '+it.items.length+' övn':'')+(it.failPlan?' · ⚡':'');
+    var sub=(it.recur?'löpande schema':'planerat')+(it.time?' · '+it.time:'')+extra;
     return '<div class="plan-ask"><div class="plan-q"><span class="ic">'+(it.icon||'•')+'</span>'+
       '<div><b>'+esc(it.name)+'</b><div class="meta">'+sub+' — har du gjort det?</div></div></div>'+
       '<div class="btn-row" style="margin-top:8px"><button class="btn fill" data-idx="'+idx+'" data-y="1">Ja, gjort</button>'+
@@ -815,53 +907,40 @@ function nowBlock(){
   return -1;
 }
 function hmToMin(s){var p=s.split(':');return (+p[0])*60+(+p[1]);}
+function loadWord(l){return l===1?'lugnt':l===2?'en del folk':l===3?'fullt':'okänt';}
 function renderGymToday(){
   ensureGym();
   var el=document.getElementById('gym-today');
-  var w=wd(new Date());
   var g=curGym();
+  var now=new Date();var w=wd(now);var nowH=now.getHours();var nowMin=now.getHours()*60+now.getMinutes();
   var hrs=g.hours[w];
-  var now=new Date();var nowMin=now.getHours()*60+now.getMinutes();
+  var head='Idag '+DAYSL[w]+' '+now.getDate()+'/'+(now.getMonth()+1);
   var statusHtml='';
   if(hrs.closed){statusHtml='<b>'+esc(g.name)+'</b> håller stängt idag.';}
   else{
     var o=hmToMin(hrs.open),c=hmToMin(hrs.close);
     if(nowMin<o)statusHtml='<b>'+esc(g.name)+'</b> öppnar '+hrs.open+' idag.';
-    else if(nowMin>=c)statusHtml='<b>'+esc(g.name)+'</b> har stängt för idag (öppnar igen imorgon).';
-    else statusHtml='<b>'+esc(g.name)+'</b> är öppet nu — stänger '+hrs.close+'.';
+    else if(nowMin>=c)statusHtml='<b>'+esc(g.name)+'</b> har stängt för idag.';
+    else statusHtml='<b>'+esc(g.name)+'</b> öppet nu — stänger '+hrs.close+'.';
   }
-  // lugnaste tiden
-  var crowd=curCrowd()[w];
-  var zonTxt=curGym().tjej?' ('+zoneNamn(state.activeZone).toLowerCase()+')':'';
-  var calm='';
-  if(!hrs.closed){
-    var o2=hmToMin(hrs.open),c2=hmToMin(hrs.close);
-    var nb=nowBlock();
-    var best=-1,bestLvl=9;
-    for(var i=0;i<TIMES.length;i++){
-      var bs=TIMES[i]*60,be=(TIMES[i]+1)*60;
-      if(be<=o2||bs>=c2)continue; // utanför öppettid
-      if(be<=nowMin)continue; // redan passerat
-      var lvl=crowd[i];
-      if(lvl===0)continue;
-      if(lvl<bestLvl||(lvl===bestLvl&&best<0)){bestLvl=lvl;best=i;}
-    }
-    if(nb>=0&&crowd[nb]>0&&nowMin>=o2&&nowMin<c2){
-      var lvlNow=crowd[nb];
-      var txtNow=lvlNow===1?'lugnt':lvlNow===2?'en del folk':'fullt';
-      var col=lvlNow===1?'var(--green)':lvlNow===2?'var(--yellow)':'var(--red)';
-      calm='<span class="dot-now" style="background:'+col+'"></span>Just nu brukar det vara <b>'+txtNow+'</b>.';
-      if(lvlNow>1&&best>=0&&best!==nb){
-        calm+=' Lugnare runt '+pad(TIMES[best])+':00.';
-      }
-    }else if(best>=0){
-      var t=bestLvl===1?'lugnast':'lugnaste';
-      calm='Det brukar vara '+t+' runt <b>'+pad(TIMES[best])+':00</b> idag'+zonTxt+'.';
-    }else{
-      calm='Markera hur det brukar vara under <b>Gym</b> så visas den lugnaste tiden här.';
-    }
+  var zonTxt=g.tjej?' ('+zoneNamn(state.activeZone).toLowerCase()+')':'';
+  var strip='';
+  for(var i=0;i<5;i++){
+    var abs=nowH+i;var hr=abs%24;var off=Math.floor(abs/24);var dw=(w+off)%7;
+    var lvl=curCrowd()[dw][hr];
+    var dh=g.hours[dw];
+    var closedCell=dh.closed||(hr*60<hmToMin(dh.open))||(hr*60>=hmToMin(dh.close));
+    strip+='<div class="gt-cell l'+lvl+(i===0?' now':'')+(closedCell?' closed':'')+'">'+pad(hr)+'</div>';
   }
-  el.innerHTML='<div class="status" style="border-top:none;padding-top:0">'+statusHtml+'</div>'+(calm?'<div class="soft" style="margin-top:8px">'+calm+'</div>':'');
+  var nowLvl=curCrowd()[w][nowH];
+  var nextCalm='';
+  for(var j=1;j<=12;j++){var a=nowH+j;var hr2=a%24;var off2=Math.floor(a/24);var dw2=(w+off2)%7;if(curCrowd()[dw2][hr2]===1){nextCalm=pad(hr2)+':00';break;}}
+  var nowTxt='Just nu är det <b>'+loadWord(nowLvl)+'</b>'+(nowLvl===0?' (omarkerat)':'')+zonTxt+'.';
+  var calmLine=nextCalm?' Nästa lugna timslag: <b>'+nextCalm+'</b>.':' Markera timmar under <b>Gym</b> så syns lugna tider här.';
+  el.innerHTML='<div class="gt-head">'+esc(head)+'</div>'+
+    '<div class="gt-strip">'+strip+'</div>'+
+    '<div class="gt-now soft">'+nowTxt+calmLine+'</div>'+
+    '<div class="status" style="margin-top:8px">'+statusHtml+'</div>';
 }
 
 // ── Logga pass (sheet) ────────────────────────────────
@@ -871,8 +950,9 @@ function renderExDatalist(){
   var dl=document.getElementById('ex-datalist');if(!dl)return;
   dl.innerHTML=state.exercises.map(function(e){return '<option value="'+esc(e.name)+'">';}).join('');
 }
-function addExRow(pref){
-  var wrap=document.getElementById('lg-ex-list');
+function exByName(name){var r=null;state.exercises.forEach(function(e){if(e.name.toLowerCase()===(name||'').toLowerCase())r=e;});return r;}
+function addExRow(listId,pref){
+  var wrap=document.getElementById(listId);
   var row=document.createElement('div');row.className='exrow';
   row.innerHTML='<input class="exr-name" list="ex-datalist" placeholder="Övning / maskin">'
     +'<div class="exr-nums">'
@@ -884,9 +964,9 @@ function addExRow(pref){
   row.querySelector('.exr-del').onclick=function(){row.parentNode.removeChild(row);};
   wrap.appendChild(row);
 }
-function collectLogItems(){
+function collectItems(listId){
   var items=[];
-  document.getElementById('lg-ex-list').querySelectorAll('.exrow').forEach(function(row){
+  document.getElementById(listId).querySelectorAll('.exrow').forEach(function(row){
     var name=row.querySelector('.exr-name').value.trim();if(!name)return;
     var kg=parseFloat(row.querySelector('.exr-kg').value);
     var rp=parseInt(row.querySelector('.exr-rep').value,10);
@@ -896,6 +976,32 @@ function collectLogItems(){
   });
   return items;
 }
+function firstRowName(listId){
+  var r=document.getElementById(listId).querySelector('.exrow .exr-name');
+  return r?r.value.trim():'';
+}
+function wireFail(prefix,getName){
+  function run(useAI){
+    var zEl=document.getElementById(prefix+'-fz');var out=document.getElementById(prefix+'-fout');
+    var z=parseFloat(zEl.value);
+    if(!z||z<=0){zEl.focus();return;}
+    var name=getName();var ex=exByName(name);var mn=ex?ex.minW:null,mx=ex?ex.maxW:null;
+    if(useAI){
+      out.style.display='block';out.className='ai-out loading';out.textContent='Tänker…';
+      var ctx='Övning: '+(name||'okänd')+'. '+((mn||mx)?'Intervall '+(mn||'?')+'\u2013'+(mx||'?')+' kg. ':'')+'Topvikt: '+z+' kg.';
+      callAI(AI_SYS+'Ge ett kort failure-upplägg: en uppvärmningstrappa (set med reps och vikt i kg) och arbetsset som siktar på failure på topvikten, plus en kort säkerhetsrad. Kort punktlista ok.\n\n'+ctx,function(t){out.className='ai-out';out.textContent=t;},450);
+    }else{
+      out.style.display='block';out.className='ai-out';out.textContent=localFailurePlan(name,z,mn,mx);
+    }
+  }
+  document.getElementById(prefix+'-fai').onclick=function(){run(true);};
+  document.getElementById(prefix+'-flocal').onclick=function(){run(false);};
+}
+function failText(prefix){
+  var out=document.getElementById(prefix+'-fout');
+  return (out&&out.style.display!=='none'&&out.textContent.trim())?out.textContent.trim():null;
+}
+function resetFail(prefix){document.getElementById(prefix+'-fz').value='';var o=document.getElementById(prefix+'-fout');o.style.display='none';o.textContent='';}
 function itemsSummary(items){
   if(!items||!items.length)return '';
   return items.map(function(it){
@@ -915,7 +1021,7 @@ function openLog(type,dateStr){
   setDots('lg-before',0);setDots('lg-after',0);
   document.getElementById('lg-note').value='';
   document.getElementById('lg-ex-list').innerHTML='';
-  renderExDatalist();
+  renderExDatalist();renderTmplOptions('lg-tmpl');resetFail('lg');
   renderLogGym();
   openSheet('log-sheet');
 }
@@ -955,7 +1061,20 @@ function renderLogZones(){
   });
 }
 document.getElementById('log-now').onclick=function(){openLog(null);};
-document.getElementById('lg-ex-add').onclick=function(){addExRow(null);};
+document.getElementById('lg-ex-add').onclick=function(){addExRow('lg-ex-list',null);};
+document.getElementById('lg-tmpl').onchange=function(){
+  var t=tmplById(this.value);if(!t)return;
+  document.getElementById('lg-ex-list').innerHTML='';(t.items||[]).forEach(function(it){addExRow('lg-ex-list',it);});
+  if(t.min&&!document.getElementById('lg-min').value)document.getElementById('lg-min').value=t.min;
+  if(!document.getElementById('lg-name').value.trim())document.getElementById('lg-name').value=t.name;
+  this.value='';
+};
+document.getElementById('lg-tmpl-save').onclick=function(){
+  var items=collectItems('lg-ex-list');
+  if(!items.length){alert('Lägg till minst en övning först.');return;}
+  openTemplateFrom(document.getElementById('lg-name').value.trim()||'Ny mall', items, parseInt(document.getElementById('lg-min').value,10)||null);
+};
+wireFail('lg',function(){return firstRowName('lg-ex-list')||document.getElementById('lg-name').value.trim();});
 document.getElementById('lg-save').onclick=function(){
   var name=document.getElementById('lg-name').value.trim();
   if(!name){document.getElementById('lg-name').focus();return;}
@@ -968,13 +1087,14 @@ document.getElementById('lg-save').onclick=function(){
   var gymId=document.getElementById('lg-gym').value||state.activeGym;
   var zone=document.getElementById('lg-zone').dataset.val||'allmant';
   var full=document.getElementById('lg-full').dataset.val;
-  var items=collectLogItems();
+  var items=collectItems('lg-ex-list');
+  var fp=failText('lg');
   state.sessions.push({
     id:Date.now(),icon:logCtx.icon||'🌿',name:name,
     min:isNaN(min)?null:min,date:date,time:time,
     before:before?+before:null,after:after?+after:null,note:note,
     gymId:gymId,zone:zone,full:full?+full:null,
-    items:items.length?items:null
+    items:items.length?items:null,failPlan:fp
   });
   if(full)applyFullToCrowd(gymId,zone,date,time,+full);
   save();closeSheets();
@@ -1064,17 +1184,29 @@ function renderPlanTypeOptions(){
 }
 document.getElementById('open-plan').onclick=function(){
   renderPlanTypeOptions();
+  renderExDatalist();renderTmplOptions('pl-tmpl');
   document.getElementById('pl-date').value=todayKey();
   document.getElementById('pl-time').value='';
+  document.getElementById('pl-ex-list').innerHTML='';
+  resetFail('pl');
   openSheet('plan-sheet');
 };
+document.getElementById('pl-ex-add').onclick=function(){addExRow('pl-ex-list',null);};
+document.getElementById('pl-tmpl').onchange=function(){
+  var t=tmplById(this.value);if(!t)return;
+  document.getElementById('pl-ex-list').innerHTML='';(t.items||[]).forEach(function(it){addExRow('pl-ex-list',it);});
+  this.value='';
+};
+wireFail('pl',function(){return firstRowName('pl-ex-list')||(state.passTypes[+document.getElementById('pl-type').value]||{}).name||'';});
 document.getElementById('pl-save').onclick=function(){
   var i=+document.getElementById('pl-type').value;
   var t=state.passTypes[i];if(!t)return;
   var date=document.getElementById('pl-date').value||todayKey();
   var time=document.getElementById('pl-time').value;
+  var items=collectItems('pl-ex-list');
+  var fp=failText('pl');
   state.planned[date]=state.planned[date]||[];
-  state.planned[date].push({icon:t.icon,name:t.name,min:t.min,time:time});
+  state.planned[date].push({icon:t.icon,name:t.name,min:t.min,time:time,items:items.length?items:null,failPlan:fp});
   save();closeSheets();renderPlanList();renderPlanToday();
 };
 function renderPlanList(){
@@ -1297,17 +1429,26 @@ function renderStats(){
   renderCal();
   renderEnergy(diffs);
   renderTypeStats(c30);
+  renderExerciseStats();
+  renderMoreStats();
 }
+var MONTHS=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+var calY=null,calM=null;
 function renderCal(){
   var el=document.getElementById('cal');
-  var now=new Date();var y=now.getFullYear(),m=now.getMonth();
+  var now=new Date();
+  if(calY===null){calY=now.getFullYear();calM=now.getMonth();}
+  var y=calY,m=calM;
+  var lbl=document.getElementById('cal-label');
+  if(lbl)lbl.textContent=MONTHS[m].charAt(0).toUpperCase()+MONTHS[m].slice(1)+' '+y;
+  var isThisMonth=(y===now.getFullYear()&&m===now.getMonth());
   var first=new Date(y,m,1);
   var startPad=wd(first);
   var dim=new Date(y,m+1,0).getDate();
-  var counts={};
+  var counts={},mins={};
   state.sessions.forEach(function(x){
     var p=x.date.split('-');
-    if(+p[0]===y&&(+p[1]-1)===m)counts[+p[2]]=(counts[+p[2]]||0)+1;
+    if(+p[0]===y&&(+p[1]-1)===m){counts[+p[2]]=(counts[+p[2]]||0)+1;mins[+p[2]]=(mins[+p[2]]||0)+(x.min||0);}
   });
   var html=DAYS.map(function(d){return '<div class="cd head">'+d[0]+'</div>';}).join('');
   for(var i=0;i<startPad;i++)html+='<div class="cd" style="visibility:hidden"></div>';
@@ -1315,10 +1456,22 @@ function renderCal(){
   for(var day=1;day<=dim;day++){
     var has=counts[day];
     var iso=y+'-'+pad(m+1)+'-'+pad(day);
-    html+='<div class="cd'+(has?' has':'')+(day===todayNum?' today':'')+'" data-date="'+iso+'">'+day+'</div>';
+    html+='<div class="cd'+(has?' has':'')+((isThisMonth&&day===todayNum)?' today':'')+'" data-date="'+iso+'">'+day+'</div>';
   }
   el.innerHTML=html;
   el.querySelectorAll('.cd[data-date]').forEach(function(c){c.onclick=function(){openDay(c.dataset.date);};});
+  var tot=0,tmin=0;Object.keys(counts).forEach(function(k){tot+=counts[k];});Object.keys(mins).forEach(function(k){tmin+=mins[k];});
+  var sum=document.getElementById('cal-sum');
+  if(sum)sum.textContent=tot?(tot+(tot===1?' pass':' pass')+(tmin?' · '+tmin+' min':'')+' den här månaden'):'Inga pass den här månaden.';
+}
+document.getElementById('cal-prev').onclick=function(){calShift(-1);};
+document.getElementById('cal-next').onclick=function(){calShift(1);};
+function calShift(delta){
+  var now=new Date();
+  if(calY===null){calY=now.getFullYear();calM=now.getMonth();}
+  calM+=delta;
+  if(calM<0){calM=11;calY--;}else if(calM>11){calM=0;calY++;}
+  renderCal();
 }
 function fmtDateLong(iso){var p=iso.split('-');var dt=new Date(+p[0],+p[1]-1,+p[2]);return DAYSL[wd(dt)]+' '+(+p[2])+'/'+(+p[1]);}
 function sessionsOn(iso){return sortedSessions().filter(function(x){return x.date===iso;});}
@@ -1334,7 +1487,8 @@ function openDay(iso){
     if(x.zone==='tjej')gz+=' · tjejdelen';
     var bits=[(x.time||''),(x.min?x.min+' min':''),gz.replace(/^ · /,''),(x.full?FT[x.full]:''),(x.before&&x.after?'energi '+x.before+'→'+x.after:''),(x.note?esc(x.note):'')].filter(Boolean).join(' · ');
     var itx=(x.items&&x.items.length)?'<div class="items">'+itemsSummary(x.items)+'</div>':'';
-    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+bits+'</div>'+itx+'</div><button data-id="'+x.id+'" title="Ta bort">×</button></div>';
+    var fpb=x.failPlan?'<div class="fail-block">⚡ '+esc(x.failPlan)+'</div>':'';
+    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+bits+'</div>'+itx+'</div><button data-id="'+x.id+'" title="Ta bort">×</button></div>'+fpb;
   }).join('');}
   el.querySelectorAll('button[data-id]').forEach(function(b){b.onclick=function(){
     state.sessions=state.sessions.filter(function(z){return String(z.id)!==b.dataset.id;});
@@ -1358,6 +1512,63 @@ function renderEnergy(diffs){
   else if(avg>0)txt='Rörelse lyfter dig oftast lite — i snitt '+avg.toFixed(1)+' steg. Små vinster räknas.';
   else txt='Just nu syns ingen tydlig energiskillnad i din logg. Det är också viktig info — kanske handlar det mer om vila just nu än om att göra mer.';
   el.innerHTML='<div class="soft" style="font-size:13px;line-height:1.7">'+txt+'<br><span style="opacity:.8">'+up+' av '+diffs.length+' pass gav mer energi efteråt.</span></div>';
+}
+function renderExerciseStats(){
+  var el=document.getElementById('ex-stats');if(!el)return;
+  var map={};
+  state.sessions.forEach(function(s){
+    (s.items||[]).forEach(function(it){
+      var key=(it.name||'').trim();if(!key)return;
+      var k=key.toLowerCase();
+      if(!map[k])map[k]={name:key,pass:0,set:0,maxW:null,maxAt:'',lastW:null,lastDate:''};
+      var o=map[k];o.pass++;
+      if(it.sets)o.set+=it.sets;
+      if(it.weight!=null){
+        if(o.maxW===null||it.weight>o.maxW){o.maxW=it.weight;o.maxAt=s.date;}
+        if(!o.lastDate||s.date>=o.lastDate){o.lastDate=s.date;o.lastW=it.weight;}
+      }
+    });
+  });
+  var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.pass-a.pass;});
+  if(!arr.length){el.innerHTML='<div class="empty-msg">Logga övningar med vikt när du tränar styrka, så byggs statistik per övning upp här.</div>';return;}
+  el.innerHTML=arr.map(function(o){
+    var bits=[];
+    bits.push(o.pass+(o.pass===1?' gång':' ggr'));
+    if(o.set)bits.push(o.set+' set');
+    if(o.maxW!=null)bits.push('tyngst '+o.maxW+' kg');
+    if(o.lastW!=null)bits.push('senast '+o.lastW+' kg');
+    return '<div class="sess-row"><div class="ic">🏋️</div><div class="body"><b>'+esc(o.name)+'</b><div class="meta">'+bits.join(' · ')+'</div></div></div>';
+  }).join('');
+}
+function renderMoreStats(){
+  var el=document.getElementById('more-stats');if(!el)return;
+  var totPass=state.sessions.length;
+  var totMin=0;state.sessions.forEach(function(s){totMin+=(s.min||0);});
+  // snitt pass/vecka senaste 8 veckorna
+  var c56=new Date();c56.setDate(c56.getDate()-56);c56.setHours(0,0,0,0);
+  var last8=0;state.sessions.forEach(function(s){var p=s.date.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);if(d>=c56)last8++;});
+  var perWeek=(last8/8).toFixed(1).replace('.',',');
+  // muskelgrupper 30 dagar (antal pass som träffar varje grupp)
+  var c30=new Date();c30.setDate(c30.getDate()-30);c30.setHours(0,0,0,0);
+  var mus={};
+  state.sessions.forEach(function(s){
+    var p=s.date.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);if(d<c30)return;
+    var groups={};
+    var nm=(s.name||'').toLowerCase();
+    state.exercises.forEach(function(e){if(e.name&&nm.indexOf(e.name.toLowerCase())>=0&&e.muskler)e.muskler.forEach(function(mm){groups[mm]=1;});});
+    (s.items||[]).forEach(function(it){var ex=it.exId?exById(it.exId):null;if(!ex)state.exercises.forEach(function(e){if(e.name.toLowerCase()===(it.name||'').toLowerCase())ex=e;});if(ex&&ex.muskler)ex.muskler.forEach(function(mm){groups[mm]=1;});});
+    Object.keys(groups).forEach(function(g){mus[g]=(mus[g]||0)+1;});
+  });
+  var musArr=Object.keys(mus).map(function(k){return [k,mus[k]];}).sort(function(a,b){return b[1]-a[1];});
+  var html='';
+  html+='<div class="avg-row"><span>Totalt antal pass</span><b>'+totPass+'</b></div>';
+  html+='<div class="avg-row"><span>Total tid</span><b>'+totMin+' min</b></div>';
+  html+='<div class="avg-row"><span>Snitt per vecka (8 v)</span><b>'+perWeek+'</b></div>';
+  if(musArr.length){
+    html+='<div class="section-sub" style="border-top:none;padding-top:6px">Muskelgrupper (30 dagar)</div>';
+    html+=musArr.map(function(r){return '<div class="avg-row"><span>'+esc(r[0])+'</span><b>'+r[1]+(r[1]===1?' pass':' pass')+'</b></div>';}).join('');
+  }
+  el.innerHTML=html;
 }
 function renderTypeStats(c30){
   var el=document.getElementById('type-stats');
@@ -1408,7 +1619,7 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setSyncBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.dataset.s=stt;b.textContent=msg;}
 function refreshSyncBadge(){if(syncOn())setSyncBadge('ok','Synkad');else setSyncBadge('off','Lokal');}
-function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,gyms:state.gyms,updated:new Date().toISOString()};}
+function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,templates:state.templates,gyms:state.gyms,updated:new Date().toISOString()};}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergeByName(local,remote){var m={};(local||[]).forEach(function(x){m[x.name]=x;});(remote||[]).forEach(function(x){if(!m[x.name])m[x.name]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergePlanned(local,remote){var out=Object.assign({},local);Object.keys(remote||{}).forEach(function(k){var seen={};var arr=[];(out[k]||[]).concat(remote[k]||[]).forEach(function(p){var key=(p.name||'')+'|'+(p.time||'');if(!seen[key]){seen[key]=1;arr.push(p);}});out[k]=arr;});return out;}
@@ -1431,6 +1642,7 @@ function applyData(d){
   if(Array.isArray(d.passTypes))state.passTypes=mergeByName(state.passTypes,d.passTypes);
   if(Array.isArray(d.exercises))state.exercises=mergeById(state.exercises,d.exercises);
   if(Array.isArray(d.recurring))state.recurring=mergeById(state.recurring,d.recurring);
+  if(Array.isArray(d.templates))state.templates=mergeById(state.templates,d.templates);
   if(d.planned&&typeof d.planned==='object')state.planned=mergePlanned(state.planned,d.planned);
   if(Array.isArray(d.gyms))state.gyms=mergeGyms(state.gyms,d.gyms);
   else if(d.gym&&typeof d.gym==='object'&&Array.isArray(state.gyms)&&state.gyms.length){
@@ -1752,6 +1964,64 @@ document.getElementById('fail-ai').onclick=function(){
 };
 document.getElementById('fail-done').onclick=closeSheets;
 
+// ── Mallar (återanvändbara pass) ─────────────────────
+function tmplById(id){for(var i=0;i<state.templates.length;i++){if(String(state.templates[i].id)===String(id))return state.templates[i];}return null;}
+function renderTmplOptions(selId){
+  var sel=document.getElementById(selId);if(!sel)return;
+  sel.innerHTML='<option value="">— Använd mall —</option>'+state.templates.map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('');
+  sel.value='';
+}
+function renderTemplates(){
+  var el=document.getElementById('tmpl-list');if(!el)return;
+  if(!state.templates.length){el.innerHTML='<div class="empty-msg">Inga mallar än. Spara ett upplägg som mall för att återanvända det.</div>';return;}
+  el.innerHTML=state.templates.map(function(t,i){
+    var n=(t.items||[]).length;
+    return '<div class="sess-row"><div class="ic">📋</div><div class="body"><b>'+esc(t.name)+'</b><div class="meta">'+n+(n===1?' övning':' övningar')+(t.min?' · '+t.min+' min':'')+'</div></div><button class="tm-edit" data-i="'+i+'" title="Ändra">✎</button><button class="tm-del" data-i="'+i+'" title="Ta bort">×</button></div>';
+  }).join('');
+  el.querySelectorAll('.tm-edit').forEach(function(b){b.onclick=function(){openTemplate(+b.dataset.i);};});
+  el.querySelectorAll('.tm-del').forEach(function(b){b.onclick=function(){state.templates.splice(+b.dataset.i,1);save();renderTemplates();};});
+}
+var tmplEdit=-1;
+function openTemplate(i){
+  tmplEdit=(typeof i==='number')?i:-1;
+  var t=tmplEdit>=0?state.templates[tmplEdit]:null;
+  document.getElementById('tmpl-title').textContent=t?'Ändra mall':'Ny mall';
+  document.getElementById('tmpl-name').value=t?t.name:'';
+  document.getElementById('tmpl-min').value=t&&t.min?t.min:'';
+  renderExDatalist();
+  var wrap=document.getElementById('tmpl-ex-list');wrap.innerHTML='';
+  ((t&&t.items)||[]).forEach(function(it){addExRow('tmpl-ex-list',it);});
+  if(!wrap.children.length)addExRow('tmpl-ex-list',null);
+  document.getElementById('tmpl-del').style.display=t?'':'none';
+  openSheet('tmpl-sheet');
+}
+function openTemplateFrom(name,items,min){
+  tmplEdit=-1;
+  document.getElementById('tmpl-title').textContent='Ny mall';
+  document.getElementById('tmpl-name').value=name||'';
+  document.getElementById('tmpl-min').value=min||'';
+  renderExDatalist();
+  var wrap=document.getElementById('tmpl-ex-list');wrap.innerHTML='';
+  (items||[]).forEach(function(it){addExRow('tmpl-ex-list',it);});
+  if(!wrap.children.length)addExRow('tmpl-ex-list',null);
+  document.getElementById('tmpl-del').style.display='none';
+  closeSheets();openSheet('tmpl-sheet');
+}
+document.getElementById('open-tmpl').onclick=function(){openTemplate(-1);};
+document.getElementById('tmpl-ex-add').onclick=function(){addExRow('tmpl-ex-list',null);};
+document.getElementById('tmpl-save').onclick=function(){
+  var name=document.getElementById('tmpl-name').value.trim();
+  if(!name){document.getElementById('tmpl-name').focus();return;}
+  var min=parseInt(document.getElementById('tmpl-min').value,10);
+  var items=collectItems('tmpl-ex-list');
+  var obj={id:tmplEdit>=0?state.templates[tmplEdit].id:Date.now(),name:name,min:isNaN(min)?null:min,items:items};
+  if(tmplEdit>=0)state.templates[tmplEdit]=obj;else state.templates.push(obj);
+  save();closeSheets();renderTemplates();
+};
+document.getElementById('tmpl-del').onclick=function(){
+  if(tmplEdit<0)return;state.templates.splice(tmplEdit,1);save();closeSheets();renderTemplates();
+};
+
 // ── Löpande schema (återkommande pass) ───────────────
 function renderRecurList(){
   var el=document.getElementById('recur-list');if(!el)return;
@@ -1798,6 +2068,48 @@ document.getElementById('rc-del2').onclick=function(){
   if(recurEdit<0)return;
   state.recurring.splice(recurEdit,1);save();closeSheets();renderRecurList();renderPlanToday();
 };
+
+// ── AI-coach: föreslå övningar per fokus ─────────────
+var COACH_CATS=[
+  {id:'mjuk',label:'Mjuk rörelse',local:['Katt–ko på alla fyra, följ andningen i 5 andetag','Axelrullningar, 10 åt varje håll','Mjuk framåtfällning stående — häng tungt och andas','Liggande ryggvridning, håll 20 sek per sida','Nackstretch: luta örat mot axeln, båda hållen']},
+  {id:'kondition',label:'Kondition',local:['Rask promenad 10–20 min i eget tempo','Trappor upp och ner, 5 lugna varv','Crosstrainer eller stå-cykel, lätt tempo 15 min','Dansa till 3 låtar du gillar','Marsch på stället med armrörelser, 3 x 2 min']},
+  {id:'styrka',label:'Styrka',local:['Knäböj mot en stol, 3 x 10','Väggarmhävningar, 3 x 8','Höftlyft på golvet, 3 x 12','Vadhävningar, 3 x 15','Planka på knä eller tår, 3 x 20 sek']},
+  {id:'rorlighet',label:'Rörlighet / stretch',local:['Höftöppnare: djup utfallssteg med lätt vridning','Bröstöppning i dörrkarm, 30 sek','Sittande framåtfällning, andas ut i rörelsen','Ankelcirklar, 10 åt varje håll','Ryggradsvridning sittande, båda hållen']},
+  {id:'balans',label:'Balans',local:['Stå på ett ben 30 sek per sida (håll i något vid behov)','Häl–tå-gång, 10 steg fram','Tåhävningar med stöd av vägg','Lätt enbensböj, 5 per ben']},
+  {id:'promenad',label:'Promenad',local:['10 min runt kvarteret i lugnt tempo','Promenad med en podd eller musik du gillar','Gå till en plats du tycker om — och tillbaka','Sätt ett litet mål, t.ex. en bänk, och vänd där']},
+  {id:'annat',label:'Annat',local:['Välj en rörelse som känns bra just idag','Något kort och tydligt räcker gott','Skriv i rutan vad du är sugen på så anpassas förslaget']}
+];
+function coachCatById(id){for(var i=0;i<COACH_CATS.length;i++){if(COACH_CATS[i].id===id)return COACH_CATS[i];}return COACH_CATS[0];}
+var coachCat='mjuk';
+function renderCoachCats(){
+  var el=document.getElementById('coach-cats');if(!el)return;
+  el.innerHTML=COACH_CATS.map(function(c){return '<button type="button" class="chip'+(c.id===coachCat?' sel':'')+'" data-c="'+c.id+'">'+c.label+'</button>';}).join('');
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){coachCat=b.dataset.c;renderCoachCats();};});
+}
+function setCoachOut(txt,loading){var el=document.getElementById('coach-out');el.style.display='block';el.className='ai-out'+(loading?' loading':'');el.textContent=txt;}
+document.getElementById('open-coach').onclick=function(){
+  coachCat='mjuk';renderCoachCats();
+  document.getElementById('coach-extra').value='';
+  document.getElementById('coach-out').style.display='none';
+  openSheet('coach-sheet');
+};
+function localCoach(){
+  var cat=coachCatById(coachCat);var extra=document.getElementById('coach-extra').value.trim();
+  var lines=[];lines.push(cat.label+' — några snälla förslag:');lines.push('');
+  cat.local.forEach(function(x){lines.push('\u2022 '+x);});
+  lines.push('');
+  if(extra)lines.push('(Du skrev: '+extra+' — plocka det som passar.)');
+  lines.push('Välj ett eller två i ditt tempo. Det räcker gott.');
+  return lines.join('\n');
+}
+document.getElementById('coach-local').onclick=function(){setCoachOut(localCoach(),false);};
+document.getElementById('coach-ai').onclick=function(){
+  setCoachOut('Tänker…',true);
+  var cat=coachCatById(coachCat);var extra=document.getElementById('coach-extra').value.trim();
+  var p=AI_SYS+'Agera rörelsecoach och föreslå 3–5 konkreta övningar med fokus på: '+cat.label+'. '+(extra?'Extra önskemål: '+extra+'. ':'')+'Varje övning på en egen rad med en kort hur-man-gör. Ska gå att göra lugnt, hemma eller på gym, och passa någon med ADHD, autism eller utbrändhet. Kort punktlista, ingen hype eller press.\n\n'+aiContext();
+  callAI(p,function(t){setCoachOut(t,false);},500);
+};
+document.getElementById('coach-done').onclick=closeSheets;
 
 // ── Hjälp för idag (tid + dagsform + pepp) ────────────
 var todayPick={tid:'',form:'',pepp:''};
@@ -1851,13 +2163,16 @@ document.getElementById('td-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.9.0',
+  version:'1.13.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
     'Senast i rörelse — visar hur länge sedan utan skuld',
     'Logga pass med längd, tid, energi före/efter, anteckning och hur fullt det upplevdes',
     'Lägg till övningarna du använt i passet — med vikt, reps och set (bra för styrkepass)',
+    'Planera ett pass med övningar precis som vid loggning',
+    'Mallar: spara ett upplägg och lägg det på ett pass när du planerar eller loggar',
+    'Failure-plan direkt på ett pass (sparas med passet och syns i kalendern)',
     'Egna passtyper som snabbval',
     'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
@@ -1867,16 +2182,39 @@ var APPINFO={
     'Zoner per gym: allmänna gymmet och tjejdelen, med separata belastningsscheman',
     'Öppettider per veckodag med status öppet/stängt',
     'Belastningsschema timme för timme, hela dygnet (00–23), med lugnaste tiden',
-    'Översikt: pass/vecka & 30 dagar, kalender där du kan öppna en dag och se passets historik, energimönster, vanligaste passtyper',
+    'Snabb belastningsremsa på Idag: nästa fem timmar i färg, aktuell belastning och nästa lugna timslag',
+    'Översikt: pass/vecka & 30 dagar, bläddringsbar kalender per månad, statistik per övning (antal, set, tyngsta & senaste vikt), muskelgrupper och totaler, energimönster och vanligaste passtyper',
     'Förslag för idag: ställ in tid, dagsform och lust — appen tittar på tidigare pass och föreslår något lagom (AI eller enkelt förslag)',
     'Efterregistrera pass bakåt via valfri dag i kalendern',
     'AI-förslag via Claude eller ChatGPT (nycklar bara på enheten)',
+    'AI-coach som direkt föreslår övningar per fokus (mjuk rörelse, kondition, styrka, rörlighet, balans, promenad m.m.)',
     'Flera färgteman + auto/ljust/mörkt',
     'Synk mellan enheter via privat GitHub-repo (union-merge per id)',
     'Säkerhetskopiering (export/import som JSON)',
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.13.0',d:'2026-07-19',items:[
+      'På Idag visas nu en liten belastningsremsa för de närmaste fem timmarna på det aktiva gymmet (och zonen), i grönt/gult/rött.',
+      'Rubrik med dagens veckodag och datum, aktuell timme markerad, och en rad: "Just nu är det X belastning. Nästa lugna timslag: HH:00".',
+      'Timmar utanför öppettiderna tonas ned. Remsan uppdateras löpande.'
+    ]},
+    {v:'1.12.0',d:'2026-07-19',items:[
+      'Ny AI-coach på Idag: välj ett fokus — mjuk rörelse, kondition, styrka, rörlighet, balans, promenad eller annat — och få konkreta övningsförslag direkt.',
+      'Ett frittextfält för särskilda önskemål (t.ex. skonsamt för knäna, hemma utan redskap).',
+      'Fungerar med AI (Claude/ChatGPT) och som enkla, inbyggda förslag utan nyckel — lugnt och utan press.'
+    ]},
+    {v:'1.11.0',d:'2026-07-19',items:[
+      'Planera ett pass har nu samma övningsrader som loggning — lägg övning/maskin med vikt, reps och set redan i planen.',
+      'Mallar: spara ett upplägg (t.ex. Benpass) och lägg det på ett pass med ett klick, både när du planerar och loggar. "Spara som mall" finns direkt i loggrutan.',
+      'Failure-plan på ett pass: ange topvikt och få uppvärmning + fördelning (AI eller enkelt) som sparas med passet och visas när du öppnar dagen i kalendern.',
+      'Planerade pass med övningar och failure-plan följer med automatiskt när du svarar "Ja, gjort".'
+    ]},
+    {v:'1.10.0',d:'2026-07-19',items:[
+      'Bläddra mellan månader i kalendern med pilar, med en liten summering (antal pass och minuter) för vald månad.',
+      'Statistik per övning: antal gånger, totala set, tyngsta vikt och senaste vikt — byggt ur de loggade övningarna.',
+      'Mer statistik: totalt antal pass, total tid, snitt pass per vecka (senaste 8 veckorna) och muskelgrupper senaste 30 dagarna.'
+    ]},
     {v:'1.9.0',d:'2026-07-19',items:[
       'När du loggar ett pass kan du nu lägga till övningarna du använt, med vikt (kg), reps och set per övning.',
       'Övningsfältet föreslår automatiskt namn från ditt övningsbibliotek, men du kan skriva fritt.',
@@ -1964,7 +2302,7 @@ document.querySelectorAll('.nav button').forEach(function(b){
 
 // ── Render-grupper ────────────────────────────────────
 function renderToday(){renderLast();renderQuickChips();renderPlanToday();renderGymToday();}
-function renderPass(){renderTypeTiles();renderPlanList();renderRecurList();renderRecent();renderExercises();}
+function renderPass(){renderTypeTiles();renderPlanList();renderRecurList();renderTemplates();renderRecent();renderExercises();}
 function renderAll(){renderToday();renderPass();renderGymUI();renderHours();renderHeat();renderCalmHint();renderStats();renderNyheter();}
 
 // ── Init ──────────────────────────────────────────────
