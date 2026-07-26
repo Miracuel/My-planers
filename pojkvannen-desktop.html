@@ -125,6 +125,26 @@ textarea{resize:vertical}
 .done{opacity:.55}
 .done .lt{text-decoration:line-through}
 
+/* Tidslinje (historik) */
+.tl{position:relative;padding-left:26px;margin-top:4px}
+.tl::before{content:'';position:absolute;left:8px;top:10px;bottom:10px;width:2px;background:var(--line)}
+.tlitem{position:relative;padding:11px 0;cursor:pointer;border-top:1px solid var(--line)}
+.tlitem:first-child{border-top:none}
+.tlitem::before{content:'';position:absolute;left:-24px;top:17px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-sizing:content-box}
+.tlitem.dim::before{background:var(--line)}
+.tlitem .th{font-family:Georgia,serif;font-size:15px;line-height:1.35}
+.tlitem .tn{font-size:11px;color:var(--muted);margin-top:3px}
+.tlitem .tb{font-size:13px;line-height:1.65;margin-top:6px;white-space:pre-wrap}
+.tlitem .tf{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.03em}
+.tlitem.v3 .th{font-size:16px}
+.tlitem.v3::before{width:13px;height:13px;left:-25.5px;top:16px}
+.switch{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer}
+.switch .sl{flex:1;font-size:13px;line-height:1.5}
+.switch .sk{flex-shrink:0;width:44px;height:26px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);position:relative;transition:background .25s}
+.switch .sk::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--muted);transition:transform .25s,background .25s}
+.switch.on .sk{background:var(--accent-soft);border-color:var(--accent)}
+.switch.on .sk::after{transform:translateX(18px);background:var(--accent)}
+
 /* Brev */
 .letter{background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:16px 17px;font-family:Georgia,serif;font-size:14px;line-height:1.85;white-space:pre-wrap}
 
@@ -255,6 +275,23 @@ textarea{resize:vertical}
   <div id="honom-body"></div>
 </div>
 
+<!-- ══ HISTORIK ══ -->
+<div class="view" id="view-historik">
+  <div class="page-h">Historik</div>
+  <div class="card-panel tight">
+    <div class="soft">Saker som hänt er. Det du lägger in här <b>vet han om</b> och kan ta upp i chatten.</div>
+    <div id="hist-stat"></div>
+    <div class="switch" id="dela-minnen">
+      <div class="sl">Låt honom även känna till dina minnen ur dagboken</div>
+      <div class="sk"></div>
+    </div>
+    <button class="btn fill" id="hist-ai" style="width:100%;margin-top:6px">✨ Låt honom minnas något</button>
+    <div id="hist-ai-out"></div>
+  </div>
+  <div class="section-title">Tidslinjen<button class="lnk" id="hist-new">+ nytt</button></div>
+  <div id="hist-list"></div>
+</div>
+
 <!-- ══ MINNEN ══ -->
 <div class="view" id="view-minnen">
   <div class="page-h">Minnen</div>
@@ -344,8 +381,9 @@ textarea{resize:vertical}
 <div class="nav">
   <button data-v="hem"><span>🏠</span>Hem</button>
   <button data-v="chatt"><span>💬</span>Chatt</button>
-  <button class="navspacer"></button>
   <button data-v="honom"><span>🫶</span>Honom</button>
+  <button class="navspacer"></button>
+  <button data-v="historik"><span>🕯️</span>Historik</button>
   <button data-v="minnen"><span>📖</span>Minnen</button>
   <button data-v="dejter"><span>🌙</span>Dejter</button>
   <button data-v="nyheter"><span>📰</span>Nyheter</button>
@@ -359,6 +397,7 @@ textarea{resize:vertical}
   <h3>Lägg till</h3>
   <div class="action-list">
     <button id="add-guy">🫶 &nbsp;Skapa en pojkvän</button>
+    <button id="add-hist">🕯️ &nbsp;Något som hänt er</button>
     <button id="add-minne">📖 &nbsp;Nytt minne</button>
     <button id="add-dejt">🌙 &nbsp;Planera en dejt</button>
     <button id="add-present">🎁 &nbsp;Presenter &amp; gester</button>
@@ -397,6 +436,25 @@ textarea{resize:vertical}
   <button class="btn fill" id="g-save" style="width:100%;margin-top:14px">Spara</button>
   <button class="btn danger" id="g-del" style="width:100%;margin-top:8px;display:none">Ta bort honom</button>
   <button class="sheet-close" id="g-close">Stäng</button>
+</div>
+
+<!-- Historik -->
+<div class="sheet" id="hist-sheet">
+  <h3 id="h-h">Något som hänt</h3>
+  <div class="soft">Skriv som om det redan hänt. Han kommer minnas det.</div>
+  <label>Vad hände?</label><input type="text" id="h-titel" placeholder="Första gången vi bråkade på riktigt" autocomplete="off">
+  <label>När? (fritext)</label><input type="text" id="h-nar" placeholder="förra hösten" autocomplete="off">
+  <label>Exakt datum (valfritt, används för sortering)</label><input type="date" id="h-datum">
+  <label>Typ</label><div class="chips" id="h-typ"></div>
+  <label>Hur avgörande?</label><div class="chips" id="h-vikt"></div>
+  <label>Berätta</label><textarea id="h-text" rows="5" placeholder="Vi…"></textarea>
+  <div class="switch on" id="h-minns">
+    <div class="sl">Han minns det här och får ta upp det</div>
+    <div class="sk"></div>
+  </div>
+  <button class="btn fill" id="h-save" style="width:100%;margin-top:8px">Spara</button>
+  <button class="btn danger" id="h-del" style="width:100%;margin-top:8px;display:none">Ta bort</button>
+  <button class="sheet-close" id="h-close">Stäng</button>
 </div>
 
 <!-- Minne -->
@@ -454,18 +512,27 @@ textarea{resize:vertical}
    ══════════════════════════════════════════════════════ */
 
 var APPINFO={
-  version:'1.0.0',
+  version:'1.1.0',
   tagline:'Skapa en helt påhittad pojkvän – chatta, samla minnen, planera dejter.',
   audience:'Privat',
   functions:[
     {area:'Honom',items:['Bygg en persona: namn, ålder, yrke, utseende, personlighetsdrag, intressen och tonläge','Välj vad han kallar dig och skriv er historia','Flera pojkvänner sparade samtidigt – byt aktiv när du vill','Egen ikon per pojkvän']},
     {area:'Chatt',items:['AI-chatt som håller sig till hans persona och er historia','Snabbfraser: Godmorgon, Hur var din dag, Tröstning, Flirt','Hela chatthistoriken sparas och synkas','Skrivindikator och dagsavdelare']},
     {area:'Närhet & humör',items:['Närhetsmätare 0–100 som växer av kontakt, dejter och gester','Humör som svalnar om ni inte pratat på ett tag','Dagar ihop räknas från ert startdatum','Statistik över meddelanden, dejter och minnen']},
+    {area:'Historik',items:['Tidslinje över saker som hänt er – han vet om dem och kan ta upp dem i chatten','Fritext för när ("förra hösten") plus valfritt exakt datum för sortering','Åtta typer: Första gången, Milstolpe, Resa, Vardag, Bråk, Löfte, Svår period, Annat','Tre nivåer av tyngd – avgörande händelser väger tyngst i hans minne','Slå av "han minns det här" för att spara något utan att ge honom det','Låt honom hitta på händelser som passar er, och redigera dem innan de sparas','Valfritt: låt honom även känna till dagboken']},
     {area:'Minnen',items:['Dagbok med rubrik, datum, typ och text','Kärleksbrev – låt honom skriva, eller skriv själv','Presenter och gester i båda riktningarna']},
     {area:'Dejter',items:['Planera dejter med plats, datum och anteckning','AI-förslag på tre dejter som passar er','Markera som genomförd – ger närhet']},
     {area:'Under huven',items:['Inbyggd GitHub-synk med union-merge per id','Export och import som JSON','Auto/ljust/mörkt läge plus sex färgteman','Mobil- och desktopversion','Egen PNG-favicon']}
   ],
   changelog:[
+    {v:'1.1.0',d:'2026-07-26',items:[
+      'Ny vy: Historik – en tidslinje över saker som hänt er, som matas in i hans persona så han kan hänvisa till dem i chatten.',
+      'Varje händelse har typ, tyngd, fritext för när, valfritt datum och en egen strömbrytare för om han minns den.',
+      'Han kan hitta på händelser själv utifrån vilka ni är – tryck på ett förslag för att fylla i formuläret.',
+      'Ny snabbfras i chatten: Minns du när… som drar en slumpad händelse ur er historik.',
+      'Ny inställning: låt honom även känna till dagboken.',
+      'Rättat: navspacern låg inte under plusknappen på mobil, så hålet i bottennavet hamnade fel.'
+    ]},
     {v:'1.0.0',d:'2026-07-26',items:[
       'Första versionen.',
       'Personabyggare med personlighetsdrag, tonläge och egen ikon.',
@@ -492,13 +559,13 @@ var OAI_KEY='pojkvannen_oai_key';
 var AI_PROV='pojkvannen_ai_provider';
 var SYNC_KEY='pojkvannensync_v1';
 
-var state={guys:[],aktiv:'',minnen:[],dejter:[],presenter:[],brev:[],greet:{},theme:'auto',skin:'rose'};
+var state={guys:[],aktiv:'',historik:[],minnen:[],dejter:[],presenter:[],brev:[],greet:{},delaMinnen:false,theme:'auto',skin:'rose'};
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function todayKey(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function nowIso(){return new Date().toISOString();}
-function load(){try{var s=localStorage.getItem(KEY);if(s)Object.assign(state,JSON.parse(s));}catch(e){}if(!Array.isArray(state.guys))state.guys=[];if(!Array.isArray(state.minnen))state.minnen=[];if(!Array.isArray(state.dejter))state.dejter=[];if(!Array.isArray(state.presenter))state.presenter=[];if(!Array.isArray(state.brev))state.brev=[];if(!state.greet||typeof state.greet!=='object')state.greet={};}
+function load(){try{var s=localStorage.getItem(KEY);if(s)Object.assign(state,JSON.parse(s));}catch(e){}if(!Array.isArray(state.guys))state.guys=[];if(!Array.isArray(state.historik))state.historik=[];if(!Array.isArray(state.minnen))state.minnen=[];if(!Array.isArray(state.dejter))state.dejter=[];if(!Array.isArray(state.presenter))state.presenter=[];if(!Array.isArray(state.brev))state.brev=[];if(!state.greet||typeof state.greet!=='object')state.greet={};}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function persist(){save();schedulePush();}
 
@@ -509,6 +576,8 @@ function schedulePush(){if(!syncOn())return;if(pushTimer)clearTimeout(pushTimer)
 var PERS=['Romantisk','Lekfull','Retsam','Trygg','Beskyddande','Intellektuell','Rolig','Mystisk','Konstnärlig','Sportig','Lugn','Passionerad','Omtänksam','Rakt på sak'];
 var TONER=[['varm','Varm & mjuk'],['flirtig','Retsam & flirtig'],['trygg','Trygg & stadig'],['poetisk','Poetisk'],['rak','Rakt på sak']];
 var EMOJIS=['🫶','💌','🌙','🖤','🌹','☕','🎸','📚','🌊','🔥','🐺','⭐'];
+var HTYPER=[['forsta','🌱','Första gången'],['milstolpe','⭐','Milstolpe'],['resa','✈️','Resa'],['vardag','☕','Vardag'],['krock','⚡','Bråk'],['lofte','🤞','Löfte'],['svart','🌧','Svår period'],['annat','🕯️','Annat']];
+var HVIKT=[[1,'Liten'],[2,'Vanlig'],[3,'Avgörande']];
 var MTYPER=[['dejt','Dejt'],['samtal','Samtal'],['ogonblick','Ögonblick'],['gest','Gest'],['drom','Dröm'],['annat','Annat']];
 var MOODS=[
   {min:80,e:'🥰',t:'är alldeles skamlöst förälskad i dig just nu'},
@@ -573,6 +642,30 @@ async function aiChat(system,msgs,maxTok){
 }
 function aiOne(system,prompt,maxTok){return aiChat(system,[{role:'user',content:prompt}],maxTok);}
 
+function histBlock(g){
+  if(!g)return '';
+  var rows=state.historik.filter(function(x){return x.guyId===g.id&&x.minns!==false;});
+  rows.sort(function(a,b){
+    var va=a.vikt||2,vb=b.vikt||2;
+    if(va!==vb)return vb-va;
+    return (a.datum||'zzzz')<(b.datum||'zzzz')?-1:1;
+  });
+  if(state.delaMinnen){
+    var mm=state.minnen.filter(function(x){return x.guyId===g.id;});
+    mm.sort(function(a,b){return (a.datum||'')<(b.datum||'')?1:-1;});
+    for(var i=0;i<mm.length&&i<8;i++)rows.push({titel:mm[i].titel,nar:svDate(mm[i].datum),text:mm[i].text,vikt:1});
+  }
+  var out='',n=0;
+  for(var j=0;j<rows.length;j++){
+    if(n>=18)break;
+    var r=rows[j];
+    var line='- '+(r.nar?'('+r.nar+') ':'')+(r.titel||'')+(r.text?': '+r.text:'')+'\n';
+    if(out.length+line.length>2600)break;
+    out+=line;n++;
+  }
+  return out;
+}
+
 function persona(g){
   if(!g)return 'Du är en vänlig påhittad pojkvän.';
   var tn='';for(var i=0;i<TONER.length;i++)if(TONER[i][0]===(g.ton||'varm'))tn=TONER[i][1];
@@ -588,11 +681,14 @@ function persona(g){
   if(g.smek)p+='DU KALLAR HENNE: '+g.smek+' (använd det då och då, inte i varje mening)\n';
   if(g.bak)p+='ER HISTORIA: '+g.bak+'\n';
   if(d!==null)p+='NI HAR VARIT IHOP: '+d+' dagar\n';
+  var hb=histBlock(g);
+  if(hb)p+='\nSAKER SOM HÄNT ER — du minns dessa som era gemensamma:\n'+hb;
   var m=moodOf(g);
   p+='DITT HUMÖR JUST NU: '+m.t+'\n\n';
   p+='REGLER:\n';
   p+='- Håll svaren korta och naturliga, som riktiga sms: oftast 1–4 meningar.\n';
   p+='- Var varm och närvarande, ställ gärna en fråga tillbaka.\n';
+  p+='- Hänvisa gärna till sådant ni varit med om, men hitta inte på detaljer som motsäger det som står ovan.\n';
   p+='- Skriv aldrig scenanvisningar, asterisker eller beskrivningar av vad du gör – bara det du säger.\n';
   p+='- Bryt aldrig karakter och nämn aldrig att du är en AI eller en app.\n';
   p+='- Om hon verkar må riktigt dåligt: var mjuk och lyssna, och uppmuntra henne varsamt att också prata med någon i sitt liv. Låtsas aldrig vara terapeut.\n';
@@ -633,7 +729,7 @@ function renderHem(){
   h+='<div class="statbox"><div class="ic">📅</div><div class="lbl">Dagar ihop</div><div class="big">'+(d===null?'–':d)+'</div></div>';
   h+='<div class="statbox"><div class="ic">💬</div><div class="lbl">Meddelanden</div><div class="big">'+msgN+'</div></div>';
   h+='<div class="statbox"><div class="ic">🌙</div><div class="lbl">Dejter</div><div class="big">'+dejtN+'</div></div>';
-  h+='<div class="statbox"><div class="ic">📖</div><div class="lbl">Minnen</div><div class="big">'+minneN+'</div></div>';
+  h+='<div class="statbox"><div class="ic">🕯️</div><div class="lbl">I er historik</div><div class="big">'+state.historik.filter(function(x){return x.guyId===g.id;}).length+'</div></div>';
   h+='</div>';
 
   h+='<div class="section-title">Dagens hälsning</div>';
@@ -646,7 +742,7 @@ function renderHem(){
 
   h+='<div class="section-title">Snabbt</div><div class="quick">';
   h+='<button onclick="go(\'chatt\')"><span>💬</span>Skriv till honom</button>';
-  h+='<button onclick="openMinne(null)"><span>📖</span>Nytt minne</button>';
+  h+='<button onclick="openHist(null)"><span>🕯️</span>Något som hänt</button>';
   h+='<button onclick="openDejt(null)"><span>🌙</span>Planera dejt</button>';
   h+='</div>';
 
@@ -693,6 +789,8 @@ function renderChatt(){
   wireGoto(warn);
 
   var qs=[['Godmorgon '+(g.namn||'')+'.','Godmorgon'],['Hur har din dag varit?','Hur var din dag'],['Jag har haft en tung dag.','Tung dag'],['Jag saknar dig.','Saknar dig'],['Berätta något du tänkt på.','Berätta något']];
+  var hr=state.historik.filter(function(x){return x.guyId===g.id&&x.minns!==false&&x.titel;});
+  if(hr.length){var pick=hr[Math.floor(Math.random()*hr.length)];qs.push(['Minns du när '+pick.titel.charAt(0).toLowerCase()+pick.titel.slice(1)+'?','Minns du när…']);}
   var qh='';for(var q=0;q<qs.length;q++)qh+='<button type="button" class="chip" data-q="'+esc(qs[q][0])+'">'+esc(qs[q][1])+'</button>';
   qk.innerHTML=qh;
   qk.querySelectorAll('button').forEach(function(b){b.onclick=function(){document.getElementById('chat-in').value=b.dataset.q;sendMsg();};});
@@ -822,6 +920,7 @@ document.getElementById('g-del').onclick=function(){
   if(!guyEdit)return;
   if(!confirm('Ta bort honom, hela chatten och kopplade minnen?'))return;
   state.guys=state.guys.filter(function(x){return x.id!==guyEdit;});
+  state.historik=state.historik.filter(function(x){return x.guyId!==guyEdit;});
   state.minnen=state.minnen.filter(function(x){return x.guyId!==guyEdit;});
   state.dejter=state.dejter.filter(function(x){return x.guyId!==guyEdit;});
   state.presenter=state.presenter.filter(function(x){return x.guyId!==guyEdit;});
@@ -830,6 +929,130 @@ document.getElementById('g-del').onclick=function(){
   persist();closeSheets();renderHonom();renderHem();renderChatt();
 };
 document.getElementById('g-close').onclick=closeSheets;
+
+/* ── HISTORIK ────────────────────────────────────────── */
+function renderHistorik(){
+  var g=G(),el=document.getElementById('hist-list'),st=document.getElementById('hist-stat');
+  var sw=document.getElementById('dela-minnen');
+  sw.classList.toggle('on',!!state.delaMinnen);
+  if(!g){
+    st.innerHTML='';
+    el.innerHTML='<div class="card-panel"><div class="empty-msg">Skapa en pojkvän först.</div><button class="btn fill" style="width:100%" onclick="openGuy(null)">🫶 Skapa en pojkvän</button></div>';
+    return;
+  }
+  var rows=state.historik.filter(function(x){return x.guyId===g.id;});
+  var minns=rows.filter(function(x){return x.minns!==false;}).length;
+  var chars=histBlock(g).length;
+  st.innerHTML='<div class="soft" style="margin-top:9px">'+rows.length+' händelse'+(rows.length===1?'':'r')+' · '+minns+' som han minns · '+chars+' tecken i hans minne</div>';
+  if(!rows.length){
+    el.innerHTML='<div class="empty-msg">Tidslinjen är tom.<br>Lägg in första gången ni bråkade, en resa, ett löfte – vad som helst.</div>';
+    return;
+  }
+  rows.sort(function(a,b){
+    var da=a.datum||'',db=b.datum||'';
+    if(da&&db)return da<db?1:-1;
+    if(da&&!db)return -1;
+    if(!da&&db)return 1;
+    return (a.ts||'')<(b.ts||'')?1:-1;
+  });
+  var h='<div class="card-panel"><div class="tl">';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i],ic='🕯️',tl='';
+    for(var t=0;t<HTYPER.length;t++)if(HTYPER[t][0]===r.typ){ic=HTYPER[t][1];tl=HTYPER[t][2];}
+    var dim=r.minns===false;
+    h+='<div class="tlitem'+(dim?' dim':'')+((r.vikt||2)===3?' v3':'')+'" onclick="openHist(\''+r.id+'\')">';
+    h+='<div class="th">'+ic+' '+esc(r.titel||'Händelse')+'</div>';
+    h+='<div class="tn">'+esc([r.nar||svDate(r.datum),tl].filter(Boolean).join(' · '))+'</div>';
+    if(r.text)h+='<div class="tb">'+esc(r.text)+'</div>';
+    h+='<div class="tf">'+(dim?'✕ han minns inte det här':'✓ han minns det här')+((r.vikt||2)===3?' · avgörande':'')+'</div>';
+    h+='</div>';
+  }
+  el.innerHTML=h+'</div></div>';
+}
+document.getElementById('dela-minnen').onclick=function(){state.delaMinnen=!state.delaMinnen;persist();renderHistorik();};
+
+var histEdit=null,histTyp='annat',histVikt=2,histMinns=true;
+function openHist(id){
+  var g=G();if(!g){alert('Skapa en pojkvän först.');openGuy(null);return;}
+  histEdit=id;
+  var r=null;if(id)for(var i=0;i<state.historik.length;i++)if(state.historik[i].id===id)r=state.historik[i];
+  document.getElementById('h-h').textContent=r?'Ändra händelse':'Något som hänt';
+  document.getElementById('h-titel').value=r?(r.titel||''):'';
+  document.getElementById('h-nar').value=r?(r.nar||''):'';
+  document.getElementById('h-datum').value=r?(r.datum||''):'';
+  document.getElementById('h-text').value=r?(r.text||''):'';
+  histTyp=r?(r.typ||'annat'):'annat';
+  histVikt=r?(r.vikt||2):2;
+  histMinns=r?(r.minns!==false):true;
+  document.getElementById('h-del').style.display=r?'block':'none';
+  renderHistPick();openSheet('hist-sheet');
+}
+function renderHistPick(){
+  var el=document.getElementById('h-typ'),h='';
+  for(var i=0;i<HTYPER.length;i++)h+='<button type="button" class="chip'+(HTYPER[i][0]===histTyp?' sel':'')+'" data-t="'+HTYPER[i][0]+'">'+HTYPER[i][1]+' '+esc(HTYPER[i][2])+'</button>';
+  el.innerHTML=h;
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){histTyp=b.dataset.t;renderHistPick();};});
+  var ev=document.getElementById('h-vikt'),h2='';
+  for(var j=0;j<HVIKT.length;j++)h2+='<button type="button" class="chip'+(HVIKT[j][0]===histVikt?' sel':'')+'" data-w="'+HVIKT[j][0]+'">'+esc(HVIKT[j][1])+'</button>';
+  ev.innerHTML=h2;
+  ev.querySelectorAll('button').forEach(function(b){b.onclick=function(){histVikt=parseInt(b.dataset.w,10);renderHistPick();};});
+  document.getElementById('h-minns').classList.toggle('on',histMinns);
+}
+document.getElementById('h-minns').onclick=function(){histMinns=!histMinns;renderHistPick();};
+document.getElementById('h-save').onclick=function(){
+  var g=G();if(!g)return;
+  var t=document.getElementById('h-titel').value.trim();
+  if(!t){alert('Vad var det som hände?');return;}
+  var d={titel:t,nar:document.getElementById('h-nar').value.trim(),datum:document.getElementById('h-datum').value,
+    text:document.getElementById('h-text').value.trim(),typ:histTyp,vikt:histVikt,minns:histMinns,guyId:g.id,updated:nowIso()};
+  if(histEdit){for(var i=0;i<state.historik.length;i++)if(state.historik[i].id===histEdit)Object.assign(state.historik[i],d);}
+  else{d.id=uid();d.ts=nowIso();state.historik.push(d);bumpNarhet(g,1);}
+  persist();closeSheets();renderHistorik();renderHem();
+};
+document.getElementById('h-del').onclick=function(){
+  if(!histEdit)return;
+  if(!confirm('Ta bort händelsen ur er historik?'))return;
+  state.historik=state.historik.filter(function(x){return x.id!==histEdit;});
+  persist();closeSheets();renderHistorik();renderHem();
+};
+document.getElementById('h-close').onclick=closeSheets;
+document.getElementById('hist-new').onclick=function(){openHist(null);};
+
+document.getElementById('hist-ai').onclick=async function(){
+  var g=G(),out=document.getElementById('hist-ai-out');
+  if(!g){alert('Skapa en pojkvän först.');openGuy(null);return;}
+  if(!hasKey()){go('installningar');alert('Lägg in en AI-nyckel under Inställningar först.');return;}
+  this.disabled=true;out.innerHTML='<div class="soft" style="margin-top:10px">Han minns…</div>';
+  try{
+    var known=histBlock(g);
+    var pr='Hitta på tre saker som skulle kunna ha hänt oss två, som passar vilka vi är. Blanda en liten vardaglig sak, en större händelse och något lite skavande. ';
+    if(known)pr+='Detta har redan hänt oss, hitta inte på något som motsäger det:\n'+known+'\n';
+    pr+='Varje förslag på en egen rad, format: När – Rubrik – vad som hände i en eller två meningar. Inga siffror, punkter eller inledning.';
+    var txt=await aiOne(persona(g),pr,700);
+    var lines=txt.split('\n').map(function(l){return l.replace(/^[-*\d.\s]+/,'').trim();}).filter(function(l){return l.length>8;}).slice(0,3);
+    if(!lines.length){out.innerHTML='<div class="soft" style="margin-top:10px">Fick inget användbart svar. Försök igen.</div>';this.disabled=false;return;}
+    var h='<div class="list" style="margin-top:11px">';
+    for(var i=0;i<lines.length;i++)h+='<div class="lcard" data-hist="'+esc(lines[i])+'"><div class="lb">'+esc(lines[i])+'</div><div class="ld" style="margin-top:6px;color:var(--accent)">Tryck för att lägga in</div></div>';
+    out.innerHTML=h+'</div>';
+    out.querySelectorAll('[data-hist]').forEach(function(c){
+      c.onclick=function(){
+        var parts=c.dataset.hist.split(/\s+[–—]\s+/);
+        openHist(null);
+        if(parts.length>=3){
+          document.getElementById('h-nar').value=parts[0].slice(0,60);
+          document.getElementById('h-titel').value=parts[1].slice(0,90);
+          document.getElementById('h-text').value=parts.slice(2).join(' – ');
+        }else if(parts.length===2){
+          document.getElementById('h-titel').value=parts[0].slice(0,90);
+          document.getElementById('h-text').value=parts[1];
+        }else{
+          document.getElementById('h-titel').value=parts[0].slice(0,90);
+        }
+      };
+    });
+  }catch(e){if(e.message!=='NOKEY')out.innerHTML='<div class="soft" style="margin-top:10px">Fel: '+esc(e.message)+'</div>';else out.innerHTML='';}
+  this.disabled=false;
+};
 
 /* ── MINNEN ──────────────────────────────────────────── */
 function renderMinnen(){
@@ -1096,7 +1319,7 @@ function mergeGuys(local,remote){
   });
   return Object.keys(m).map(function(k){return m[k];});
 }
-function payload(){return{guys:state.guys,aktiv:state.aktiv,minnen:state.minnen,dejter:state.dejter,presenter:state.presenter,brev:state.brev,greet:state.greet,updated:nowIso()};}
+function payload(){return{guys:state.guys,aktiv:state.aktiv,historik:state.historik,delaMinnen:state.delaMinnen,minnen:state.minnen,dejter:state.dejter,presenter:state.presenter,brev:state.brev,greet:state.greet,updated:nowIso()};}
 
 async function ghGet(){
   var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});
@@ -1111,6 +1334,8 @@ async function ghPull(){
     var d=await ghGet();
     if(d){
       if(Array.isArray(d.guys))state.guys=mergeGuys(state.guys,d.guys);
+      if(Array.isArray(d.historik))state.historik=mergeById(state.historik,d.historik);
+      if(typeof d.delaMinnen==='boolean'&&!state.historik.length)state.delaMinnen=d.delaMinnen;
       if(Array.isArray(d.minnen))state.minnen=mergeById(state.minnen,d.minnen);
       if(Array.isArray(d.dejter))state.dejter=mergeById(state.dejter,d.dejter);
       if(Array.isArray(d.presenter))state.presenter=mergeById(state.presenter,d.presenter);
@@ -1178,6 +1403,7 @@ document.getElementById('import-file').onchange=function(e){
       if(d&&Array.isArray(d.guys)){
         if(confirm('Slå ihop '+d.guys.length+' pojkvän(ner) med din data?')){
           state.guys=mergeGuys(state.guys,d.guys);
+          state.historik=mergeById(state.historik,d.historik);
           state.minnen=mergeById(state.minnen,d.minnen);
           state.dejter=mergeById(state.dejter,d.dejter);
           state.presenter=mergeById(state.presenter,d.presenter);
@@ -1193,7 +1419,7 @@ document.getElementById('import-file').onchange=function(e){
 document.getElementById('wipe-btn').onclick=function(){
   if(!confirm('Nollställ hela appen? All data på den här enheten försvinner.'))return;
   if(!confirm('Är du helt säker?'))return;
-  state={guys:[],aktiv:'',minnen:[],dejter:[],presenter:[],brev:[],greet:{},theme:state.theme,skin:state.skin};
+  state={guys:[],aktiv:'',historik:[],minnen:[],dejter:[],presenter:[],brev:[],greet:{},delaMinnen:false,theme:state.theme,skin:state.skin};
   save();renderActive();go('hem');
 };
 
@@ -1234,6 +1460,7 @@ function renderView(v){
   if(v==='hem')renderHem();
   else if(v==='chatt')renderChatt();
   else if(v==='honom')renderHonom();
+  else if(v==='historik')renderHistorik();
   else if(v==='minnen')renderMinnen();
   else if(v==='dejter')renderDejter();
   else if(v==='nyheter')renderChangelog();
@@ -1261,6 +1488,7 @@ wireGoto(document);
 document.getElementById('fab').onclick=function(){openSheet('add-sheet');};
 document.getElementById('add-close').onclick=closeSheets;
 document.getElementById('add-guy').onclick=function(){closeSheets();openGuy(null);};
+document.getElementById('add-hist').onclick=function(){closeSheets();openHist(null);};
 document.getElementById('add-minne').onclick=function(){closeSheets();openMinne(null);};
 document.getElementById('add-dejt').onclick=function(){closeSheets();openDejt(null);};
 document.getElementById('add-present').onclick=function(){closeSheets();openPresent(null);};
