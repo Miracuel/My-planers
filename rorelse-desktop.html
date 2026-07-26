@@ -56,6 +56,9 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .exrow .exr-fx.active{color:var(--accent);border-color:var(--accent)}
 .exr-failwrap{margin-top:8px}
 .exr-fout{margin-top:6px}
+.eval-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.eval-row span{font-size:14px;color:var(--ink);flex:1}
+.eval-row input{width:96px;text-align:center}
 .exrow .exr-del:active{background:var(--panel)}
 .sess-row .items{font-size:11px;color:var(--accent);margin-top:2px;line-height:1.5}
 .gt-head{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:8px}
@@ -614,6 +617,19 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <button class="sheet-close" id="day-done" style="display:none"></button>
 </div>
 
+<div class="sheet" id="eval-sheet">
+  <h3 id="eval-title">Utvärdering</h3>
+  <div class="soft">En snabb koll så statistiken blir rätt. Allt är frivilligt.</div>
+  <label>Hur fullt var det på gymmet?</label>
+  <div class="seg" id="eval-full">
+    <button type="button" data-f="1">Lugnt</button>
+    <button type="button" data-f="2">En del</button>
+    <button type="button" data-f="3">Fullt</button>
+  </div>
+  <div id="eval-ex"></div>
+  <button class="sheet-close" id="eval-save">Spara passet</button>
+</div>
+
 <div class="sheet" id="coach-sheet">
   <h3>🧑‍🏫 AI-coach</h3>
   <div class="soft">Välj ett fokus så föreslår coachen konkreta övningar — lugnt, i din takt.</div>
@@ -907,15 +923,52 @@ function clearItem(it){
   }
 }
 function doPlanned(it,didIt){
-  if(didIt){
-    state.sessions.push({id:Date.now(),icon:it.icon||'🌿',name:it.name,min:it.min||null,
-      date:todayKey(),time:it.time||new Date().toTimeString().slice(0,5),
-      before:null,after:null,note:'',gymId:state.activeGym||'',zone:'allmant',full:null,
-      items:it.items||null,failPlan:it.failPlan||null});
-  }
+  if(didIt){openEval(it);return;}
   clearItem(it);
   save();renderPlanToday();renderPass();renderStats();renderToday();
 }
+var evalCtx=null;
+function openEval(it){
+  evalCtx=it;
+  document.getElementById('eval-title').textContent='Utvärdering — '+it.name;
+  var f=document.getElementById('eval-full');f.dataset.val='';
+  f.querySelectorAll('button').forEach(function(b){
+    b.classList.remove('sel');
+    b.onclick=function(){
+      if(f.dataset.val===b.dataset.f){f.dataset.val='';b.classList.remove('sel');return;}
+      f.dataset.val=b.dataset.f;f.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');
+    };
+  });
+  var ex=document.getElementById('eval-ex');
+  if(it.items&&it.items.length){
+    ex.innerHTML='<label>Högsta vikt per övning (kg)</label>'+it.items.map(function(item,i){
+      var pre=item.weight!=null?item.weight:(exByName(item.name)&&exByName(item.name).lastW!=null?exByName(item.name).lastW:'');
+      return '<div class="eval-row"><span>'+esc(item.name)+'</span><input type="number" inputmode="decimal" step="2.5" class="eval-w" data-i="'+i+'" value="'+pre+'" placeholder="kg"></div>';
+    }).join('');
+  }else{ex.innerHTML='';}
+  openSheet('eval-sheet');
+}
+document.getElementById('eval-save').onclick=function(){
+  var it=evalCtx;if(!it)return;
+  var full=document.getElementById('eval-full').dataset.val;
+  var time=it.time||new Date().toTimeString().slice(0,5);
+  var items=(it.items||[]).map(function(item,i){
+    var inp=document.querySelector('#eval-ex .eval-w[data-i="'+i+'"]');
+    var w=inp?parseFloat(inp.value):NaN;
+    var o=Object.assign({},item);
+    if(!isNaN(w))o.weight=w;
+    return o;
+  });
+  applyLastW(items);
+  var gymId=state.activeGym||'';var zone=state.activeZone||'allmant';
+  state.sessions.push({id:Date.now(),icon:it.icon||'🌿',name:it.name,min:it.min||null,
+    date:todayKey(),time:time,before:null,after:null,note:'',
+    gymId:gymId,zone:zone,full:full?+full:null,
+    items:items.length?items:null,failPlan:it.failPlan||null});
+  if(full)applyFullToCrowd(gymId,zone,todayKey(),time,+full);
+  clearItem(it);evalCtx=null;
+  save();closeSheets();renderPlanToday();renderPass();renderStats();renderToday();renderHeat&&renderHeat();renderCalmHint&&renderCalmHint();
+};
 function renderPlanToday(){
   var el=document.getElementById('plan-today');
   var items=todaysItems();
@@ -989,6 +1042,7 @@ function renderExDatalist(){
   dl.innerHTML=state.exercises.map(function(e){return '<option value="'+esc(e.name)+'">';}).join('');
 }
 function exByName(name){var r=null;state.exercises.forEach(function(e){if(e.name.toLowerCase()===(name||'').toLowerCase())r=e;});return r;}
+function applyLastW(items){(items||[]).forEach(function(it){if(it.weight==null)return;var ex=it.exId?exById(it.exId):exByName(it.name);if(ex)ex.lastW=it.weight;});}
 function addExRow(listId,pref){
   var withFail=(listId==='pl-ex-list'||listId==='lg-ex-list');
   var wrap=document.getElementById(listId);
@@ -1006,7 +1060,17 @@ function addExRow(listId,pref){
     +'<button type="button" class="btn exr-flocal">Enkelt</button></div>'
     +'<div class="exr-fout ai-out" style="display:none"></div></div>';
   row.innerHTML=html;
-  if(pref){row.querySelector('.exr-name').value=pref.name||'';row.querySelector('.exr-kg').value=(pref.weight!=null?pref.weight:'');row.querySelector('.exr-rep').value=(pref.reps!=null?pref.reps:'');row.querySelector('.exr-set').value=(pref.sets!=null?pref.sets:'');if(pref.failPlan)row.dataset.failplan=pref.failPlan;}
+  if(pref){
+    var pn=pref.name||'';row.querySelector('.exr-name').value=pn;
+    var kgv=(pref.weight!=null)?pref.weight:'';
+    if(kgv===''&&pn){var pex=exByName(pn);if(pex&&pex.lastW!=null)kgv=pex.lastW;}
+    row.querySelector('.exr-kg').value=kgv;
+    row.querySelector('.exr-rep').value=(pref.reps!=null?pref.reps:'');
+    row.querySelector('.exr-set').value=(pref.sets!=null?pref.sets:'');
+    if(pref.failPlan)row.dataset.failplan=pref.failPlan;
+  }
+  var nameEl=row.querySelector('.exr-name');
+  nameEl.onchange=function(){var kgEl=row.querySelector('.exr-kg');if(!kgEl.value){var ex=exByName(nameEl.value.trim());if(ex&&ex.lastW!=null)kgEl.value=ex.lastW;}};
   row.querySelector('.exr-del').onclick=function(){row.parentNode.removeChild(row);};
   if(withFail){
     var fx=row.querySelector('.exr-fx');var wrapF=row.querySelector('.exr-failwrap');
@@ -1158,6 +1222,7 @@ document.getElementById('lg-save').onclick=function(){
   var zone=document.getElementById('lg-zone').dataset.val||'allmant';
   var full=document.getElementById('lg-full').dataset.val;
   var items=collectItems('lg-ex-list');
+  applyLastW(items);
   var fp=failText('lg');
   state.sessions.push({
     id:Date.now(),icon:logCtx.icon||'🌿',name:name,
@@ -2267,7 +2332,7 @@ document.getElementById('td-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.15.0',
+  version:'1.16.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
@@ -2281,7 +2346,8 @@ var APPINFO={
     'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
     'Lös planering framåt (öppna, se och redigera ett planerat pass), plus löpande schema för återkommande pass',
-    '"Planerat idag"-avstämning med Ja/Nej — Ja loggar passet automatiskt',
+    '"Planerat idag"-avstämning med Ja/Nej — Ja öppnar en kort utvärdering (upplevd belastning + högsta vikt per övning) och loggar passet',
+    'Högsta vikt per övning sparas och förifylls automatiskt nästa gång övningen används (även via mall)',
     'Flera gym — lägg till, byt mellan och ta bort gym, var och en med egna öppettider och belastningsschema',
     'Zoner per gym: allmänna gymmet och tjejdelen, med separata belastningsscheman',
     'Öppettider per veckodag med status öppet/stängt',
@@ -2298,6 +2364,11 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.16.0',d:'2026-07-19',items:[
+      'När du svarar "Ja, gjort" på ett pass öppnas en kort utvärdering: hur fullt det var på gymmet och högsta vikt i varje övning.',
+      'Den upplevda belastningen matar belastningsschemat för den timmen, precis som vid vanlig loggning.',
+      'Högsta vikten sparas per övning och förifylls automatiskt nästa gång du använder övningen — i loggning, planering och när du lägger på en mall.'
+    ]},
     {v:'1.15.0',d:'2026-07-19',items:[
       'Öppna ett planerat pass för att se detaljerna — tid, övningar med vikt/reps/set och failure-planer.',
       'Redigera ett planerat pass: ändra tid, dag, övningar och failure-plan och spara — det uppdateras på plats istället för att dubbleras.',
