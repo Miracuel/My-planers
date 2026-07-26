@@ -572,6 +572,28 @@ html[data-enkelt="1"] .avancerat{display:none !important}
 .steg.klar .mid b{color:var(--muted)}
 .mer{width:100%;border:1px dashed var(--line);background:none;color:var(--muted);border-radius:14px;padding:11px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px}
 .mer:active{background:var(--panel2)}
+
+/* v11.1 – kommande betalningar */
+.kb{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--dopamin);border-radius:18px;padding:14px;margin-bottom:9px;cursor:pointer}
+.kb.betald{border-left-color:var(--frihet)}
+.kb-top{display:flex;align-items:baseline;gap:10px}
+.kb-tot{font-family:Georgia,serif;font-size:22px;white-space:nowrap}
+.kb-d{flex:1;font-size:14px;font-weight:600}
+.kb-sub{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
+.kb-poster{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
+.kb-poster div{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--muted)}
+.kb-poster div b{color:var(--ink);font-weight:600}
+.kb-poster div.ov{color:var(--gladje)}
+.prad{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.prad:last-of-type{border-bottom:none}
+.prad .mid{flex:1;min-width:0}
+.prad .mid b{display:block;font-size:14px}
+.prad .mid span{font-size:11px;color:var(--muted)}
+.prad .amt{font-variant-numeric:tabular-nums;font-size:14px}
+.prad.ov{background:var(--panel2);border-radius:12px;padding:11px;border-bottom:none;margin-top:6px}
+.kvarrutan{background:var(--panel2);border-radius:14px;padding:12px;margin-top:12px;font-size:13px;line-height:1.6}
+.kvarrutan b{font-family:Georgia,serif;font-size:19px;display:block;margin-top:3px}
+.kvarrutan b.neg{color:var(--dopamin)}
 </style>
 </head>
 <body>
@@ -640,6 +662,10 @@ html[data-enkelt="1"] .avancerat{display:none !important}
     <div class="chips" id="r-filter"></div>
     <div class="grid2" id="r-kpi" style="margin-top:12px"></div>
   </div>
+
+  <div class="section-title">Kommande betalningar</div>
+  <div id="kb-lista"></div>
+  <div class="btn-row"><button class="btn fill" type="button" onclick="openKommande()">&#10133; Ny kommande betalning</button></div>
 
   <div class="section-title">Att bocka av</div>
   <div class="card-panel"><div id="r-lista"></div></div>
@@ -1407,6 +1433,41 @@ html[data-enkelt="1"] .avancerat{display:none !important}
   <button class="sheet-close" type="button" id="sa-save">Spara f&ouml;rdelning</button>
 </div>
 
+<div class="sheet" id="kommande-sheet">
+  <h3>Kommande betalning</h3>
+  <div class="soft">Skriv in summan som ska dras och n&auml;r. Bocka sedan i vilka r&auml;kningar som ing&aring;r.</div>
+  <label>Summa som dras (kr)</label><input id="kb-belopp" type="number" inputmode="decimal">
+  <label>Datum</label><input id="kb-datum" type="date">
+  <label>Dras fr&aring;n</label><div class="chips" id="kb-konto"></div>
+  <label>Ing&aring;r n&aring;gon av dessa &aring;terkommande r&auml;kningar?</label>
+  <div class="chips" id="kb-rakningar"></div>
+  <div class="kvarrutan" id="kb-kvar"></div>
+  <button class="sheet-close" type="button" id="kb-save">Spara betalningen</button>
+</div>
+
+<div class="sheet" id="kbdetalj-sheet">
+  <h3 id="kd-h">Betalning</h3>
+  <div class="soft" id="kd-info"></div>
+  <div id="kd-poster" style="margin-top:12px"></div>
+  <div class="btn-row"><button class="btn fill" type="button" id="kd-dela">Dela upp &ouml;vrigt</button></div>
+  <div class="btn-row">
+    <button class="btn" type="button" id="kd-betald">Markera betald</button>
+    <button class="btn ghost" type="button" id="kd-bort">Ta bort</button>
+  </div>
+  <button class="sheet-close" type="button" onclick="closeSheets()">St&auml;ng</button>
+</div>
+
+<div class="sheet" id="dela-sheet">
+  <h3>Vad var en del av summan?</h3>
+  <div class="soft" id="dl-info"></div>
+  <label>Vad var det?</label><input id="dl-namn" placeholder="Tandl&auml;kare, d&auml;ck, present&hellip;">
+  <label>Summa (kr)</label><input id="dl-belopp" type="number" inputmode="decimal">
+  <label>Kategori</label><div class="chips" id="dl-kat"></div>
+  <label>Tillh&ouml;r</label><div class="chips" id="dl-agare"></div>
+  <div class="tiny" id="dl-kvar" style="margin-top:8px"></div>
+  <button class="sheet-close" type="button" id="dl-save">Bryt ut som egen post</button>
+</div>
+
 <div class="sheet" id="betala-sheet">
   <h3 id="bt-h">Betala</h3>
   <div class="soft" id="bt-info"></div>
@@ -1464,6 +1525,7 @@ html[data-enkelt="1"] .avancerat{display:none !important}
     <button type="button" data-p="nobuy" class="bred"><b>&#128994;</b>No buy day idag</button>
     <button type="button" data-p="ut"><b>&#10134;</b>Pengar ut</button>
     <button type="button" data-p="in"><b>&#10133;</b>Pengar in</button>
+    <button type="button" data-p="kommande"><b>&#128198;</b>Kommande betalning</button>
     <button type="button" data-p="rakning"><b>&#129534;</b>Ny r&auml;kning</button>
     <button type="button" data-p="extra"><b>&#128176;</b>Extra inkomst</button>
     <button type="button" data-p="overforing"><b>&#128260;</b>&Ouml;verf&ouml;ring</button>
@@ -1540,6 +1602,9 @@ html[data-enkelt="1"] .avancerat{display:none !important}
     <button class="btn ghost" type="button" id="dg-punkt">Lägg till punkt</button>
   </div>
   <div class="btn-row">
+    <button class="btn ghost" type="button" id="dg-kommande">📅 Kommande betalning</button>
+  </div>
+  <div class="btn-row">
     <button class="btn ghost" type="button" id="dg-lila">🟣 Nödvändigt köp</button>
     <button class="btn ghost" type="button" id="dg-rosa">🩷 Inte planerat</button>
   </div>
@@ -1568,7 +1633,7 @@ html[data-enkelt="1"] .avancerat{display:none !important}
 
 <div class="toast" id="toast"></div>
 <script>
-var APPINFO={version:'11.0.0',tagline:'Enkelt läge som standard. Allt finns kvar, men bara det du behöver syns.',audience:'Privat',functions:['Enkelt läge som standard – allt finns kvar bakom en knapp','Kom igång-guide med fyra steg','Grupperad meny istället för en lång lista','Livsplan: årspottar istället för månadsbudget','Tre nivåer: fasta kostnader, livsstil och projekt','Projekt med budget, start, mål och koppling till köp','Säsongsfördelning så att budgeten följer livet','Skriv in inkomsten – appen föreslår hela fördelningen','Rensningsknappar för månad, pottar eller hela Livsplanen','Hämta fasta kostnader direkt från dina räkningar','Extra inkomst med status: planerad, möjlig, bekräftad eller mottagen','Förslag på vad de extra pengarna ska göra – med motivering','Mjuka varningar med Visa konsekvensen, Pausa 24 timmar, Justera planen eller Allt är okej','Snabbknappar: Nödvändigt, Inte planerat och No buy day','Kategori, betalningstyp och konto på varje köp – tre olika saker','Egna kategorier och betalningstyper med emoji, arkivering och radering','Kalendern visar köp, status på dragningar och fyra summor för månaden','Kontoprognos: saldot efter månadens kvarvarande dragningar','Kreditköp med eget betaldatum i kalendern eller på månadsfaktura','Betalningar med vem som betalar – avräknas mot Magishoppens skuld till dig','Plusknappen matar in allt: köp, räkning, inkomst, utgift, överföring och betalning','På väg mot noll: varje skuld som eget kort med ränta, framsteg och slutdatum','Betalningar delas upp i vad som går till skulden och vad som går till ränta','Bedömning av köp: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning','Beslutsmotor, räkningar, dashboard, Frihetsresan och mikrolärande','Synk, export, sex färgteman, mobil och desktop'],changelog:[{v:'11.0.0',d:'2026-07-23',items:['Enkelt läge är nu standard. Appen visar det du behöver för att sköta ekonomin, och gömmer resten.','Växla mellan Enkelt och Visa allt högst upp i menyn eller under Inställningar. Ingenting raderas – allt finns kvar direkt bakom knappen.','I enkelt läge göms Frihetsresan, Milstolpar, Lär dig, Rådgivaren, Tidslinjen och Söndagsreflektionen ur navigeringen.','I Livsplanen göms frihetsindex, tid och pengar, simulatorn, säsong, plan mot verklighet och rensningsdelen tills du vill se dem.','Menyn är grupperad i Pengarna, Magishoppen, Utveckling och Appen istället för en lång lista.','Ny Kom igång-ruta på startsidan med fyra steg: inkomst, räkningar, buffert och skulder, första köpet. Den bockar av sig själv och försvinner när du är klar.','Startsidan visar frihetspoäng och dagens tanke först i Visa allt-läget.']},{v:'10.2.0',d:'2026-07-23',items:['Ny knapp under Fasta kostnader: Hämta från dina räkningar. Den synkar alla återkommande privata räkningar till årspottar – månadsbelopp gånger tolv, årsbelopp som de är.','Knappen kan tryckas hur många gånger som helst: nya räkningar läggs till, ändrade belopp uppdateras och räkningar du tagit bort arkiveras automatiskt.','Under knappen står hur många återkommande privata räkningar du har, vad de kostar per år och hur många som inte är hämtade än.','Hämtade pottar visar Från Räkningarna och månadsbeloppet, så det syns var siffran kommer ifrån.','Rättade en dubblering av Livsplanens vy som gjorde att flera vyer fanns två gånger i dokumentet.']},{v:'10.1.0',d:'2026-07-23',items:['Månadsplanen är förenklad: skriv bara in trygg inkomst och eventuell extra inkomst, så föreslår appen fördelningen.','Förslaget räknas fram från dina räkningar, dina skulders månadsbetalning, Magishoppens räkningar och en månads andel av årspottarna enligt säsongen.','Varje rad har en motivering, och allt går att justera direkt i förslaget.','Tryggt att använda uppdateras medan du skriver.','Ny rensningssektion längst ner i Livsplanen: rensa den här månaden, alla månadsplaner, årspottar och projekt, eller hela Livsplanen.','Rensningen rör aldrig köp, räkningar, konton eller skulder.']},{v:'10.0.0',d:'2026-07-19',items:['Planering heter nu Livsplan och bygger på år istället för månader – du har inget månadsproblem, du har ett kassaflödesproblem.','Tre nivåer: Fasta kostnader, Livsstil och Projekt.','Livsstilspottar är årspottar. Smink 12 000 kr per år istället för 500 kr i månaden – köp för 2 500 kr en månad och 0 kr nästa utan att ha spräckt något.','Projekt har en början och ett slut: Keratinutbildning, hemgym, ny garderob. Med budget, startdatum, måldatum och ett varför.','Köp kan kopplas till ett projekt. Då säger appen inte att du köpte hår för 3 000 kr, utan att 3 000 kr har lagts på projektet Keratinutbildning och att 9 000 kr är kvar.','Pottar kopplas till köpkategorier och räknar av sig själva när du loggar ett köp.','Säsongsfördelning: sommartung, hösttung, vintertung, tungt i början eller helt egen fördelning per månad. Budgeten följer livet istället för tvärtom.','Årsöversikt med planerat för hela året, hur stor andel av årsinkomsten det är, och en stapel per månad över vad som faktiskt gått åt.','Takten mäts mot säsongen, inte mot en tolftedel – varningen kommer först när potten faktiskt riskerar att ta slut i förtid.','Månadsplanen, bufferten, simulatorn och plan mot verklighet finns kvar längre ner för den som vill ha detaljerna.']},{v:'9.3.0',d:'2026-07-19',items:['Betalningsrutan frågar nu vem som betalar: Privat, Klarna, Magishoppen eller Annat – och från vilket konto.','Betalar Magishoppen en privat skuld räknas hela beloppet av mot vad butiken är skyldig dig, ränta inkluderad.','Betalar du privat på en butiksskuld ökar butikens skuld till dig med samma summa.','Rutan visar effekten innan du sparar, så det aldrig blir en överraskning.','Skuldkortet visar senaste betalningen: belopp, datum, vem som betalade, från vilket konto och hur mycket som gick till skulden respektive räntan.','Betalningshistoriken visar också vem som betalade.','Klarna är nu en egen ägare under Räkningarna, i skuldflikarna och på köp – med egen färg.','Betalningen kan dateras och dras från valt konto direkt.']},{v:'9.2.0',d:'2026-07-19',items:['Plusknappen är nu en inmatningshubb: köp, no buy day, pengar ut, pengar in, ny räkning, extra inkomst, överföring, betalning på skuld, punkt i kalendern och nytt beslut – allt från samma ställe.','Pengar in och Pengar ut för kostnader och inkomster som inte är vanliga köp, med kategori, konto och datum.','Överföring mellan konton flyttar pengar utan att räknas som utgift – och går den till ett buffertkonto ökar bufferten automatiskt.','Alla poster uppdaterar kontosaldot direkt och bokförs en enda gång.','Desktopmenyn visar nu alla vyer, så På väg mot noll, Räkningarna, Konton och Lär dig går att nå direkt från sidomenyn.']},{v:'9.1.0',d:'2026-07-19',items:['Kreditköp kan nu få ett eget betaldatum – då dyker dragningen upp i kalendern på den dagen, i gult.','Alternativt markeras köpet som Månadsfaktura. Då hamnar det inte i kalendern som en egen dragning, utan syns på fakturan i Räkningarna.','Räkningen visar hur många köp och hur mycket som ligger på den fakturan den månaden.','I dagvyn kan en kreditbetalning bockas av som betald – då minskar skulden och kontot med samma summa.','Konton kan markeras som Kredit, så att appen vet att köp där ökar en skuld istället för att minska ett saldo.']},{v:'9.0.0',d:'2026-07-19',items:['Plan heter nu Planering – något levande, inte ett prov man kan misslyckas med.','Månadsväljare med pilar högst upp: varje månad har sin egen plan, som kan kopieras från föregående månad.','Extra inkomst per månad med status planerad, möjlig, bekräftad eller mottagen. Möjliga pengar räknas aldrig som pengar du har.','Förslag på fördelning av extra pengar: räkningar, buffert, dyraste skulden, kommande utgifter och tio procent till något roligt – med motivering till varje rad.','Rådgivaren kan tycka till om just den summan.','Mjuka varningar istället för alarm: de utgår från din egen takt och kommer med knapparna Visa konsekvensen, Pausa köp i 24 timmar, Justera planen och Allt är okej.','Onödigt heter nu Inte planerat – samma data, mindre skam.','Köp registreras med kategori, betalningstyp och konto. Betalningstyp och konto är två olika saker.','Egna kategorier och betalningstyper med emoji, som kan arkiveras istället för att raderas så att historiken överlever.','Kalendern visar status på dragningar: kommande, dras snart, betald och försenad, plus fyra summor – köp hittills, räkningar betalda, kvar att betala och totalt planerat.','Konton visar nu saldot efter månadens kvarvarande dragningar.','Skulder heter På väg mot noll. Varje skuld har ett eget kort med startbelopp, betalat av, betald ränta, ränta denna månad och beräknat slutdatum.','En betalning delas upp i vad som går till skulden och vad som går till ränta.','Beslut och Perspektiv ger nu en bedömning: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning – plus förslag på bättre tajming.','Snabbknappen finns även som flytande knapp längst ner, alltid nära tummen.']},{v:'8.0.0',d:'2026-07-19',items:['Snabbknappar, no buy day och kalender med belopp per dag.']},{v:'7.0.0',d:'2026-07-19',items:['Räkningarna, skuldflikar och Magishoppens skuld till dig.']},{v:'6.0.0',d:'2026-07-19',items:['Ekonomiskt väder, fyra siffror, AI-coach, frihetspoäng och simulator.']},{v:'5.0.0',d:'2026-07-19',items:['Beslutsmotorn och Frihetsresan.']},{v:'4.0.0',d:'2026-07-19',items:['Trygg månadsinkomst, Levnadskonto, tre mål och mikrolärandet.']},{v:'3.0.0',d:'2026-07-19',items:['Nedräkningskalender, dashboard, konton och budget per månad.']},{v:'2.0.0',d:'2026-07-19',items:['Frihetsindex 0–100, prognos och milstolpar.']},{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.']}]};
+var APPINFO={version:'11.1.0',tagline:'Enkelt läge som standard. Allt finns kvar, men bara det du behöver syns.',audience:'Privat',functions:['Enkelt läge som standard – allt finns kvar bakom en knapp','Kom igång-guide med fyra steg','Kommande betalning: summa och datum, matcha mot räkningar, dela upp övrigt','Grupperad meny istället för en lång lista','Livsplan: årspottar istället för månadsbudget','Tre nivåer: fasta kostnader, livsstil och projekt','Projekt med budget, start, mål och koppling till köp','Säsongsfördelning så att budgeten följer livet','Skriv in inkomsten – appen föreslår hela fördelningen','Rensningsknappar för månad, pottar eller hela Livsplanen','Hämta fasta kostnader direkt från dina räkningar','Extra inkomst med status: planerad, möjlig, bekräftad eller mottagen','Förslag på vad de extra pengarna ska göra – med motivering','Mjuka varningar med Visa konsekvensen, Pausa 24 timmar, Justera planen eller Allt är okej','Snabbknappar: Nödvändigt, Inte planerat och No buy day','Kategori, betalningstyp och konto på varje köp – tre olika saker','Egna kategorier och betalningstyper med emoji, arkivering och radering','Kalendern visar köp, status på dragningar och fyra summor för månaden','Kontoprognos: saldot efter månadens kvarvarande dragningar','Kreditköp med eget betaldatum i kalendern eller på månadsfaktura','Betalningar med vem som betalar – avräknas mot Magishoppens skuld till dig','Plusknappen matar in allt: köp, räkning, inkomst, utgift, överföring och betalning','På väg mot noll: varje skuld som eget kort med ränta, framsteg och slutdatum','Betalningar delas upp i vad som går till skulden och vad som går till ränta','Bedömning av köp: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning','Beslutsmotor, räkningar, dashboard, Frihetsresan och mikrolärande','Synk, export, sex färgteman, mobil och desktop'],changelog:[{v:'11.1.0',d:'2026-07-23',items:['Ny snabbfunktion: Kommande betalning. Skriv bara in summan som ska dras och vilket datum.','Direkt under dyker dina återkommande räkningar för den månaden upp – bocka i vilka som ingår i summan.','Det som blir kvar läggs automatiskt som Övrigt, och rutan visar hela tiden hur mycket det blir.','Gå in i betalningen och tryck Dela upp övrigt för att säga att en viss summa var något särskilt. Den bryts ut som egen post med namn, kategori och ägare, och dras från övrigt.','Betalningen syns i kalendern på sitt datum, och de räkningar som ingår dubbelräknas inte.','Markera betald drar summan från valt konto, bockar av de ingående räkningarna och bokför varje post för sig i årets utgifter.','Finns i Räkningarna, i plusmenyn och direkt från en dag i kalendern.']},{v:'11.0.0',d:'2026-07-23',items:['Enkelt läge är nu standard. Appen visar det du behöver för att sköta ekonomin, och gömmer resten.','Växla mellan Enkelt och Visa allt högst upp i menyn eller under Inställningar. Ingenting raderas – allt finns kvar direkt bakom knappen.','I enkelt läge göms Frihetsresan, Milstolpar, Lär dig, Rådgivaren, Tidslinjen och Söndagsreflektionen ur navigeringen.','I Livsplanen göms frihetsindex, tid och pengar, simulatorn, säsong, plan mot verklighet och rensningsdelen tills du vill se dem.','Menyn är grupperad i Pengarna, Magishoppen, Utveckling och Appen istället för en lång lista.','Ny Kom igång-ruta på startsidan med fyra steg: inkomst, räkningar, buffert och skulder, första köpet. Den bockar av sig själv och försvinner när du är klar.','Startsidan visar frihetspoäng och dagens tanke först i Visa allt-läget.']},{v:'10.2.0',d:'2026-07-23',items:['Ny knapp under Fasta kostnader: Hämta från dina räkningar. Den synkar alla återkommande privata räkningar till årspottar – månadsbelopp gånger tolv, årsbelopp som de är.','Knappen kan tryckas hur många gånger som helst: nya räkningar läggs till, ändrade belopp uppdateras och räkningar du tagit bort arkiveras automatiskt.','Under knappen står hur många återkommande privata räkningar du har, vad de kostar per år och hur många som inte är hämtade än.','Hämtade pottar visar Från Räkningarna och månadsbeloppet, så det syns var siffran kommer ifrån.','Rättade en dubblering av Livsplanens vy som gjorde att flera vyer fanns två gånger i dokumentet.']},{v:'10.1.0',d:'2026-07-23',items:['Månadsplanen är förenklad: skriv bara in trygg inkomst och eventuell extra inkomst, så föreslår appen fördelningen.','Förslaget räknas fram från dina räkningar, dina skulders månadsbetalning, Magishoppens räkningar och en månads andel av årspottarna enligt säsongen.','Varje rad har en motivering, och allt går att justera direkt i förslaget.','Tryggt att använda uppdateras medan du skriver.','Ny rensningssektion längst ner i Livsplanen: rensa den här månaden, alla månadsplaner, årspottar och projekt, eller hela Livsplanen.','Rensningen rör aldrig köp, räkningar, konton eller skulder.']},{v:'10.0.0',d:'2026-07-19',items:['Planering heter nu Livsplan och bygger på år istället för månader – du har inget månadsproblem, du har ett kassaflödesproblem.','Tre nivåer: Fasta kostnader, Livsstil och Projekt.','Livsstilspottar är årspottar. Smink 12 000 kr per år istället för 500 kr i månaden – köp för 2 500 kr en månad och 0 kr nästa utan att ha spräckt något.','Projekt har en början och ett slut: Keratinutbildning, hemgym, ny garderob. Med budget, startdatum, måldatum och ett varför.','Köp kan kopplas till ett projekt. Då säger appen inte att du köpte hår för 3 000 kr, utan att 3 000 kr har lagts på projektet Keratinutbildning och att 9 000 kr är kvar.','Pottar kopplas till köpkategorier och räknar av sig själva när du loggar ett köp.','Säsongsfördelning: sommartung, hösttung, vintertung, tungt i början eller helt egen fördelning per månad. Budgeten följer livet istället för tvärtom.','Årsöversikt med planerat för hela året, hur stor andel av årsinkomsten det är, och en stapel per månad över vad som faktiskt gått åt.','Takten mäts mot säsongen, inte mot en tolftedel – varningen kommer först när potten faktiskt riskerar att ta slut i förtid.','Månadsplanen, bufferten, simulatorn och plan mot verklighet finns kvar längre ner för den som vill ha detaljerna.']},{v:'9.3.0',d:'2026-07-19',items:['Betalningsrutan frågar nu vem som betalar: Privat, Klarna, Magishoppen eller Annat – och från vilket konto.','Betalar Magishoppen en privat skuld räknas hela beloppet av mot vad butiken är skyldig dig, ränta inkluderad.','Betalar du privat på en butiksskuld ökar butikens skuld till dig med samma summa.','Rutan visar effekten innan du sparar, så det aldrig blir en överraskning.','Skuldkortet visar senaste betalningen: belopp, datum, vem som betalade, från vilket konto och hur mycket som gick till skulden respektive räntan.','Betalningshistoriken visar också vem som betalade.','Klarna är nu en egen ägare under Räkningarna, i skuldflikarna och på köp – med egen färg.','Betalningen kan dateras och dras från valt konto direkt.']},{v:'9.2.0',d:'2026-07-19',items:['Plusknappen är nu en inmatningshubb: köp, no buy day, pengar ut, pengar in, ny räkning, extra inkomst, överföring, betalning på skuld, punkt i kalendern och nytt beslut – allt från samma ställe.','Pengar in och Pengar ut för kostnader och inkomster som inte är vanliga köp, med kategori, konto och datum.','Överföring mellan konton flyttar pengar utan att räknas som utgift – och går den till ett buffertkonto ökar bufferten automatiskt.','Alla poster uppdaterar kontosaldot direkt och bokförs en enda gång.','Desktopmenyn visar nu alla vyer, så På väg mot noll, Räkningarna, Konton och Lär dig går att nå direkt från sidomenyn.']},{v:'9.1.0',d:'2026-07-19',items:['Kreditköp kan nu få ett eget betaldatum – då dyker dragningen upp i kalendern på den dagen, i gult.','Alternativt markeras köpet som Månadsfaktura. Då hamnar det inte i kalendern som en egen dragning, utan syns på fakturan i Räkningarna.','Räkningen visar hur många köp och hur mycket som ligger på den fakturan den månaden.','I dagvyn kan en kreditbetalning bockas av som betald – då minskar skulden och kontot med samma summa.','Konton kan markeras som Kredit, så att appen vet att köp där ökar en skuld istället för att minska ett saldo.']},{v:'9.0.0',d:'2026-07-19',items:['Plan heter nu Planering – något levande, inte ett prov man kan misslyckas med.','Månadsväljare med pilar högst upp: varje månad har sin egen plan, som kan kopieras från föregående månad.','Extra inkomst per månad med status planerad, möjlig, bekräftad eller mottagen. Möjliga pengar räknas aldrig som pengar du har.','Förslag på fördelning av extra pengar: räkningar, buffert, dyraste skulden, kommande utgifter och tio procent till något roligt – med motivering till varje rad.','Rådgivaren kan tycka till om just den summan.','Mjuka varningar istället för alarm: de utgår från din egen takt och kommer med knapparna Visa konsekvensen, Pausa köp i 24 timmar, Justera planen och Allt är okej.','Onödigt heter nu Inte planerat – samma data, mindre skam.','Köp registreras med kategori, betalningstyp och konto. Betalningstyp och konto är två olika saker.','Egna kategorier och betalningstyper med emoji, som kan arkiveras istället för att raderas så att historiken överlever.','Kalendern visar status på dragningar: kommande, dras snart, betald och försenad, plus fyra summor – köp hittills, räkningar betalda, kvar att betala och totalt planerat.','Konton visar nu saldot efter månadens kvarvarande dragningar.','Skulder heter På väg mot noll. Varje skuld har ett eget kort med startbelopp, betalat av, betald ränta, ränta denna månad och beräknat slutdatum.','En betalning delas upp i vad som går till skulden och vad som går till ränta.','Beslut och Perspektiv ger nu en bedömning: ryms tryggt, möjligt men påverkar annat, vänta gärna eller saknar täckning – plus förslag på bättre tajming.','Snabbknappen finns även som flytande knapp längst ner, alltid nära tummen.']},{v:'8.0.0',d:'2026-07-19',items:['Snabbknappar, no buy day och kalender med belopp per dag.']},{v:'7.0.0',d:'2026-07-19',items:['Räkningarna, skuldflikar och Magishoppens skuld till dig.']},{v:'6.0.0',d:'2026-07-19',items:['Ekonomiskt väder, fyra siffror, AI-coach, frihetspoäng och simulator.']},{v:'5.0.0',d:'2026-07-19',items:['Beslutsmotorn och Frihetsresan.']},{v:'4.0.0',d:'2026-07-19',items:['Trygg månadsinkomst, Levnadskonto, tre mål och mikrolärandet.']},{v:'3.0.0',d:'2026-07-19',items:['Nedräkningskalender, dashboard, konton och budget per månad.']},{v:'2.0.0',d:'2026-07-19',items:['Frihetsindex 0–100, prognos och milstolpar.']},{v:'1.0.0',d:'2026-07-19',items:['Första versionen av Frihet.']}]};
 
 // ── State ──────────────────────────────────────────────
 var KEY='frihet_v1';
@@ -1577,12 +1642,12 @@ var EKO0={inkomst:0,fasta:0,minimi:0,butik:0,vardag:0,sparande:0,frihet:0,buffer
 var state={eko:Object.assign({},EKO0),
   butik:{forsaljning:0,lager:0,hyra:0,ovrigt:0,moms:0,lan:0},
   skulder:[],kop:[],vantelista:[],tidslinje:[],sondag:[],segrar:[],idxhist:[],konton:[],trans:[],butikPoster:[],malen:[],beslut:[],dagbok:[],
-  budget:{},butikM:{},laste:{},historik:[],rakningar:[],rakStatus:{},butikSkuld:[],nobuy:{},planer:{},extra:[],kategorier:[],betaltyper:[],pottar:[],jobb:{lon:0,timmar:40,pass:6,kaffe:49},
+  budget:{},butikM:{},laste:{},historik:[],rakningar:[],rakStatus:{},butikSkuld:[],nobuy:{},planer:{},extra:[],kategorier:[],betaltyper:[],pottar:[],kommande:[],jobb:{lon:0,timmar:40,pass:6,kaffe:49},
   larande:{klara:{},sparade:[],xp:0,utmaningar:{},tankeSedd:''},start:null,
   mal:{typ:'skuld',varde:0,text:'',start:0,m:''},uppgifter:{},enkelt:null,
   updated:'',theme:'auto',skin:'skog'};
 try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){state=Object.assign(state,o);state.eko=Object.assign({},EKO0,o.eko||{});state.butik=Object.assign({forsaljning:0,lager:0,hyra:0,ovrigt:0,moms:0,lan:0},o.butik||{});}}}catch(e){}
-['skulder','kop','vantelista','tidslinje','sondag','segrar','idxhist','konton','trans','butikPoster','malen','beslut','dagbok','historik','rakningar','butikSkuld','extra','kategorier','betaltyper','pottar'].forEach(function(k){if(!Array.isArray(state[k]))state[k]=[];});
+['skulder','kop','vantelista','tidslinje','sondag','segrar','idxhist','konton','trans','butikPoster','malen','beslut','dagbok','historik','rakningar','butikSkuld','extra','kategorier','betaltyper','pottar','kommande'].forEach(function(k){if(!Array.isArray(state[k]))state[k]=[];});
 ['budget','butikM','laste','rakStatus','nobuy','planer'].forEach(function(k){if(!state[k]||typeof state[k]!=='object')state[k]={};});
 state.jobb=Object.assign({lon:0,timmar:40,pass:6,kaffe:49},state.jobb||{});
 state.larande=Object.assign({klara:{},sparade:[],xp:0,utmaningar:{},tankeSedd:''},state.larande||{});
@@ -3820,6 +3885,13 @@ function betalningarFor(d){
   for(var q=0;q<state.kop.length;q++){var k=state.kop[q];
     if(k.betaldatum===d&&!k.faktura)
       ut.push({namn:(k.namn||k.kategori||'Kreditköp'),belopp:num(k.belopp),typ:'kredit',betald:!!k.kreditBetald,id:k.id,konto:k.betalsatt});}
+  var raknade={};
+  for(var w=0;w<state.kommande.length;w++){var kb=state.kommande[w];
+    if(kb.d!==d)continue;
+    ut.push({namn:'Kommande betalning'+((kb.poster||[]).length?(' · '+kb.poster.length+' poster'):''),
+      belopp:num(kb.total),typ:'kommande',betald:!!kb.betald,id:kb.id,konto:kb.konto});
+    for(var e2=0;e2<(kb.poster||[]).length;e2++)if(kb.poster[e2].rakningId)raknade[kb.poster[e2].rakningId]=true;}
+  if(Object.keys(raknade).length)ut=ut.filter(function(x){return !(x.typ==='rakning'&&raknade[x.id]);});
   return ut;
 }
 function betalSumma(d){var l=betalningarFor(d),s2=0;for(var i=0;i<l.length;i++)if(!l[i].betald)s2+=num(l[i].belopp);return s2;}
@@ -3860,12 +3932,16 @@ function openDag(d){
     h+='<span class="mid"><b>'+esc(bet[i].namn)+'</b><span>'+
       (bet[i].typ==='rakning'?('Räkning · '+esc(agareNamn(bet[i].agare))+(bet[i].betald?' · betald':'')):
        bet[i].typ==='kredit'?('Kreditköp · '+esc(bet[i].konto||'kredit')+(bet[i].betald?' · betald':' · dras den här dagen')):
+       bet[i].typ==='kommande'?('Kommande betalning'+(bet[i].konto?(' · '+esc(bet[i].konto)):'')+(bet[i].betald?' · betald':' · dras den här dagen')):
        ('Planerad utgift · '+esc(kr(bet[i].sparat))+' sparat'))+'</span></span>';
     h+='<span class="amt">'+esc(kr(bet[i].belopp))+'</span>';
     if(bet[i].typ==='kredit'&&!bet[i].betald)h+='<button class="btn ghost" type="button" data-kb="'+bet[i].id+'">Betald</button>';
+    if(bet[i].typ==='kommande')h+='<button class="btn ghost" type="button" data-kom="'+bet[i].id+'">&#8250;</button>';
     h+='</div>';}
   var dbEl=document.getElementById('dg-betal');
   dbEl.innerHTML=h;
+  dbEl.querySelectorAll('button[data-kom]').forEach(function(b){b.onclick=function(){
+    closeSheets();setTimeout(function(){openKbDetalj(b.dataset.kom);},180);};});
   dbEl.querySelectorAll('button[data-kb]').forEach(function(b){b.onclick=function(){
     var id=b.dataset.kb,kop=null;
     for(var i=0;i<state.kop.length;i++)if(state.kop[i].id===id)kop=state.kop[i];
@@ -3900,6 +3976,7 @@ function openDag(d){
   document.getElementById('dg-lila').onclick=function(){openSnabb('nodvandigt',d);};
   document.getElementById('dg-rosa').onclick=function(){openSnabb('onodigt',d);};
   document.getElementById('dg-punkt').onclick=function(){openHandelse();document.getElementById('h-datum').value=d;};
+  document.getElementById('dg-kommande').onclick=function(){closeSheets();setTimeout(function(){openKommande(d);},180);};
   openSheet('dag-sheet');
 }
 
@@ -3943,6 +4020,7 @@ function renderRakFilter(){
   el.querySelectorAll('button').forEach(function(b){b.onclick=function(){rakFilter=b.dataset.f;renderRakningar();};});
 }
 function renderRakningar(){
+  renderKommande();
   var mi=document.getElementById('r-manad');if(mi&&!mi.value)mi.value=valdRakManad;
   renderRakFilter();
   var m=valdRakManad,sum=rakSummor(m,rakFilter),idag=todayKey();
@@ -4060,6 +4138,133 @@ function openBelopp(id){
   document.getElementById('bl-belopp').value=(st.faktiskt!==undefined&&st.faktiskt!==null)?st.faktiskt:'';
   document.getElementById('bl-diff').innerHTML='';
   openSheet('belopp-sheet');
+}
+
+// ── Kommande betalningar ──────────────────────────────
+function kbSummaPoster(kb){var s2=0;for(var i=0;i<(kb.poster||[]).length;i++)s2+=num(kb.poster[i].belopp);return s2;}
+function kbOvrigt(kb){
+  for(var i=0;i<(kb.poster||[]).length;i++)if(kb.poster[i].ovrigt)return kb.poster[i];
+  return null;
+}
+function kbSattOvrigt(kb){
+  var kant=0;
+  for(var i=0;i<(kb.poster||[]).length;i++)if(!kb.poster[i].ovrigt)kant+=num(kb.poster[i].belopp);
+  var rest=num(kb.total)-kant;
+  var ov=kbOvrigt(kb);
+  if(rest>0.5){
+    if(ov)ov.belopp=rest;
+    else kb.poster.push({id:uid(),namn:'Övrigt',belopp:rest,ovrigt:true,kategori:'Övrigt',agare:'privat'});
+  }else if(ov)kb.poster=kb.poster.filter(function(p){return !p.ovrigt;});
+}
+var kbBelopp=0,kbDatum='',kbKonto='',kbValda=[];
+function renderKommandeForm(){
+  ritaKontoChips('kb-konto',kbKonto,function(v){kbKonto=v;renderKommandeForm();},'Inget konto');
+  var d=document.getElementById('kb-datum').value||todayKey();
+  var m=d.slice(0,7),l=[],h='';
+  for(var i=0;i<state.rakningar.length;i++){var r=state.rakningar[i];
+    if(r.borttagen||!rakGaller(r,m))continue;
+    l.push(r);}
+  if(!l.length)h='<div class="tiny">Inga återkommande räkningar för '+esc(fmtManad(m))+'.</div>';
+  for(var j=0;j<l.length;j++){
+    var vald=kbValda.indexOf(l[j].id)>=0;
+    var st=rakStatusFor(m)[l[j].id]||{};
+    h+='<button type="button" class="chip'+(vald?' sel':'')+'" data-r="'+l[j].id+'">'+esc(l[j].namn)+' &middot; '+esc(kr(rakBelopp(l[j],m)))+(st.betald?' &middot; betald':'')+'</button>';}
+  var el=document.getElementById('kb-rakningar');
+  el.innerHTML=h;
+  el.querySelectorAll('button[data-r]').forEach(function(b){b.onclick=function(){
+    var id=b.dataset.r,i2=kbValda.indexOf(id);
+    if(i2>=0)kbValda.splice(i2,1);else kbValda.push(id);
+    renderKommandeForm();};});
+  var tot=num(document.getElementById('kb-belopp').value),kant=0;
+  for(var q=0;q<kbValda.length;q++)for(var w=0;w<state.rakningar.length;w++)
+    if(state.rakningar[w].id===kbValda[q])kant+=rakBelopp(state.rakningar[w],m);
+  var rest=tot-kant;
+  var ku=document.getElementById('kb-kvar');
+  if(!tot)ku.innerHTML='Skriv in summan som dras.';
+  else ku.innerHTML='Av '+esc(kr(tot))+' är '+esc(kr(kant))+' räkningar.<span class="lbl"></span>'+
+    (rest>0.5?('Läggs som övrigt:<b>'+esc(kr(rest))+'</b><span class="tiny">Du kan bryta ut delar av den senare.</span>'):
+     rest<-0.5?('<b class="neg">'+esc(kr(-rest))+' för mycket</b><span class="tiny">Räkningarna du bockat i är större än summan.</span>'):
+     '<b>Allt är täckt av räkningar.</b>');
+}
+function openKommande(datum){
+  kbBelopp=0;kbValda=[];kbKonto=standardKonto();
+  document.getElementById('kb-belopp').value='';
+  document.getElementById('kb-datum').value=datum||todayKey();
+  renderKommandeForm();openSheet('kommande-sheet');
+}
+function renderKommande(){
+  var el=document.getElementById('kb-lista');if(!el)return;
+  var idag=todayKey();
+  var l=state.kommande.slice().sort(function(a,b){return (a.d||'').localeCompare(b.d||'');});
+  var h='';
+  if(!l.length)h='<div class="card-panel"><div class="empty-msg">Inga kommande betalningar inlagda. Bra när du vet att en summa ska dras men inte exakt vad den består av.</div></div>';
+  for(var i=0;i<l.length;i++){
+    var kb=l[i],dg=dagarMellan(idag,kb.d);
+    h+='<div class="kb'+(kb.betald?' betald':'')+'" data-k="'+kb.id+'">';
+    h+='<div class="kb-top"><span class="kb-d">'+esc(fmtDate(kb.d))+'</span><span class="kb-tot">'+esc(kr(kb.total))+'</span></div>';
+    h+='<div class="kb-sub">'+(kb.betald?'Betald':(dg===0?'Dras idag':dg>0?('Om '+dg+' dagar'):(-dg+' dagar sedan – inte bockad som betald')))+
+       ' &middot; '+(kb.poster||[]).length+' poster'+(kb.konto?(' &middot; '+esc(kb.konto)):'')+'</div>';
+    if((kb.poster||[]).length){
+      h+='<div class="kb-poster">';
+      for(var j=0;j<kb.poster.length;j++)
+        h+='<div'+(kb.poster[j].ovrigt?' class="ov"':'')+'><span>'+esc(kb.poster[j].namn)+'</span><b>'+esc(kr(kb.poster[j].belopp))+'</b></div>';
+      h+='</div>';}
+    h+='</div>';}
+  el.innerHTML=h;
+  el.querySelectorAll('.kb').forEach(function(c){c.onclick=function(){openKbDetalj(c.dataset.k);};});
+}
+var aktivKb=null;
+function kbHitta(id){for(var i=0;i<state.kommande.length;i++)if(state.kommande[i].id===id)return state.kommande[i];return null;}
+function openKbDetalj(id){
+  aktivKb=id;
+  var kb=kbHitta(id);if(!kb)return;
+  document.getElementById('kd-h').textContent=kr(kb.total)+' den '+fmtDate(kb.d);
+  document.getElementById('kd-info').textContent=kb.betald?'Betald och bokförd.':
+    'Tryck på Dela upp övrigt för att säga vad en del av summan egentligen var.';
+  var h='';
+  for(var i=0;i<(kb.poster||[]).length;i++){var p=kb.poster[i];
+    h+='<div class="prad'+(p.ovrigt?' ov':'')+'"><span class="mid"><b>'+esc(p.namn)+'</b><span>'+
+      (p.ovrigt?'Ej specificerat än':(p.rakningId?'Räkning':'Egen post')+' &middot; '+esc(agareNamn(p.agare||'privat'))+' &middot; '+esc(p.kategori||'Övrigt'))+
+      '</span></span><span class="amt">'+esc(kr(p.belopp))+'</span>';
+    if(!p.ovrigt&&!p.rakningId&&!kb.betald)h+='<button class="btn ghost" type="button" data-bort="'+p.id+'">&#10005;</button>';
+    h+='</div>';}
+  var summa=kbSummaPoster(kb);
+  h+='<div class="kvarrutan">Summerat: '+esc(kr(summa))+' av '+esc(kr(kb.total))+'.</div>';
+  var pe=document.getElementById('kd-poster');
+  pe.innerHTML=h;
+  pe.querySelectorAll('button[data-bort]').forEach(function(b){b.onclick=function(){
+    kb.poster=kb.poster.filter(function(p2){return p2.id!==b.dataset.bort;});
+    kbSattOvrigt(kb);persist();openKbDetalj(id);renderKommande();};});
+  var ov=kbOvrigt(kb);
+  document.getElementById('kd-dela').style.display=(ov&&!kb.betald)?'':'none';
+  document.getElementById('kd-betald').textContent=kb.betald?'Ångra betald':'Markera betald';
+  openSheet('kbdetalj-sheet');
+}
+var delaKat='Övrigt',delaAgare='privat';
+function renderDelaForm(){
+  var kb=kbHitta(aktivKb);if(!kb)return;
+  var ov=kbOvrigt(kb);
+  var el=document.getElementById('dl-kat'),h='',ak=aktiva(state.kategorier);
+  for(var i=0;i<ak.length;i++)h+='<button type="button" class="chip'+(delaKat===ak[i].namn?' sel':'')+'" data-k="'+esc(ak[i].namn)+'">'+esc(ak[i].emoji||'')+' '+esc(ak[i].namn)+'</button>';
+  el.innerHTML=h;
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){delaKat=b.dataset.k;renderDelaForm();};});
+  var ae=document.getElementById('dl-agare'),h2='';
+  for(var j=0;j<RAK_AGARE.length;j++)h2+='<button type="button" class="chip'+(delaAgare===RAK_AGARE[j][0]?' sel':'')+'" data-a="'+RAK_AGARE[j][0]+'">'+RAK_AGARE[j][1]+'</button>';
+  ae.innerHTML=h2;
+  ae.querySelectorAll('button').forEach(function(b){b.onclick=function(){delaAgare=b.dataset.a;renderDelaForm();};});
+  var b2=num(document.getElementById('dl-belopp').value);
+  var kvar=(ov?num(ov.belopp):0)-b2;
+  document.getElementById('dl-kvar').innerHTML=ov?
+    ('Övrigt är '+esc(kr(ov.belopp))+'. Efter uppdelningen: <b>'+esc(kr(Math.max(0,kvar)))+'</b>'+(kvar<-0.5?' – summan är större än övrigt.':'')):'';
+}
+function openDela(){
+  var kb=kbHitta(aktivKb);if(!kb)return;
+  var ov=kbOvrigt(kb);if(!ov)return;
+  document.getElementById('dl-info').textContent='Övrigt är '+kr(ov.belopp)+'. Bryt ut det du vet vad det var.';
+  document.getElementById('dl-namn').value='';
+  document.getElementById('dl-belopp').value='';
+  delaKat='Övrigt';delaAgare='privat';
+  renderDelaForm();openSheet('dela-sheet');
 }
 
 // ── Magishoppens skuld till dig ───────────────────────
@@ -4850,13 +5055,13 @@ function setBadge(st,msg){var b=document.getElementById('sync-badge');if(!b)retu
 function mergeDagar(a,b){var m={};(b||[]).forEach(function(x){m[x.d]=x;});(a||[]).forEach(function(x){m[x.d]=x;});
   return Object.keys(m).sort().map(function(k){return m[k];});}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
-function payload(){return {eko:state.eko,butik:state.butik,skulder:state.skulder,kop:state.kop,vantelista:state.vantelista,tidslinje:state.tidslinje,sondag:state.sondag,segrar:state.segrar,idxhist:state.idxhist,mal:state.mal,uppgifter:state.uppgifter,konton:state.konton,trans:state.trans,butikPoster:state.butikPoster,malen:state.malen,beslut:state.beslut,dagbok:state.dagbok,historik:state.historik,rakningar:state.rakningar,rakStatus:state.rakStatus,butikSkuld:state.butikSkuld,nobuy:state.nobuy,planer:state.planer,extra:state.extra,pottar:state.pottar,enkelt:state.enkelt,budget:state.budget,butikM:state.butikM,laste:state.laste,jobb:state.jobb,larande:state.larande,start:state.start,updated:state.updated||new Date().toISOString()};}
+function payload(){return {eko:state.eko,butik:state.butik,skulder:state.skulder,kop:state.kop,vantelista:state.vantelista,tidslinje:state.tidslinje,sondag:state.sondag,segrar:state.segrar,idxhist:state.idxhist,mal:state.mal,uppgifter:state.uppgifter,konton:state.konton,trans:state.trans,butikPoster:state.butikPoster,malen:state.malen,beslut:state.beslut,dagbok:state.dagbok,historik:state.historik,rakningar:state.rakningar,rakStatus:state.rakStatus,butikSkuld:state.butikSkuld,nobuy:state.nobuy,planer:state.planer,extra:state.extra,pottar:state.pottar,kommande:state.kommande,enkelt:state.enkelt,budget:state.budget,butikM:state.butikM,laste:state.laste,jobb:state.jobb,larande:state.larande,start:state.start,updated:state.updated||new Date().toISOString()};}
 async function ghGet(){var r=await fetch(ghUrl(),{headers:ghHeaders(),cache:'no-store'});if(r.status===404){sync.sha=null;return null;}if(!r.ok)throw new Error('HTTP '+r.status);var j=await r.json();sync.sha=j.sha;return JSON.parse(b64dec(j.content));}
 async function ghPull(){
   if(!syncOn())return;
   try{setBadge('load','Hämtar…');var d=await ghGet();
     if(d){
-      ['skulder','kop','vantelista','tidslinje','sondag','segrar','konton','trans','butikPoster','malen','beslut','dagbok','rakningar','butikSkuld','extra','pottar'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
+      ['skulder','kop','vantelista','tidslinje','sondag','segrar','konton','trans','butikPoster','malen','beslut','dagbok','rakningar','butikSkuld','extra','pottar','kommande'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
       if(Array.isArray(d.idxhist))state.idxhist=mergeDagar(state.idxhist,d.idxhist);
       if(Array.isArray(d.historik)){var hm={};d.historik.forEach(function(x){hm[x.m]=x;});state.historik.forEach(function(x){hm[x.m]=x;});state.historik=Object.keys(hm).sort().map(function(k){return hm[k];});}
       if(d.uppgifter)state.uppgifter=Object.assign({},d.uppgifter,state.uppgifter);
@@ -5119,7 +5324,7 @@ document.getElementById('import-file').onchange=function(e){
   var f=e.target.files[0];if(!f)return;var r=new FileReader();
   r.onload=function(){try{var d=JSON.parse(r.result);
     if(d&&typeof d==='object'){
-      ['skulder','kop','vantelista','tidslinje','sondag','segrar','konton','trans','butikPoster','malen','beslut','dagbok','rakningar','butikSkuld','extra','pottar'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
+      ['skulder','kop','vantelista','tidslinje','sondag','segrar','konton','trans','butikPoster','malen','beslut','dagbok','rakningar','butikSkuld','extra','pottar','kommande'].forEach(function(k){if(Array.isArray(d[k]))state[k]=mergeById(state[k],d[k]);});
       if(Array.isArray(d.idxhist))state.idxhist=mergeDagar(state.idxhist,d.idxhist);
       if(Array.isArray(d.historik)){var hm={};d.historik.forEach(function(x){hm[x.m]=x;});state.historik.forEach(function(x){hm[x.m]=x;});state.historik=Object.keys(hm).sort().map(function(k){return hm[k];});}
       if(d.uppgifter)state.uppgifter=Object.assign({},d.uppgifter,state.uppgifter);
@@ -5424,6 +5629,7 @@ document.querySelectorAll('#plus-sheet .plusgrid button').forEach(function(b){b.
       state.nobuy[k]=true;loggaSeger('No buy day.');persist();renderActive();toast('🟢 No buy day registrerad.');}
     else if(a==='ut')openFlow('ut');
     else if(a==='in')openFlow('in');
+    else if(a==='kommande')openKommande();
     else if(a==='rakning')openRakning();
     else if(a==='extra')openExtra();
     else if(a==='overforing')openOver();
@@ -5579,6 +5785,63 @@ document.getElementById('hamta-rak').onclick=function(){
   var el=document.getElementById(id);
   if(el)el.querySelectorAll('button').forEach(function(b){b.onclick=function(){settLage(b.dataset.l==='1');};});
 });
+
+document.getElementById('kb-belopp').oninput=renderKommandeForm;
+document.getElementById('kb-datum').onchange=function(){kbValda=[];renderKommandeForm();};
+document.getElementById('kb-save').onclick=function(){
+  var tot=num(document.getElementById('kb-belopp').value);
+  if(!tot){closeSheets();return;}
+  var d=document.getElementById('kb-datum').value||todayKey(),m=d.slice(0,7);
+  var poster=[];
+  for(var i=0;i<kbValda.length;i++)for(var j=0;j<state.rakningar.length;j++){var r=state.rakningar[j];
+    if(r.id!==kbValda[i])continue;
+    poster.push({id:uid(),namn:r.namn,belopp:rakBelopp(r,m),rakningId:r.id,kategori:r.kategori||'Övrigt',agare:agareAv(r)});}
+  var kb={id:uid(),d:d,total:tot,konto:kbKonto,betald:false,poster:poster};
+  kbSattOvrigt(kb);
+  state.kommande.push(kb);
+  persist();closeSheets();renderActive();
+  var ov=kbOvrigt(kb);
+  toast('Inlagd den ' + fmtDate(d) + '.' + (poster.length?('<br>' + poster.length + ' räkningar matchade.'):'') +
+    (ov?('<br>' + kr(ov.belopp) + ' ligger som övrigt.'):''));
+};
+document.getElementById('kd-dela').onclick=function(){closeSheets();setTimeout(openDela,180);};
+document.getElementById('dl-belopp').oninput=renderDelaForm;
+document.getElementById('dl-save').onclick=function(){
+  var kb=kbHitta(aktivKb);if(!kb){closeSheets();return;}
+  var b=num(document.getElementById('dl-belopp').value),n=document.getElementById('dl-namn').value.trim();
+  var ov=kbOvrigt(kb);
+  if(!b||!n||!ov){closeSheets();return;}
+  if(b>num(ov.belopp)+0.5){toast('Summan är större än övrigt (' + kr(ov.belopp) + ').');return;}
+  kb.poster.push({id:uid(),namn:n,belopp:b,kategori:delaKat,agare:delaAgare});
+  kbSattOvrigt(kb);
+  persist();closeSheets();renderActive();
+  var ov2=kbOvrigt(kb);
+  toast(kr(b) + ' är nu en egen post: ' + n + '.' + (ov2?('<br>Kvar som övrigt: ' + kr(ov2.belopp) + '.'):'<br>Allt är specificerat.'));
+};
+document.getElementById('kd-betald').onclick=function(){
+  var kb=kbHitta(aktivKb);if(!kb)return;
+  if(kb.betald){
+    kb.betald=false;persist();openKbDetalj(kb.id);renderActive();toast('Ångrat.');return;}
+  openBetala({rubrik:'Betala '+kr(kb.total),info:fmtDate(kb.d)+' · '+(kb.poster||[]).length+' poster.',
+    belopp:num(kb.total),konto:kb.konto||standardKonto(),datum:kb.d,
+    klar:function(belopp,konto,datum){
+      kb.betald=true;kb.konto=konto;kb.betaldD=datum;
+      draFranKonto(konto,belopp);
+      var m=datum.slice(0,7),st=rakStatusFor(m);
+      for(var i=0;i<(kb.poster||[]).length;i++){var p=kb.poster[i];
+        if(p.rakningId){
+          if(!st[p.rakningId])st[p.rakningId]={};
+          st[p.rakningId].betald=true;st[p.rakningId].inkommen=true;st[p.rakningId].betaldD=datum;st[p.rakningId].konto=konto;}
+        state.trans.push({id:uid(),d:datum,typ:'ut',kat:p.kategori||'Övrigt',namn:p.namn,belopp:num(p.belopp),konto:konto,agare:p.agare||'privat'});}
+      loggaSeger('Betalade ' + kr(belopp) + ' – ' + (kb.poster||[]).length + ' poster.');
+      renderActive();
+    }});
+};
+document.getElementById('kd-bort').onclick=function(){
+  if(!confirm('Ta bort den kommande betalningen?'))return;
+  state.kommande=state.kommande.filter(function(k){return k.id!==aktivKb;});
+  persist();closeSheets();renderActive();
+};
 
 // ── Start ──────────────────────────────────────────────
 loadSync();

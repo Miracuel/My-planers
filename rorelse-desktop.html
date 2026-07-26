@@ -72,6 +72,8 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .sess-row .meta{color:var(--muted);font-size:11px;margin-top:1px}
 .sess-row .arrow{font-size:12px;color:var(--accent);white-space:nowrap}
 .sess-row button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+.sess-row .ex-fail,.sess-row .ex-edit{font-size:15px;padding:2px 4px}
+.sess-row .ex-fail:active{color:var(--accent)}
 
 /* Öppettider */
 .hours-row{display:flex;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
@@ -279,6 +281,16 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <div id="plan-list" style="margin-top:10px"></div>
   </div>
 
+  <div class="section-title">Övningar &amp; maskiner</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Spara maskiner och övningar med viktintervall och vad du tycker. Planera failure-set med förslag på uppvärmning och vikter.</div>
+    <div class="btn-row">
+      <button class="btn" id="add-ex">+ Lägg till övning</button>
+      <button class="btn" id="open-fail">⚡ Failure-plan</button>
+    </div>
+    <div id="ex-list" style="margin-top:10px"></div>
+  </div>
+
   <div class="section-title">Senaste passen</div>
   <div class="card-panel"><div id="recent-list"></div></div>
 </div>
@@ -438,6 +450,39 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <button class="btn ghost" id="gym-del" style="width:100%;margin-top:8px">Ta bort det här gymmet</button>
 </div>
 
+<div class="sheet" id="ex-sheet">
+  <h3 id="ex-title">Övning</h3>
+  <label>Namn på övning / maskin</label>
+  <input type="text" id="ex-name" placeholder="T.ex. Benpress">
+  <div class="row2">
+    <div><label>Vikt från (kg)</label><input type="number" id="ex-min" min="0" step="2.5" placeholder="20"></div>
+    <div><label>Vikt till (kg)</label><input type="number" id="ex-max" min="0" step="2.5" placeholder="120"></div>
+  </div>
+  <label>Vad tycker du om övningen?</label>
+  <div class="dotpick" id="ex-rating"></div>
+  <label>Anteckning (frivilligt)</label>
+  <textarea id="ex-note" rows="2" placeholder="Känsla, inställning, vad du vill minnas…"></textarea>
+  <div id="ex-gym-wrap"><label>Vilket gym</label><select id="ex-gym"></select></div>
+  <button class="sheet-close" id="ex-save">Spara</button>
+  <button class="btn ghost" id="ex-del" style="width:100%;margin-top:8px">Ta bort övningen</button>
+</div>
+
+<div class="sheet" id="fail-sheet">
+  <h3>⚡ Failure-plan</h3>
+  <div class="soft">Skriv din högsta planerade vikt, så föreslås uppvärmning och en fördelning fram till ett failure-set på topvikten.</div>
+  <label>Övning / maskin</label>
+  <input type="text" id="fail-name" placeholder="T.ex. Benpress">
+  <div class="soft" id="fail-interval" style="margin-top:2px"></div>
+  <label>Högsta planerade vikt (kg)</label>
+  <input type="number" id="fail-z" min="1" step="2.5" placeholder="100">
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn fill" id="fail-ai">Föreslå med AI</button>
+    <button class="btn" id="fail-local">Enkelt upplägg</button>
+  </div>
+  <div id="fail-out" class="ai-out" style="display:none"></div>
+  <button class="sheet-close" id="fail-done">Stäng</button>
+</div>
+
 <div class="sheet" id="sync-sheet">
   <h3>☁ Synk mellan enheter</h3>
   <div class="soft">Rörelse kan spara din data i ett <b>privat</b> GitHub-repo, så att mobilen och datorn alltid visar samma pass, planering och gym. Din token sparas bara lokalt på den här enheten — aldrig i koden.</div>
@@ -501,6 +546,7 @@ var state={
     {icon:'⏱',name:'5-minuters-start',min:5}
   ],
   planned:{},
+  exercises:null,
   gyms:null,
   activeGym:'',
   activeZone:'allmant',
@@ -545,6 +591,7 @@ function curGym(){return gymById(state.activeGym)||state.gyms[0];}
 function curCrowd(){var g=curGym();return g.crowd[state.activeZone]||g.crowd.allmant;}
 function zoneNamn(z){for(var i=0;i<ZONES.length;i++){if(ZONES[i].id===z)return ZONES[i].namn;}return 'Allmänna gymmet';}
 function ensureGym(){
+  if(!Array.isArray(state.exercises))state.exercises=[];
   if(!Array.isArray(state.gyms)){
     var old=state.gym||{};
     state.gyms=[{id:uid(),name:old.name||'Mitt gym',tjej:true,hours:old.hours||defaultHours(),crowd:{allmant:fixDays(old.crowd),tjej:blankDays()}}];
@@ -1190,7 +1237,7 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setSyncBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.dataset.s=stt;b.textContent=msg;}
 function refreshSyncBadge(){if(syncOn())setSyncBadge('ok','Synkad');else setSyncBadge('off','Lokal');}
-function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,gyms:state.gyms,updated:new Date().toISOString()};}
+function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,gyms:state.gyms,updated:new Date().toISOString()};}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergeByName(local,remote){var m={};(local||[]).forEach(function(x){m[x.name]=x;});(remote||[]).forEach(function(x){if(!m[x.name])m[x.name]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergePlanned(local,remote){var out=Object.assign({},local);Object.keys(remote||{}).forEach(function(k){var seen={};var arr=[];(out[k]||[]).concat(remote[k]||[]).forEach(function(p){var key=(p.name||'')+'|'+(p.time||'');if(!seen[key]){seen[key]=1;arr.push(p);}});out[k]=arr;});return out;}
@@ -1211,6 +1258,7 @@ function mergeGyms(local,remote){
 function applyData(d){
   if(Array.isArray(d.sessions))state.sessions=mergeById(state.sessions,d.sessions);
   if(Array.isArray(d.passTypes))state.passTypes=mergeByName(state.passTypes,d.passTypes);
+  if(Array.isArray(d.exercises))state.exercises=mergeById(state.exercises,d.exercises);
   if(d.planned&&typeof d.planned==='object')state.planned=mergePlanned(state.planned,d.planned);
   if(Array.isArray(d.gyms))state.gyms=mergeGyms(state.gyms,d.gyms);
   else if(d.gym&&typeof d.gym==='object'&&Array.isArray(state.gyms)&&state.gyms.length){
@@ -1355,24 +1403,24 @@ function aiContext(){
   return lines.join('\n');
 }
 function setAiOut(txt,loading){var el=document.getElementById('ai-out');el.style.display='block';el.className='ai-out'+(loading?' loading':'');el.textContent=txt;}
-function callAI(prompt){
+function callAI(prompt,onResult,maxTok){
   var prov=ai.provider;var key=prov==='claude'?ai.claude:ai.openai;
-  if(!key){setAiOut('Lägg in din '+(prov==='claude'?'Claude':'ChatGPT')+'-nyckel först.',false);return;}
-  setAiOut('Tänker…',true);
+  if(!key){onResult('Lägg in din '+(prov==='claude'?'Claude':'ChatGPT')+'-nyckel under ✨ AI först.');return;}
+  var mt=maxTok||400;
   if(prov==='claude'){
-    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt}]})})
+    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:mt,messages:[{role:'user',content:prompt}]})})
     .then(function(r){return r.json();}).then(function(j){
-      if(j.error){setAiOut('Fel: '+(j.error.message||'okänt fel')+'.',false);return;}
+      if(j.error){onResult('Fel: '+(j.error.message||'okänt fel')+'.');return;}
       var t=(j.content||[]).map(function(c){return c.type==='text'?c.text:'';}).join('').trim();
-      setAiOut(t||'Inget svar.',false);
-    }).catch(function(e){setAiOut('Nätverksfel: '+e.message,false);});
+      onResult(t||'Inget svar.');
+    }).catch(function(e){onResult('Nätverksfel: '+e.message);});
   }else{
-    fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+key},body:JSON.stringify({model:'gpt-4o-mini',max_tokens:400,messages:[{role:'user',content:prompt}]})})
+    fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+key},body:JSON.stringify({model:'gpt-4o-mini',max_tokens:mt,messages:[{role:'user',content:prompt}]})})
     .then(function(r){return r.json();}).then(function(j){
-      if(j.error){setAiOut('Fel: '+(j.error.message||'okänt fel')+'.',false);return;}
+      if(j.error){onResult('Fel: '+(j.error.message||'okänt fel')+'.');return;}
       var t=j.choices&&j.choices[0]&&j.choices[0].message?(j.choices[0].message.content||'').trim():'';
-      setAiOut(t||'Inget svar.',false);
-    }).catch(function(e){setAiOut('Nätverksfel: '+e.message,false);});
+      onResult(t||'Inget svar.');
+    }).catch(function(e){onResult('Nätverksfel: '+e.message);});
   }
 }
 var AI_SYS='Du är en varm, lugn rörelsecoach i en app för någon med ADHD, autism och utbrändhet. Svara på svenska, kort och utan press, hype, skuld eller listor. ';
@@ -1387,19 +1435,130 @@ document.getElementById('ai-savekey').onclick=function(){
   ai.openai=document.getElementById('ai-openai').value.trim();
   saveAI();setAiOut('Nycklar sparade på den här enheten.',false);
 };
-document.getElementById('ai-suggest').onclick=function(){callAI(AI_SYS+'Föreslå EN liten, konkret sak att göra idag (gärna 5–20 min), anpassad efter energin och historiken. Max 4 meningar. Nämn lugn tid på gymmet om det passar.\n\nKontext:\n'+aiContext());};
-document.getElementById('ai-reflect').onclick=function(){callAI(AI_SYS+'Beskriv snällt vilka mönster du ser i historiken, t.ex. vad som verkar ge energi. 3–4 meningar, peka på något uppmuntrande.\n\nKontext:\n'+aiContext());};
+document.getElementById('ai-suggest').onclick=function(){setAiOut('Tänker…',true);callAI(AI_SYS+'Föreslå EN liten, konkret sak att göra idag (gärna 5–20 min), anpassad efter energin och historiken. Max 4 meningar. Nämn lugn tid på gymmet om det passar.\n\nKontext:\n'+aiContext(),function(t){setAiOut(t,false);});};
+document.getElementById('ai-reflect').onclick=function(){setAiOut('Tänker…',true);callAI(AI_SYS+'Beskriv snällt vilka mönster du ser i historiken, t.ex. vad som verkar ge energi. 3–4 meningar, peka på något uppmuntrande.\n\nKontext:\n'+aiContext(),function(t){setAiOut(t,false);});};
 document.getElementById('ai-done').onclick=closeSheets;
+
+// ── Övningar / maskiner + failure-planerare ───────────
+function round25(x){return Math.round(x/2.5)*2.5;}
+function fmtKg(x){return (Math.round(x)===x?String(x):x.toFixed(1))+' kg';}
+function ratingStars(r){var s='';for(var i=1;i<=5;i++){s+=i<=(r||0)?'★':'☆';}return s;}
+function renderExercises(){
+  var el=document.getElementById('ex-list');if(!el)return;
+  if(!state.exercises.length){el.innerHTML='<div class="empty-msg">Lägg till dina övningar och maskiner — vikter, vad du tycker, och planera failure-set.</div>';return;}
+  var multi=state.gyms&&state.gyms.length>1;
+  el.innerHTML=state.exercises.map(function(x,i){
+    var w=(x.minW||x.maxW)?((x.minW||'?')+'–'+(x.maxW||'?')+' kg'):'';
+    var gg='';if(multi&&x.gymId){var g=gymById(x.gymId);if(g)gg=' · '+esc(g.name);}
+    var meta=[w,x.rating?ratingStars(x.rating):'',x.note?esc(x.note):''].filter(Boolean).join(' · ')+gg;
+    return '<div class="sess-row"><div class="ic">🏋️</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+(meta||'–')+'</div></div>'+
+      '<button class="ex-fail" data-i="'+i+'" title="Failure-plan">⚡</button>'+
+      '<button class="ex-edit" data-i="'+i+'" title="Ändra">✎</button></div>';
+  }).join('');
+  el.querySelectorAll('.ex-fail').forEach(function(b){b.onclick=function(){openFail(state.exercises[+b.dataset.i]);};});
+  el.querySelectorAll('.ex-edit').forEach(function(b){b.onclick=function(){openEx(+b.dataset.i);};});
+}
+var exEdit=-1;
+function openEx(i){
+  exEdit=(typeof i==='number')?i:-1;
+  var x=exEdit>=0?state.exercises[exEdit]:null;
+  document.getElementById('ex-title').textContent=x?'Ändra övning':'Ny övning';
+  document.getElementById('ex-name').value=x?x.name:'';
+  document.getElementById('ex-min').value=x&&x.minW?x.minW:'';
+  document.getElementById('ex-max').value=x&&x.maxW?x.maxW:'';
+  document.getElementById('ex-note').value=x?(x.note||''):'';
+  setDots('ex-rating',x?x.rating:0);
+  var gw=document.getElementById('ex-gym-wrap'),gs=document.getElementById('ex-gym');
+  if(state.gyms&&state.gyms.length>1){gw.style.display='';gs.innerHTML=state.gyms.map(function(g){return '<option value="'+g.id+'">'+esc(g.name)+'</option>';}).join('');gs.value=(x&&x.gymId)||state.activeGym;}
+  else gw.style.display='none';
+  document.getElementById('ex-del').style.display=x?'':'none';
+  openSheet('ex-sheet');
+}
+document.getElementById('add-ex').onclick=function(){openEx(-1);};
+document.getElementById('ex-save').onclick=function(){
+  var name=document.getElementById('ex-name').value.trim();
+  if(!name){document.getElementById('ex-name').focus();return;}
+  var mn=parseFloat(document.getElementById('ex-min').value);
+  var mx=parseFloat(document.getElementById('ex-max').value);
+  var rating=+(document.getElementById('ex-rating').dataset.val||0)||null;
+  var note=document.getElementById('ex-note').value.trim();
+  var gymId=(state.gyms&&state.gyms.length>1)?document.getElementById('ex-gym').value:(state.activeGym||'');
+  var obj={id:exEdit>=0?state.exercises[exEdit].id:Date.now(),name:name,minW:isNaN(mn)?null:mn,maxW:isNaN(mx)?null:mx,rating:rating,note:note,gymId:gymId};
+  if(exEdit>=0)state.exercises[exEdit]=obj;else state.exercises.push(obj);
+  save();closeSheets();renderExercises();
+};
+document.getElementById('ex-del').onclick=function(){
+  if(exEdit<0)return;
+  if(!confirm('Ta bort övningen?'))return;
+  state.exercises.splice(exEdit,1);save();closeSheets();renderExercises();
+};
+// Failure-planerare
+function localFailurePlan(name,z,mn,mx){
+  if(!z||z<=0)return 'Skriv in högsta planerade vikt först.';
+  var lines=[];
+  if(mx&&z>mx)lines.push('OBS: '+z+' kg är över intervallet du angav ('+mx+' kg). Dubbelkolla.');
+  lines.push(name?('Failure-upplägg – '+name):'Failure-upplägg');
+  if(mn||mx)lines.push('Maskinens intervall: '+(mn||'?')+'–'+(mx||'?')+' kg.');
+  lines.push('');
+  lines.push('Uppvärmning:');
+  var steps=[{p:0.4,r:'8–10 reps',t:' (lätt)'},{p:0.6,r:'5 reps',t:''},{p:0.85,r:'3 reps',t:''}];
+  steps.forEach(function(s){var kg=round25(z*s.p);if(mn&&kg<mn)kg=mn;if(kg>=z)kg=round25(z*0.8);lines.push('• '+s.r+' @ '+fmtKg(kg)+s.t);});
+  lines.push('Vila 60–90 sek mellan uppvärmningsseten.');
+  lines.push('');
+  lines.push('Arbetsset (failure på topvikten):');
+  lines.push('• 6–10 reps @ '+fmtKg(z)+' — kör till failure');
+  lines.push('• 1–2 set till på samma vikt, 2–3 min vila, om du orkar');
+  lines.push('');
+  lines.push('Teknik före vikt. Stanna vid skarp smärta — och strunta i det här om dagen inte är rätt, det är helt okej.');
+  return lines.join('\n');
+}
+function setFailOut(txt,loading){var el=document.getElementById('fail-out');el.style.display='block';el.className='ai-out'+(loading?' loading':'');el.textContent=txt;}
+var failCtx={};
+function openFail(ex){
+  failCtx=ex||{};
+  document.getElementById('fail-name').value=ex?ex.name:'';
+  document.getElementById('fail-z').value='';
+  var iv=document.getElementById('fail-interval');
+  if(ex&&(ex.minW||ex.maxW))iv.textContent='Intervall: '+(ex.minW||'?')+'–'+(ex.maxW||'?')+' kg';
+  else iv.textContent='';
+  document.getElementById('fail-out').style.display='none';
+  openSheet('fail-sheet');
+}
+document.getElementById('open-fail').onclick=function(){openFail(null);};
+function failInputs(){
+  return {name:document.getElementById('fail-name').value.trim(),
+    z:parseFloat(document.getElementById('fail-z').value),
+    mn:failCtx.minW||null,mx:failCtx.maxW||null};
+}
+document.getElementById('fail-local').onclick=function(){
+  var f=failInputs();
+  if(!f.z||f.z<=0){document.getElementById('fail-z').focus();return;}
+  setFailOut(localFailurePlan(f.name,f.z,f.mn,f.mx),false);
+};
+document.getElementById('fail-ai').onclick=function(){
+  var f=failInputs();
+  if(!f.z||f.z<=0){document.getElementById('fail-z').focus();return;}
+  setFailOut('Tänker…',true);
+  var ctx='Övning/maskin: '+(f.name||'okänd')+'. ';
+  if(f.mn||f.mx)ctx+='Viktintervall: '+(f.mn||'?')+'–'+(f.mx||'?')+' kg. ';
+  if(failCtx.rating)ctx+='Personen gillar övningen ('+failCtx.rating+'/5). ';
+  ctx+='Högsta planerade vikt (topset): '+f.z+' kg.';
+  var p=AI_SYS+'Personen vill köra ett failure-set. Ge ett konkret upplägg: en kort uppvärmningstrappa (set med reps och vikt i kg, härledd från topvikten), sedan arbetsset som siktar på failure på topvikten (ungefärligt repsintervall), samt vila mellan set. Håll det kort och i kg. Här får du använda en kort punktlista. Avsluta med en kort, vänlig säkerhetsrad om teknik och att stanna vid skarp smärta.\n\n'+ctx;
+  callAI(p,function(t){setFailOut(t,false);},500);
+};
+document.getElementById('fail-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.5.0',
+  version:'1.6.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
     'Senast i rörelse — visar hur länge sedan utan skuld',
     'Logga pass med längd, tid, energi före/efter, anteckning och hur fullt det upplevdes',
     'Egna passtyper som snabbval',
+    'Övnings- och maskinbibliotek med viktintervall, betyg och anteckning',
+    'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
     'Lös planering framåt',
     'Flera gym — lägg till, byt mellan och ta bort gym, var och en med egna öppettider och belastningsschema',
     'Zoner per gym: allmänna gymmet och tjejdelen, med separata belastningsscheman',
@@ -1413,6 +1572,12 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.6.0',d:'2026-07-19',items:[
+      'Övningar & maskiner: spara en övning eller maskin med viktintervall (från–till), ett betyg på vad du tycker om den, och en anteckning. Kan knytas till ett visst gym.',
+      'Failure-planerare: skriv in din högsta planerade vikt så föreslås en uppvärmningstrappa och en fördelning fram till ett failure-set på topvikten.',
+      'Förslaget kan komma från AI (Claude/ChatGPT) eller som ett enkelt, direkt upplägg utan AI — med reps, vikter och vila, plus en vänlig säkerhetsrad.',
+      'Failure-planen kan öppnas direkt från en sparad övning (förifyller namn och intervall).'
+    ]},
     {v:'1.5.0',d:'2026-07-19',items:[
       'Flera gym: lägg till hur många gym du vill, byt mellan dem med ett tryck och ge varje gym egna öppettider och eget belastningsschema.',
       'Zoner per gym — allmänna gymmet och tjejdelen har separata belastningsscheman, eftersom det sällan är lika fullt i båda.',
@@ -1476,11 +1641,11 @@ document.querySelectorAll('.nav button').forEach(function(b){
 
 // ── Render-grupper ────────────────────────────────────
 function renderToday(){renderLast();renderQuickChips();renderPlanToday();renderGymToday();}
-function renderPass(){renderTypeTiles();renderPlanList();renderRecent();}
+function renderPass(){renderTypeTiles();renderPlanList();renderRecent();renderExercises();}
 function renderAll(){renderToday();renderPass();renderGymUI();renderHours();renderHeat();renderCalmHint();renderStats();renderNyheter();}
 
 // ── Init ──────────────────────────────────────────────
-buildDots('lg-before');buildDots('lg-after');bindFullPick();
+buildDots('lg-before');buildDots('lg-after');buildDots('ex-rating');bindFullPick();
 loadSync();refreshSyncBadge();loadAI();
 renderGymUI();
 renderToday();

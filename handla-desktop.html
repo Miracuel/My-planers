@@ -169,6 +169,12 @@ html[data-theme=dark] .sp-badge.err{background:#3A2D29;color:#D49C8C}
 .skaf-act{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
 .btn-use{border:1px solid var(--accent);background:var(--panel);color:var(--accent);border-radius:10px;padding:6px 9px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .btn-use:active{background:var(--accent-soft)}
+.btn-slut{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:10px;padding:6px 9px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-slut:active{background:var(--panel2)}
+.antal-step{display:inline-flex;align-items:center;gap:9px;margin-top:8px}
+.astep{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:17px;line-height:1;cursor:pointer;font-family:inherit;padding:0;flex-shrink:0}
+.astep:active{background:var(--accent-soft)}
+.antal-n{font-size:13px;color:var(--ink);min-width:40px;text-align:center;font-variant-numeric:tabular-nums}
 .anv-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:6px}
 .anv-main{flex:1;min-width:0}
 .anv-main .item-name{font-size:14px}
@@ -370,6 +376,8 @@ html[data-theme=dark]{
   <h3>Vara i skafferiet</h3>
   <label>Namn</label>
   <input type="text" id="sk-name">
+  <label>Antal i skafferiet</label>
+  <input type="number" id="sk-antal" inputmode="numeric" step="1" min="1" value="1">
   <label>Mängd / notis</label>
   <input type="text" id="sk-qty" placeholder="T.ex. 1 paket">
   <label>Avdelning</label>
@@ -410,7 +418,7 @@ html[data-theme=dark]{
   <div class="datefix"><button id="sk-open-today">Öppnad idag</button><button id="sk-open-clear">Rensa</button></div>
   <button class="sheet-close" id="sk-save">Spara</button>
   <div class="btn-row" style="margin-top:8px">
-    <button class="btn ghost" id="sk-used">✓ Förbrukad</button>
+    <button class="btn ghost" id="sk-slut">✓ Slut</button>
     <button class="btn ghost" id="sk-waste">🗑 Slängd</button>
   </div>
   <button class="btn ghost" id="sk-tolist" style="width:100%;margin-top:8px">+ Lägg i inköpslistan</button>
@@ -510,8 +518,8 @@ var APPMETA={
 };
 // ── Inb\u00e4ddad changelog & funktioner ──
 var APPINFO={
-  version:'1.5.0',
-  updated:'2026-07-19',
+  version:'1.7.0',
+  updated:'2026-07-25',
   tagline:'En lugn ink\u00f6pslista som h\u00e5ller ordning p\u00e5 avdelningar, recept och vanor.',
   audience:'F\u00f6r dig som vill ha en snabb, prydlig ink\u00f6pslista som synkar mellan telefon och dator i hush\u00e5llet.',
   functions:[
@@ -535,7 +543,11 @@ var APPINFO={
       'Varning n\u00e4r datumet n\u00e4rmar sig \u2014 f\u00e4rgad rad, \u201dAnv\u00e4nd snart\u201d-sektion och antalsbadge i navet.',
       'Egen plats per vara (kylsk\u00e5p, frys, sk\u00e5p \u2026) med snabbval; skafferiet grupperas per plats.',
       'Varning i listan n\u00e4r du l\u00e4gger till n\u00e5got du redan har hemma.',
-      'F\u00f6rbrukad tar bort varan; Sl\u00e4ngd loggar den som matsvinn.'
+      'Slut tar varan ur skafferiet och l\u00e4gger den p\u00e5 ink\u00f6pslistan; Sl\u00e4ngd loggar den som matsvinn.'
+    ]},
+    {area:'Antal',items:[
+      'Antal per vara i skafferiet med \u2212/+ direkt p\u00e5 raden (t.ex. 4 st, klicka \u2212 f\u00f6r 3).',
+      'N\u00e4r antalet n\u00e5r noll tas varan ur skafferiet och l\u00e4ggs p\u00e5 ink\u00f6pslistan.'
     ]},
     {area:'Mängd & näring',items:[
       'Mängd och enhet per vara (ml, g, st, skivor, dl, msk, portioner) med kvar-mätare.',
@@ -578,6 +590,14 @@ var APPINFO={
     ]}
   ],
   changelog:[
+    {v:'1.7.0',d:'2026-07-25',items:[
+      'Antal per vara i skafferiet: s\u00e4tt t.ex. 4 st och justera med \u2212/+ direkt p\u00e5 raden.',
+      'N\u00e4r antalet r\u00e4knas ned till noll tas varan ur skafferiet och hamnar p\u00e5 ink\u00f6pslistan.'
+    ]},
+    {v:'1.6.0',d:'2026-07-19',items:[
+      'Ny \u201dSlut\u201d-knapp p\u00e5 varje vara i skafferiet \u2014 markera n\u00e4r n\u00e5got tagit slut, inte bara hur mycket som anv\u00e4nts.',
+      'Slut tar varan ur skafferiet och l\u00e4gger den direkt p\u00e5 ink\u00f6pslistan, s\u00e5 du kommer ih\u00e5g att k\u00f6pa nytt.'
+    ]},
     {v:'1.5.0',d:'2026-07-19',items:[
       'Streckkodsskanning med kameran \u2014 knapp b\u00e5de i ink\u00f6pslistan och i skafferiet.',
       'Skanna i listan f\u00f6r att l\u00e4gga till varan; skanna i skafferiet f\u00f6r att direkt registrera att den anv\u00e4nts.',
@@ -981,9 +1001,11 @@ function skafRadHtml(x){
   }
   return '<div class="skaf-item'+(kod?' '+kod:'')+'">'
     +'<div class="skaf-main" data-sk="'+x.id+'"><span class="item-name">'+esc(x.name)+'</span>'
-    +(meta.length?'<span class="item-qty">'+meta.join(' · ')+'</span>':'')+bt+bar+'</div>'
+    +(meta.length?'<span class="item-qty">'+meta.join(' · ')+'</span>':'')+bt+bar
+    +'<div class="antal-step"><button class="astep" data-minus="'+x.id+'" aria-label="Minska">\u2212</button><span class="antal-n">'+antalText(x)+'</span><button class="astep" data-plus="'+x.id+'" aria-label="\u00d6ka">+</button></div>'+'</div>'
     +'<div class="skaf-act">'
     +'<button class="btn-use" data-u="'+x.id+'">Använd</button>'
+    +'<button class="btn-slut" data-slut="'+x.id+'">Slut</button>'
     +'<button class="icon-btn" data-w="'+x.id+'" title="Slängd">🗑</button>'
     +'</div>'
   +'</div>';
@@ -1064,8 +1086,37 @@ function renderSkafferi(){
   for(var w=0;w<wbtns.length;w++){wbtns[w].onclick=function(){slangVara(this.dataset.w);};}
   var ubtns=el.querySelectorAll('[data-u]');
   for(var u=0;u<ubtns.length;u++){ubtns[u].onclick=function(){openAnvandSheet(this.dataset.u);};}
+  var sbtns=el.querySelectorAll('[data-slut]');
+  for(var sx=0;sx<sbtns.length;sx++){sbtns[sx].onclick=function(){slutVara(this.dataset.slut);};}
+  var minusB=el.querySelectorAll('[data-minus]');
+  for(var mb=0;mb<minusB.length;mb++){minusB[mb].onclick=function(e){if(e)e.stopPropagation();antalMinus(this.dataset.minus);};}
+  var plusB=el.querySelectorAll('[data-plus]');
+  for(var pb=0;pb<plusB.length;pb++){plusB[pb].onclick=function(e){if(e)e.stopPropagation();antalPlus(this.dataset.plus);};}
 }
 
+function antalOf(x){return (typeof x.antal==='number'&&x.antal>0)?x.antal:1;}
+function antalText(x){return antalOf(x)+' st';}
+function antalPlus(id){
+  var x=state.skafferi.find(function(s){return s.id===id;});
+  if(!x)return;
+  x.antal=antalOf(x)+1;x.updated=new Date().toISOString();
+  save();renderSkafferi();
+}
+function antalMinus(id){
+  var x=state.skafferi.find(function(s){return s.id===id;});
+  if(!x)return;
+  var n=antalOf(x)-1;
+  if(n<=0){slutVara(id);return;}
+  x.antal=n;x.updated=new Date().toISOString();
+  save();renderSkafferi();
+}
+function slutVara(id){
+  var x=state.skafferi.find(function(s){return s.id===id;});
+  if(!x)return;
+  addItem(x.name,'',x.cat);
+  state.skafferi=state.skafferi.filter(function(s){return s.id!==id;});
+  save();closeSheets();renderAll();
+}
 function slangVara(id){
   var x=state.skafferi.find(function(s){return s.id===id;});
   if(!x)return;
@@ -1088,6 +1139,7 @@ function openSkafSheet(id){
   var x=state.skafferi.find(function(s){return s.id===id;});
   if(!x)return;
   document.getElementById('sk-name').value=x.name||'';
+  document.getElementById('sk-antal').value=antalOf(x);
   document.getElementById('sk-qty').value=x.qty||'';
   document.getElementById('sk-cat').value=x.cat||'ovrigt';
   document.getElementById('sk-plats').value=x.plats||'';
@@ -1110,6 +1162,7 @@ document.getElementById('sk-save').onclick=function(){
   var x=state.skafferi.find(function(s){return s.id===skafEditId;});
   if(x){
     x.name=document.getElementById('sk-name').value.trim()||x.name;
+    x.antal=Math.max(1,Math.round(numOr0(document.getElementById('sk-antal').value))||1);
     x.qty=document.getElementById('sk-qty').value.trim();
     x.cat=document.getElementById('sk-cat').value;
     x.plats=document.getElementById('sk-plats').value.trim();
@@ -1129,10 +1182,7 @@ document.getElementById('sk-save').onclick=function(){
   }
   closeSheets();renderAll();
 };
-document.getElementById('sk-used').onclick=function(){
-  state.skafferi=state.skafferi.filter(function(s){return s.id!==skafEditId;});
-  save();closeSheets();renderAll();
-};
+document.getElementById('sk-slut').onclick=function(){slutVara(skafEditId);};
 document.getElementById('sk-waste').onclick=function(){slangVara(skafEditId);};
 document.getElementById('sk-tolist').onclick=function(){
   var x=state.skafferi.find(function(s){return s.id===skafEditId;});
@@ -1219,7 +1269,7 @@ function narFromName(namn){
 }
 function nySkafVara(namn,qty,cat,kopt){
   var t=narFromName(namn);
-  return {id:uid(),name:namn,qty:qty||'',cat:cat,plats:'',kopt:kopt,bast:'',oppnad:'',kod:'',
+  return {id:uid(),name:namn,qty:qty||'',cat:cat,plats:'',kopt:kopt,bast:'',oppnad:'',kod:'',antal:1,
           mangd:null,kvar:null,enhet:t?t.enhet:'st',nar:t?t.nar:{kcal:0,protein:0,fett:0,socker:0},
           updated:new Date().toISOString()};
 }
