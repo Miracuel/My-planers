@@ -49,6 +49,10 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .exrow .exr-nums{display:flex;gap:6px;align-items:center}
 .exrow .exr-nums input{padding:7px 6px;text-align:center}
 .exrow .exr-del{flex:0 0 auto;width:34px;background:none;border:1px solid var(--line);border-radius:9px;color:var(--muted);font-size:16px;cursor:pointer}
+.exrow .exr-fx{flex:0 0 auto;width:34px;background:none;border:1px solid var(--line);border-radius:9px;color:var(--muted);font-size:14px;cursor:pointer}
+.exrow .exr-fx.active{color:var(--accent);border-color:var(--accent)}
+.exr-failwrap{margin-top:8px}
+.exr-fout{margin-top:6px}
 .exrow .exr-del:active{background:var(--panel)}
 .sess-row .items{font-size:11px;color:var(--accent);margin-top:2px;line-height:1.5}
 .gt-head{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:8px}
@@ -952,16 +956,48 @@ function renderExDatalist(){
 }
 function exByName(name){var r=null;state.exercises.forEach(function(e){if(e.name.toLowerCase()===(name||'').toLowerCase())r=e;});return r;}
 function addExRow(listId,pref){
+  var withFail=(listId==='pl-ex-list'||listId==='lg-ex-list');
   var wrap=document.getElementById(listId);
   var row=document.createElement('div');row.className='exrow';
-  row.innerHTML='<input class="exr-name" list="ex-datalist" placeholder="Övning / maskin">'
+  var html='<input class="exr-name" list="ex-datalist" placeholder="Övning / maskin">'
     +'<div class="exr-nums">'
     +'<input class="exr-kg" type="number" inputmode="decimal" step="2.5" placeholder="kg">'
     +'<input class="exr-rep" type="number" inputmode="numeric" placeholder="reps">'
-    +'<input class="exr-set" type="number" inputmode="numeric" placeholder="set">'
-    +'<button type="button" class="exr-del" title="Ta bort">\u00d7</button></div>';
-  if(pref){row.querySelector('.exr-name').value=pref.name||'';row.querySelector('.exr-kg').value=(pref.weight!=null?pref.weight:'');row.querySelector('.exr-rep').value=(pref.reps!=null?pref.reps:'');row.querySelector('.exr-set').value=(pref.sets!=null?pref.sets:'');}
+    +'<input class="exr-set" type="number" inputmode="numeric" placeholder="set">';
+  if(withFail)html+='<button type="button" class="exr-fx" title="Failure-plan">\u26A1</button>';
+  html+='<button type="button" class="exr-del" title="Ta bort">\u00d7</button></div>';
+  if(withFail)html+='<div class="exr-failwrap" style="display:none"><div class="fail-mini">'
+    +'<input class="exr-fz" type="number" inputmode="decimal" step="2.5" placeholder="topvikt kg">'
+    +'<button type="button" class="btn fill exr-fai">AI</button>'
+    +'<button type="button" class="btn exr-flocal">Enkelt</button></div>'
+    +'<div class="exr-fout ai-out" style="display:none"></div></div>';
+  row.innerHTML=html;
+  if(pref){row.querySelector('.exr-name').value=pref.name||'';row.querySelector('.exr-kg').value=(pref.weight!=null?pref.weight:'');row.querySelector('.exr-rep').value=(pref.reps!=null?pref.reps:'');row.querySelector('.exr-set').value=(pref.sets!=null?pref.sets:'');if(pref.failPlan)row.dataset.failplan=pref.failPlan;}
   row.querySelector('.exr-del').onclick=function(){row.parentNode.removeChild(row);};
+  if(withFail){
+    var fx=row.querySelector('.exr-fx');var wrapF=row.querySelector('.exr-failwrap');
+    if(pref&&pref.failPlan){fx.classList.add('active');var o0=row.querySelector('.exr-fout');o0.style.display='block';o0.textContent=pref.failPlan;}
+    fx.onclick=function(){
+      var show=wrapF.style.display==='none';wrapF.style.display=show?'':'none';
+      if(show){var kg=row.querySelector('.exr-kg').value;var fz=row.querySelector('.exr-fz');if(!fz.value&&kg)fz.value=kg;}
+    };
+    var runRow=function(useAI){
+      var name=row.querySelector('.exr-name').value.trim();
+      var z=parseFloat(row.querySelector('.exr-fz').value||row.querySelector('.exr-kg').value);
+      var out=row.querySelector('.exr-fout');
+      if(!z||z<=0){row.querySelector('.exr-fz').focus();return;}
+      var ex=exByName(name);var mn=ex?ex.minW:null,mx=ex?ex.maxW:null;
+      if(useAI){
+        out.style.display='block';out.className='exr-fout ai-out loading';out.textContent='Tänker…';
+        var ctx='Övning: '+(name||'okänd')+'. '+((mn||mx)?'Intervall '+(mn||'?')+'\u2013'+(mx||'?')+' kg. ':'')+'Topvikt: '+z+' kg.';
+        callAI(AI_SYS+'Ge ett kort failure-upplägg: uppvärmningstrappa (set med reps och vikt i kg) och arbetsset mot failure på topvikten, plus kort säkerhetsrad. Kort punktlista ok.\n\n'+ctx,function(t){out.className='exr-fout ai-out';out.textContent=t;if(t&&t.indexOf('Lägg in din')!==0&&t.indexOf('Fel:')!==0&&t.indexOf('Nätverksfel')!==0){row.dataset.failplan=t;fx.classList.add('active');}},450);
+      }else{
+        out.style.display='block';out.className='exr-fout ai-out';var t=localFailurePlan(name,z,mn,mx);out.textContent=t;row.dataset.failplan=t;fx.classList.add('active');
+      }
+    };
+    row.querySelector('.exr-fai').onclick=function(){runRow(true);};
+    row.querySelector('.exr-flocal').onclick=function(){runRow(false);};
+  }
   wrap.appendChild(row);
 }
 function collectItems(listId){
@@ -972,7 +1008,7 @@ function collectItems(listId){
     var rp=parseInt(row.querySelector('.exr-rep').value,10);
     var st=parseInt(row.querySelector('.exr-set').value,10);
     var ex=null;state.exercises.forEach(function(e){if(e.name.toLowerCase()===name.toLowerCase())ex=e;});
-    items.push({name:name,exId:ex?ex.id:null,weight:isNaN(kg)?null:kg,reps:isNaN(rp)?null:rp,sets:isNaN(st)?null:st});
+    items.push({name:name,exId:ex?ex.id:null,weight:isNaN(kg)?null:kg,reps:isNaN(rp)?null:rp,sets:isNaN(st)?null:st,failPlan:(row.dataset.failplan||null)});
   });
   return items;
 }
@@ -1009,7 +1045,7 @@ function itemsSummary(items){
     if(it.weight!=null)seg.push(it.weight+' kg');
     if(it.reps!=null)seg.push(it.reps+' rep');
     if(it.sets!=null)seg.push(it.sets+' set');
-    return esc(it.name)+(seg.length?' ('+seg.join(' \u00d7 ')+')':'');
+    return esc(it.name)+(seg.length?' ('+seg.join(' \u00d7 ')+')':'')+(it.failPlan?' \u26A1':'');
   }).join(', ');
 }
 function openLog(type,dateStr){
@@ -1488,7 +1524,8 @@ function openDay(iso){
     var bits=[(x.time||''),(x.min?x.min+' min':''),gz.replace(/^ · /,''),(x.full?FT[x.full]:''),(x.before&&x.after?'energi '+x.before+'→'+x.after:''),(x.note?esc(x.note):'')].filter(Boolean).join(' · ');
     var itx=(x.items&&x.items.length)?'<div class="items">'+itemsSummary(x.items)+'</div>':'';
     var fpb=x.failPlan?'<div class="fail-block">⚡ '+esc(x.failPlan)+'</div>':'';
-    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+bits+'</div>'+itx+'</div><button data-id="'+x.id+'" title="Ta bort">×</button></div>'+fpb;
+    var ifpb=(x.items||[]).filter(function(it){return it.failPlan;}).map(function(it){return '<div class="fail-block">⚡ '+esc(it.name)+': '+esc(it.failPlan)+'</div>';}).join('');
+    return '<div class="sess-row"><div class="ic">'+(x.icon||'🌿')+'</div><div class="body"><b>'+esc(x.name)+'</b><div class="meta">'+bits+'</div>'+itx+'</div><button data-id="'+x.id+'" title="Ta bort">×</button></div>'+fpb+ifpb;
   }).join('');}
   el.querySelectorAll('button[data-id]').forEach(function(b){b.onclick=function(){
     state.sessions=state.sessions.filter(function(z){return String(z.id)!==b.dataset.id;});
@@ -2163,7 +2200,7 @@ document.getElementById('td-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.13.0',
+  version:'1.14.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
@@ -2172,7 +2209,7 @@ var APPINFO={
     'Lägg till övningarna du använt i passet — med vikt, reps och set (bra för styrkepass)',
     'Planera ett pass med övningar precis som vid loggning',
     'Mallar: spara ett upplägg och lägg det på ett pass när du planerar eller loggar',
-    'Failure-plan direkt på ett pass (sparas med passet och syns i kalendern)',
+    'Failure-plan direkt på ett pass, och per enskild övning i planering/loggning (sparas och syns i kalendern)',
     'Egna passtyper som snabbval',
     'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
@@ -2194,6 +2231,11 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.14.0',d:'2026-07-19',items:[
+      'Failure-plan per övning: varje övningsrad (i planering och loggning) har nu en ⚡-knapp som ger uppvärmning + fördelning för just den övningen utifrån topvikten.',
+      'Fungerar med AI eller enkelt upplägg, och topvikten förifylls från radens kg.',
+      'Övningar med en sparad failure-plan visas med ⚡, och hela planen syns när du öppnar dagen i kalendern.'
+    ]},
     {v:'1.13.0',d:'2026-07-19',items:[
       'På Idag visas nu en liten belastningsremsa för de närmaste fem timmarna på det aktiva gymmet (och zonen), i grönt/gult/rött.',
       'Rubrik med dagens veckodag och datum, aktuell timme markerad, och en rad: "Just nu är det X belastning. Nästa lugna timslag: HH:00".',
