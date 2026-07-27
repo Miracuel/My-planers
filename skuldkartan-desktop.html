@@ -399,6 +399,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
   <div class="menurow" data-go="mal"><div class="mi">&#9788;</div><div>Målbild och drömmar</div></div>
   <div class="menurow" data-go="analys"><div class="mi">&#9650;</div><div>Analys &amp; heatmap</div></div>
   <div class="menurow" data-go="nyheter"><div class="mi">&#9734;</div><div>Nyheter &amp; funktioner</div></div>
+  <div class="menurow" onclick="exportExcel();closeSheets()"><div class="mi">&#128202;</div><div>Exportera till Excel</div></div>
   <div class="menurow" data-go="installningar"><div class="mi">&#9881;</div><div>Inställningar &amp; synk</div></div>
   <button class="sheet-close" onclick="closeSheets()">Stäng</button>
 </div>
@@ -414,7 +415,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.6.0',
+version:'1.7.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -424,9 +425,19 @@ functions:[
  {area:'Profil och krav',items:['Storleksklassning S, M och L per dimension i stället för en enda siffra','Fjorton dimensioner: användare, klienter, mobiler, servrar, system, integrationer, platser, nätverksenheter, lagring, externa användare, leverantörer, förändringstakt, publika enheter och bemanning','Varnar för ojämn profil: litet på servrar men stort på klienter ger stora supportbehov','Tjugo frågor om verksamhetens art: privatförsäljning, kortbetalning, myndighet, samhällsviktigt, känsliga uppgifter med mera','Kravlista som byggs av storlek och verksamhet, med referens till lag eller standard','Markera varje krav som Har vi, Delvis eller Saknas och gör om det som saknas till en skuld']},
  {area:'Inventering',items:['Inventeringsrundor per avdelning med 28 frågor','Självrapporterat: ja, nej eller vet ej, med antal och notering','Egen lista för skugg-IT som avdelningen känner till men IT inte gör','Frågelista att hämta ut och dela med avdelningen','Vet ej och saknat antal blir blinda fläckar med ett tryck','Sammanställning av vilka luckor som återkommer i flera avdelningar']},
  {area:'Målbild',items:['18 färdiga drömmar om hur IT borde fungera, i sex teman','Varje dröm har mått och konkreta steg dit','Koppla skulder till mål och se vad som står i vägen','Nuläge 1–5 per mål och avstånd till drömmen i analysen','Egna mål går att skriva från grunden']},
- {area:'Övrigt',items:['GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
+ {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.7.0',d:'2026-07-20',items:[
+  'Export till Excel som samlar hela appen i en fil med nio flikar.',
+  'Flik Översikt med nyckeltal, storleksprofil och fördelning per område.',
+  'Flik Skulder med alla fält, inklusive allvar, osäkerhetsspann, hävstång, kvadrant, säkerhet, klarhet och kopplade mål.',
+  'Flik Kartläggning med alla 240 frågor, ert svar, rekommenderat steg och beläggen med länk.',
+  'Flikar för Profil, Krav, prioriterade Åtgärder, Inventering, Målbild och Belägg.',
+  'Varje flik har frysta rubriker och autofilter så att materialet går att sortera och filtrera direkt.',
+  'Excel-biblioteket hämtas först när ni exporterar, så appen är fortsatt snabb och fungerar offline i övrigt.',
+  'JSON-exporten finns kvar som säkerhetskopia och för återimport.'
+ ]},
  {v:'1.6.0',d:'2026-07-20',items:[
   'Bra svar följs nu upp med frågan om saken är dokumenterad och informerad.',
   'Svarar ni Nej på en kontrollfråga svarar appen Bra, och frågar sedan om det är dokumenterat och informerat.',
@@ -2180,7 +2191,9 @@ function renderInst(){
 
   h+='<div class="section-title">Data</div><div class="card-panel">';
   h+='<div class="soft">'+state.items.length+' skulder, '+state.inventeringar.length+' inventeringsrundor, '+state.mal.length+' mål, '+state.snapshots.length+' ögonblicksbilder.</div>';
-  h+='<div class="btn-row"><button class="btn" onclick="exportJson()">Exportera</button><button class="btn" onclick="document.getElementById(\'imp\').click()">Importera</button></div>';
+  h+='<div class="btn-row"><button class="btn fill" onclick="exportExcel()">Exportera till Excel</button></div>';
+  h+='<div class="soft" style="margin-top:8px">Nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg. Kräver internet första gången biblioteket hämtas.</div>';
+  h+='<div class="btn-row"><button class="btn" onclick="exportJson()">Exportera JSON (säkerhetskopia)</button><button class="btn" onclick="document.getElementById(\'imp\').click()">Importera JSON</button></div>';
   h+='<input type="file" id="imp" accept="application/json" style="display:none">';
   h+='<div class="btn-row"><button class="btn ghost" onclick="seedDemo()">Fyll med exempel</button><button class="btn danger" onclick="nollstall()">Nollställ allt</button></div>';
   h+='</div>';
@@ -2926,6 +2939,164 @@ function renderMal(){
     }
   }
   el.innerHTML=h;
+}
+
+/* ── Excel-export ────────────────────────────────────────── */
+var XLSX_CDN='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+function laddaXLSX(){
+  return new Promise(function(res,rej){
+    if(window.XLSX)return res(window.XLSX);
+    var s=document.createElement('script');
+    s.src=XLSX_CDN;
+    s.onload=function(){window.XLSX?res(window.XLSX):rej(new Error('XLSX laddades inte'));};
+    s.onerror=function(){rej(new Error('Kunde inte hämta Excel-biblioteket. Kräver internet första gången.'));};
+    document.head.appendChild(s);
+  });
+}
+function aoaSheet(X,rows,breda){
+  var ws=X.utils.aoa_to_sheet(rows);
+  if(breda)ws['!cols']=breda.map(function(w){return {wch:w};});
+  if(rows.length)ws['!autofilter']={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:rows.length-1,c:(rows[0].length-1)}})};
+  ws['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'};
+  return ws;
+}
+function jaNej(v){return v?'Ja':'Nej';}
+function svarText(v){return v==='ja'?'Ja':(v==='nej'?'Nej':(v==='osaker'?'Osäker':''));}
+
+function exportExcel(){
+  toast('Bygger Excel-fil…');
+  laddaXLSX().then(function(X){
+    var wb=X.utils.book_new();
+    var dat=todayKey();
+
+    /* 1. Översikt */
+    var akt=aktiva();
+    var pk=profilKlass();
+    var ov=[['Skuldkartan – export',''],['Datum',dat],['Version',APPINFO.version],['',''],
+      ['NYCKELTAL',''],
+      ['Skulder totalt',state.items.length],
+      ['Aktiva skulder',akt.length],
+      ['Måste ha',akt.filter(function(x){return Number(x.behov)===1;}).length],
+      ['Genomsnittligt allvar',totalIndex()],
+      ['Genomsnittlig säkerhet (%)',snittSakerhet()],
+      ['Blinda fläckar',blindaFlackar().length],
+      ['Uppskattad ränta (h/mån)',rantaTimmar()],
+      ['',''],['STORLEKSPROFIL',''],
+      ['Samlad klass',pk?KLASS[pk].n:'Ej ifylld'],
+      ['Index (av 3)',profilIndex()]];
+    var kl=profilKlasser();
+    for(var i=0;i<DIM.length;i++)if(kl[DIM[i].id])ov.push([DIM[i].n,KLASS[kl[DIM[i].id]].n+' ('+kl[DIM[i].id]+')']);
+    ov.push(['','']);ov.push(['FÖRDELNING PER OMRÅDE','']);
+    var byG={};for(var g=0;g<akt.length;g++){var gg=TYPMAP[akt[g].typ].grupp;byG[gg]=(byG[gg]||0)+1;}
+    for(var gr=0;gr<GRUPPER.length;gr++)if(byG[GRUPPER[gr].id])ov.push([GRUPPER[gr].namn,byG[GRUPPER[gr].id]]);
+    X.utils.book_append_sheet(wb,aoaSheet(X,ov,[30,40]),'Översikt');
+
+    /* 2. Skulder */
+    var sh=[['Titel','Område','Skuldtyp','System','Objekt','Antal','Status','Behov',
+      'Påverkan','Risk','Spridning','Ränta','Kostnad','Allvar','Osäkerhetsspann','Hävstång','Kvadrant',
+      'Underlag','Mörkertal','Säkerhet %','Klarhet 0-7','Beskrivning','Symptom','Grundorsak','Konsekvens','Åtgärd','Ägare','Beslut','Mål','Skapad']];
+    var lst=state.items.slice().sort(function(a,b){var d=(Number(a.behov)||2)-(Number(b.behov)||2);if(d)return d;return allvar(b)-allvar(a);});
+    for(var s=0;s<lst.length;s++){
+      var it=lst[s],ty=TYPMAP[it.typ],G=GRUPPMAP[ty.grupp];
+      var malnamn=(it.mal||[]).map(function(mid){var m=malById(mid);return m?m.namn:'';}).filter(Boolean).join('; ');
+      sh.push([it.titel||'',G?G.namn:'',ty.namn,it.system||'',it.objekt||'',it.antal||'',
+        (STATUS.filter(function(x){return x.id===it.status;})[0]||{}).namn||it.status,behovNamn(it.behov),
+        it.paverkan,it.risk,it.spridning,it.ranta,it.kostnad,allvar(it),spann(it),havstang(it),KVAD[kvadrant(it)].n,
+        UNDERLAG[(Number(it.underlag)||3)-1].n,MORKERTAL[(Number(it.morkertal)||3)-1].n,sakerhet(it),klarhet(it),
+        it.beskrivning||'',it.symptom||'',it.grundorsak||'',it.konsekvens||'',it.atgard||'',it.agare||'',it.beslut||'',malnamn,it.skapad||'']);
+    }
+    X.utils.book_append_sheet(wb,aoaSheet(X,sh,[34,20,22,18,20,7,12,14,9,7,10,7,9,8,9,9,18,16,16,11,11,40,30,30,30,34,16,24,26,12]),'Skulder');
+
+    /* 3. Kartläggning */
+    var ka=[['Område','Skuldtyp','Kontrollfråga','Svar','Rekommenderat steg','Dokumenterat','Informerat','Länk','Intygas av']];
+    for(var t=0;t<TYPER.length;t++){
+      var T=TYPER[t],TG=GRUPPMAP[T.grupp];
+      for(var q=0;q<T.fragor.length;q++){
+        var sv=svarPa(T.id+'_'+q),b=state.bevis&&state.bevis['q:'+T.id+'_'+q];
+        ka.push([TG.namn,T.namn,T.fragor[q],svarText(sv),
+          sv==='ja'?(T.rek[q]||''):(sv==='osaker'?T.utredning[0]:''),
+          b?svarText(b.dok):'',b?svarText(b.info):'',b?(b.lank||''):'',b?(b.av||''):'']);
+      }
+    }
+    X.utils.book_append_sheet(wb,aoaSheet(X,ka,[22,24,60,8,50,13,12,40,18]),'Kartläggning');
+
+    /* 4. Profil */
+    var pr=[['Dimension','Antal','Klass','Tröskel liten/stor','Vad nivån innebär']];
+    for(var d=0;d<DIM.length;d++){
+      var D=DIM[d],c=dimKlass(D),v=dimVarde(D.id);
+      pr.push([D.n,v===null?'':v,c?KLASS[c].n:'',D.berakn==='belastning'?'användare/IT-person':(D.t[0]+' / '+D.t[1]),c?D.foljd[c]:'']);
+    }
+    pr.push(['','','','','']);pr.push(['VERKSAMHETENS ART','','','','']);
+    pr.push(['Fråga','Svar','','','']);
+    for(var v2=0;v2<VERKSAMHET.length;v2++)pr.push([VERKSAMHET[v2].f,svarText(verkSvar(VERKSAMHET[v2].id)),'','','']);
+    X.utils.book_append_sheet(wb,aoaSheet(X,pr,[46,10,10,20,60]),'Profil');
+
+    /* 5. Krav */
+    var krav=alltKrav();
+    var kr=[['Behovsnivå','Krav','Gäller er för att','Referens','Status','Rekommenderat steg']];
+    for(var k=0;k<krav.length;k++){
+      var K=krav[k];
+      kr.push([behovNamn(K.niva),K.n,K.kalla,K.ref||'',
+        (function(st){return st==='har'?'Har vi':(st==='delvis'?'Delvis':(st==='saknas'?'Saknas':''));})(kravStatus(K.id)),K.steg||'']);
+    }
+    if(krav.length<=1)kr.push(['','Fyll i Profil för att generera krav','','','','']);
+    X.utils.book_append_sheet(wb,aoaSheet(X,kr,[14,44,40,20,10,50]),'Krav');
+
+    /* 6. Åtgärder – prioriterat */
+    var at=[['Prioritet','Titel','Behov','Kvadrant','Allvar','Hävstång','Säkerhet %','Åtgärd','Ägare']];
+    var prio=akt.slice().sort(function(a,b){var dd=(Number(a.behov)||2)-(Number(b.behov)||2);if(dd)return dd;return havstang(b)-havstang(a);});
+    for(var p=0;p<prio.length;p++){
+      var P=prio[p];
+      at.push([p+1,P.titel||'',behovNamn(P.behov),KVAD[kvadrant(P)].n,allvar(P),havstang(P),sakerhet(P),P.atgard||'',P.agare||'']);
+    }
+    X.utils.book_append_sheet(wb,aoaSheet(X,at,[8,34,14,18,8,9,10,40,16]),'Åtgärder');
+
+    /* 7. Inventering */
+    var inv=[['Avdelning','Kontakt','Datum','Klar','Kategori','Grupp','Svar','Antal','Notering']];
+    for(var r=0;r<state.inventeringar.length;r++){
+      var ru=state.inventeringar[r];
+      for(var m=0;m<INVKAT.length;m++){
+        var K2=INVKAT[m],sv2=ru.svar[K2.id];
+        if(!sv2||!sv2.h)continue;
+        var GG=INVGRUPPER.filter(function(x){return x.id===K2.g;})[0];
+        inv.push([ru.avdelning||'',ru.kontakt||'',ru.datum||'',jaNej(ru.klar),K2.n,GG?GG.namn:'',
+          sv2.h==='ja'?'Ja':(sv2.h==='nej'?'Nej':'Vet ej'),sv2.a||'',sv2.n||'']);
+      }
+      for(var sk=0;sk<(ru.skugg||[]).length;sk++){
+        inv.push([ru.avdelning||'',ru.kontakt||'',ru.datum||'',jaNej(ru.klar),'SKUGG-IT: '+(ru.skugg[sk].namn||''),'Annat','Ja','',ru.skugg[sk].notering||'']);
+      }
+    }
+    if(inv.length===1)inv.push(['Ingen inventering gjord än','','','','','','','','']);
+    X.utils.book_append_sheet(wb,aoaSheet(X,inv,[18,16,12,7,34,20,8,8,40]),'Inventering');
+
+    /* 8. Målbild */
+    var ml=[['Mål','Tema','Nuläge 1-5','Öppna skulder','Ägare','Måldatum','Beskrivning','Mäts som']];
+    for(var mm=0;mm<state.mal.length;mm++){
+      var M=state.mal[mm],tema=(TEMAN.filter(function(x){return x.id===M.tema;})[0]||{}).n||'';
+      var kopp=skulderForMal(M.id).filter(function(x){return x.status!=='atgardad'&&x.status!=='accepterad';}).length;
+      var dr=DROMMAR.filter(function(x){return x.id===M.dromId;})[0];
+      ml.push([M.namn||'',tema,Number(M.nulage)||1,kopp,M.agare||'',M.maldatum||'',M.dromm||'',dr?dr.matt:'']);
+    }
+    if(ml.length===1)ml.push(['Inga mål upplagda än','','','','','','','']);
+    X.utils.book_append_sheet(wb,aoaSheet(X,ml,[34,14,11,14,16,12,44,44]),'Målbild');
+
+    /* 9. Belägg */
+    var bv=[['Vad','Källa','Dokumenterat','Informerat','Länk','Intygas av','Datum']];
+    if(state.bevis)for(var bk in state.bevis){
+      var B=state.bevis[bk],namn=bk,kalla='';
+      if(bk.indexOf('q:')===0){var rest=bk.slice(2),di=rest.lastIndexOf('_'),tt=TYPMAP[rest.slice(0,di)];namn=tt?tt.fragor[parseInt(rest.slice(di+1),10)]:rest;kalla='Kontrollfråga';}
+      else if(bk.indexOf('krav:')===0){kalla='Krav';var kk=alltKrav();for(var ki=0;ki<kk.length;ki++)if(kk[ki].id===bk.slice(5))namn=kk[ki].n;}
+      else if(bk.indexOf('verk:')===0){kalla='Verksamhet';var vv=VERKSAMHET.filter(function(x){return x.id===bk.slice(5);})[0];namn=vv?vv.f:bk;}
+      bv.push([namn,kalla,svarText(B.dok),svarText(B.info),B.lank||'',B.av||'',B.datum||'']);
+    }
+    if(bv.length===1)bv.push(['Inga belägg registrerade än','','','','','','']);
+    X.utils.book_append_sheet(wb,aoaSheet(X,bv,[50,14,13,12,40,18,12]),'Belägg');
+
+    X.writeFile(wb,'skuldkartan-'+dat+'.xlsx');
+    toast('Excel-fil skapad');
+  }).catch(function(e){
+    toast(e.message||'Excel-export misslyckades');
+  });
 }
 
 /* ── Changelog-vy ────────────────────────────────────────── */
