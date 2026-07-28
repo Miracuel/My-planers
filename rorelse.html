@@ -43,7 +43,8 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .plan-q .ic{font-size:20px}
 .plan-q b{font-family:Georgia,serif;font-weight:400;font-size:15px}
 .plan-q .plan-edit{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;align-self:flex-start}
-.body.pl-open{cursor:pointer}
+.body.pl-open,.body.sd-open{cursor:pointer}
+.sess-row .sd-edit,.sess-row .sd-del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
 .sess-row .pl-edit{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer}
 .plan-q .meta{font-size:12px;color:var(--muted);margin-top:1px}
 .plan-ask .btn{padding:8px 12px}
@@ -489,6 +490,8 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <div><label>Dag</label><input type="date" id="pl-date"></div>
     <div><label>Tid (frivilligt)</label><input type="time" id="pl-time"></div>
   </div>
+  <label class="gym-check"><input type="checkbox" id="pl-someday"> Ingen särskild dag — lägg som "nästa gång"</label>
+  <div class="soft">Ett sånt pass ligger kvar på Idag tills du markerat det som gjort.</div>
   <label>Övningar (frivilligt)</label>
   <select id="pl-tmpl" style="margin-bottom:8px"></select>
   <div id="pl-ex-list"></div>
@@ -716,6 +719,7 @@ var state={
   recurring:null,
   recurDone:null,
   templates:null,
+  someday:null,
   gyms:null,
   activeGym:'',
   activeZone:'allmant',
@@ -763,6 +767,7 @@ function ensureGym(){
   if(!Array.isArray(state.exercises))state.exercises=[];
   if(!Array.isArray(state.recurring))state.recurring=[];
   if(!Array.isArray(state.templates))state.templates=[];
+  if(!Array.isArray(state.someday))state.someday=[];
   if(!state.recurDone||typeof state.recurDone!=='object')state.recurDone={};
   if(!Array.isArray(state.gyms)){
     var old=state.gym||{};
@@ -884,12 +889,16 @@ function todaysItems(){
     if(sessionDoneToday(r.name))return;
     items.push({src:'recur',id:r.id,icon:r.icon||iconForName(r.name),name:r.name,min:r.min,time:r.time,recur:true});
   });
+  (state.someday||[]).forEach(function(p){items.push({src:'someday',id:p.id,icon:p.icon,name:p.name,min:p.min,time:p.time,items:p.items,failPlan:p.failPlan,someday:true});});
   return items;
 }
+function somedayById(id){for(var i=0;i<(state.someday||[]).length;i++){if(String(state.someday[i].id)===String(id))return state.someday[i];}return null;}
 function clearItem(it){
   if(it.src==='plan'){
     var tk=todayKey();var list=state.planned[tk]||[];list.splice(it.i,1);
     if(!list.length)delete state.planned[tk];
+  }else if(it.src==='someday'){
+    state.someday=(state.someday||[]).filter(function(p){return String(p.id)!==String(it.id);});
   }else{
     var tk2=todayKey();state.recurDone[tk2]=state.recurDone[tk2]||[];
     if(state.recurDone[tk2].indexOf(it.id)<0)state.recurDone[tk2].push(it.id);
@@ -948,19 +957,24 @@ function renderPlanToday(){
   if(!items.length){el.innerHTML='<div class="empty-msg">Inget planerat idag — och det är helt okej.</div>';return;}
   el.innerHTML=items.map(function(it,idx){
     var extra=(it.items&&it.items.length?' · '+it.items.length+' övn':'')+(it.failPlan?' · ⚡':'');
-    var sub=(it.recur?'löpande schema':'planerat')+(it.time?' · '+it.time:'')+extra;
+    var kind=it.recur?'löpande schema':(it.someday?'nästa gång':'planerat');
+    var sub=kind+(it.time?' · '+it.time:'')+extra;
     var editBtn=it.recur?'':'<button class="plan-edit" data-idx="'+idx+'" title="Ändra">✎</button>';
+    var nejBtn=it.someday?'':'<button class="btn" data-idx="'+idx+'" data-y="0">Nej</button>';
     return '<div class="plan-ask"><div class="plan-q"><span class="ic">'+(it.icon||'•')+'</span>'+
       '<div style="flex:1"><b>'+esc(it.name)+'</b><div class="meta">'+sub+' — har du gjort det?</div></div>'+editBtn+'</div>'+
       '<div class="btn-row" style="margin-top:8px"><button class="btn fill" data-idx="'+idx+'" data-y="1">Ja, gjort</button>'+
-      '<button class="btn" data-idx="'+idx+'" data-y="0">Nej</button></div></div>';
+      nejBtn+'</div></div>';
   }).join('');
   var snapshot=items;
   el.querySelectorAll('.plan-ask .btn-row button').forEach(function(b){
     b.onclick=function(){doPlanned(snapshot[+b.dataset.idx], b.dataset.y==='1');};
   });
   el.querySelectorAll('.plan-edit').forEach(function(b){
-    b.onclick=function(){var it=snapshot[+b.dataset.idx];openPlanSheet({date:todayKey(),index:it.i,orig:(state.planned[todayKey()]||[])[it.i]});};
+    b.onclick=function(){var it=snapshot[+b.dataset.idx];
+      if(it.someday)openPlanSheet({someday:true,orig:somedayById(it.id)});
+      else openPlanSheet({date:todayKey(),index:it.i,orig:(state.planned[todayKey()]||[])[it.i]});
+    };
   });
 }
 
@@ -1297,17 +1311,23 @@ function selectPlType(name){
   if(found>=0){sel.value=String(found);}
   else{var opt=document.createElement('option');opt.value='custom';opt.textContent=name;sel.appendChild(opt);sel.value='custom';}
 }
+function togglePlSomeday(){
+  var on=document.getElementById('pl-someday').checked;
+  var dt=document.getElementById('pl-date');dt.disabled=on;dt.style.opacity=on?'.4':'';
+}
+document.getElementById('pl-someday').onchange=togglePlSomeday;
 function openPlanSheet(editRef){
   planEdit=editRef||null;
   renderPlanTypeOptions();
   renderExDatalist();renderTmplOptions('pl-tmpl');
   document.getElementById('pl-ex-list').innerHTML='';
   resetFail('pl');
+  document.getElementById('pl-someday').checked=!!(planEdit&&planEdit.someday);
   var h3=document.querySelector('#plan-sheet h3');var saveBtn=document.getElementById('pl-save');
   if(planEdit&&planEdit.orig){
     var p=planEdit.orig;
     selectPlType(p.name);
-    document.getElementById('pl-date').value=planEdit.date;
+    document.getElementById('pl-date').value=planEdit.someday?todayKey():planEdit.date;
     document.getElementById('pl-time').value=p.time||'';
     (p.items||[]).forEach(function(it){addExRow('pl-ex-list',it);});
     if(p.failPlan){var o=document.getElementById('pl-fout');o.style.display='block';o.className='ai-out';o.textContent=p.failPlan;}
@@ -1317,6 +1337,7 @@ function openPlanSheet(editRef){
     document.getElementById('pl-time').value='';
     if(h3)h3.textContent='Planera ett pass';saveBtn.textContent='Lägg till i planen';
   }
+  togglePlSomeday();
   openSheet('plan-sheet');
 }
 document.getElementById('open-plan').onclick=function(){openPlanSheet(null);};
@@ -1336,22 +1357,32 @@ document.getElementById('pl-save').onclick=function(){
   var time=document.getElementById('pl-time').value;
   var items=collectItems('pl-ex-list');
   var fp=failText('pl');
+  var someday=document.getElementById('pl-someday').checked;
   var obj={icon:icon,name:name,min:min,time:time,items:items.length?items:null,failPlan:fp};
   if(planEdit){
-    var arr=state.planned[planEdit.date]||[];
-    arr.splice(planEdit.index,1);
-    if(!arr.length)delete state.planned[planEdit.date];
+    if(planEdit.someday){state.someday=(state.someday||[]).filter(function(p){return String(p.id)!==String(planEdit.orig.id);});}
+    else{var arr=state.planned[planEdit.date]||[];arr.splice(planEdit.index,1);if(!arr.length)delete state.planned[planEdit.date];}
   }
-  state.planned[date]=state.planned[date]||[];
-  state.planned[date].push(obj);
+  if(someday){
+    obj.id=(planEdit&&planEdit.someday&&planEdit.orig)?planEdit.orig.id:Date.now();
+    state.someday=state.someday||[];state.someday.push(obj);
+  }else{
+    state.planned[date]=state.planned[date]||[];
+    state.planned[date].push(obj);
+  }
   planEdit=null;
   save();closeSheets();renderPlanList();renderPlanToday();
 };
 function renderPlanList(){
   var el=document.getElementById('plan-list');
   var keys=Object.keys(state.planned).filter(function(k){return k>=todayKey()&&state.planned[k].length;}).sort();
-  if(!keys.length){el.innerHTML='<div class="empty-msg">Inget inplanerat.</div>';return;}
+  var sd=state.someday||[];
+  if(!keys.length&&!sd.length){el.innerHTML='<div class="empty-msg">Inget inplanerat.</div>';return;}
   var html='';
+  sd.forEach(function(p,i){
+    var extra=(p.items&&p.items.length?' · '+p.items.length+' övn':'')+(p.failPlan?' · ⚡':'');
+    html+='<div class="sess-row"><div class="ic">'+(p.icon||'•')+'</div><div class="body sd-open" data-sid="'+p.id+'"><b>'+esc(p.name)+'</b><div class="meta">Nästa gång'+(p.time?' · '+p.time:'')+extra+' · tryck för att öppna</div></div><button class="sd-edit" data-sid="'+p.id+'" title="Ändra">✎</button><button class="sd-del" data-sid="'+p.id+'" title="Ta bort">×</button></div>';
+  });
   keys.forEach(function(k){
     var label=relDateFull(k);
     state.planned[k].forEach(function(p,i){
@@ -1362,6 +1393,8 @@ function renderPlanList(){
   el.innerHTML=html;
   function openRef(b){return {date:b.dataset.k,index:+b.dataset.i,orig:(state.planned[b.dataset.k]||[])[+b.dataset.i]};}
   el.querySelectorAll('.pl-open,.pl-edit').forEach(function(b){b.onclick=function(){openPlanSheet(openRef(b));};});
+  el.querySelectorAll('.sd-open,.sd-edit').forEach(function(b){b.onclick=function(){openPlanSheet({someday:true,orig:somedayById(b.dataset.sid)});};});
+  el.querySelectorAll('.sd-del').forEach(function(b){b.onclick=function(){state.someday=(state.someday||[]).filter(function(p){return String(p.id)!==String(b.dataset.sid);});save();renderPlanList();renderPlanToday();};});
   el.querySelectorAll('.pl-del').forEach(function(b){
     b.onclick=function(){
       var k=b.dataset.k,i=+b.dataset.i;
@@ -1761,7 +1794,7 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setSyncBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.dataset.s=stt;b.textContent=msg;}
 function refreshSyncBadge(){if(syncOn())setSyncBadge('ok','Synkad');else setSyncBadge('off','Lokal');}
-function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,templates:state.templates,gyms:state.gyms,updated:new Date().toISOString()};}
+function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,templates:state.templates,someday:state.someday,gyms:state.gyms,updated:new Date().toISOString()};}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergeByName(local,remote){var m={};(local||[]).forEach(function(x){m[x.name]=x;});(remote||[]).forEach(function(x){if(!m[x.name])m[x.name]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergePlanned(local,remote){var out=Object.assign({},local);Object.keys(remote||{}).forEach(function(k){var seen={};var arr=[];(out[k]||[]).concat(remote[k]||[]).forEach(function(p){var key=(p.name||'')+'|'+(p.time||'');if(!seen[key]){seen[key]=1;arr.push(p);}});out[k]=arr;});return out;}
@@ -1785,6 +1818,7 @@ function applyData(d){
   if(Array.isArray(d.exercises))state.exercises=mergeById(state.exercises,d.exercises);
   if(Array.isArray(d.recurring))state.recurring=mergeById(state.recurring,d.recurring);
   if(Array.isArray(d.templates))state.templates=mergeById(state.templates,d.templates);
+  if(Array.isArray(d.someday))state.someday=mergeById(state.someday,d.someday);
   if(d.planned&&typeof d.planned==='object')state.planned=mergePlanned(state.planned,d.planned);
   if(Array.isArray(d.gyms))state.gyms=mergeGyms(state.gyms,d.gyms);
   else if(d.gym&&typeof d.gym==='object'&&Array.isArray(state.gyms)&&state.gyms.length){
@@ -2305,7 +2339,7 @@ document.getElementById('td-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.16.0',
+  version:'1.17.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
@@ -2318,7 +2352,7 @@ var APPINFO={
     'Egna passtyper som snabbval',
     'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
-    'Lös planering framåt (öppna, se och redigera ett planerat pass), plus löpande schema för återkommande pass',
+    'Lös planering framåt (öppna, se och redigera ett planerat pass), pass utan bestämd dag ("nästa gång") som ligger kvar på Idag tills de är gjorda, plus löpande schema',
     '"Planerat idag"-avstämning med Ja/Nej — Ja öppnar en kort utvärdering (upplevd belastning + högsta vikt per övning) och loggar passet',
     'Högsta vikt per övning sparas och förifylls automatiskt nästa gång övningen används (även via mall)',
     'Flera gym — lägg till, byt mellan och ta bort gym, var och en med egna öppettider och belastningsschema',
@@ -2337,6 +2371,11 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.17.0',d:'2026-07-19',items:[
+      'Pass utan bestämd dag: kryssa "Ingen särskild dag — nästa gång" när du planerar, så slipper du välja datum.',
+      'Ett sånt pass ligger kvar överst på Idag (märkt "nästa gång") tills du markerat det som gjort — det försvinner inte automatiskt och har ingen Nej-knapp.',
+      'Går att öppna, redigera och ta bort som andra planerade pass, och följer med i synk.'
+    ]},
     {v:'1.16.0',d:'2026-07-19',items:[
       'När du svarar "Ja, gjort" på ett pass öppnas en kort utvärdering: hur fullt det var på gymmet och högsta vikt i varje övning.',
       'Den upplevda belastningen matar belastningsschemat för den timmen, precis som vid vanlig loggning.',
