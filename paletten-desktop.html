@@ -36,6 +36,7 @@ h1.brand{font-family:Georgia,serif;font-weight:400;font-size:21px;color:var(--in
 label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:10px 0 4px}
 input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;padding:9px 10px;font-family:inherit;width:100%;outline:none}
 input[type=color]{padding:2px;height:42px;cursor:pointer}
+input[type=range]{width:100%;padding:0;height:28px;background:transparent;border:none;accent-color:var(--accent);cursor:pointer}
 .empty-msg{font-size:12px;color:var(--muted);padding:10px 0;text-align:center}
 .soft{font-size:12px;color:var(--muted);line-height:1.6}
 .row{display:flex;align-items:center;gap:10px}
@@ -258,7 +259,7 @@ html,body{background:var(--bg)}
 <!-- FÄRGER -->
 <div class="view" id="view-farger">
   <div class="section-title" style="margin-top:0">Mitt färgförråd
-    <button class="btn tiny fill" id="new-paint">+ Färg</button>
+    <span style="display:flex;gap:6px"><button class="btn tiny" id="open-trappa">🪜 Trappa</button><button class="btn tiny fill" id="new-paint">+ Färg</button></span>
   </div>
   <input type="text" class="search" id="paint-search" placeholder="Sök färg eller märke…">
   <div class="chips" id="type-filter"></div>
@@ -398,6 +399,26 @@ html,body{background:var(--bg)}
   <button class="sheet-close" id="pt-save">Spara färg</button>
 </div>
 
+<div class="sheet" id="trappa-sheet">
+  <h3>🪜 Färgtrappa</h3>
+  <div class="soft">Välj mörkaste och ljusaste färg, så räknar appen ut stegen emellan – från skugga till highlight. Spara hela trappan i Färger eller som ett recept.</div>
+  <div class="row" style="gap:14px;margin-top:10px">
+    <div style="flex:1"><label>Mörkast</label><input type="color" id="tr-dark" value="#3A2B4A"></div>
+    <div style="flex:1"><label>Ljusast</label><input type="color" id="tr-light" value="#E7D8F0"></div>
+  </div>
+  <label>Antal steg: <span id="tr-nlabel">5</span></label>
+  <input type="range" id="tr-steps" min="3" max="9" value="5" step="1">
+  <label>Namn på trappan</label>
+  <input type="text" id="tr-name" placeholder="T.ex. Lila hud, Guldtrappa…">
+  <div id="tr-preview" style="display:flex;height:36px;border-radius:10px;overflow:hidden;margin:12px 0;border:1px solid var(--line)"></div>
+  <div id="tr-list"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn" id="tr-save-paints">Spara i Färger</button>
+    <button class="btn fill" id="tr-save-recipe">Skapa recept</button>
+  </div>
+  <button class="sheet-close" id="tr-close">Stäng</button>
+</div>
+
 <div class="sheet" id="rec-sheet">
   <h3 id="rec-sheet-title">Nytt recept</h3>
   <label>Namn</label>
@@ -453,7 +474,7 @@ var DEFAULT_STEPS=['Grundering','Basfärg','Wash / skuggning','Lagring','Highlig
 
 // ── App-info & changelog (inbäddad) ───────────────────
 var APPINFO={
-  version:'1.2.0',
+  version:'1.3.0',
   tagline:'Planera figurinmålning, logga färger per del och håll koll på färgförrådet.',
   audience:'För figurin- och miniatyrmålare som vill dokumentera färgval per del, planera måltursföljden och ha ordning på sitt färgförråd.',
   functions:[
@@ -463,10 +484,15 @@ var APPINFO={
     'Färgförråd med märke, typ, färgton och slut-status, sök och typfilter',
     'Återanvändbara färgrecept som kan läggas in i en projektdel',
     'Automatisk inköpslista från färgstatus + egen lista',
+    'Färgtrappa: välj mörkast och ljusast färg och få stegen emellan, spara i förrådet eller som recept',
     'Inbyggd GitHub-synk mellan enheter (per-app-fil, union-merge)',
     'Auto/mörkt/ljust tema och lokal lagring med export/import'
   ],
   changelog:[
+    {v:'1.3.0',d:'2026-06-17',items:[
+      'Ny färgtrappa (i Färger → 🪜 Trappa): välj mörkaste och ljusaste färg och antal steg, så räknas färgerna emellan ut automatiskt med live-förhandsvisning – från skugga (Wash) via mellanlager (Lager) till highlight.',
+      'Spara hela trappan direkt i färgförrådet eller som ett recept med ett tryck.'
+    ]},
     {v:'1.2.0',d:'2026-06-17',items:[
       'Egen färg som läggs till i ett projekt hamnar nu automatiskt i Färger (färgförrådet) och länkas till delen.',
       'Färger på en del går nu att redigera direkt i figur-vyn – tryck på färgraden för att ändra roll, färg och anteckning.',
@@ -907,6 +933,57 @@ document.getElementById('pt-save').onclick=function(){
   if(ptEditId){var p=findPaint(ptEditId);Object.assign(p,o);}
   else{o.id=uid();state.paints.push(o);}
   save();closeSheets();renderPaints();renderShop();
+};
+
+// ── FÄRGTRAPPA (mörkast → ljusast med steg emellan) ───
+function hx2(n){n=Math.max(0,Math.min(255,Math.round(n)));var s=n.toString(16);return s.length<2?'0'+s:s;}
+function hexToRgb(h){h=(h||'').replace('#','');if(h.length===3)h=h.charAt(0)+h.charAt(0)+h.charAt(1)+h.charAt(1)+h.charAt(2)+h.charAt(2);return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgbToHex(r,g,b){return '#'+hx2(r)+hx2(g)+hx2(b);}
+function rampColors(dark,light,n){
+  var a=hexToRgb(dark),b=hexToRgb(light),out=[];if(n<2)n=2;
+  for(var i=0;i<n;i++){var t=i/(n-1);out.push(rgbToHex(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t));}
+  return out;
+}
+function trappaRole(i,n){return i===0?'Wash':(i===n-1?'Highlight':'Lager');}
+function currentRamp(){
+  var dark=document.getElementById('tr-dark').value;
+  var light=document.getElementById('tr-light').value;
+  var n=+document.getElementById('tr-steps').value;
+  return {dark:dark,light:light,n:n,colors:rampColors(dark,light,n)};
+}
+function renderTrappa(){
+  var r=currentRamp();
+  document.getElementById('tr-nlabel').textContent=r.n;
+  var prev='';for(var i=0;i<r.colors.length;i++)prev+='<div style="flex:1;background:'+r.colors[i]+'"></div>';
+  document.getElementById('tr-preview').innerHTML=prev;
+  var h='';
+  for(var k=0;k<r.colors.length;k++){
+    h+='<div class="item"><span class="swatch lg" style="background:'+r.colors[k]+'"></span>'
+      +'<div class="grow"><b>'+r.colors[k].toUpperCase()+'</b><small>Steg '+(k+1)+' · '+trappaRole(k,r.n)+'</small></div></div>';
+  }
+  document.getElementById('tr-list').innerHTML=h;
+}
+document.getElementById('open-trappa').onclick=function(){document.getElementById('tr-name').value='';renderTrappa();openSheet('trappa-sheet');};
+document.getElementById('tr-dark').oninput=renderTrappa;
+document.getElementById('tr-light').oninput=renderTrappa;
+document.getElementById('tr-steps').oninput=renderTrappa;
+document.getElementById('tr-close').onclick=closeSheets;
+document.getElementById('tr-save-paints').onclick=function(){
+  var r=currentRamp();var base=document.getElementById('tr-name').value.trim()||'Trappa';
+  for(var i=0;i<r.colors.length;i++){
+    var nm=base+' '+(i+1);var typ=trappaRole(i,r.n);var found=null;
+    for(var j=0;j<state.paints.length;j++){if((state.paints[j].name||'').toLowerCase()===nm.toLowerCase()){found=state.paints[j];break;}}
+    if(found){found.hex=r.colors[i];found.type=typ;}
+    else{state.paints.push({id:uid(),name:nm,brand:'',type:typ,hex:r.colors[i],status:'har',note:'Färgtrappa'});}
+  }
+  save();renderPaints();closeSheets();alert('Sparade '+r.colors.length+' färger i Färger.');
+};
+document.getElementById('tr-save-recipe').onclick=function(){
+  var r=currentRamp();var base=document.getElementById('tr-name').value.trim()||'Trappa';
+  var steps=[];for(var i=0;i<r.colors.length;i++)steps.push({role:trappaRole(i,r.n),note:'',name:base+' '+(i+1),hex:r.colors[i]});
+  var nr={id:uid(),name:base,note:'Färgtrappa: '+r.dark.toUpperCase()+' → '+r.light.toUpperCase(),steps:steps};
+  state.recipes.unshift(nr);save();closeSheets();ui.openRec=nr.id;
+  var navRec=document.querySelector('.nav button[data-v=recept]');if(navRec)navRec.click();
 };
 
 // ── RECEPT ────────────────────────────────────────────
