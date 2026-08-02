@@ -186,7 +186,6 @@ html,body{background:var(--bg)}
 .app{margin:0 auto 0 212px;max-width:780px;padding:26px 34px 60px}
 .syncbar{justify-content:flex-start;margin:0 0 14px}
 .fab{position:static}
-/* bottom-sheets blir centrerade modaler */
 .sheet{left:50%;right:auto;top:50%;bottom:auto;width:460px;max-width:92vw;
   border-radius:18px;max-height:86vh;transform:translate(-50%,-46%);opacity:0;
   transition:transform .2s ease,opacity .2s ease;box-shadow:0 18px 60px rgba(0,0,0,.22)}
@@ -373,8 +372,10 @@ html,body{background:var(--bg)}
   <label>Välj ur förrådet</label>
   <input type="text" id="slot-search" placeholder="Sök i mina färger…">
   <div id="slot-paints" style="max-height:200px;overflow-y:auto"></div>
-  <label>…eller skriv en färg fritt</label>
-  <input type="text" id="slot-custom" placeholder="Färgnamn (om den inte finns i förrådet)">
+  <label>…eller lägg till en ny färg (hamnar automatiskt i Färger)</label>
+  <input type="text" id="slot-custom" placeholder="Färgnamn">
+  <label>Färgprick (hexkod) för den nya färgen</label>
+  <input type="color" id="slot-hex" value="#8A6BA6">
   <label>Anteckning (frivillig)</label>
   <input type="text" id="slot-note" placeholder="T.ex. 2 lager, utspädd, blandad 1:1…">
   <button class="sheet-close" id="slot-save">Spara färg</button>
@@ -415,6 +416,8 @@ html,body{background:var(--bg)}
   <div id="rs-paints" style="max-height:200px;overflow-y:auto"></div>
   <label>…eller skriv en färg fritt</label>
   <input type="text" id="rs-custom" placeholder="Färgnamn">
+  <label>Färgprick (hexkod)</label>
+  <input type="color" id="rs-hex" value="#8A6BA6">
   <label>Anteckning (frivillig)</label>
   <input type="text" id="rs-note" placeholder="T.ex. utspädd 2:1">
   <button class="sheet-close" id="rs-save">Spara steg</button>
@@ -450,7 +453,7 @@ var DEFAULT_STEPS=['Grundering','Basfärg','Wash / skuggning','Lagring','Highlig
 
 // ── App-info & changelog (inbäddad) ───────────────────
 var APPINFO={
-  version:'1.1.0',
+  version:'1.2.0',
   tagline:'Planera figurinmålning, logga färger per del och håll koll på färgförrådet.',
   audience:'För figurin- och miniatyrmålare som vill dokumentera färgval per del, planera måltursföljden och ha ordning på sitt färgförråd.',
   functions:[
@@ -464,6 +467,11 @@ var APPINFO={
     'Auto/mörkt/ljust tema och lokal lagring med export/import'
   ],
   changelog:[
+    {v:'1.2.0',d:'2026-06-17',items:[
+      'Egen färg som läggs till i ett projekt hamnar nu automatiskt i Färger (färgförrådet) och länkas till delen.',
+      'Färger på en del går nu att redigera direkt i figur-vyn – tryck på färgraden för att ändra roll, färg och anteckning.',
+      'Ny färg kan anges med egen färgprick (hexkod) både på en projektdel och i recept-steg.'
+    ]},
     {v:'1.1.0',d:'2026-06-17',items:[
       'Inbyggd GitHub-synk (appkollen-style): per-app-filen paletten.json i ett privat repo, fine-grained token sparas bara lokalt, union-merge per id så inga poster tappas mellan enheter, auto-hämtning vid start och när appen återfår fokus, statusbadge (Lokal/Hämtar/Sparar/Synkad/Synkfel).',
       'Ny vy "Nyheter & funktioner" med version och ändringslogg i appen.',
@@ -664,7 +672,7 @@ function renderParts(p){
       var hex=sl.paintId?paintHex(sl.paintId):(sl.hex||'#cccccc');
       var nm=sl.paintId?paintLabel(findPaint(sl.paintId)):(sl.name||'(borttagen färg)');
       h+='<div class="slot"><span class="swatch" style="background:'+esc(hex)+'"></span>'
-        +'<div class="grow"><span class="role">'+esc(sl.role||'')+'</span>'
+        +'<div class="grow" data-act="editslot" data-pi="'+i+'" data-si="'+k+'" style="cursor:pointer"><span class="role">'+esc(sl.role||'')+'</span>'
         +'<span class="nm"> '+esc(nm)+'</span>'
         +(sl.note?'<span class="nt">'+esc(sl.note)+'</span>':'')+'</div>'
         +'<button class="x" data-act="delslot" data-pi="'+i+'" data-si="'+k+'">×</button></div>';
@@ -681,6 +689,7 @@ function bindActs(wrap){
       var act=b.dataset.act,pi=+b.dataset.pi,si=+b.dataset.si;
       var p=findProj(ui.openProj);
       if(act==='addslot'){openSlot(pi,null);}
+      else if(act==='editslot'){openSlot(pi,si);}
       else if(act==='delpart'){if(confirm('Ta bort delen "'+p.parts[pi].name+'"?')){p.parts.splice(pi,1);save();renderProjDetail();}}
       else if(act==='delslot'){p.parts[pi].slots.splice(si,1);save();renderProjDetail();}
     };
@@ -762,12 +771,29 @@ document.getElementById('part-save').onclick=function(){
 };
 
 // ── FÄRGSLOT på del ───────────────────────────────────
+function findOrCreatePaint(name,hex){
+  name=(name||'').trim();if(!name)return null;
+  for(var i=0;i<state.paints.length;i++){
+    if((state.paints[i].name||'').toLowerCase()===name.toLowerCase())return state.paints[i].id;
+  }
+  var np={id:uid(),name:name,brand:'',type:'Övrigt',hex:hex||'#8A6BA6',status:'har',note:''};
+  state.paints.push(np);
+  return np.id;
+}
 function openSlot(pi,si){
-  ui.editPart=pi;ui.editSlot=si;ui.slotPaint=null;ui.slotRole='Bas';
-  document.getElementById('slot-title').textContent='Färg på delen';
+  ui.editPart=pi;ui.editSlot=(si==null?null:si);ui.slotPaint=null;ui.slotRole='Bas';
+  var custom='',hexv='#8A6BA6',note='';
+  if(si!=null){
+    var sl=findProj(ui.openProj).parts[pi].slots[si];
+    ui.slotRole=sl.role||'Bas';note=sl.note||'';
+    if(sl.paintId){ui.slotPaint=sl.paintId;var pp=findPaint(sl.paintId);if(pp&&pp.hex)hexv=pp.hex;}
+    else{custom=sl.name||'';hexv=sl.hex||'#8A6BA6';}
+  }
+  document.getElementById('slot-title').textContent=(si!=null?'Ändra färg':'Färg på delen');
   document.getElementById('slot-search').value='';
-  document.getElementById('slot-custom').value='';
-  document.getElementById('slot-note').value='';
+  document.getElementById('slot-custom').value=custom;
+  document.getElementById('slot-hex').value=hexv;
+  document.getElementById('slot-note').value=note;
   segPick('slot-role',ROLES,ui.slotRole,function(v){ui.slotRole=v;segPick('slot-role',ROLES,v,arguments.callee);});
   renderSlotPaints('');
   openSheet('slot-sheet');
@@ -795,13 +821,15 @@ document.getElementById('slot-search').oninput=function(e){renderSlotPaints(e.ta
 document.getElementById('slot-save').onclick=function(){
   var p=findProj(ui.openProj);var part=p.parts[ui.editPart];
   var custom=document.getElementById('slot-custom').value.trim();
+  var hexv=document.getElementById('slot-hex').value;
   var note=document.getElementById('slot-note').value.trim();
-  if(!ui.slotPaint&&!custom){alert('Välj en färg ur förrådet eller skriv ett färgnamn.');return;}
+  if(!ui.slotPaint&&!custom){alert('Välj en färg ur förrådet eller skriv ett namn på en ny färg.');return;}
   var slot={role:ui.slotRole,note:note};
   if(ui.slotPaint){slot.paintId=ui.slotPaint;}
-  else{slot.name=custom;slot.hex='';}
-  part.slots=part.slots||[];part.slots.push(slot);
-  save();closeSheets();renderProjDetail();
+  else{slot.paintId=findOrCreatePaint(custom,hexv);} // egen färg hamnar automatiskt i Färger
+  part.slots=part.slots||[];
+  if(ui.editSlot!=null){part.slots[ui.editSlot]=slot;}else{part.slots.push(slot);}
+  save();closeSheets();renderProjDetail();renderPaints();
 };
 
 // ── FÄRGER ────────────────────────────────────────────
@@ -951,6 +979,7 @@ document.getElementById('rd-delete').onclick=function(){
 document.getElementById('rd-add-step').onclick=function(){
   ui.rsPaint=null;ui.rsRole='Bas';
   document.getElementById('rs-search').value='';document.getElementById('rs-custom').value='';document.getElementById('rs-note').value='';
+  document.getElementById('rs-hex').value='#8A6BA6';
   segPick('rs-role',ROLES,ui.rsRole,function(v){ui.rsRole=v;segPick('rs-role',ROLES,v,arguments.callee);});
   renderRsPaints('');
   openSheet('recstep-sheet');
@@ -971,7 +1000,7 @@ document.getElementById('rs-save').onclick=function(){
   var r=findRec(ui.openRec);var custom=document.getElementById('rs-custom').value.trim();var note=document.getElementById('rs-note').value.trim();
   if(!ui.rsPaint&&!custom){alert('Välj en färg eller skriv ett färgnamn.');return;}
   var step={role:ui.rsRole,note:note};
-  if(ui.rsPaint)step.paintId=ui.rsPaint;else{step.name=custom;step.hex='';}
+  if(ui.rsPaint)step.paintId=ui.rsPaint;else{step.name=custom;step.hex=document.getElementById('rs-hex').value;}
   r.steps=r.steps||[];r.steps.push(step);save();closeSheets();renderRecDetail();
 };
 
