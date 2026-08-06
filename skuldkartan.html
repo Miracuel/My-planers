@@ -383,7 +383,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.13.0',
+version:'1.13.1',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -396,6 +396,10 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.13.1',d:'2026-08-06',items:[
+  'Robustare start: om något oväntat fel skulle uppstå vid uppstart visas nu ett tydligt meddelande med möjlighet att rensa sparad data och ladda om, i stället för en blank sida.',
+  'Rättade en meny-post som saknade mål och därför inte gjorde något vid klick.'
+ ]},
  {v:'1.13.0',d:'2026-08-06',items:[
   'Ny frivillig ambition under Vi vill: EU AI Act-nivå, ansvarsfull hantering av AI enligt EU:s AI-förordning.',
   'Åtta kontroller med referens till artiklar i AI-förordningen: förteckning över AI som används, riskklassificering av användningarna, inga förbjudna metoder, öppenhet när människor möter AI, märkning av AI-genererat innehåll, mänsklig kontroll, grundläggande AI-kompetens och leverantörskrav vid inköp av AI.',
@@ -3687,7 +3691,7 @@ function init(){
   };
   document.getElementById('it-save').onclick=saveItem;
   var mr=document.querySelectorAll('.menurow');
-  for(var m=0;m<mr.length;m++)(function(r){r.onclick=function(){go(r.dataset.go);};})(mr[m]);
+  for(var m=0;m<mr.length;m++)(function(r){if(r.getAttribute('onclick'))return;r.onclick=function(){if(r.dataset.go)go(r.dataset.go);};})(mr[m]);
   document.getElementById('theme-btn').onclick=function(){
     state.theme=state.theme==='auto'?'light':(state.theme==='light'?'dark':'auto');
     save();applyTheme();
@@ -3702,7 +3706,19 @@ function init(){
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
   setInterval(function(){if(state.theme==='auto')applyTheme();},600000);
 }
-init();
+try{init();}catch(e){
+  try{
+    var box=document.createElement('div');
+    box.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#111;padding:24px;font:15px/1.6 -apple-system,system-ui,sans-serif;overflow:auto';
+    box.innerHTML='<h2 style="margin:0 0 8px">Appen kunde inte starta</h2>'+
+      '<p>Ett fel uppstod vid start. Oftast beror det på sparad data från en tidigare version.</p>'+
+      '<p style="font-family:monospace;background:#f4f4f4;padding:10px;border-radius:8px;white-space:pre-wrap;word-break:break-word">'+(e&&e.message?e.message:e)+'</p>'+
+      '<button id="nollstall-akut" style="margin-top:12px;padding:12px 18px;border:0;border-radius:10px;background:#b4553f;color:#fff;font-size:15px">Rensa sparad data och ladda om</button>'+
+      '<p style="margin-top:10px;color:#666;font-size:13px">Rensar bara den här appens data i den här webbläsaren. Synkad data i GitHub påverkas inte.</p>';
+    document.body.appendChild(box);
+    document.getElementById('nollstall-akut').onclick=function(){try{localStorage.removeItem(KEY);}catch(x){}location.reload();};
+  }catch(e2){document.body.innerHTML='<p style="padding:24px;font-family:sans-serif">Appen kunde inte starta: '+(e&&e.message?e.message:e)+'</p>';}
+}
 
 </script>
 </body>
