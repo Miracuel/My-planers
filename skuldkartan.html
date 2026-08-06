@@ -235,6 +235,29 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .toast.on{opacity:.96}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<script>
+(function(){
+function show(msg,extra){
+ try{
+  if(document.getElementById('sk-fatal'))return;
+  var d=document.createElement('div');
+  d.id='sk-fatal';
+  d.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99999;background:#fff;color:#111;padding:24px;font:15px/1.6 -apple-system,system-ui,sans-serif;overflow:auto';
+  var h=document.createElement('h2');h.textContent='Appen kunde inte starta';h.style.margin='0 0 8px';
+  var p=document.createElement('p');p.textContent='Ett fel uppstod vid start. Meddelandet nedan visar orsaken \u2013 skicka det till utvecklaren.';
+  var pre=document.createElement('pre');pre.textContent=(msg||'')+(extra?('\n'+extra):'');
+  pre.style.cssText='background:#f4f4f4;padding:10px;border-radius:8px;white-space:pre-wrap;word-break:break-word';
+  var btn=document.createElement('button');btn.textContent='Rensa sparad data och ladda om';
+  btn.style.cssText='margin-top:12px;padding:12px 18px;border:0;border-radius:10px;background:#b4553f;color:#fff;font-size:15px';
+  btn.onclick=function(){try{localStorage.removeItem('skuldkartan_v1');}catch(e){}location.reload();};
+  d.appendChild(h);d.appendChild(p);d.appendChild(pre);d.appendChild(btn);
+  (document.body||document.documentElement).appendChild(d);
+ }catch(e){}
+}
+window.onerror=function(m,s,l,c){show(m,(s||'')+':'+l+':'+c);return false;};
+window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(ev.filename||'')+':'+ev.lineno+':'+ev.colno);});
+})();
+</script>
 </head>
 <body>
 <div class="app">
@@ -383,7 +406,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.13.1',
+version:'1.13.2',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -396,6 +419,10 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.13.2',d:'2026-08-06',items:[
+  'Tog bort ambitionen EU AI Act-nivå igen efter rapport om att sidan slutade ladda.',
+  'Flyttade ut säkerhetsnätet först i sidan så att det fångar även fel som annars skulle ge en helt blank sida, och visar ett tydligt meddelande med möjlighet att rensa data och ladda om.'
+ ]},
  {v:'1.13.1',d:'2026-08-06',items:[
   'Robustare start: om något oväntat fel skulle uppstå vid uppstart visas nu ett tydligt meddelande med möjlighet att rensa sparad data och ladda om, i stället för en blank sida.',
   'Rättade en meny-post som saknade mål och därför inte gjorde något vid klick.'
@@ -1344,17 +1371,6 @@ var AMBITIONER=[
   {n:'Utträdesstrategi för kritiska tredjepartsleverantörer',ref:'DORA art. 28',steg:'Beskriv hur ni byter eller tar hem tjänsten om leverantören faller bort.'},
   {n:'Testad kontinuitets- och återställningsplan',ref:'DORA art. 11\u201312',steg:'Öva återställning och mät faktisk återställningstid för det kritiska.'},
   {n:'Rutin för att dela hot- och incidentinformation',ref:'DORA art. 45',steg:'Bestäm med vem och hur ni delar hotinformation, även om deltagandet är frivilligt.'}]},
-{id:'aiact',namn:'EU AI Act-nivå',kort:'Ansvarsfull hantering av AI enligt EU:s AI-förordning',ikon:'\u25c9',
- varfor:'EU:s AI-förordning ställer krav som växer fram stegvis. Även utan att vara leverantör vill ni veta vilken AI ni använder, hålla er från förbjudna metoder och vara öppna med när AI används.',
- krav:[
-  {n:'Förteckning över vilka AI-verktyg och AI-funktioner som används',ref:'AI Act art. 3',steg:'Kartlägg både egna och inköpta verktyg med AI, inklusive gratisverktyg som används i arbetet.'},
-  {n:'Riskklassificering av era AI-användningar',ref:'AI Act art. 6\u20137',steg:'Bedöm varje användning som förbjuden, hög risk, begränsad eller minimal risk.'},
-  {n:'Inga förbjudna AI-metoder används',ref:'AI Act art. 5',steg:'Kontrollera att ni inte använder AI för otillåten profilering, social poängsättning eller manipulativa metoder.'},
-  {n:'Öppenhet när människor möter AI',ref:'AI Act art. 50',steg:'Informera tydligt när en person interagerar med AI, till exempel en chattbot.'},
-  {n:'AI-genererat innehåll märks',ref:'AI Act art. 50',steg:'Märk bilder, ljud och text som skapats eller väsentligt ändrats av AI.'},
-  {n:'Mänsklig kontroll över AI som påverkar personer',ref:'AI Act art. 14',steg:'Se till att en människa kan granska och åsidosätta beslut som stöds av AI.'},
-  {n:'Grundläggande AI-kompetens hos berörd personal',ref:'AI Act art. 4',steg:'Ge dem som använder AI i arbetet en kort genomgång av möjligheter och gränser.'},
-  {n:'Leverantörskrav och dataskydd vid inköp av AI',ref:'AI Act art. 25\u201328',steg:'Ställ frågor om träningsdata, säkerhet och ansvar redan i kravställningen, och koppla till biträdesavtal.'}]},
 {id:'ledtid',namn:'Snabb och smidig IT',kort:'Egna servicemål utan ramverk',ikon:'\u21e5',
  varfor:'Ni kanske inte vill ha ett helt ramverk, men vill sätta egna ambitioner för hur smidig IT ska vara.',
  krav:[
@@ -3706,19 +3722,7 @@ function init(){
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&syncOn())ghPull();});
   setInterval(function(){if(state.theme==='auto')applyTheme();},600000);
 }
-try{init();}catch(e){
-  try{
-    var box=document.createElement('div');
-    box.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#111;padding:24px;font:15px/1.6 -apple-system,system-ui,sans-serif;overflow:auto';
-    box.innerHTML='<h2 style="margin:0 0 8px">Appen kunde inte starta</h2>'+
-      '<p>Ett fel uppstod vid start. Oftast beror det på sparad data från en tidigare version.</p>'+
-      '<p style="font-family:monospace;background:#f4f4f4;padding:10px;border-radius:8px;white-space:pre-wrap;word-break:break-word">'+(e&&e.message?e.message:e)+'</p>'+
-      '<button id="nollstall-akut" style="margin-top:12px;padding:12px 18px;border:0;border-radius:10px;background:#b4553f;color:#fff;font-size:15px">Rensa sparad data och ladda om</button>'+
-      '<p style="margin-top:10px;color:#666;font-size:13px">Rensar bara den här appens data i den här webbläsaren. Synkad data i GitHub påverkas inte.</p>';
-    document.body.appendChild(box);
-    document.getElementById('nollstall-akut').onclick=function(){try{localStorage.removeItem(KEY);}catch(x){}location.reload();};
-  }catch(e2){document.body.innerHTML='<p style="padding:24px;font-family:sans-serif">Appen kunde inte starta: '+(e&&e.message?e.message:e)+'</p>';}
-}
+init();
 
 </script>
 </body>
