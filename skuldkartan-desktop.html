@@ -205,6 +205,15 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .statbox.tap:active{background:var(--accent-soft)}
 .ovbanner{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px}
 .ovbanner .lnk{margin-left:auto}
+.bar-row.tap{cursor:pointer;border-radius:8px;padding:4px;margin:-4px -4px 0}
+.bar-row.tap:active{background:var(--accent-soft)}
+.ordrad{display:flex;gap:11px;align-items:flex-start;padding:11px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer;background:var(--panel)}
+.ordrad:active{background:var(--accent-soft)}
+.ordnr{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.ordber{margin-top:6px;font-size:12px;line-height:1.5;padding:6px 9px;border-radius:8px}
+.ordber b{font-weight:700}
+.ordfore{background:rgba(120,150,110,.16)}
+.ordefter{background:rgba(181,133,47,.14)}
 .fixlist{margin-top:10px;background:var(--panel2);border-radius:12px;padding:10px}
 .fixlist .fh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .fixlist ul{margin-left:16px;font-size:12px;line-height:1.7}
@@ -473,7 +482,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.19.0',
+version:'1.21.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -486,6 +495,16 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.21.0',d:'2026-08-06',items:[
+  'Nytt ordningsförslag högst upp under Åtgärder: en numrerad turordning 1, 2, 3 över de aktiva skulderna.',
+  'Turordningen sätter måste ha först, sedan det som låser upp flest andra skulder, sedan störst hävstång.',
+  'Beroenden visas i klartext: gör innan pekar på skulder som den här låser upp, och gör först pekar på det som bör vara på plats innan, med en kort motivering.',
+  'Grundregeln är appens princip: kartlägg det okända innan ni åtgärdar, och lägg grunden som nät och register innan det som vilar på den.'
+ ]},
+ {v:'1.20.0',d:'2026-08-06',items:[
+  'Staplarna under Analys är nu klickbara: både Var skulden sitter per område och Allvar per skuldtyp.',
+  'Ett tryck öppnar Skulder-vyn filtrerad på det området eller den skuldtypen.'
+ ]},
  {v:'1.19.0',d:'2026-08-06',items:[
   'Nyckeltalen i översikten är nu klickbara: aktiva skulder, gör nu, måste ha, blinda fläckar, snittsäkerhet, ränta och oklara.',
   'Ett tryck öppnar Skulder-vyn med just de posterna i en lista, med en rad högst upp som visar urvalet och en knapp för att visa alla igen.',
@@ -2236,7 +2255,8 @@ function svaraQ(tid,q,v){
 }
 function toggleAcc(id){openAcc[id]=!openAcc[id];renderKartlagg();}
 function tickQ(k){var d=k.lastIndexOf('_');svaraQ(k.slice(0,d),parseInt(k.slice(d+1),10),'ja');}
-function filtTyp(t){typFilter=t;kvadFilter='';gruppFilter='';go('skulder');}
+function filtTyp(t){typFilter=t;kvadFilter='';gruppFilter='';behovFilter='';ovFilter='';go('skulder');}
+function filtGrupp(g){gruppFilter=g;typFilter='';kvadFilter='';behovFilter='';ovFilter='';go('skulder');}
 function fromQ(tid,q){
   var ty=TYPMAP[tid];
   var sv=svarPa(tid+'_'+q);
@@ -2309,12 +2329,121 @@ function behovsKort(akt){
   h+='</div>';
   return h;
 }
+/* ── Beroenden mellan skuldtyper: gör X innan Y ──────────── */
+/* BEROENDE[typ] = lista av typer som bör göras EFTER typ, dvs typ
+   låser upp eller underlättar dem. Grunden är appens princip: kartlägg
+   innan du åtgärdar, och lägg grunden innan det som vilar på den. */
+var BEROENDE={
+ /* Kartlägg det okända innan konkret arbete på samma sak */
+ okantenhet:['klient','mobil','kring','avteknik','tillgangar','livscykel','patch','hallbarhet'],
+ okantsystem:['portfolj','licens','integration','program','patch','livscykel'],
+ okantnat:['natverk','ot','overvakning'],
+ okantdata:['data','efterlevnad'],
+ okantatkomst:['identitet'],
+ okantberoende:['arkitektur','kontinuitet','integration'],
+ okantansvar:['process','dok','anvandare'],
+ okantkostnad:['licens','portfolj','hallbarhet'],
+ /* Register och grund innan det som bygger på det */
+ tillgangar:['livscykel','hallbarhet','klient','mobil'],
+ natverk:['server','moln','ot','telefoni'],
+ server:['lagring','kontinuitet'],
+ identitet:['sakerhet','efterlevnad'],
+ patch:['sakerhet'],
+ overvakning:['kontinuitet'],
+ dok:['kompetens','kontinuitet'],
+ portfolj:['arkitektur','integration'],
+ data:['integration','efterlevnad']
+};
+/* Kort motivering per beroende-relation (nyckel: fore>efter), annars generellt. */
+function beroendeSkal(foreTyp,efterTyp){
+  var ft=TYPMAP[foreTyp];
+  if(ft&&ft.grupp==='okant')return 'Kartlägg det okända först – annars åtgärdar ni på en ofullständig bild.';
+  var m={
+   tillgangar:'Ett register är grunden för att kunna planera utbyte och kostnad.',
+   natverk:'Nätet är golvet allt annat står på.',
+   server:'Servrarna måste vara på plats innan lagring och återstart kan säkras.',
+   identitet:'Ordning på behörigheter innan ni bygger säkerhet ovanpå.',
+   patch:'Patchning stänger de vanligaste vägarna in innan vidare härdning.',
+   overvakning:'Utan övervakning märks inte om kontinuitetsplanen faktiskt håller.',
+   dok:'Dokumentation innan kunskapen ska spridas och driften ska kunna återstartas.',
+   portfolj:'Överblick över systemfloran innan arkitektur och kopplingar rörs.',
+   data:'Data som går att lita på innan den kopplas vidare eller rapporteras.'
+  };
+  return m[foreTyp]||'Det här underlättar eller minskar arbetet med den andra.';
+}
+/* Bygg ordnings- och beroendeinfo för en lista aktiva skulder. */
+function planeraOrdning(list){
+  var byTyp={};
+  for(var i=0;i<list.length;i++){(byTyp[list[i].typ]=byTyp[list[i].typ]||[]).push(list[i]);}
+  /* prereqPoäng = hur många andra närvarande skulder posten låser upp */
+  function laserUpp(it){
+    var mal=BEROENDE[it.typ]||[],n=0;
+    for(var k=0;k<mal.length;k++)if(byTyp[mal[k]])n+=byTyp[mal[k]].length;
+    return n;
+  }
+  var sorted=list.slice().sort(function(a,b){
+    var db=(Number(a.behov)||2)-(Number(b.behov)||2);if(db)return db;      /* måste ha först */
+    var dl=laserUpp(b)-laserUpp(a);if(dl)return dl;                         /* det som låser upp mest */
+    return havstang(b)-havstang(a);                                        /* sedan hävstång */
+  });
+  var info={};
+  for(var s=0;s<sorted.length;s++){
+    var it=sorted[s];
+    var mal=BEROENDE[it.typ]||[];
+    var mojliggor=[];    /* skulder denna bör göras INNAN */
+    for(var m=0;m<mal.length;m++){
+      var grp=byTyp[mal[m]]||[];
+      for(var g=0;g<grp.length;g++)if(grp[g].id!==it.id)mojliggor.push(grp[g]);
+    }
+    var gorForst=[];     /* skulder som bör göras INNAN denna */
+    for(var t in BEROENDE){
+      if(BEROENDE[t].indexOf(it.typ)<0)continue;
+      var grp2=byTyp[t]||[];
+      for(var g2=0;g2<grp2.length;g2++)if(grp2[g2].id!==it.id)gorForst.push(grp2[g2]);
+    }
+    info[it.id]={mojliggor:mojliggor,gorForst:gorForst};
+  }
+  return {sorted:sorted,info:info};
+}
+function kortTitel(it){var ty=TYPMAP[it.typ];return it.titel||(ty?ty.namn:'Skuld');}
+function ordningHtml(akt){
+  if(akt.length<2)return '';
+  var pl=planeraOrdning(akt);
+  var visa=pl.sorted.slice(0,12);
+  var h='<div class="section-title">Ordningsförslag<span class="soft">'+akt.length+'</span></div>';
+  h+='<div class="soft" style="margin-bottom:8px">Föreslagen turordning: måste ha först, sedan det som låser upp flest andra skulder, sedan störst hävstång. Beroenden visas som gör den ena innan den andra.</div>';
+  var harBeroenden=false;
+  for(var i=0;i<visa.length;i++){
+    var it=visa[i],ty=TYPMAP[it.typ],inf=pl.info[it.id];
+    h+='<div class="ordrad" onclick="openItem(\''+it.id+'\')">';
+    h+='<div class="ordnr">'+(i+1)+'</div>';
+    h+='<div style="flex:1;min-width:0">';
+    h+='<div style="font-weight:600">'+esc(kortTitel(it))+'</div>';
+    h+='<div class="soft" style="margin-top:2px">'+(ty?esc(ty.namn):'')+(it.system?' &middot; '+esc(it.system):'')+' &middot; allvar '+allvar(it)+'</div>';
+    if(inf.mojliggor.length){
+      harBeroenden=true;
+      var namn=[];for(var m=0;m<inf.mojliggor.length&&m<3;m++)namn.push(esc(kortTitel(inf.mojliggor[m])));
+      var extra=inf.mojliggor.length>3?(' m.fl. ('+inf.mojliggor.length+')'):'';
+      h+='<div class="ordber ordfore"><b>Gör innan:</b> '+namn.join(', ')+extra+'<div class="soft" style="margin-top:2px">'+esc(beroendeSkal(it.typ,inf.mojliggor[0].typ))+'</div></div>';
+    }
+    if(inf.gorForst.length){
+      var namn2=[];for(var g=0;g<inf.gorForst.length&&g<3;g++)namn2.push(esc(kortTitel(inf.gorForst[g])));
+      var extra2=inf.gorForst.length>3?(' m.fl. ('+inf.gorForst.length+')'):'';
+      h+='<div class="ordber ordefter"><b>Gör först:</b> '+namn2.join(', ')+extra2+'</div>';
+    }
+    h+='</div></div>';
+  }
+  if(akt.length>12)h+='<div class="soft" style="margin-top:6px">Visar de 12 första. Resten finns i kvadranterna nedan.</div>';
+  if(!harBeroenden)h+='<div class="soft" style="margin-top:6px">Inga tydliga beroenden mellan de aktuella skulderna – ta dem i turordningen ovan.</div>';
+  return h;
+}
+
 function renderAtgarder(){
   var el=document.getElementById('at-body');
   var akt=aktiva();
   var rekH=behovsKort(akt)+rekommendationer();
   if(!akt.length){el.innerHTML=rekH+(rekH?'':'<div class="empty-msg">Inga aktiva skulder att planera.</div>');return;}
-  var h=rekH;
+  var h=rekH+ordningHtml(akt);
   var order=['gornu','planera','stada','bevaka'];
   for(var q=0;q<order.length;q++){
     var grp=akt.filter(function(x){return kvadrant(x)===order[q];});
@@ -2350,7 +2479,7 @@ function renderAnalys(){
     var G=GRUPPER[gr],dd=byG[G.id];
     if(!dd)continue;
     var sn2=Math.round(dd.s/dd.n);
-    h+='<div class="bar-row"><div class="bl"><div class="bn">'+G.ikon+' '+esc(G.namn)+'</div><div class="bv">'+sn2+' · '+dd.n+' st</div></div><div class="bar-track"><div class="bar-fill" style="width:'+sn2+'%"></div></div></div>';
+    h+='<div class="bar-row tap" onclick="filtGrupp(\''+G.id+'\')"><div class="bl"><div class="bn">'+G.ikon+' '+esc(G.namn)+'</div><div class="bv">'+sn2+' · '+dd.n+' st</div></div><div class="bar-track"><div class="bar-fill" style="width:'+sn2+'%"></div></div></div>';
   }
   h+='<div class="soft" style="margin-top:8px">Siffran är genomsnittligt allvar i området, antalet är hur många skulder som ligger där.</div></div>';
   h+='<div class="section-title">Allvar per skuldtyp</div><div class="card-panel">';
@@ -2358,7 +2487,7 @@ function renderAnalys(){
   var ks=Object.keys(by).sort(function(a,b){return (by[b].s/by[b].n)-(by[a].s/by[a].n);});
   for(var k=0;k<ks.length;k++){
     var sn=Math.round(by[ks[k]].s/by[ks[k]].n);
-    h+='<div class="bar-row"><div class="bl"><div class="bn">'+esc(TYPMAP[ks[k]].namn)+'</div><div class="bv">'+sn+' · '+by[ks[k]].n+' st</div></div><div class="bar-track"><div class="bar-fill" style="width:'+sn+'%;background:'+TYPMAP[ks[k]].farg+'"></div></div></div>';
+    h+='<div class="bar-row tap" onclick="filtTyp(\''+ks[k]+'\')"><div class="bl"><div class="bn">'+esc(TYPMAP[ks[k]].namn)+'</div><div class="bv">'+sn+' · '+by[ks[k]].n+' st</div></div><div class="bar-track"><div class="bar-fill" style="width:'+sn+'%;background:'+TYPMAP[ks[k]].farg+'"></div></div></div>';
   }
   h+='</div>';
   h+='<div class="section-title">System mot skuldtyp</div><div class="card-panel">'+heatmap(akt)+'</div>';
