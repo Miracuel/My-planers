@@ -326,6 +326,12 @@ h1.brand{display:none}
       <button id="import-btn">Importera</button>
       <input type="file" id="import-file" accept=".json" style="display:none">
     </div>
+    <div class="foot">
+      <button id="xls-template">⬇ Excel-mall</button>
+      <button id="xls-export">⬇ Exportera Excel</button>
+      <button id="xls-import">⬆ Importera Excel</button>
+      <input type="file" id="xls-file" accept=".xlsx,.xls" style="display:none">
+    </div>
     <div class="privacy">Allt sparas bara i din enhet. Säkerhetskopiera då och då — en ny telefon glömmer allt. 🗃</div>
   </div>
 
@@ -684,7 +690,7 @@ var KEY='samlingen_v1';
 
 // ── Appinfo + changelog (källa för Nyheter-vyn och sidofiler) ──
 var APPINFO={
-  version:'1.18.0',
+  version:'1.19.0',
   tagline:'Håll ordning på allt du samlar — böcker, brädspel, konstmaterial, smink, vad som helst.',
   audience:'För dig som vill ha en lätt, flexibel översikt över dina samlingar och din önskelista.',
   functions:[
@@ -701,9 +707,15 @@ var APPINFO={
     {area:'Inventering',items:['Inventeringsläge: bocka av saker som inventerade med dagens datum','Sätt plats / var den finns (med förslag på platser du använt)','Se hur många som är inventerade, filtrera på ej inventerade och nollställ en ny runda']},
     {area:'Palett',items:['Alla saker med färgplupp som rutor på en färgskala','Gruppera i färgfamiljer (röda, blåa, neutrala osv.)','Hitta snarlika / nästan identiska färger genom att jämföra hexkoder','Klicka eller hovra på en färg för att se vilken sak den tillhör']},
     {area:'Planera & önska',items:['Två flikar: Önskar och På väg / förbeställt','Lägg till önskan eller förbeställning direkt med samling och info','"✓ Köpt" respektive "✓ Klar" flyttar saken till Äger med dagens datum']},
-    {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']}
+    {area:'Synk & säkerhet',items:['Inbyggd GitHub-synk mellan telefon och dator (samlingen.json)','Fine-grained token sparas bara lokalt — aldrig i koden','Säkerhetskopiera och importera som JSON-fil']},
+    {area:'Excel',items:['Exportera hela samlingen till en Excel-fil','Ladda ner en tom Excel-mall med alla fält och exempelrader','Importera från Excel — okända samlingar skapas automatiskt','Färg anges som hexkod (t.ex. #A8794E) i kolumnen Hexfärg']}
   ],
   changelog:[
+    {v:'1.19.0',d:'2026-07-16',items:[
+      'Excel-import och -export: exportera hela samlingen till .xlsx och importera tillbaka.',
+      'Ladda ner en tom Excel-mall med alla fält (och exempelrader) att fylla i och importera.',
+      'Färg fylls i som hexkod i kolumnen Hexfärg. Samlingar som inte finns skapas automatiskt vid import.'
+    ]},
     {v:'1.18.0',d:'2026-07-16',items:[
       'Gåva-markering: flagga en sak som "Fick i present" och ange från vem. Visas på raden, går att söka på, filtrera fram och sätta på flera via Markera.'
     ]},
@@ -2088,6 +2100,152 @@ el('export-btn').onclick=function(){
   a.download='samlingen-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
 };
 el('import-btn').onclick=function(){el('import-file').click();};
+
+// ── Excel: kolumner, export, mall, import ──────────────
+var XLS_COLS=[
+  ['Samling','coll','coll'],
+  ['Namn','name','text'],
+  ['Status','status','status'],
+  ['Taggar (komma)','tags','tags'],
+  ['Märke','brand','text'],
+  ['Typ','type','text'],
+  ['Familj / serie','family','text'],
+  ['Hexfärg','hex','hex'],
+  ['Emoji','emoji','text'],
+  ['Antal','qty','num'],
+  ['Inköpspris','value','num'],
+  ['Försäljningspris','sell','num'],
+  ['Till salu (Ja/Nej)','forSale','bool'],
+  ['Inköpsdatum (ÅÅÅÅ-MM-DD)','bought','text'],
+  ['Butik','store','text'],
+  ['Ordernummer','order','text'],
+  ['Köplänk','link','text'],
+  ['Streckkod','barcode','text'],
+  ['Plats','location','text'],
+  ['Utgångsdatum (ÅÅÅÅ-MM-DD)','expiry','text'],
+  ['Användning','usage','usage'],
+  ['Använd först (Ja/Nej)','useFirst','bool'],
+  ['Projekt (Ja/Nej)','project','bool'],
+  ['Gåva (Ja/Nej)','gift','bool'],
+  ['Gåva från','giftFrom','text'],
+  ['Såld/given till','soldTo','text'],
+  ['Såld datum','soldDate','text'],
+  ['Inventerad (datum)','inventoried','text'],
+  ['Använd (datum)','usedOn','text'],
+  ['Decluttrad (datum)','declutteredOn','text'],
+  ['Betyg (0-5)','rating','num'],
+  ['Anteckning','note','text']
+];
+function statusLabelOf(code){for(var i=0;i<STATUS.length;i++){if(STATUS[i][0]===code)return STATUS[i][1];}return code||'';}
+function statusCodeFrom(v){v=(''+v).trim().toLowerCase();if(!v)return 'have';for(var i=0;i<STATUS.length;i++){if(STATUS[i][0].toLowerCase()===v||STATUS[i][1].toLowerCase()===v)return STATUS[i][0];}return 'have';}
+function usageCodeFrom(v){v=(''+v).trim().toLowerCase();if(!v)return '';for(var k in USAGE_LABELS){var o=USAGE_LABELS[k];for(var i=0;i<o.length;i++){if(o[i][0].toLowerCase()===v||o[i][1].toLowerCase()===v)return o[i][0];}}return '';}
+function normHex(v){v=(''+v).trim();if(!v)return '';if(v.charAt(0)!=='#')v='#'+v;return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)?v:'';}
+function boolStr(b){return b?'Ja':'';}
+function parseBool(v){return /^(ja|j|yes|y|x|1|true|sant)$/i.test((''+v).trim());}
+function parseNum(v){if(v===''||v==null)return '';var n=parseFloat((''+v).replace(',','.').replace(/\s/g,''));return isNaN(n)?'':n;}
+function cellForExport(it,field,type){
+  if(type==='coll'){var c=collById(it.coll);return c?c.name:'';}
+  if(type==='status')return statusLabelOf(it.status);
+  if(type==='tags')return (it.tags||[]).join(', ');
+  if(type==='bool')return boolStr(it[field]);
+  if(type==='usage')return usageLabel(it);
+  if(type==='num')return (it[field]===''||it[field]==null)?'':it[field];
+  return it[field]==null?'':it[field];
+}
+function xlsHeaders(){var h=[];for(var i=0;i<XLS_COLS.length;i++)h.push(XLS_COLS[i][0]);return h;}
+function xlsAoa(){
+  var rows=[xlsHeaders()];
+  for(var i=0;i<state.items.length;i++){
+    var it=state.items[i];if(it.parent)continue; // delar exporteras inte som egna rader
+    var r=[];for(var c=0;c<XLS_COLS.length;c++)r.push(cellForExport(it,XLS_COLS[c][1],XLS_COLS[c][2]));
+    rows.push(r);
+  }
+  return rows;
+}
+function xlsTemplateAoa(){
+  var rows=[xlsHeaders()];
+  var ex1=['Smink','Röd matt läppstift','Äger','favorit, matt','MittMärke','Läppstift','Varma röda','#B5304A','',1,149,'','Nej','2026-02-10','Kicks','','','','Låda 1','2027-05-01','Använd','Ja','','Ja','Mormor','','','2026-07-16','','',4,'Perfekt nyans'];
+  var ex2=['Böcker','Exempelbok','Önskar','','Förlaget','Pocket','','','📕','',129,'','Nej','','Adlibris','','https://...','','Bokhyllan','','Planerar läsa','','','','','','','','','',0,'Fyll i en rad per sak. Hexfärg t.ex. #A8794E'];
+  rows.push(ex1);rows.push(ex2);
+  return rows;
+}
+function xlsImport(aoa){
+  if(!aoa||aoa.length<2)return {added:0,newColls:0,err:'Tom fil eller saknar rader.'};
+  var head=aoa[0].map(function(x){return (''+x).trim().toLowerCase();});
+  function col(name){return head.indexOf(name.toLowerCase());}
+  // bygg fältindex
+  var idx={};for(var c=0;c<XLS_COLS.length;c++){var ci=col(XLS_COLS[c][0]);if(ci>=0)idx[XLS_COLS[c][1]]={i:ci,t:XLS_COLS[c][2]};}
+  if(idx.name==null)return {added:0,newColls:0,err:'Kolumnen "Namn" saknas.'};
+  var collByName={};for(var k=0;k<state.collections.length;k++)collByName[(state.collections[k].name||'').toLowerCase()]=state.collections[k];
+  var added=0,newColls=0;
+  for(var r=1;r<aoa.length;r++){
+    var row=aoa[r];if(!row)continue;
+    var name=(''+(row[idx.name.i]||'')).trim();if(!name)continue;
+    // samling
+    var collId;
+    if(idx.coll!=null){
+      var cn=(''+(row[idx.coll.i]||'')).trim();
+      if(cn){var found=collByName[cn.toLowerCase()];
+        if(!found){found={id:uid(),name:cn,icon:ICONS[0],color:COLORS[0],kind:'general'};state.collections.push(found);collByName[cn.toLowerCase()]=found;newColls++;}
+        collId=found.id;}
+    }
+    if(!collId)collId=currentColl||(state.collections[0]&&state.collections[0].id);
+    if(!collId){var dc={id:uid(),name:'Importerat',icon:ICONS[0],color:COLORS[0],kind:'general'};state.collections.push(dc);collByName['importerat']=dc;collId=dc.id;newColls++;}
+    var it={id:uid(),coll:collId,name:name,tags:[],brand:'',type:'',barcode:'',link:'',store:'',order:'',
+      location:'',inventoried:'',usedOn:'',declutteredOn:'',family:'',usage:'',expiry:'',useFirst:false,project:false,
+      gift:false,giftFrom:'',soldTo:'',soldDate:'',hex:'',emoji:'',parent:'',status:'have',qty:1,value:'',sell:'',
+      bought:'',forSale:false,rating:0,note:'',created:Date.now()+r};
+    for(var f in idx){
+      if(f==='name'||f==='coll')continue;
+      var meta=idx[f],raw=row[meta.i];if(raw==null)raw='';
+      if(meta.t==='tags')it.tags=(''+raw).split(/[,;]/).map(function(s){return s.trim();}).filter(function(s){return s;});
+      else if(meta.t==='bool')it[f]=parseBool(raw);
+      else if(meta.t==='num'){var n=parseNum(raw);it[f]=(f==='qty')?(n===''?1:n):n;}
+      else if(meta.t==='status')it.status=statusCodeFrom(raw);
+      else if(meta.t==='usage')it.usage=usageCodeFrom(raw);
+      else if(meta.t==='hex')it.hex=normHex(raw);
+      else it[f]=(''+raw).trim();
+    }
+    state.items.push(it);added++;
+  }
+  migrateItems();distributeAllSets();save();
+  return {added:added,newColls:newColls};
+}
+function loadXLSX(cb){
+  if(window.XLSX){cb();return;}
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=function(){cb();};
+  s.onerror=function(){alert('Kunde inte ladda Excel-stödet. Det kräver internet första gången du använder det.');};
+  document.head.appendChild(s);
+}
+function saveWorkbook(aoa,filename){
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Samlingen');
+  XLSX.writeFile(wb,filename);
+}
+el('xls-template').onclick=function(){loadXLSX(function(){saveWorkbook(xlsTemplateAoa(),'samlingen-mall.xlsx');});};
+el('xls-export').onclick=function(){loadXLSX(function(){saveWorkbook(xlsAoa(),'samlingen-'+todayKey()+'.xlsx');});};
+el('xls-import').onclick=function(){el('xls-file').click();};
+el('xls-file').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  loadXLSX(function(){
+    var rd=new FileReader();
+    rd.onload=function(ev){
+      try{
+        var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+        var res=xlsImport(aoa);
+        if(res.err){alert(res.err);return;}
+        backToHome();refreshAll();
+        alert('Importerade '+res.added+' saker'+(res.newColls?(' och skapade '+res.newColls+' ny(a) samling(ar)'):'')+'.');
+      }catch(err){alert('Kunde inte läsa Excel-filen.');}
+    };
+    rd.readAsArrayBuffer(f);
+  });
+  e.target.value='';
+};
 el('import-file').onchange=function(e){
   var f=e.target.files[0];if(!f)return;
   var r=new FileReader();
