@@ -60,6 +60,20 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .eval-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .eval-row span{font-size:14px;color:var(--ink);flex:1}
 .eval-row input{width:96px;text-align:center}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+.kpi-n{font-family:Georgia,serif;font-size:19px;color:var(--ink);line-height:1.1}
+.kpi-l{font-size:10px;color:var(--muted);margin-top:3px}
+.dash-sub{font-size:12px;color:var(--muted);margin:4px 0 6px}
+.dash-chart{display:flex;align-items:flex-end;gap:5px;height:92px}
+.dash-bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.dash-bar-fill{width:100%;background:var(--accent);border-radius:5px 5px 0 0;min-height:2px;transition:height .3s}
+.dash-bar span{font-size:9px;color:var(--muted);margin-top:4px}
+.spark{margin-top:5px;display:block}
+.cat-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.cat-row .meta{font-size:11px;color:var(--muted);margin-top:1px}
+.cat-add{flex:0 0 auto;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);border-radius:9px;padding:6px 10px;font-size:12px;cursor:pointer}
+.cat-add.added{background:none;border-color:var(--line);color:var(--muted)}
 .exrow .exr-del:active{background:var(--panel)}
 .sess-row .items{font-size:11px;color:var(--accent);margin-top:2px;line-height:1.5}
 .gt-head{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:8px}
@@ -72,6 +86,8 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .gt-cell.now{outline:2px solid var(--ink);outline-offset:1px}
 .gt-cell.closed{opacity:.4}
 .gt-now{font-size:12px;line-height:1.6}
+.pepp-head{font-family:Georgia,serif;font-size:15px;color:var(--ink);margin-bottom:6px}
+.pepp-item{font-size:13px;color:var(--ink);line-height:1.7}
 .fail-mini{display:flex;gap:6px;align-items:center}
 .fail-mini input{flex:1}
 .fail-mini .btn{flex:0 0 auto;padding:9px 12px}
@@ -295,8 +311,12 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <button class="btn fill" id="log-now" style="width:100%;margin-top:12px">Logga ett pass</button>
     <button class="btn" id="open-today" style="width:100%;margin-top:8px">✨ Förslag för idag</button>
     <button class="btn" id="open-coach" style="width:100%;margin-top:8px">🧑‍🏫 AI-coach</button>
+    <button class="btn" id="open-planner" style="width:100%;margin-top:8px">🎯 Planera pass &amp; mål</button>
     <div class="chips" id="quick-chips"></div>
   </div>
+
+  <div class="section-title">Pepp &amp; framsteg</div>
+  <div class="card-panel" id="pepp"></div>
 
   <div class="section-title">Planerat</div>
   <div class="card-panel" id="plan-today"></div>
@@ -342,10 +362,17 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <div class="soft" style="margin-bottom:8px">Spara maskiner och övningar med viktintervall och vad du tycker. Planera failure-set med förslag på uppvärmning och vikter.</div>
     <div class="btn-row">
       <button class="btn" id="add-ex">+ Lägg till övning</button>
+      <button class="btn" id="open-catalog">+ Från bibliotek</button>
       <button class="btn" id="open-fail">⚡ Failure-plan</button>
     </div>
     <div class="soft" style="margin-top:8px">Vill du fylla i ett pass i efterhand? Öppna en dag i kalendern under <b>Översikt</b> och tryck "Logga pass den här dagen".</div>
     <div id="ex-list" style="margin-top:10px"></div>
+  </div>
+
+  <div class="section-title">Importera</div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Loggar du i Strength Log? Importera dina pass hit — med övningar, vikter och reps.</div>
+    <button class="btn" id="open-import" style="width:100%">⬇︎ Importera från Strength Log</button>
   </div>
 
   <div class="section-title">Senaste passen</div>
@@ -388,6 +415,9 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     </div>
   </div>
 
+  <div class="section-title">Dashboard</div>
+  <div class="card-panel" id="dash"></div>
+
   <div class="section-title">Kalender</div>
   <div class="card-panel">
     <div class="cal-nav">
@@ -404,6 +434,18 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
 
   <div class="section-title">Statistik per övning</div>
   <div class="card-panel" id="ex-stats"></div>
+
+  <div class="section-title">Styrkeuträknare <span class="soft">(Brzycki)</span></div>
+  <div class="card-panel">
+    <div class="soft" style="margin-bottom:8px">Uppskattar ditt 1RM och hur mycket du bör klara vid olika reps. Välj en övning så fylls din bästa loggade set i, eller skriv egna siffror.</div>
+    <label>Övning</label>
+    <select id="calc-ex"></select>
+    <div class="row2">
+      <div><label>Vikt (kg)</label><input type="number" id="calc-w" step="2.5" placeholder="80"></div>
+      <div><label>Reps</label><input type="number" id="calc-r" placeholder="8"></div>
+    </div>
+    <div id="calc-out" style="margin-top:8px"></div>
+  </div>
 
   <div class="section-title">Mer statistik</div>
   <div class="card-panel" id="more-stats"></div>
@@ -620,6 +662,21 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <button class="sheet-close" id="day-done" style="display:none"></button>
 </div>
 
+<div class="sheet" id="import-sheet">
+  <h3>Importera från Strength Log</h3>
+  <div class="soft">Klistra in texten du delar från Strength Log, så läses passen in med övningar, vikter och reps.</div>
+  <textarea id="imp-text" rows="7" placeholder="Klistra in Strength Log-texten här…"></textarea>
+  <button class="btn fill" id="imp-run" style="width:100%;margin-top:8px">Importera texten</button>
+  <div class="section-sub">…eller från en delad länk</div>
+  <div class="fail-mini">
+    <input type="text" id="imp-url" placeholder="https://app.strengthlog.com/share?id=…">
+    <button type="button" class="btn" id="imp-fetch">Hämta</button>
+  </div>
+  <div class="soft" style="margin-top:4px">Delade länkar kan blockeras av webbläsaren. Funkar det inte — öppna länken, kopiera texten och klistra in ovan.</div>
+  <div id="imp-out" class="ai-out" style="display:none"></div>
+  <button class="sheet-close" id="imp-done">Stäng</button>
+</div>
+
 <div class="sheet" id="eval-sheet">
   <h3 id="eval-title">Utvärdering</h3>
   <div class="soft">En snabb koll så statistiken blir rätt. Allt är frivilligt.</div>
@@ -631,6 +688,35 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   </div>
   <div id="eval-ex"></div>
   <button class="sheet-close" id="eval-save">Spara passet</button>
+</div>
+
+<div class="sheet" id="planner-sheet">
+  <h3>🎯 Planera pass &amp; mål</h3>
+  <div class="soft">Välj din målbild så föreslår appen ett pass. Vikter räknas ut från dina tidigare pass (Brzycki), med förslag för nästa gång.</div>
+  <label>Din målbild (en eller flera)</label>
+  <div class="chips" id="goal-chips"></div>
+  <label>Något att ta hänsyn till? (frivilligt)</label>
+  <input type="text" id="goal-note" placeholder="t.ex. ont i axeln, undvik hopp">
+  <label>Hur mycket tid?</label>
+  <div class="seg" id="pl-ai-time">
+    <button type="button" data-v="20">20 min</button>
+    <button type="button" data-v="30">30</button>
+    <button type="button" data-v="45">45</button>
+    <button type="button" data-v="60">60+</button>
+  </div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn fill" id="planner-ai">Planera med AI</button>
+    <button class="btn" id="planner-local">Enkelt förslag</button>
+  </div>
+  <div id="planner-out" class="ai-out" style="display:none"></div>
+  <button class="sheet-close" id="planner-done">Stäng</button>
+</div>
+
+<div class="sheet" id="catalog-sheet">
+  <h3>Övningsbibliotek</h3>
+  <div class="soft">Lägg till färdiga övningar till ditt eget bibliotek — styrka, kondition, Pilates och rörlighet.</div>
+  <div id="catalog-list"></div>
+  <button class="sheet-close" id="catalog-done">Klar</button>
 </div>
 
 <div class="sheet" id="coach-sheet">
@@ -747,6 +833,8 @@ var state={
   recurDone:null,
   templates:null,
   someday:null,
+  goals:null,
+  goalNote:null,
   gyms:null,
   activeGym:'',
   activeZone:'allmant',
@@ -795,6 +883,8 @@ function ensureGym(){
   if(!Array.isArray(state.recurring))state.recurring=[];
   if(!Array.isArray(state.templates))state.templates=[];
   if(!Array.isArray(state.someday))state.someday=[];
+  if(!Array.isArray(state.goals))state.goals=[];
+  if(typeof state.goalNote!=='string')state.goalNote='';
   if(!state.recurDone||typeof state.recurDone!=='object')state.recurDone={};
   if(!Array.isArray(state.gyms)){
     var old=state.gym||{};
@@ -887,6 +977,58 @@ function renderLast(){
 }
 
 // ── Quick chips ───────────────────────────────────────
+function weekStart(d){var x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-wd(x));return x;}
+function passInRange(a,b){var n=0;state.sessions.forEach(function(s){var p=s.date.split('-');var dt=new Date(+p[0],+p[1]-1,+p[2]);if(dt>=a&&dt<b)n++;});return n;}
+function exSeries(){
+  var map={};
+  state.sessions.forEach(function(s){(s.items||[]).forEach(function(it){
+    if(it.weight==null)return;var k=(it.name||'').toLowerCase();if(!k)return;
+    (map[k]=map[k]||{name:it.name,pts:[]}).pts.push({d:s.date,w:it.weight});
+  });});
+  return map;
+}
+function renderPepp(){
+  var el=document.getElementById('pepp');if(!el)return;
+  var now=new Date();var ws=weekStart(now);var wsPrev=new Date(ws);wsPrev.setDate(ws.getDate()-7);var wsNext=new Date(ws);wsNext.setDate(ws.getDate()+7);
+  var thisWk=passInRange(ws,wsNext),lastWk=passInRange(wsPrev,ws),total=state.sessions.length;
+  if(!total){
+    el.innerHTML='<div class="pepp-head">Här växer din pepp fram 🌱</div><div class="soft">Logga eller importera ett pass, så börjar dina framsteg synas här — helt i din takt.</div>';
+    return;
+  }
+  var bWeek=null,bGain=null,bGoal=null,bStreak=null,bEnergy=null;
+  if(thisWk>0){
+    var cmp=lastWk?(thisWk>lastWk?' — ett mer än förra veckan':thisWk===lastWk?' — lika stadigt som förra veckan':''):'';
+    bWeek=thisWk+' pass den här veckan'+cmp+'.';
+  }
+  var counts=[];for(var i=7;i>=0;i--){var a=new Date(ws);a.setDate(ws.getDate()-i*7);var b=new Date(a);b.setDate(a.getDate()+7);counts.push(passInRange(a,b));}
+  var j=counts.length-1;if(counts[j]===0)j--;var streak=0;while(j>=0&&counts[j]>0){streak++;j--;}
+  if(streak>=2)bStreak=streak+' veckor i rad med rörelse — fin kontinuitet.';
+  var map=exSeries();var gain=null;
+  Object.keys(map).forEach(function(k){
+    var pts=map[k].pts.slice().sort(function(a,b){return a.d<b.d?-1:1;});
+    if(pts.length<2)return;var last=pts[pts.length-1],prev=pts[pts.length-2];
+    if(last.w>prev.w){var g={name:map[k].name,prev:prev.w,last:last.w,date:last.d};if(!gain||g.date>gain.date||(g.date===gain.date&&(g.last-g.prev)>(gain.last-gain.prev)))gain=g;}
+  });
+  if(gain)bGain='Du ökade på '+esc(gain.name)+': '+gain.prev+' → '+gain.last+' kg.';
+  var c30=new Date();c30.setDate(c30.getDate()-30);c30.setHours(0,0,0,0);
+  var diffs=[];state.sessions.forEach(function(s){var p=s.date.split('-');var dt=new Date(+p[0],+p[1]-1,+p[2]);if(dt>=c30&&s.before&&s.after)diffs.push(s.after-s.before);});
+  if(diffs.length>=3){var avg=diffs.reduce(function(a,b){return a+b;},0)/diffs.length;if(avg>=0.3)bEnergy='Du mår oftast bättre efteråt (+'+(Math.round(avg*10)/10).toString().replace('.',',')+' i snitt på energin).';}
+  if((state.goals||[]).length){
+    var tm=targetMuscles();var hit=false;
+    state.sessions.forEach(function(s){var p=s.date.split('-');var dt=new Date(+p[0],+p[1]-1,+p[2]);if(dt<ws)return;
+      var nm=(s.name||'').toLowerCase();
+      state.exercises.forEach(function(e){if(e.name&&nm.indexOf(e.name.toLowerCase())>=0&&(e.muskler||[]).some(function(m){return tm.indexOf(m)>=0;}))hit=true;});
+      (s.items||[]).forEach(function(it){var ex=it.exId?exById(it.exId):exByName(it.name);if(ex&&(ex.muskler||[]).some(function(m){return tm.indexOf(m)>=0;}))hit=true;});
+    });
+    if(hit){var g0=goalById(state.goals[0]);if(g0)bGoal='Du har rört dig mot din målbild ('+esc(g0.label.toLowerCase())+') den här veckan.';}
+  }
+  var bullets=[bWeek,bGain,bGoal,bStreak,bEnergy].filter(Boolean);
+  var head=thisWk>0?'Snyggt jobbat den här veckan':(total?'Rörelsen finns här när du är redo':'');
+  var sub=thisWk>0?'':'Vilodagar räknas också — ingen press.';
+  var body=bullets.slice(0,4).map(function(b){return '<div class="pepp-item">• '+b+'</div>';}).join('');
+  if(!body)body='<div class="soft">Fortsätt i din takt — varje rörelse räknas.</div>';
+  el.innerHTML='<div class="pepp-head">'+head+'</div>'+(sub?'<div class="soft" style="margin-bottom:6px">'+sub+'</div>':'')+body;
+}
 function renderQuickChips(){
   var el=document.getElementById('quick-chips');
   var picks=state.passTypes.slice(0,4);
@@ -1630,8 +1772,10 @@ function renderStats(){
   renderCal();
   renderEnergy(diffs);
   renderTypeStats(c30);
+  renderDashboard();
   renderExerciseStats();
   renderMoreStats();
+  renderCalcEx();
 }
 var MONTHS=['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
 var calY=null,calM=null;
@@ -1715,6 +1859,44 @@ function renderEnergy(diffs){
   else txt='Just nu syns ingen tydlig energiskillnad i din logg. Det är också viktig info — kanske handlar det mer om vila just nu än om att göra mer.';
   el.innerHTML='<div class="soft" style="font-size:13px;line-height:1.7">'+txt+'<br><span style="opacity:.8">'+up+' av '+diffs.length+' pass gav mer energi efteråt.</span></div>';
 }
+function fmtNum(n){return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+function sessionVolume(s){if(typeof s.vol==='number'&&s.vol>0)return s.vol;var v=0;(s.items||[]).forEach(function(it){if(it.weight!=null&&it.reps)v+=it.weight*it.reps*(it.sets||1);});return v;}
+function sparkline(vals,w,ht){
+  if(!vals||vals.length<2)return '';
+  var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);var rng=(mx-mn)||1;
+  var step=w/(vals.length-1);
+  var pts=vals.map(function(v,i){var x=(i*step).toFixed(1);var y=(ht-((v-mn)/rng)*(ht-4)-2).toFixed(1);return x+','+y;});
+  return '<svg class="spark" width="'+w+'" height="'+ht+'" viewBox="0 0 '+w+' '+ht+'"><polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="'+pts.join(' ')+'"/></svg>';
+}
+function renderDashboard(){
+  var el=document.getElementById('dash');if(!el)return;
+  var totalPass=state.sessions.length;var totalVol=0,totalMin=0;
+  state.sessions.forEach(function(s){totalVol+=sessionVolume(s);totalMin+=(s.min||0);});
+  var base=new Date();base.setHours(0,0,0,0);base.setDate(base.getDate()-wd(base));
+  var weeks=[];for(var i=7;i>=0;i--){var ws=new Date(base);ws.setDate(base.getDate()-i*7);var we=new Date(ws);we.setDate(ws.getDate()+7);weeks.push({start:ws,end:we,vol:0,label:(ws.getDate())+'/'+(ws.getMonth()+1)});}
+  state.sessions.forEach(function(s){var p=s.date.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);weeks.forEach(function(w){if(d>=w.start&&d<w.end)w.vol+=sessionVolume(s);});});
+  var maxVol=Math.max.apply(null,weeks.map(function(w){return w.vol;}).concat([1]));
+  var bars=weeks.map(function(w){var hp=w.vol>0?Math.max(Math.round(w.vol/maxVol*100),3):0;return '<div class="dash-bar" title="'+fmtNum(w.vol)+' kg"><div class="dash-bar-fill" style="height:'+hp+'%"></div><span>'+w.label+'</span></div>';}).join('');
+  var kpi='<div class="kpi-row">'+
+    '<div class="kpi"><div class="kpi-n">'+totalPass+'</div><div class="kpi-l">pass totalt</div></div>'+
+    '<div class="kpi"><div class="kpi-n">'+fmtNum(totalVol)+'</div><div class="kpi-l">kg volym</div></div>'+
+    '<div class="kpi"><div class="kpi-n">'+fmtNum(totalMin)+'</div><div class="kpi-l">minuter</div></div>'+
+    '</div>';
+  el.innerHTML=kpi+(totalVol>0?'<div class="dash-sub">Volym per vecka (senaste 8)</div><div class="dash-chart">'+bars+'</div>':'<div class="soft">Logga eller importera pass med vikt och reps, så byggs volym och kurvor upp här.</div>');
+}
+function brzycki1RM(w,r){if(!w||!r||r<1||r>=37)return null;return w*36/(37-r);}
+function weightForReps(orm,r){if(!orm||r<1||r>=37)return null;return orm*(37-r)/36;}
+function bestSet(name,exId){
+  var best=null;
+  state.sessions.forEach(function(s){(s.items||[]).forEach(function(it){
+    var match=exId?(it.exId===exId):((it.name||'').toLowerCase()===(name||'').toLowerCase());
+    if(!match)return;
+    if(it.weight==null||!it.reps)return;
+    var e=brzycki1RM(it.weight,it.reps);
+    if(e&&(!best||e>best.e1rm))best={weight:it.weight,reps:it.reps,e1rm:e,date:s.date};
+  });});
+  return best;
+}
 function renderExerciseStats(){
   var el=document.getElementById('ex-stats');if(!el)return;
   var map={};
@@ -1722,12 +1904,14 @@ function renderExerciseStats(){
     (s.items||[]).forEach(function(it){
       var key=(it.name||'').trim();if(!key)return;
       var k=key.toLowerCase();
-      if(!map[k])map[k]={name:key,pass:0,set:0,maxW:null,maxAt:'',lastW:null,lastDate:''};
+      if(!map[k])map[k]={name:key,pass:0,set:0,maxW:null,maxAt:'',lastW:null,lastDate:'',e1rm:null,series:[]};
       var o=map[k];o.pass++;
       if(it.sets)o.set+=it.sets;
       if(it.weight!=null){
         if(o.maxW===null||it.weight>o.maxW){o.maxW=it.weight;o.maxAt=s.date;}
         if(!o.lastDate||s.date>=o.lastDate){o.lastDate=s.date;o.lastW=it.weight;}
+        if(it.reps){var e=brzycki1RM(it.weight,it.reps);if(e&&(o.e1rm==null||e>o.e1rm))o.e1rm=e;}
+        o.series.push({d:s.date,w:it.weight});
       }
     });
   });
@@ -1739,8 +1923,30 @@ function renderExerciseStats(){
     if(o.set)bits.push(o.set+' set');
     if(o.maxW!=null)bits.push('tyngst '+o.maxW+' kg');
     if(o.lastW!=null)bits.push('senast '+o.lastW+' kg');
-    return '<div class="sess-row"><div class="ic">🏋️</div><div class="body"><b>'+esc(o.name)+'</b><div class="meta">'+bits.join(' · ')+'</div></div></div>';
+    if(o.e1rm!=null)bits.push('ca 1RM '+round25(o.e1rm)+' kg');
+    var ser=o.series.slice().sort(function(a,b){return a.d<b.d?-1:1;}).map(function(x){return x.w;});
+    var sp=sparkline(ser,120,26);
+    return '<div class="sess-row"><div class="ic">🏋️</div><div class="body"><b>'+esc(o.name)+'</b><div class="meta">'+bits.join(' · ')+'</div>'+sp+'</div></div>';
   }).join('');
+}
+function renderCalcEx(){
+  var sel=document.getElementById('calc-ex');if(!sel)return;
+  var withData={};
+  state.sessions.forEach(function(s){(s.items||[]).forEach(function(it){if(it.weight!=null&&it.reps)withData[(it.name||'').toLowerCase()]=(it.name||'');});});
+  var names=Object.keys(withData).map(function(k){return withData[k];});
+  state.exercises.forEach(function(e){if(names.map(function(n){return n.toLowerCase();}).indexOf(e.name.toLowerCase())<0)names.push(e.name);});
+  sel.innerHTML='<option value="">— Egen inmatning —</option>'+names.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join('');
+}
+function renderCalc(){
+  var out=document.getElementById('calc-out');if(!out)return;
+  var w=parseFloat(document.getElementById('calc-w').value);
+  var r=parseInt(document.getElementById('calc-r').value,10);
+  var orm=brzycki1RM(w,r);
+  if(!orm){out.innerHTML='<div class="empty-msg">Fyll i vikt och reps (1–12 reps ger bäst uppskattning).</div>';return;}
+  var reps=[1,2,3,5,8,10,12];
+  var rows=reps.map(function(rp){var wt=round25(weightForReps(orm,rp));return '<div class="avg-row"><span>'+rp+' reps</span><b>'+wt+' kg</b></div>';}).join('');
+  out.innerHTML='<div class="avg-row"><span><b>Beräknat 1RM</b></span><b>'+round25(orm)+' kg</b></div>'+rows+
+    '<div class="soft" style="margin-top:8px">Uppskattning enligt Brzycki utifrån '+w+' kg × '+r+' reps. Det är en riktlinje — teknik och dagsform går före siffran, och öka försiktigt.</div>';
 }
 function renderMoreStats(){
   var el=document.getElementById('more-stats');if(!el)return;
@@ -1821,7 +2027,7 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setSyncBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.dataset.s=stt;b.textContent=msg;}
 function refreshSyncBadge(){if(syncOn())setSyncBadge('ok','Synkad');else setSyncBadge('off','Lokal');}
-function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,templates:state.templates,someday:state.someday,gyms:state.gyms,updated:new Date().toISOString()};}
+function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,templates:state.templates,someday:state.someday,goals:state.goals,goalNote:state.goalNote,gyms:state.gyms,updated:new Date().toISOString()};}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergeByName(local,remote){var m={};(local||[]).forEach(function(x){m[x.name]=x;});(remote||[]).forEach(function(x){if(!m[x.name])m[x.name]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergePlanned(local,remote){var out=Object.assign({},local);Object.keys(remote||{}).forEach(function(k){var seen={};var arr=[];(out[k]||[]).concat(remote[k]||[]).forEach(function(p){var key=(p.name||'')+'|'+(p.time||'');if(!seen[key]){seen[key]=1;arr.push(p);}});out[k]=arr;});return out;}
@@ -1846,6 +2052,8 @@ function applyData(d){
   if(Array.isArray(d.recurring))state.recurring=mergeById(state.recurring,d.recurring);
   if(Array.isArray(d.templates))state.templates=mergeById(state.templates,d.templates);
   if(Array.isArray(d.someday))state.someday=mergeById(state.someday,d.someday);
+  if(Array.isArray(d.goals))state.goals=d.goals;
+  if(typeof d.goalNote==='string')state.goalNote=d.goalNote;
   if(d.planned&&typeof d.planned==='object')state.planned=mergePlanned(state.planned,d.planned);
   if(Array.isArray(d.gyms))state.gyms=mergeGyms(state.gyms,d.gyms);
   else if(d.gym&&typeof d.gym==='object'&&Array.isArray(state.gyms)&&state.gyms.length){
@@ -1984,6 +2192,7 @@ function aiContext(){
   ss.forEach(function(x){var p=x.date.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);if(d>=ws)wk++;if(d>=c30)mo++;});
   lines.push('Pass denna vecka: '+wk+'. Senaste 30 dagarna: '+mo+'.');
   var rec=ss.slice(0,5).map(function(x){return x.name+(x.min?' '+x.min+'min':'')+(x.before&&x.after?' (energi '+x.before+'\u2192'+x.after+')':'');});
+  if(goalsText())lines.push('Målbild: '+goalsText()+'.');
   if(rec.length)lines.push('Senaste pass: '+rec.join('; ')+'.');
   var mk=recentMuscles(14);
   if(mk.length)lines.push('Muskelgrupper tränade senaste 14 dagarna: '+mk.join(', ')+'.');
@@ -2050,6 +2259,54 @@ document.getElementById('ai-done').onclick=closeSheets;
 
 // ── Övningar / maskiner + failure-planerare ───────────
 var MUSKLER=['Ben','Rumpa','Rygg','Bröst','Axlar','Biceps','Triceps','Mage/Core','Vader','Helkropp','Kondition'];
+var GOALS=[
+  {id:'rumpa',label:'Bygga rumpa',musk:['Rumpa','Ben'],scheme:'hyper'},
+  {id:'brost',label:'Bygga bröst',musk:['Bröst','Triceps'],scheme:'hyper'},
+  {id:'rygg',label:'Bygga rygg',musk:['Rygg','Biceps'],scheme:'hyper'},
+  {id:'ben',label:'Bygga ben',musk:['Ben','Rumpa','Vader'],scheme:'hyper'},
+  {id:'axlararmar',label:'Axlar & armar',musk:['Axlar','Biceps','Triceps'],scheme:'hyper'},
+  {id:'stark',label:'Bli starkare',musk:['Helkropp','Ben','Rygg','Bröst'],scheme:'strength'},
+  {id:'viktner',label:'Gå ner i vikt',musk:['Kondition','Helkropp'],scheme:'endur'},
+  {id:'kondition',label:'Kondition',musk:['Kondition'],scheme:'cardio'},
+  {id:'rorlighet',label:'Rörlighet & hållning',musk:['Mage/Core','Rygg'],scheme:'mobility'},
+  {id:'mabra',label:'Må bra / mindre stress',musk:['Kondition','Mage/Core'],scheme:'gentle'}
+];
+function goalById(id){for(var i=0;i<GOALS.length;i++){if(GOALS[i].id===id)return GOALS[i];}return null;}
+function goalsText(){
+  var labels=(state.goals||[]).map(function(id){var g=goalById(id);return g?g.label:null;}).filter(Boolean);
+  var t=labels.join(', ');
+  if(state.goalNote)t+=(t?'. ':'')+state.goalNote;
+  return t;
+}
+function targetMuscles(){
+  var set={};(state.goals||[]).forEach(function(id){var g=goalById(id);if(g)g.musk.forEach(function(m){set[m]=1;});});
+  return Object.keys(set);
+}
+var CATALOG=[
+  {c:'Rumpa & ben',n:'Knäböj',m:['Ben','Rumpa']},{c:'Rumpa & ben',n:'Benpress',m:['Ben','Rumpa']},
+  {c:'Rumpa & ben',n:'Marklyft',m:['Rygg','Rumpa','Ben']},{c:'Rumpa & ben',n:'Hip thrust',m:['Rumpa']},
+  {c:'Rumpa & ben',n:'Utfall',m:['Ben','Rumpa']},{c:'Rumpa & ben',n:'Rumänsk marklyft',m:['Rumpa','Ben']},
+  {c:'Rumpa & ben',n:'Höftabduktion',m:['Rumpa']},{c:'Rumpa & ben',n:'Lårcurl',m:['Ben']},
+  {c:'Rumpa & ben',n:'Benspark (leg extension)',m:['Ben']},{c:'Rumpa & ben',n:'Vadpress',m:['Vader']},
+  {c:'Bröst',n:'Bänkpress',m:['Bröst','Triceps']},{c:'Bröst',n:'Bröstpress i maskin',m:['Bröst']},
+  {c:'Bröst',n:'Hantelpress',m:['Bröst']},{c:'Bröst',n:'Flyes',m:['Bröst']},{c:'Bröst',n:'Armhävningar',m:['Bröst','Triceps']},
+  {c:'Rygg',n:'Latsdrag',m:['Rygg','Biceps']},{c:'Rygg',n:'Maskinrodd',m:['Rygg','Biceps']},
+  {c:'Rygg',n:'Skivstångsrodd',m:['Rygg']},{c:'Rygg',n:'Pullups',m:['Rygg','Biceps']},{c:'Rygg',n:'Ryggresning',m:['Rygg']},
+  {c:'Axlar & armar',n:'Axelpress',m:['Axlar']},{c:'Axlar & armar',n:'Sidolyft',m:['Axlar']},
+  {c:'Axlar & armar',n:'Bicepscurl',m:['Biceps']},{c:'Axlar & armar',n:'Tricepspress',m:['Triceps']},
+  {c:'Axlar & armar',n:'Face pull',m:['Axlar','Rygg']},
+  {c:'Core',n:'Crunch',m:['Mage/Core']},{c:'Core',n:'Plankan',m:['Mage/Core']},
+  {c:'Core',n:'Russian twist',m:['Mage/Core']},{c:'Core',n:'Hängande benlyft',m:['Mage/Core']},{c:'Core',n:'Sidoplanka',m:['Mage/Core']},
+  {c:'Kondition',n:'Promenad',m:['Kondition']},{c:'Kondition',n:'Löpband',m:['Kondition']},
+  {c:'Kondition',n:'Cykel',m:['Kondition']},{c:'Kondition',n:'Crosstrainer',m:['Kondition']},
+  {c:'Kondition',n:'Rodd (erg)',m:['Kondition','Rygg']},{c:'Kondition',n:'Hopprep',m:['Kondition']},
+  {c:'Pilates',n:'The Hundred',m:['Mage/Core']},{c:'Pilates',n:'Roll-up',m:['Mage/Core']},
+  {c:'Pilates',n:'Bäckenlyft (bro)',m:['Rumpa','Mage/Core']},{c:'Pilates',n:'Bird-dog',m:['Rygg','Mage/Core']},
+  {c:'Pilates',n:'Sidoliggande benlyft',m:['Rumpa']},{c:'Pilates',n:'Leg circles',m:['Mage/Core','Ben']},
+  {c:'Pilates',n:'Swan',m:['Rygg']},{c:'Pilates',n:'Cat-cow',m:['Rygg']},{c:'Pilates',n:'Single-leg stretch',m:['Mage/Core']},
+  {c:'Rörlighet',n:'Höftöppnare',m:['Ben','Rumpa']},{c:'Rörlighet',n:'Bröstöppning',m:['Bröst','Axlar']},
+  {c:'Rörlighet',n:'Framåtfällning',m:['Rygg']},{c:'Rörlighet',n:'Ankelcirklar',m:['Vader']},{c:'Rörlighet',n:'Thoracic rotation',m:['Rygg']}
+];
 function round25(x){return Math.round(x/2.5)*2.5;}
 function fmtKg(x){return (Math.round(x)===x?String(x):x.toFixed(1))+' kg';}
 function ratingStars(r){var s='';for(var i=1;i<=5;i++){s+=i<=(r||0)?'★':'☆';}return s;}
@@ -2280,6 +2537,7 @@ var COACH_CATS=[
   {id:'rorlighet',label:'Rörlighet / stretch',local:['Höftöppnare: djup utfallssteg med lätt vridning','Bröstöppning i dörrkarm, 30 sek','Sittande framåtfällning, andas ut i rörelsen','Ankelcirklar, 10 åt varje håll','Ryggradsvridning sittande, båda hållen']},
   {id:'balans',label:'Balans',local:['Stå på ett ben 30 sek per sida (håll i något vid behov)','Häl–tå-gång, 10 steg fram','Tåhävningar med stöd av vägg','Lätt enbensböj, 5 per ben']},
   {id:'promenad',label:'Promenad',local:['10 min runt kvarteret i lugnt tempo','Promenad med en podd eller musik du gillar','Gå till en plats du tycker om — och tillbaka','Sätt ett litet mål, t.ex. en bänk, och vänd där']},
+  {id:'pilates',label:'Pilates',local:['The Hundred – pumpa armarna och andas i takt, 10 andetag','Roll-up – rulla upp och ner kota för kota, 6–8 ggr','Bäckenlyft/bro – lyft höften, håll 3 sek, 10 ggr','Bird-dog – motsatt arm och ben, 8 per sida','Sidoliggande benlyft – 12 per sida','Plankan – 20–40 sek, mjukt och stabilt']},
   {id:'annat',label:'Annat',local:['Välj en rörelse som känns bra just idag','Något kort och tydligt räcker gott','Skriv i rutan vad du är sugen på så anpassas förslaget']}
 ];
 function coachCatById(id){for(var i=0;i<COACH_CATS.length;i++){if(COACH_CATS[i].id===id)return COACH_CATS[i];}return COACH_CATS[0];}
@@ -2364,9 +2622,240 @@ document.getElementById('td-ai').onclick=function(){
 };
 document.getElementById('td-done').onclick=closeSheets;
 
+// ── Import från Strength Log ──────────────────────────
+function parseAmPm(s){
+  var m=s.match(/(\d{1,2}):(\d{2})\s*([ap])\.?\s*m/i);
+  if(!m)return '';
+  var hh=+m[1],mm=m[2],ap=m[3].toLowerCase();
+  if(ap==='p'&&hh<12)hh+=12;if(ap==='a'&&hh===12)hh=0;
+  return (hh<10?'0'+hh:hh)+':'+mm;
+}
+function parseWeightNum(s){return parseFloat(String(s).replace(/\s/g,'').replace(',','.'));}
+function parseStrengthLog(text){
+  var lines=(text||'').split(/\r?\n/);
+  var out=[];var cur=null;
+  var skip=/^(Set|Reps|Medelvikt|Volym|Träningstid)\s*:/i;
+  var dateRe=/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2}\s*[ap]\.?\s*m)/i;
+  lines.forEach(function(raw){
+    var line=raw.trim();if(!line)return;
+    var dm=line.match(dateRe);
+    if(dm){if(cur)out.push(cur);cur={date:dm[1],time:parseAmPm(dm[2]),min:null,items:[]};return;}
+    var tm=line.match(/^Träningstid:\s*(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?/i);
+    if(tm&&cur){var hh=+(tm[1]||0),mn=+(tm[2]||0);cur.min=(hh*60+mn)||null;return;}
+    if(skip.test(line))return;
+    if(line.charAt(0)==='#')return;
+    var ci=line.indexOf(':');
+    if(ci>0&&cur){
+      var name=line.slice(0,ci).trim();var rest=line.slice(ci+1);
+      var sets=[];
+      rest.split(',').forEach(function(sp){
+        var m2=sp.match(/(\d+)\s*[x\u00d7]\s*([\d.,\s]+?)(?:\s*\(PB!?\))?\s*$/i);
+        if(m2){var reps=+m2[1];var wt=parseWeightNum(m2[2]);if(!isNaN(wt))sets.push({reps:reps,weight:wt});}
+      });
+      if(sets.length){
+        var top=sets[0];
+        sets.forEach(function(s){if(s.weight>top.weight||(s.weight===top.weight&&s.reps>top.reps))top=s;});
+        var v=0;sets.forEach(function(s){v+=(s.reps||0)*(s.weight||0);});
+        cur.vol=(cur.vol||0)+v;
+        cur.items.push({name:name,weight:top.weight,reps:top.reps||null,sets:sets.length});
+      }
+    }
+  });
+  if(cur)out.push(cur);
+  return out.filter(function(s){return s.items.length||s.min;});
+}
+function uidNum(){return Date.now()+Math.floor(Math.random()*100000);}
+function importStrengthLog(text){
+  var parsed=parseStrengthLog(text);var added=0;
+  parsed.forEach(function(p){
+    var dup=state.sessions.some(function(s){return s.date===p.date&&(s.time||'')===(p.time||'')&&s.name==='Styrkepass';});
+    if(dup)return;
+    p.items.forEach(function(it){
+      var ex=exByName(it.name);
+      if(!ex){ex={id:uidNum(),name:it.name,minW:null,maxW:null,rating:null,note:'',gymId:state.activeGym||'',muskler:[],lastW:null};state.exercises.push(ex);}
+      it.exId=ex.id;
+    });
+    applyLastW(p.items);
+    state.sessions.push({id:uidNum(),icon:'🏋️',name:'Styrkepass',min:p.min||null,date:p.date,time:p.time||'',
+      before:null,after:null,note:'Importerad från Strength Log',gymId:state.activeGym||'',zone:'allmant',full:null,
+      items:p.items.length?p.items:null,failPlan:null,vol:(p.vol||null)});
+    added++;
+  });
+  if(added){save();renderToday();renderPass();renderStats();}
+  return {added:added,found:parsed.length};
+}
+function setImpOut(txt){var el=document.getElementById('imp-out');el.style.display='block';el.className='ai-out';el.textContent=txt;}
+document.getElementById('open-import').onclick=function(){
+  document.getElementById('imp-text').value='';document.getElementById('imp-url').value='';
+  document.getElementById('imp-out').style.display='none';openSheet('import-sheet');
+};
+document.getElementById('imp-run').onclick=function(){
+  var t=document.getElementById('imp-text').value;
+  if(!t.trim()){document.getElementById('imp-text').focus();return;}
+  var r=importStrengthLog(t);
+  setImpOut(r.found?('Importerade '+r.added+' pass'+(r.found>r.added?' ('+(r.found-r.added)+' fanns redan)':'')+'.'):'Hittade inga pass i texten. Kontrollera att du kopierat hela delningen.');
+};
+document.getElementById('imp-fetch').onclick=function(){
+  var url=document.getElementById('imp-url').value.trim();if(!url){document.getElementById('imp-url').focus();return;}
+  setImpOut('Hämtar…');
+  fetch(url).then(function(r){return r.text();}).then(function(t){
+    var r=importStrengthLog(t);
+    if(!r.found)setImpOut('Kunde inte läsa passdata från länken (Strength Log-sidan laddas dynamiskt). Öppna länken, kopiera texten och klistra in ovan.');
+    else setImpOut('Importerade '+r.added+' pass.');
+  }).catch(function(e){setImpOut('Kunde inte hämta länken automatiskt (blockeras oftast av webbläsaren, CORS). Öppna länken, kopiera texten och klistra in ovan istället.');});
+};
+document.getElementById('imp-done').onclick=closeSheets;
+
+// ── Målbild + AI-passplanerare + katalog ──────────────
+function renderGoalChips(){
+  var el=document.getElementById('goal-chips');if(!el)return;
+  el.innerHTML=GOALS.map(function(g){return '<button type="button" class="chip'+((state.goals||[]).indexOf(g.id)>=0?' sel':'')+'" data-g="'+g.id+'">'+g.label+'</button>';}).join('');
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var id=b.dataset.g;var i=(state.goals||[]).indexOf(id);
+    if(i>=0)state.goals.splice(i,1);else state.goals.push(id);
+    save();renderGoalChips();
+  };});
+}
+function planCount(t){t=parseInt(t,10)||30;return t<=20?3:t<=30?4:t<=45?5:6;}
+function schemeFor(){
+  var order=['strength','hyper','endur','cardio','mobility','gentle'];
+  var have={};(state.goals||[]).forEach(function(id){var g=goalById(id);if(g)have[g.scheme]=1;});
+  for(var i=0;i<order.length;i++){if(have[order[i]])return order[i];}
+  return 'hyper';
+}
+function repsSetsFor(scheme){
+  if(scheme==='strength')return {reps:5,sets:4};
+  if(scheme==='endur')return {reps:15,sets:3};
+  if(scheme==='cardio')return {reps:null,sets:null};
+  if(scheme==='mobility'||scheme==='gentle')return {reps:10,sets:2,noweight:true};
+  return {reps:10,sets:3};
+}
+function computeItemWeight(name,reps){
+  if(!reps)return null;var b=bestSet(name,null);
+  if(b&&b.e1rm)return round25(weightForReps(b.e1rm,reps));
+  return null;
+}
+function pickExercisesFor(muscles,scheme,count){
+  var picked=[];var seen={};
+  function tryAdd(name,m){
+    var k=name.toLowerCase();if(seen[k])return;
+    var hit=(!muscles.length)|| (m||[]).some(function(x){return muscles.indexOf(x)>=0;});
+    if(!hit)return;seen[k]=1;picked.push(name);
+  }
+  // användarens egna först
+  (state.exercises||[]).forEach(function(e){if(picked.length<count)tryAdd(e.name,e.muskler);});
+  // katalog
+  var cats=(scheme==='cardio')?['Kondition']:(scheme==='mobility'||scheme==='gentle')?['Pilates','Rörlighet','Kondition']:null;
+  CATALOG.forEach(function(e){
+    if(picked.length>=count)return;
+    if(cats&&cats.indexOf(e.c)<0)return;
+    tryAdd(e.n,e.m);
+  });
+  // fyll på om för få
+  if(picked.length<Math.min(3,count)){CATALOG.forEach(function(e){if(picked.length<count)tryAdd(e.n,e.m);});}
+  return picked.slice(0,count);
+}
+function buildLocalPlan(time){
+  var scheme=schemeFor();var rs=repsSetsFor(scheme);
+  var muscles=targetMuscles();
+  var names=pickExercisesFor(muscles,scheme,planCount(time));
+  var items=names.map(function(n){
+    var w=rs.noweight?null:computeItemWeight(n,rs.reps);
+    return {name:n,reps:rs.reps,sets:rs.sets,weight:w};
+  });
+  var note=scheme==='strength'?'Tunga baslyft, längre vila (2–3 min).':scheme==='cardio'?'Håll ett jämnt, pratbart tempo.':scheme==='endur'?'Kortare vila, håll tempot uppe.':scheme==='mobility'||scheme==='gentle'?'Mjukt och kravlöst — kvalitet före mängd.':'Fokusera på tekniken och känn muskeln jobba.';
+  return {items:items,note:note};
+}
+function nextTips(items){
+  var tips=[];
+  (items||[]).forEach(function(it){
+    if(it.weight==null)return;var ex=exByName(it.name);
+    var lw=ex&&ex.lastW!=null?ex.lastW:null;
+    if(lw!=null)tips.push(it.name+': sist '+lw+' kg → prova '+round25(lw+2.5)+' kg eller +1 rep');
+    else tips.push(it.name+': öka försiktigt med 2,5 kg när det känns lätt');
+  });
+  return tips;
+}
+var lastPlanItems=null;
+function renderPlanOut(plan){
+  var el=document.getElementById('planner-out');el.style.display='block';
+  if(!plan||!plan.items||!plan.items.length){el.innerHTML='<div class="empty-msg">Kunde inte skapa en plan. Prova igen eller välj en målbild.</div>';lastPlanItems=null;return;}
+  lastPlanItems=plan.items;
+  var rows=plan.items.map(function(it){
+    var s='';
+    if(it.sets&&it.reps)s=it.sets+'×'+it.reps;else if(it.reps)s=it.reps+' reps';else s='10–20 min';
+    if(it.weight!=null)s+=' @ '+it.weight+' kg';
+    return '<div class="avg-row"><span>'+esc(it.name)+'</span><b>'+s+'</b></div>';
+  }).join('');
+  var tips=plan.nextTips&&plan.nextTips.length?plan.nextTips:nextTips(plan.items);
+  var tipsHtml=tips.length?'<div class="dash-sub" style="margin-top:8px">Nästa gång</div>'+tips.map(function(t){return '<div class="soft">• '+esc(t)+'</div>';}).join(''):'';
+  el.innerHTML=rows+(plan.note?'<div class="soft" style="margin-top:8px">'+esc(plan.note)+'</div>':'')+tipsHtml+
+    '<button class="btn fill" id="planner-add" style="width:100%;margin-top:10px">Lägg till som pass (nästa gång)</button>';
+  document.getElementById('planner-add').onclick=function(){
+    var nm=(state.goals&&state.goals.length)?(goalById(state.goals[0]).label):'AI-pass';
+    var items=lastPlanItems.map(function(it){return {name:it.name,exId:(exByName(it.name)||{}).id||null,weight:it.weight,reps:it.reps,sets:it.sets,failPlan:null};});
+    state.someday=state.someday||[];state.someday.push({id:uidNum(),icon:'🏋️',name:nm,min:null,time:'',items:items,failPlan:null});
+    save();renderPlanToday();renderPass();
+    el.innerHTML='<div class="empty-msg">Tillagt som "nästa gång" på Idag. Lycka till!</div>';
+  };
+}
+document.getElementById('open-planner').onclick=function(){
+  renderGoalChips();
+  document.getElementById('goal-note').value=state.goalNote||'';
+  var seg=document.getElementById('pl-ai-time');seg.dataset.val=seg.dataset.val||'30';
+  seg.querySelectorAll('button').forEach(function(b){b.classList.toggle('sel',b.dataset.v===seg.dataset.val);
+    b.onclick=function(){seg.dataset.val=b.dataset.v;seg.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');};});
+  document.getElementById('planner-out').style.display='none';
+  openSheet('planner-sheet');
+};
+document.getElementById('goal-note').oninput=function(){state.goalNote=this.value;save();};
+document.getElementById('planner-local').onclick=function(){
+  renderPlanOut(buildLocalPlan(document.getElementById('pl-ai-time').dataset.val||'30'));
+};
+document.getElementById('planner-ai').onclick=function(){
+  var el=document.getElementById('planner-out');el.style.display='block';el.className='ai-out loading';el.textContent='Planerar…';
+  var time=document.getElementById('pl-ai-time').dataset.val||'30';
+  var hist=(state.exercises||[]).map(function(e){var b=bestSet(e.name,null);return e.name+(b?' (1RM~'+round25(b.e1rm)+', sist '+(e.lastW!=null?e.lastW+'kg':'-')+')':'');}).join('; ');
+  var p=AI_SYS+'Planera ETT träningspass. Målbild: '+(goalsText()||'allmän hälsa')+'. Tid: '+time+' min. '+
+    'Välj lämpliga övningar (gärna sådana personen redan gör). Svara ENDAST med giltig JSON, inga kodstaket, på formen '+
+    '{"exercises":[{"name":"Övning","sets":3,"reps":10}],"note":"kort tips","nextTime":"kort progressionsförslag"}. '+
+    'Sätt INTE vikter (de räknas ut automatiskt). 3–6 övningar. Reps/set ska passa målet.\n\nÖvningar personen har: '+(hist||'inga ännu')+'\n'+aiContext();
+  callAI(p,function(t){
+    el.className='ai-out';
+    var plan=null;
+    try{var clean=t.replace(/\x60\x60\x60json/gi,'').replace(/\x60\x60\x60/g,'').trim();var s=clean.indexOf('{'),e=clean.lastIndexOf('}');if(s>=0&&e>s)plan=JSON.parse(clean.slice(s,e+1));}catch(err){plan=null;}
+    if(!plan||!plan.exercises){el.textContent=t;return;}
+    var items=plan.exercises.map(function(x){var reps=x.reps||null;var sets=x.sets||null;return {name:x.name,reps:reps,sets:sets,weight:computeItemWeight(x.name,reps)};});
+    var tips=nextTips(items);if(plan.nextTime)tips.unshift(plan.nextTime);
+    renderPlanOut({items:items,note:plan.note||'',nextTips:tips});
+  },700);
+};
+document.getElementById('planner-done').onclick=closeSheets;
+
+// Katalog-plockare
+function renderCatalog(){
+  var el=document.getElementById('catalog-list');if(!el)return;
+  var cats=[];CATALOG.forEach(function(e){if(cats.indexOf(e.c)<0)cats.push(e.c);});
+  el.innerHTML=cats.map(function(c){
+    var rows=CATALOG.filter(function(e){return e.c===c;}).map(function(e){
+      var have=!!exByName(e.n);
+      return '<div class="cat-row"><div><b>'+esc(e.n)+'</b><div class="meta">'+e.m.join(', ')+'</div></div><button class="cat-add'+(have?' added':'')+'" data-n="'+esc(e.n)+'">'+(have?'✓ Tillagd':'+ Lägg till')+'</button></div>';
+    }).join('');
+    return '<div class="section-sub">'+c+'</div>'+rows;
+  }).join('');
+  el.querySelectorAll('.cat-add').forEach(function(b){b.onclick=function(){
+    if(b.classList.contains('added'))return;
+    var name=b.dataset.n;var entry=null;CATALOG.forEach(function(e){if(e.n===name)entry=e;});
+    if(!exByName(name)){state.exercises.push({id:uidNum(),name:name,minW:null,maxW:null,rating:null,note:'',gymId:state.activeGym||'',muskler:entry?entry.m.slice():[],lastW:null});save();renderExercises();}
+    b.classList.add('added');b.textContent='✓ Tillagd';
+  };});
+}
+document.getElementById('open-catalog').onclick=function(){renderCatalog();openSheet('catalog-sheet');};
+document.getElementById('catalog-done').onclick=closeSheets;
+
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.17.0',
+  version:'1.21.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
@@ -2378,6 +2867,9 @@ var APPINFO={
     'Failure-plan direkt på ett pass, och per enskild övning i planering/loggning (sparas och syns i kalendern)',
     'Egna passtyper som snabbval',
     'Övnings- och maskinbibliotek med viktintervall, muskelgrupper, betyg och anteckning',
+    'Styrkeuträknare (Brzycki): uppskattar 1RM och hur mycket du bör klara vid olika reps utifrån dina loggade set',
+    'Dashboard i Översikt med totaler, volym per vecka och utvecklingskurva per övning',
+    'Import från Strength Log (klistra in delningstexten) — övningar, vikter och reps läses in automatiskt',
     'Failure-planerare: ange topvikt och få uppvärmning + set-fördelning (AI eller enkelt upplägg)',
     'Lös planering framåt (öppna, se och redigera ett planerat pass), pass utan bestämd dag ("nästa gång") som ligger kvar på Idag tills de är gjorda, plus löpande schema',
     '"Planerat idag"-avstämning med Ja/Nej — Ja öppnar en kort utvärdering (upplevd belastning + högsta vikt per övning) och loggar passet',
@@ -2387,17 +2879,43 @@ var APPINFO={
     'Öppettider per veckodag med status öppet/stängt',
     'Belastningsschema timme för timme, hela dygnet (00–23), med lugnaste tiden',
     'Snabb belastningsremsa på Idag: nästa fem timmar i färg, aktuell belastning och nästa lugna timslag',
+    'Pepp & framsteg på Idag — peppande sammanfattning byggd på din egen data (veckans pass, styrkeökningar, energi, kontinuitet och målbild)',
     'Översikt: pass/vecka & 30 dagar, bläddringsbar kalender per månad, statistik per övning (antal, set, tyngsta & senaste vikt), muskelgrupper och totaler, energimönster och vanligaste passtyper',
     'Förslag för idag: ställ in tid, dagsform och lust — appen tittar på tidigare pass och föreslår något lagom (AI eller enkelt förslag)',
     'Efterregistrera pass bakåt via valfri dag i kalendern',
     'AI-förslag via Claude eller ChatGPT (nycklar bara på enheten)',
-    'AI-coach som direkt föreslår övningar per fokus (mjuk rörelse, kondition, styrka, rörlighet, balans, promenad m.m.)',
+    'AI-coach som direkt föreslår övningar per fokus (mjuk rörelse, kondition, styrka, rörlighet, balans, promenad, Pilates m.m.)',
+    'AI-passplanerare som planerar utifrån din målbild, räknar vikter enligt Brzycki och föreslår nästa gång',
+    'Målbild för träningen (bygga rumpa/bröst, bli stark, gå ner i vikt, kondition m.m.)',
+    'Inbyggt övningsbibliotek att lägga till egna övningar från, inklusive Pilates',
     'Flera färgteman + auto/ljust/mörkt',
     'Synk mellan enheter via privat GitHub-repo (union-merge per id)',
     'Säkerhetskopiering (export/import som JSON)',
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.21.0',d:'2026-07-19',items:[
+      'Pepp & framsteg högst upp på Idag: en varm, ärlig sammanfattning byggd på din egen data.',
+      'Visar bl.a. veckans pass jämfört med förra veckan, veckor i rad med rörelse, styrkeökningar per övning, om du mår bättre efter passen, och om du rört dig mot din målbild.',
+      'Inga tomma superlativ och ingen press — vilodagar räknas, och när du inte loggat något syns bara mjuk uppmuntran.'
+    ]},
+    {v:'1.20.0',d:'2026-07-19',items:[
+      'Målbild: välj vad träningen ska leda till (bygga rumpa, bröst, rygg, ben, bli starkare, gå ner i vikt, kondition, rörlighet, må bra). Den styr förslagen och sparas.',
+      'AI-passplanerare (🎯 på Idag): planerar ett helt pass efter din målbild och tid, räknar ut arbetsvikter enligt Brzycki från dina tidigare pass, och ger förslag för nästa gång. Finns med AI och som enkelt förslag utan nyckel. Kan läggas till direkt som ett "nästa gång"-pass.',
+      'Pilates finns nu som eget fokus i AI-coachen.',
+      'Inbyggt övningsbibliotek: lägg snabbt till färdiga övningar (styrka, kondition, Pilates, rörlighet) till ditt eget bibliotek via "+ Från bibliotek".'
+    ]},
+    {v:'1.19.0',d:'2026-07-19',items:[
+      'Dashboard överst i Översikt: pass totalt, total volym (kg) och tid, plus ett stapeldiagram över volym per vecka de senaste 8 veckorna.',
+      'Utvecklingskurva (mini-graf) per övning i statistiken — se hur vikten rört sig över tid.',
+      'Import från Strength Log: klistra in texten du delar därifrån, så läses varje pass in med övningar, toppvikt, reps och antal set. Nya övningar läggs automatiskt till i biblioteket och toppvikten sparas.',
+      'Även ett fält för delad Strength Log-länk (fungerar när webbläsaren tillåter det, annars klistra in texten).'
+    ]},
+    {v:'1.18.0',d:'2026-07-19',items:[
+      'Styrkeuträknare i Översikt som använder Brzycki-formeln för att uppskatta ditt 1RM och hur mycket du bör klara vid 1–12 reps.',
+      'Välj en övning så fylls din bästa loggade set i automatiskt, eller skriv egna vikt/reps.',
+      'Per övning visas nu även ett ungefärligt 1RM i statistiken.'
+    ]},
     {v:'1.17.0',d:'2026-07-19',items:[
       'Pass utan bestämd dag: kryssa "Ingen särskild dag — nästa gång" när du planerar, så slipper du välja datum.',
       'Ett sånt pass ligger kvar överst på Idag (märkt "nästa gång") tills du markerat det som gjort — det försvinner inte automatiskt och har ingen Nej-knapp.',
@@ -2525,12 +3043,24 @@ document.querySelectorAll('.nav button').forEach(function(b){
 });
 
 // ── Render-grupper ────────────────────────────────────
-function renderToday(){renderLast();renderQuickChips();renderPlanToday();renderGymToday();}
+function renderToday(){renderLast();renderPepp();renderQuickChips();renderPlanToday();renderGymToday();}
 function renderPass(){renderTypeTiles();renderPlanList();renderRecurList();renderTemplates();renderRecent();renderExercises();}
 function renderAll(){renderToday();renderPass();renderGymUI();renderHours();renderHeat();renderCalmHint();renderStats();renderNyheter();}
 
 // ── Init ──────────────────────────────────────────────
 buildDots('lg-before');buildDots('lg-after');buildDots('ex-rating');bindFullPick();
+(function(){
+  var exSel=document.getElementById('calc-ex');
+  if(exSel){
+    exSel.onchange=function(){
+      var b=bestSet(exSel.value,null);
+      if(b){document.getElementById('calc-w').value=b.weight;document.getElementById('calc-r').value=b.reps;}
+      renderCalc();
+    };
+    document.getElementById('calc-w').oninput=renderCalc;
+    document.getElementById('calc-r').oninput=renderCalc;
+  }
+})();
 loadSync();refreshSyncBadge();loadAI();
 renderGymUI();
 renderToday();
