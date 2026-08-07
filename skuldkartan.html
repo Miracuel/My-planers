@@ -197,6 +197,14 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .rbtn.pa{font-weight:700}
 .rbmark{margin-top:6px;font-size:12px;font-weight:700}
 .riskrad.rbdim{opacity:.62}
+.rbbadge{flex-shrink:0;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.rbfilter{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.rbchip{font-family:inherit;font-size:12px;padding:6px 12px;border:1px solid var(--line);border-radius:20px;background:var(--panel);color:var(--ink);cursor:pointer}
+.rbchip.pa{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.statbox.tap{cursor:pointer;transition:border-color .15s}
+.statbox.tap:active{background:var(--accent-soft)}
+.ovbanner{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px}
+.ovbanner .lnk{margin-left:auto}
 .fixlist{margin-top:10px;background:var(--panel2);border-radius:12px;padding:10px}
 .fixlist .fh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .fixlist ul{margin-left:16px;font-size:12px;line-height:1.7}
@@ -423,7 +431,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.17.0',
+version:'1.19.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -436,6 +444,17 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.19.0',d:'2026-08-06',items:[
+  'Nyckeltalen i översikten är nu klickbara: aktiva skulder, gör nu, måste ha, blinda fläckar, snittsäkerhet, ränta och oklara.',
+  'Ett tryck öppnar Skulder-vyn med just de posterna i en lista, med en rad högst upp som visar urvalet och en knapp för att visa alla igen.',
+  'Snittsäkerhet visar de poster som är lågt underbyggda, ränta visar de som växer snabbt och oklara visar de som saknar utredning.'
+ ]},
+ {v:'1.18.0',d:'2026-08-06',items:[
+  'Riskbeslutet syns nu i skuldkortet: risknivå, en färgad märkning för ej accepterad, tillfälligt accepterad eller accepterad, och knappar för att ändra direkt i kortet.',
+  'Översikten har ett nytt avsnitt Riskbeslut med tre klickbara rutor: kräver beslut, tillfälligt och accepterade.',
+  'Ett tryck på en ruta öppnar riskanalysen filtrerad på just de riskerna.',
+  'Riskregistret har filterknappar för Alla, Kräver beslut, Tillfälligt och Accepterade.'
+ ]},
  {v:'1.17.0',d:'2026-08-06',items:[
   'Frågelistan i inventeringen hämtas nu som en Excel-fil i stället för en textfil.',
   'Filen har en färdig tabell med kolumner för svar, antal och vilka och var, grupperad per område, plus fält för avdelning, kontakt och datum och en ruta för skugg-IT.',
@@ -1797,13 +1816,13 @@ function renderOversikt(){
   h+='<div class="card-panel" style="margin-bottom:10px"><div class="gauge">'+gaugeSvg(ti)+
      '<div class="gtxt"><div class="gnum">'+ti+'</div><div class="gcap">Genomsnittligt allvar över '+akt.length+' aktiva skulder. '+omdome(ti)+'</div></div></div></div>';
   h+='<div class="statgrid">'+
-     stat('Aktiva skulder',akt.length,all.length+' totalt')+
-     stat('Gör nu',gornu,'hög nytta, låg insats')+
-     stat('Måste ha',akt.filter(function(x){return Number(x.behov)===1;}).length,'går före allt annat')+
-     stat('Blinda fläckar',blindaFlackar().length,'saker ni inte vet')+
-     stat('Snittsäkerhet',snittSakerhet()+' %','hur väl underbyggt')+
-     stat('Ränta',rt+' h','uppskattad förlust per månad')+
-     stat('Oklara',oklara,'saknar utredning')+
+     statTap('aktiv','Aktiva skulder',akt.length,all.length+' totalt')+
+     statTap('gornu','Gör nu',gornu,'hög nytta, låg insats')+
+     statTap('mastaha','Måste ha',akt.filter(function(x){return Number(x.behov)===1;}).length,'går före allt annat')+
+     statTap('blinda','Blinda fläckar',blindaFlackar().length,'saker ni inte vet')+
+     statTap('osaker','Snittsäkerhet',snittSakerhet()+' %','hur väl underbyggt')+
+     statTap('ranta','Ränta',rt+' h','uppskattad förlust per månad')+
+     statTap('oklara','Oklara',oklara,'saknar utredning')+
      '</div>';
   var pk=profilKlass();
   if(pk){
@@ -1819,6 +1838,14 @@ function renderOversikt(){
       h+='<div class="card-panel tight"><div class="soft">'+kr.filter(function(x){return x.niva===1;}).length+' krav är måste-ha utifrån er storlek och verksamhet'+(saknasM?', varav '+saknasM+' är markerade som saknade':'')+'.</div></div>';
     }
   }
+  h+='<div class="section-title">Riskbeslut<button class="lnk" onclick="visaRisk(\'alla\')">Riskanalys</button></div>';
+  var rbEj=0,rbTill=0,rbAcc=0;
+  for(var rbi=0;rbi<akt.length;rbi++){var rbv=riskbeslutAv(akt[rbi]);if(rbv==='accepterad')rbAcc++;else if(rbv==='tillfallig')rbTill++;else rbEj++;}
+  h+='<div class="statgrid rbgrid">'+
+     '<div class="statbox tap" onclick="visaRisk(\'ej\')"><div class="lbl">Kräver beslut</div><div class="big" style="color:var(--q1)">'+rbEj+'</div><div class="sub">ej accepterade</div></div>'+
+     '<div class="statbox tap" onclick="visaRisk(\'tillfallig\')"><div class="lbl">Tillfälligt</div><div class="big" style="color:var(--acc)">'+rbTill+'</div><div class="sub">ska omprövas</div></div>'+
+     '<div class="statbox tap" onclick="visaRisk(\'accepterad\')"><div class="lbl">Accepterade</div><div class="big" style="color:var(--q3)">'+rbAcc+'</div><div class="sub">medvetet beslut</div></div>'+
+     '</div>';
   h+='<div class="section-title">Per skuldtyp<button class="lnk" onclick="go(\'analys\')">Analys</button></div>';
   h+='<div class="card-panel">'+donut()+'</div>';
   h+='<div class="section-title">Störst hävstång<button class="lnk" onclick="go(\'atgarder\')">Alla</button></div>';
@@ -1834,6 +1861,7 @@ function omdome(v){
   return 'Lågt tryck. Bevaka så det inte kryper uppåt.';
 }
 function stat(l,v,s){return '<div class="statbox"><div class="lbl">'+esc(l)+'</div><div class="big">'+esc(String(v))+'</div><div class="sub">'+esc(s)+'</div></div>';}
+function statTap(f,l,v,s){return '<div class="statbox tap" onclick="visaSkulder(\''+f+'\')"><div class="lbl">'+esc(l)+'</div><div class="big">'+esc(String(v))+'</div><div class="sub">'+esc(s)+'</div></div>';}
 function gaugeSvg(v){
   var r=34,c=2*Math.PI*r,off=c-(c*v/100);
   var col=v>=75?'var(--red)':(v>=55?'var(--gold)':'var(--ok)');
@@ -1941,7 +1969,7 @@ function renderMatris(){
   el.innerHTML=h;
 }
 var kvadFilter='';
-function filtKvad(k){kvadFilter=k;typFilter='';gruppFilter='';go('skulder');}
+function filtKvad(k){kvadFilter=k;typFilter='';gruppFilter='';ovFilter='';go('skulder');}
 
 /* ── Kort ────────────────────────────────────────────────── */
 function itemCard(it,nr){
@@ -1972,6 +2000,17 @@ function itemCard(it,nr){
 
 /* ── Vy: Skulder ─────────────────────────────────────────── */
 var typFilter='',gruppFilter='',behovFilter='',sokning='';
+var ovFilter='';
+var OVURVAL={
+ aktiv:{n:'Aktiva skulder',f:function(x){return aktiva().indexOf(x)>=0;}},
+ gornu:{n:'Gör nu',f:function(x){return kvadrant(x)==='gornu'&&aktiva().indexOf(x)>=0;}},
+ mastaha:{n:'Måste ha',f:function(x){return Number(x.behov)===1&&aktiva().indexOf(x)>=0;}},
+ blinda:{n:'Blinda fläckar',f:function(x){return TYPMAP[x.typ]&&TYPMAP[x.typ].grupp==='okant'&&aktiva().indexOf(x)>=0;}},
+ osaker:{n:'Låg säkerhet',f:function(x){return sakerhet(x)<50&&aktiva().indexOf(x)>=0;}},
+ ranta:{n:'Växande ränta',f:function(x){return Number(x.ranta||0)>=4&&aktiva().indexOf(x)>=0;}},
+ oklara:{n:'Oklara',f:function(x){return klarhet(x)<4&&aktiva().indexOf(x)>=0;}}
+};
+function visaSkulder(f){ovFilter=(OVURVAL[f]?f:'');typFilter='';kvadFilter='';gruppFilter='';behovFilter='';go('skulder');}
 function renderSkulder(){
   var fb=document.getElementById('sk-filter');
   var fh='<button class="'+(!typFilter&&!kvadFilter&&!gruppFilter&&!behovFilter?'on':'')+'" onclick="setFilt(\'\')">Alla '+state.items.length+'</button>';
@@ -1989,21 +2028,29 @@ function renderSkulder(){
   }
   fb.innerHTML=fh;
   var list=state.items.slice();
+  if(ovFilter&&OVURVAL[ovFilter])list=list.filter(OVURVAL[ovFilter].f);
   if(typFilter)list=list.filter(function(x){return x.typ===typFilter;});
   if(gruppFilter)list=list.filter(function(x){return TYPMAP[x.typ]&&TYPMAP[x.typ].grupp===gruppFilter;});
   if(behovFilter)list=list.filter(function(x){return String(x.behov)===behovFilter;});
   if(kvadFilter)list=list.filter(function(x){return kvadrant(x)===kvadFilter&&x.status!=='atgardad'&&x.status!=='accepterad';});
   if(sokning){var q=sokning.toLowerCase();list=list.filter(function(x){return (x.titel+' '+x.system+' '+x.agare+' '+x.beskrivning).toLowerCase().indexOf(q)>=0;});}
   list.sort(function(a,b){var d=(Number(a.behov)||2)-(Number(b.behov)||2);if(d)return d;return allvar(b)-allvar(a);});
-  document.getElementById('sk-count').textContent=list.length+' av '+state.items.length+' skulder, sorterade efter allvar.';
   var el=document.getElementById('sk-body');
+  if(ovFilter&&OVURVAL[ovFilter]){
+    document.getElementById('sk-count').textContent='Urval: '+OVURVAL[ovFilter].n+' – '+list.length+' skulder.';
+    var banner='<div class="ovbanner">Visar <b>'+esc(OVURVAL[ovFilter].n)+'</b> ('+list.length+')<button class="lnk" onclick="visaSkulder(\'\')">Visa alla</button></div>';
+    if(!list.length){el.innerHTML=banner+'<div class="empty-msg">Inga skulder i det här urvalet just nu.</div>';return;}
+    var hb=banner+'<div class="slist">';for(var jb=0;jb<list.length;jb++)hb+=itemCard(list[jb]);hb+='</div>';
+    el.innerHTML=hb;return;
+  }
+  document.getElementById('sk-count').textContent=list.length+' av '+state.items.length+' skulder, sorterade efter allvar.';
   if(!list.length){el.innerHTML='<div class="empty-msg">Inget matchar. Ändra filtret eller lägg till en skuld med plus.</div>';return;}
   var h='<div class="slist">';for(var j=0;j<list.length;j++)h+=itemCard(list[j]);h+='</div>';
   el.innerHTML=h;
 }
-function setFilt(t){typFilter=t;kvadFilter='';gruppFilter='';behovFilter='';renderSkulder();}
-function setBehovFilter(v){behovFilter=(behovFilter===String(v)?'':String(v));typFilter='';kvadFilter='';gruppFilter='';renderSkulder();}
-function setGrupp(g){gruppFilter=(gruppFilter===g?'':g);typFilter='';kvadFilter='';behovFilter='';renderSkulder();}
+function setFilt(t){typFilter=t;kvadFilter='';gruppFilter='';behovFilter='';ovFilter='';renderSkulder();}
+function setBehovFilter(v){behovFilter=(behovFilter===String(v)?'':String(v));typFilter='';kvadFilter='';gruppFilter='';ovFilter='';renderSkulder();}
+function setGrupp(g){gruppFilter=(gruppFilter===g?'':g);typFilter='';kvadFilter='';behovFilter='';ovFilter='';renderSkulder();}
 
 /* ── Vy: Kartlägg ────────────────────────────────────────── */
 var openAcc={},kaGrupp='',kaSok='',kaVis='alla';
@@ -2484,6 +2531,7 @@ function openItem(id){
   }
   var a=allvar(it),kv=KVAD[kvadrant(it)];
   h+='<div class="card-panel tight" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b>Allvar '+a+'</b> · Hävstång '+havstang(it)+'</div><span class="chip acc">'+esc(kv.n)+'</span></div><div class="soft" style="margin-top:5px">'+esc(kv.d)+'</div></div>';
+  h+='<div class="card-panel tight" id="rb-kort" style="margin-top:10px">'+riskKortHtml(it)+'</div>';
 
   h+='<div class="sub-h">Klargör skulden</div>';
   var ns=nastaSteg(it);
@@ -3899,8 +3947,22 @@ function setRiskbeslut(id,v){
   var it=state.items.filter(function(x){return x.id===id;})[0];if(!it)return;
   it.riskbeslut=(riskbeslutAv(it)===v?'ej':v);
   it.upd=Date.now();
-  save();persistSoon();renderRisk();
+  save();persistSoon();
+  var rv=document.getElementById('view-risk');
+  if(rv&&rv.classList.contains('active'))renderRisk();
+  var box=document.getElementById('rb-kort');
+  if(box&&curId===id)box.innerHTML=riskKortHtml(it);
   toast(it.riskbeslut==='accepterad'?'Markerad som accepterad risk':(it.riskbeslut==='tillfallig'?'Tillfälligt accepterad':'Markerad som ej accepterad'));
+}
+function riskKortHtml(it){
+  var rb=riskbeslutAv(it),nv=risknivaAv(it);
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">';
+  h+='<div><b>Risknivå '+nv.namn+'</b> <span class="soft">&middot; poäng '+riskpoang(it)+' (K'+konsekvensAv(it)+' &times; S'+sannolikhetAv(it)+')</span></div>';
+  h+='<span class="rbbadge" style="background:'+riskbeslutFarg(rb)+'">'+esc(riskbeslutNamn(rb))+'</span></div>';
+  h+='<div class="soft" style="margin-top:5px">Riskbeslut:</div>';
+  h+=riskbeslutRad(it);
+  if(rb==='tillfallig')h+='<div class="soft" style="margin-top:6px">Tillfälligt accepterad &ndash; kom ihåg att ompröva.</div>';
+  return h;
 }
 function riskbeslutRad(it){
   var cur=riskbeslutAv(it),h='<div class="rbknappar" onclick="event.stopPropagation()">';
@@ -3910,6 +3972,9 @@ function riskbeslutRad(it){
   }
   return h+'</div>';
 }
+var riskFilter='alla';
+function setRiskFilter(f){riskFilter=f;renderRisk();}
+function visaRisk(f){riskFilter=f||'alla';go('risk');}
 function renderRisk(){
   var el=document.getElementById('risk-body');if(!el)return;
   var a=aktiva();
@@ -3964,13 +4029,22 @@ function renderRisk(){
 
   /* Riskregister */
   h+='<div class="section-title">Riskregister</div>';
-  h+='<div class="soft" style="margin-bottom:8px">Alla aktiva poster, sorterade efter risk. Markera varje risk som ej accepterad, tillfälligt accepterad eller accepterad. Accepterade hamnar sist.</div>';
+  var filterval=[['alla','Alla'],['ej','Kräver beslut'],['tillfallig','Tillfälligt'],['accepterad','Accepterade']];
+  h+='<div class="rbfilter">';
+  for(var fi=0;fi<filterval.length;fi++){
+    var fv=filterval[fi];
+    h+='<button class="rbchip'+(riskFilter===fv[0]?' pa':'')+'" onclick="setRiskFilter(\''+fv[0]+'\')">'+esc(fv[1])+'</button>';
+  }
+  h+='</div>';
+  h+='<div class="soft" style="margin:6px 0 8px">Markera varje risk som ej accepterad, tillfälligt accepterad eller accepterad. Accepterade hamnar sist.</div>';
   var lista=riskAktiva().slice().sort(function(x,y){
     var rank={ej:0,tillfallig:1,accepterad:2};
     var dx=rank[riskbeslutAv(x)]-rank[riskbeslutAv(y)];
     if(dx)return dx;
     return riskpoang(y)-riskpoang(x);
   });
+  if(riskFilter!=='alla')lista=lista.filter(function(it){return riskbeslutAv(it)===riskFilter;});
+  if(!lista.length)h+='<div class="card-panel"><p class="soft">Inga risker i det här läget.</p></div>';
   for(var r2=0;r2<lista.length;r2++){
     var it=lista[r2],nv=risknivaAv(it),ty=TYPMAP[it.typ],rb=riskbeslutAv(it);
     h+='<div class="riskrad'+(rb!=='ej'?' rbdim':'')+'" onclick="openItem(\''+it.id+'\')">';
