@@ -639,6 +639,7 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
   <h3>Importera från Strength Log</h3>
   <div class="soft">Klistra in texten du delar från Strength Log, så läses passen in med övningar, vikter och reps.</div>
   <textarea id="imp-text" rows="7" placeholder="Klistra in Strength Log-texten här…"></textarea>
+  <label class="gym-check"><input type="checkbox" id="imp-force"> Importera även om passet verkar finnas redan</label>
   <button class="btn fill" id="imp-run" style="width:100%;margin-top:8px">Importera texten</button>
   <div class="section-sub">…eller från en delad länk</div>
   <div class="fail-mini">
@@ -2638,11 +2639,16 @@ function parseStrengthLog(text){
   return out.filter(function(s){return s.items.length||s.min;});
 }
 function uidNum(){return Date.now()+Math.floor(Math.random()*100000);}
-function importStrengthLog(text){
-  var parsed=parseStrengthLog(text);var added=0;
+function importStrengthLog(text,force){
+  var parsed=parseStrengthLog(text);var added=0;var skipped=[];
   parsed.forEach(function(p){
-    var dup=state.sessions.some(function(s){return s.date===p.date&&(s.time||'')===(p.time||'')&&s.name==='Styrkepass';});
-    if(dup)return;
+    var dup=!force&&state.sessions.some(function(s){
+      if(s.date!==p.date||(s.time||'')!==(p.time||'')||s.name!=='Styrkepass')return false;
+      if(typeof s.vol==='number'&&typeof p.vol==='number')return Math.abs(s.vol-p.vol)<1;
+      if((s.items||[]).length&&p.items.length)return (s.items||[]).length===p.items.length;
+      return true;
+    });
+    if(dup){skipped.push(p.date+(p.time?' '+p.time:''));return;}
     p.items.forEach(function(it){
       var ex=exByName(it.name);
       if(!ex){ex={id:uidNum(),name:it.name,minW:null,maxW:null,rating:null,note:'',gymId:state.activeGym||'',muskler:[],lastW:null};state.exercises.push(ex);}
@@ -2655,26 +2661,33 @@ function importStrengthLog(text){
     added++;
   });
   if(added){save();renderToday();renderPass();renderStats();}
-  return {added:added,found:parsed.length};
+  return {added:added,found:parsed.length,skipped:skipped};
+}
+function importMsg(r){
+  if(!r.found)return 'Hittade inga pass i texten. Kontrollera att du kopierat hela delningen (raderna med "Övning: reps x vikt").';
+  if(r.added&&r.skipped.length)return 'Importerade '+r.added+' pass. '+r.skipped.length+' fanns redan ('+r.skipped.join(', ')+').';
+  if(r.added)return 'Importerade '+r.added+(r.added===1?' pass':' pass')+'.';
+  return 'Passet verkar redan finnas ('+r.skipped.join(', ')+'). Bocka i "Importera även dubbletter" nedan om du ändå vill lägga in det.';
 }
 function setImpOut(txt){var el=document.getElementById('imp-out');el.style.display='block';el.className='ai-out';el.textContent=txt;}
 document.getElementById('open-import').onclick=function(){
-  document.getElementById('imp-text').value='';document.getElementById('imp-url').value='';
+  document.getElementById('imp-text').value='';document.getElementById('imp-url').value='';document.getElementById('imp-force').checked=false;
   document.getElementById('imp-out').style.display='none';openSheet('import-sheet');
 };
 document.getElementById('imp-run').onclick=function(){
   var t=document.getElementById('imp-text').value;
   if(!t.trim()){document.getElementById('imp-text').focus();return;}
-  var r=importStrengthLog(t);
-  setImpOut(r.found?('Importerade '+r.added+' pass'+(r.found>r.added?' ('+(r.found-r.added)+' fanns redan)':'')+'.'):'Hittade inga pass i texten. Kontrollera att du kopierat hela delningen.');
+  var force=document.getElementById('imp-force').checked;
+  setImpOut(importMsg(importStrengthLog(t,force)));
 };
 document.getElementById('imp-fetch').onclick=function(){
   var url=document.getElementById('imp-url').value.trim();if(!url){document.getElementById('imp-url').focus();return;}
   setImpOut('Hämtar…');
   fetch(url).then(function(r){return r.text();}).then(function(t){
-    var r=importStrengthLog(t);
+    var force=document.getElementById('imp-force').checked;
+    var r=importStrengthLog(t,force);
     if(!r.found)setImpOut('Kunde inte läsa passdata från länken (Strength Log-sidan laddas dynamiskt). Öppna länken, kopiera texten och klistra in ovan.');
-    else setImpOut('Importerade '+r.added+' pass.');
+    else setImpOut(importMsg(r));
   }).catch(function(e){setImpOut('Kunde inte hämta länken automatiskt (blockeras oftast av webbläsaren, CORS). Öppna länken, kopiera texten och klistra in ovan istället.');});
 };
 document.getElementById('imp-done').onclick=closeSheets;
@@ -2828,7 +2841,7 @@ document.getElementById('catalog-done').onclick=closeSheets;
 
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.21.0',
+  version:'1.22.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
@@ -2867,6 +2880,11 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.22.0',d:'2026-07-19',items:[
+      'Importen dubblettkollar nu på innehåll (datum, tid och volym), så ett ändrat eller nytt pass på samma tid inte längre blockeras felaktigt.',
+      'Ny kryssruta "Importera även om passet verkar finnas redan" om du ändå vill lägga in det.',
+      'Tydligare besked vid import, med datum och tid på det som hoppades över.'
+    ]},
     {v:'1.21.0',d:'2026-07-19',items:[
       'Pepp & framsteg högst upp på Idag: en varm, ärlig sammanfattning byggd på din egen data.',
       'Visar bl.a. veckans pass jämfört med förra veckan, veckor i rad med rörelse, styrkeökningar per övning, om du mår bättre efter passen, och om du rört dig mot din målbild.',
