@@ -186,6 +186,17 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .amb.vald{border-color:var(--accent);background:var(--accent-soft)}
 .ambbox{flex-shrink:0;width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;background:var(--panel)}
 .ambbox.on{background:var(--accent);border-color:var(--accent)}
+.riskbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);margin-top:10px}
+.riskbar span{display:block;height:100%}
+.riskik{flex-shrink:0;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:17px}
+.riskrad{display:flex;gap:11px;align-items:flex-start;padding:11px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer;background:var(--panel)}
+.riskrad:active{background:var(--accent-soft)}
+.rnliv{flex-shrink:0;width:34px;height:34px;border-radius:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.rbknappar{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.rbtn{flex:1 1 auto;min-width:96px;font-family:inherit;font-size:12px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);cursor:pointer}
+.rbtn.pa{font-weight:700}
+.rbmark{margin-top:6px;font-size:12px;font-weight:700}
+.riskrad.rbdim{opacity:.62}
 .fixlist{margin-top:10px;background:var(--panel2);border-radius:12px;padding:10px}
 .fixlist .fh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .fixlist ul{margin-left:16px;font-size:12px;line-height:1.7}
@@ -340,6 +351,11 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
   <div id="an-body"></div>
 </div>
 
+<!-- RISKANALYS -->
+<div class="view" id="view-risk">
+  <div id="risk-body"></div>
+</div>
+
 <!-- NYHETER -->
 <div class="view" id="view-nyheter">
   <div class="page-h">Nyheter &amp; funktioner</div>
@@ -368,7 +384,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
   <button data-v="kartlagg"><span>&#9906;</span>Kartlägg</button>
   <button data-v="inventering"><span>&#9636;</span>Inventering</button>
   <button data-v="mal"><span>&#9788;</span>Målbild</button>
-  <button data-v="analys"><span>&#9650;</span>Analys</button>
+  <button data-v="analys"><span>&#9650;</span>Analys</button><button data-v="risk"><span>&#9888;</span>Riskanalys</button>
   <button data-v="nyheter"><span>&#9734;</span>Nyheter</button>
   <button data-v="installningar"><span>&#9881;</span>Inställningar</button>
 </nav>
@@ -389,6 +405,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
   <div class="menurow" data-go="inventering"><div class="mi">&#9636;</div><div>Inventering per avdelning</div></div>
   <div class="menurow" data-go="mal"><div class="mi">&#9788;</div><div>Målbild och drömmar</div></div>
   <div class="menurow" data-go="analys"><div class="mi">&#9650;</div><div>Analys &amp; heatmap</div></div>
+  <div class="menurow" data-go="risk"><div class="mi">&#9888;</div><div>Riskanalys</div></div>
   <div class="menurow" data-go="nyheter"><div class="mi">&#9734;</div><div>Nyheter &amp; funktioner</div></div>
   <div class="menurow" onclick="exportExcel();closeSheets()"><div class="mi">&#128202;</div><div>Exportera till Excel</div></div>
   <div class="menurow" data-go="installningar"><div class="mi">&#9881;</div><div>Inställningar &amp; synk</div></div>
@@ -406,7 +423,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.14.0',
+version:'1.17.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -414,11 +431,31 @@ functions:[
  {area:'Analys',items:['Analysmatris: allvar mot insats i fyra kvadranter','Allvarsindex av påverkan, risk, spridning och ränta','Hävstång = nytta per insats','Heatmap system mot skuldtyp','Ögonblicksbilder och trend över tid','Fördelning per område och per skuldtyp','Säkerhetsgrad per punkt av underlag och mörkertal','Allvar visas med osäkerhetsspann, till exempel 74 ±18','Matrisen ritar osäkra punkter med streckad ring','Blinda fläckar och gissningar räknas separat','Visar vilka frågeområden ni inte ens tittat på']},
  {area:'Klargörande',items:['Behovsnivå per punkt: måste ha, skulle behöva eller önskar ha','Sjustegs klarhetstrappa per skuld','Appen pekar ut nästa steg som saknas','Symptom, grundorsak, konsekvens, åtgärd, ägare, beslut']},
  {area:'Profil och krav',items:['Storleksklassning S, M och L per dimension i stället för en enda siffra','Fjorton dimensioner: användare, klienter, mobiler, servrar, system, integrationer, platser, nätverksenheter, lagring, externa användare, leverantörer, förändringstakt, publika enheter och bemanning','Varnar för ojämn profil: litet på servrar men stort på klienter ger stora supportbehov','Tjugo frågor om verksamhetens art: privatförsäljning, kortbetalning, myndighet, samhällsviktigt, känsliga uppgifter med mera','Kravlista som byggs av storlek och verksamhet, med referens till lag eller standard','Vi vill: frivilliga ambitioner som ISO 27001, ITIL, CIS, Zero Trust, DORA-nivå och EU AI Act-nivå som lägger till egna målkrav','Vårt åtagande: aktivera en publicerad policy så blir varje åtagande en kontroll att bocka av','Markera varje krav som Har vi, Delvis eller Saknas och gör om det som saknas till en skuld']},
- {area:'Inventering',items:['Inventeringsrundor per avdelning med 28 frågor','Självrapporterat: ja, nej eller vet ej, med antal och notering','Egen lista för skugg-IT som avdelningen känner till men IT inte gör','Frågelista att hämta ut och dela med avdelningen','Vet ej och saknat antal blir blinda fläckar med ett tryck','Sammanställning av vilka luckor som återkommer i flera avdelningar']},
+ {area:'Inventering',items:['Inventeringsrundor per avdelning med 28 frågor','Självrapporterat: ja, nej eller vet ej, med antal och notering','Egen lista för skugg-IT som avdelningen känner till men IT inte gör','Frågelista att hämta ut som Excel och dela med avdelningen','Vet ej och saknat antal blir blinda fläckar med ett tryck','Sammanställning av vilka luckor som återkommer i flera avdelningar']},
  {area:'Målbild',items:['18 färdiga drömmar om hur IT borde fungera, i sex teman','Varje dröm har mått och konkreta steg dit','Koppla skulder till mål och se vad som står i vägen','Nuläge 1–5 per mål och avstånd till drömmen i analysen','Egna mål går att skriva från grunden']},
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.17.0',d:'2026-08-06',items:[
+  'Frågelistan i inventeringen hämtas nu som en Excel-fil i stället för en textfil.',
+  'Filen har en färdig tabell med kolumner för svar, antal och vilka och var, grupperad per område, plus fält för avdelning, kontakt och datum och en ruta för skugg-IT.',
+  'Avdelningen kan fylla i direkt i Excel och skicka tillbaka.'
+ ]},
+ {v:'1.16.0',d:'2026-08-06',items:[
+  'Riskbeslut i riskregistret: markera varje risk som ej accepterad, tillfälligt accepterad eller accepterad.',
+  'Ej accepterad är utgångsläget. Tillfälligt accepterad markeras för omprövning. Accepterad är ett medvetet beslut.',
+  'Accepterade och tillfälligt accepterade risker tonas ned och sorteras sist, så det som kräver beslut hamnar överst.',
+  'Överblicken visar hur många risker som kräver beslut, är tillfälligt accepterade respektive accepterade.',
+  'Riskbeslutet följer med i synk och i Excel-exporten som en egen kolumn i Riskanalys-fliken.'
+ ]},
+ {v:'1.15.0',d:'2026-08-06',items:[
+  'Ny vy Riskanalys som räknas ut automatiskt ur befintlig data, utan att ni behöver fylla i något nytt.',
+  'Varje aktiv post får en risknivå av sannolikhet gånger konsekvens: sannolikhet ur risk och ränta, konsekvens ur påverkan och spridning.',
+  'En riskmatris visar alla poster i ett rutnät fem gånger fem, där längst upp till höger är allvarligast.',
+  'Systemrisker upptäcks automatiskt: nyckelpersonsrisk, beslut på gissningar, ej uppfyllda måste-ha-krav, obelagda påståenden, växande skuld, svag grundsäkerhet och stora mörkertal.',
+  'Ett riskregister listar alla poster sorterade efter risk, med vad som driver risken i klartext.',
+  'Riskanalysen följer med i Excel-exporten som en egen flik, inklusive systemriskerna.'
+ ]},
  {v:'1.14.0',d:'2026-08-06',items:[
   'Lade tillbaka ambitionen EU AI Act-nivå under Vi vill, sedan det bekräftats att den inte orsakade laddningsproblemet.',
   'Åtta kontroller med referens till artiklar i AI-förordningen: förteckning över AI som används, riskklassificering, inga förbjudna metoder, öppenhet när människor möter AI, märkning av AI-genererat innehåll, mänsklig kontroll, grundläggande AI-kompetens och leverantörskrav vid inköp.'
@@ -539,7 +576,7 @@ changelog:[
   'Ny vy Inventering: rundor per avdelning med 28 frågor om vad de faktiskt har.',
   'Självrapporterat svar ja, nej eller vet ej, med antal och notering per kategori.',
   'Egen lista för skugg-IT som avdelningen känner till men IT inte gör, med knapp för att göra om den till en skuld.',
-  'Frågelista går att hämta ut som textfil och dela med avdelningen i förväg.',
+  'Frågelista går att hämta ut som Excel-fil och dela med avdelningen i förväg.',
   'Allt som blir Vet ej eller Ja utan antal kan göras om till blinda fläckar i ett svep.',
   'Sammanställning av vilka luckor som återkommer i flera avdelningar.',
   'Ny vy Målbild med 18 färdiga drömmar i sex teman: överblick, smidigt, kvalitet, tryggt, kostnadsklokt och hållbart.',
@@ -1698,7 +1735,7 @@ function load(){
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 function normItem(o){
-  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',
+  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',riskbeslut:'',
     status:'ny',paverkan:3,risk:3,spridning:2,ranta:3,kostnad:3,skapad:todayKey(),upd:Date.now()};
   var r={};for(var k in d)r[k]=d[k];
   for(var j in o)if(o[j]!==undefined)r[j]=o[j];
@@ -3302,19 +3339,45 @@ function taRunda(){
   invAktiv=null;save();persist();renderInventering();
 }
 function exportFragelista(){
-  var t='FRÅGELISTA – INVENTERING AV IT\n\nAvdelning: ______________  Kontakt: ______________  Datum: __________\n\n'+
-   'Svara Ja, Nej eller Vet ej. Vid Ja: skriv ungefär hur många och vilka.\nDet finns inga fel svar. Vet ej är ett lika bra svar som Ja.\n\n';
-  for(var g=0;g<INVGRUPPER.length;g++){
-    t+='\n== '+INVGRUPPER[g].namn.toUpperCase()+' ==\n\n';
-    var kat=INVKAT.filter(function(k){return k.g===INVGRUPPER[g].id;});
-    for(var i=0;i<kat.length;i++)t+=(i+1)+'. '+kat[i].n+'\n   ('+kat[i].h+')\n   Ja / Nej / Vet ej    Antal: ______  Vilka, var: ____________________\n\n';
-  }
-  t+='\n== ANNAT NI ANVÄNDER ==\n\nVerktyg, tjänster, prylar eller egna lösningar ni använder i arbetet\nsom ni tror att IT inte känner till. Inget är för litet.\n\n';
-  for(var s=0;s<6;s++)t+='- ____________________________________________\n\n';
-  var blob=new Blob([t],{type:'text/plain;charset=utf-8'});
-  var u=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=u;a.download='inventering-fragelista.txt';a.click();
-  setTimeout(function(){URL.revokeObjectURL(u);},1500);
+  toast('Bygger frågelista…');
+  laddaXLSX().then(function(X){
+    var wb=X.utils.book_new();
+    var rows=[];
+    rows.push(['Frågelista – inventering av IT','','','']);
+    rows.push(['','','','']);
+    rows.push(['Avdelning:','','Kontakt:','']);
+    rows.push(['Datum:','','','']);
+    rows.push(['','','','']);
+    rows.push(['Svara Ja, Nej eller Vet ej. Vid Ja: skriv ungefär hur många och vilka. Det finns inga fel svar – Vet ej är lika bra som Ja.','','','']);
+    rows.push(['','','','']);
+    rows.push(['Fråga','Svar (Ja/Nej/Vet ej)','Antal','Vilka och var']);
+    var merges=[];
+    for(var g=0;g<INVGRUPPER.length;g++){
+      rows.push([INVGRUPPER[g].namn.toUpperCase(),'','','']);
+      merges.push({s:{r:rows.length-1,c:0},e:{r:rows.length-1,c:3}});
+      var kat=INVKAT.filter(function(k){return k.g===INVGRUPPER[g].id;});
+      for(var i=0;i<kat.length;i++){
+        rows.push([kat[i].n+' – '+kat[i].h,'','','']);
+      }
+    }
+    rows.push(['','','','']);
+    rows.push(['ANNAT NI ANVÄNDER','','','']);
+    merges.push({s:{r:rows.length-1,c:0},e:{r:rows.length-1,c:3}});
+    rows.push(['Verktyg, tjänster, prylar eller egna lösningar ni använder i arbetet som ni tror att IT inte känner till. Inget är för litet.','','','']);
+    merges.push({s:{r:rows.length-1,c:0},e:{r:rows.length-1,c:3}});
+    for(var s=0;s<8;s++)rows.push(['','','','']);
+    var ws=aoaSheet(X,rows,[62,20,10,42]);
+    ws['!merges']=merges;
+    /* radbrytning + toppjustering på frågekolumnen */
+    for(var rc in ws){
+      if(rc[0]==='!')continue;
+      var cell=ws[rc];
+      if(cell&&typeof cell.v==='string'&&cell.v.length>40)cell.s={alignment:{wrapText:true,vertical:'top'}};
+    }
+    X.utils.book_append_sheet(wb,ws,'Frågelista');
+    X.writeFile(wb,'inventering-fragelista-'+todayKey()+'.xlsx');
+    toast('Frågelista klar');
+  }).catch(function(e){toast(e.message||'Kunde inte bygga frågelistan');});
 }
 
 /* ── Vy: Målbild ─────────────────────────────────────────── */
@@ -3536,6 +3599,23 @@ function exportExcel(){
     }
     X.utils.book_append_sheet(wb,aoaSheet(X,at,[8,34,14,18,8,9,10,40,16]),'Åtgärder');
 
+    /* 6b. Riskanalys – automatiskt härledd */
+    var rl=riskAktiva();
+    var rk=[['Riskpoäng','Nivå','Riskbeslut','Titel','Skuldtyp','Konsekvens (1-5)','Sannolikhet (1-5)','Vad som driver risken','Behov','Åtgärd','Ägare']];
+    for(var rr=0;rr<rl.length;rr++){
+      var RI=rl[rr],rn=risknivaAv(RI),rty=TYPMAP[RI.typ];
+      rk.push([riskpoang(RI),rn.namn,riskbeslutNamn(riskbeslutAv(RI)),RI.titel||'',rty?rty.namn:'',konsekvensAv(RI),sannolikhetAv(RI),riskDrivare(RI),behovNamn(RI.behov),RI.atgard||'',RI.agare||'']);
+    }
+    var srk=systemrisker();
+    if(srk.length){
+      rk.push(['','','','','','','','','','','']);
+      rk.push(['SYSTEMRISKER','Antal','','Beskrivning','','','','Nästa steg','','','']);
+      for(var s3=0;s3<srk.length;s3++)rk.push([srk[s3].t,srk[s3].n,'',srk[s3].vad,'','','',srk[s3].steg,'','','']);
+    }
+    var rkWs=aoaSheet(X,rk,[10,10,20,32,22,14,14,46,12,40,16]);
+    for(var rc in rkWs){if(rc[0]==='!')continue;if(rkWs[rc]&&typeof rkWs[rc].v==='string'&&rkWs[rc].v.length>40)rkWs[rc].s={alignment:{wrapText:true,vertical:'top'}};}
+    X.utils.book_append_sheet(wb,rkWs,'Riskanalys');
+
     /* 7. Inventering */
     var inv=[['Avdelning','Kontakt','Datum','Klar','Kategori','Grupp','Svar','Antal','Notering']];
     for(var r=0;r<state.inventeringar.length;r++){
@@ -3681,6 +3761,231 @@ function applyTheme(){
   if(b)b.innerHTML=m==='auto'?'&#9686;':(m==='dark'?'&#9790;':'&#9728;');
   renderActive();
 }
+/* ── Automatisk riskanalys (härledd, ingen ny sparad data) ── */
+function konsekvensAv(it){
+  /* Hur illa det blir om det inträffar: påverkan väger tyngst, spridning breddar. 1-5 */
+  var v=Math.round(Number(it.paverkan||3)*0.6+Number(it.spridning||3)*0.4);
+  return Math.max(1,Math.min(5,v));
+}
+function sannolikhetAv(it){
+  /* Hur troligt att det slår till: risk att det går sönder + ränta som gör att det växer. 1-5 */
+  var v=Math.round(Number(it.risk||3)*0.6+Number(it.ranta||3)*0.4);
+  return Math.max(1,Math.min(5,v));
+}
+function riskpoang(it){return konsekvensAv(it)*sannolikhetAv(it);} /* 1-25 */
+var RISKNIVA=[
+ {min:15,niva:4,namn:'Kritisk',f:'var(--q1)'},
+ {min:10,niva:3,namn:'Hög',f:'var(--q2)'},
+ {min:5,niva:2,namn:'Medel',f:'var(--acc)'},
+ {min:1,niva:1,namn:'Låg',f:'var(--q3)'}
+];
+function risknivaAv(it){
+  var p=riskpoang(it);
+  for(var i=0;i<RISKNIVA.length;i++)if(p>=RISKNIVA[i].min)return RISKNIVA[i];
+  return RISKNIVA[RISKNIVA.length-1];
+}
+function riskDrivare(it){
+  /* Vad som driver risken mest, i klarspråk. */
+  var d=[];
+  if(Number(it.paverkan||0)>=4)d.push('stor påverkan om det händer');
+  if(Number(it.spridning||0)>=4)d.push('drabbar brett');
+  if(Number(it.risk||0)>=4)d.push('hög risk att det går sönder');
+  if(Number(it.ranta||0)>=4)d.push('växer snabbt om inget görs');
+  if(sakerhet(it)<40)d.push('svag kunskap, kan vara värre än vi tror');
+  if(Number(it.behov)===1)d.push('måste ha på plats');
+  if(!d.length)d.push('jämn, måttlig risk');
+  return d.join(', ');
+}
+function riskAktiva(){
+  /* Aktiva skulder, sorterade efter riskpoäng (högst först). */
+  return aktiva().slice().sort(function(a,b){
+    var d=riskpoang(b)-riskpoang(a);
+    if(d)return d;
+    return allvar(b)-allvar(a);
+  });
+}
+function riskProfil(){
+  /* Fördelning över nivåer + samlad nivå. */
+  var a=aktiva(),f={1:0,2:0,3:0,4:0},sum=0;
+  for(var i=0;i<a.length;i++){var n=risknivaAv(a[i]).niva;f[n]++;sum+=riskpoang(a[i]);}
+  var samlad=1;
+  if(f[4]>0)samlad=4;else if(f[3]>=2)samlad=4;else if(f[3]>0)samlad=3;else if(f[2]>=3)samlad=3;else if(f[2]>0)samlad=2;
+  return {antal:a.length,f:f,snitt:a.length?Math.round(sum/a.length):0,samlad:samlad};
+}
+function riskNivaNamn(n){return ({1:'Låg',2:'Medel',3:'Hög',4:'Kritisk'})[n]||'Låg';}
+function riskNivaFarg(n){return ({1:'var(--q3)',2:'var(--acc)',3:'var(--q2)',4:'var(--q1)'})[n]||'var(--q3)';}
+
+function systemrisker(){
+  /* Mönster som är farligare tillsammans än var för sig. Härleds ur befintlig data. */
+  var a=aktiva(),ut=[];
+  function typIn(it,ids){return ids.indexOf(it.typ)>=0;}
+  /* 1. Nyckelpersonsrisk */
+  var nyckel=a.filter(function(i){return typIn(i,['kompetens','dok','okantansvar']);});
+  if(nyckel.length)ut.push({t:'Nyckelpersonsrisk',ik:'\u26d3',n:nyckel.length,
+    vad:'Kunskap och ansvar sitter hos enskilda personer. När någon är sjuk eller slutar stannar eller fördröjs driften.',
+    steg:'Dokumentera det viktigaste och peka ut en ersättare för varje kritiskt system.'});
+  /* 2. Blinda fläckar med svag kunskap */
+  var blinda=a.filter(function(i){return TYPMAP[i.typ]&&TYPMAP[i.typ].grupp==='okant'&&sakerhet(i)<50;});
+  if(blinda.length)ut.push({t:'Beslut på gissningar',ik:'\u25d1',n:blinda.length,
+    vad:'Flera poster är både okända och lågt underbyggda. Ni prioriterar då på gissningar, och den verkliga risken kan vara högre.',
+    steg:'Utred de här först, innan ni lägger tid och pengar på åtgärder.'});
+  /* 3. Saknade måste-ha-krav */
+  var kravSakn=0;
+  var kl=alltKrav();
+  for(var k=0;k<kl.length;k++)if(kl[k].niva===1&&kravStatus(kl[k].id)==='saknas')kravSakn++;
+  if(kravSakn)ut.push({t:'Krav som inte är uppfyllda',ik:'\u00a7',n:kravSakn,
+    vad:'Krav på nivån måste ha är markerade som saknas. Det är en risk som redan är identifierad, mot lag, avtal eller egen policy.',
+    steg:'Ta kraven till kravlistan och lägg upp de som saknas som skulder med ägare och datum.'});
+  /* 4. Obelagda påståenden */
+  var bs=typeof bevisStat==='function'?bevisStat():null;
+  if(bs&&bs.odok>0)ut.push({t:'Går inte att visa upp',ik:'\u25a1',n:bs.odok,
+    vad:'Bra svar finns men är inte dokumenterade eller informerade. Vid en revision eller incident går de inte att bevisa.',
+    steg:'Dokumentera och informera, börja med det som rör lag och avtal.'});
+  /* 5. Växande skuld (ränta) */
+  var vaxer=a.filter(function(i){return Number(i.ranta||0)>=4;});
+  if(vaxer.length)ut.push({t:'Blir dyrare med tiden',ik:'\u2197',n:vaxer.length,
+    vad:'Flera poster växer snabbt om inget görs. Kostnaden och risken är lägre i dag än om ett halvår.',
+    steg:'Tidigarelägg de här även om skadan just nu verkar måttlig.'});
+  /* 6. Säkerhetskoncentration */
+  var sak=a.filter(function(i){return typIn(i,['identitet','patch','sakerhet','overvakning']);});
+  if(sak.length>=2)ut.push({t:'Svag grundsäkerhet',ik:'\u26e8',n:sak.length,
+    vad:'Flera brister sitter i behörigheter, patchning, styrning eller övervakning samtidigt. Tillsammans gör de ett intrång både troligare och svårare att upptäcka.',
+    steg:'Prioritera behörigheter och patchning först, det stänger de vanligaste vägarna in.'});
+  /* 7. Stora mörkertal */
+  var mork=a.filter(function(i){return Number(i.morkertal||0)>=4;});
+  if(mork.length)ut.push({t:'Stort mörkertal',ik:'\u25cc',n:mork.length,
+    vad:'För flera poster tror ni att det finns mer under ytan. Den verkliga omfattningen är sannolikt större än den som syns.',
+    steg:'Gör en riktad inventering av just de här områdena.'});
+  return ut;
+}
+
+function riskMatrisSvg(){
+  /* 5x5 sannolikhet (y) x konsekvens (x), med prickar per aktiv skuld. */
+  var a=aktiva();
+  var W=300,H=300,pad=34,cell=(W-pad)/5;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:340px;display:block;margin:0 auto">';
+  /* rutor färgade efter riskpoäng */
+  for(var ky=1;ky<=5;ky++)for(var kx=1;kx<=5;kx++){
+    var p=ky*kx,f='var(--q3)';
+    if(p>=15)f='var(--q1)';else if(p>=10)f='var(--q2)';else if(p>=5)f='var(--acc)';
+    var x=pad+(kx-1)*cell,y=(5-ky)*cell;
+    s+='<rect x="'+x+'" y="'+y+'" width="'+cell+'" height="'+cell+'" fill="'+f+'" opacity="0.16" stroke="var(--line)" stroke-width="1"/>';
+  }
+  /* aggregera prickar per ruta */
+  var buckets={};
+  for(var i=0;i<a.length;i++){var kx2=konsekvensAv(a[i]),ky2=sannolikhetAv(a[i]);var key=kx2+'_'+ky2;buckets[key]=(buckets[key]||0)+1;}
+  for(var kk in buckets){
+    var parts=kk.split('_'),cx=Number(parts[0]),cy=Number(parts[1]),cnt=buckets[kk];
+    var px=pad+(cx-1)*cell+cell/2,py=(5-cy)*cell+cell/2;
+    var r=Math.min(cell*0.4,8+cnt*3);
+    s+='<circle cx="'+px+'" cy="'+py+'" r="'+r+'" fill="var(--ink)" opacity="0.82"/>';
+    s+='<text x="'+px+'" y="'+(py+4)+'" text-anchor="middle" font-size="12" fill="var(--panel)" font-weight="700">'+cnt+'</text>';
+  }
+  /* axlar */
+  s+='<text x="'+(pad+ (W-pad)/2)+'" y="'+(H-4)+'" text-anchor="middle" font-size="11" fill="var(--muted)">Konsekvens &rarr;</text>';
+  s+='<text x="12" y="'+((5*cell)/2)+'" text-anchor="middle" font-size="11" fill="var(--muted)" transform="rotate(-90 12 '+((5*cell)/2)+')">Sannolikhet &rarr;</text>';
+  return s+'</svg>';
+}
+
+var RISKBESLUT=[
+ {v:'ej',n:'Ej accepterad',f:'var(--q1)'},
+ {v:'tillfallig',n:'Tillfälligt accepterad',f:'var(--acc)'},
+ {v:'accepterad',n:'Accepterad',f:'var(--q3)'}
+];
+function riskbeslutAv(it){var v=it&&it.riskbeslut;return (v==='accepterad'||v==='tillfallig')?v:'ej';}
+function riskbeslutNamn(v){for(var i=0;i<RISKBESLUT.length;i++)if(RISKBESLUT[i].v===v)return RISKBESLUT[i].n;return 'Ej accepterad';}
+function riskbeslutFarg(v){for(var i=0;i<RISKBESLUT.length;i++)if(RISKBESLUT[i].v===v)return RISKBESLUT[i].f;return 'var(--q1)';}
+function setRiskbeslut(id,v){
+  var it=state.items.filter(function(x){return x.id===id;})[0];if(!it)return;
+  it.riskbeslut=(riskbeslutAv(it)===v?'ej':v);
+  it.upd=Date.now();
+  save();persistSoon();renderRisk();
+  toast(it.riskbeslut==='accepterad'?'Markerad som accepterad risk':(it.riskbeslut==='tillfallig'?'Tillfälligt accepterad':'Markerad som ej accepterad'));
+}
+function riskbeslutRad(it){
+  var cur=riskbeslutAv(it),h='<div class="rbknappar" onclick="event.stopPropagation()">';
+  for(var i=0;i<RISKBESLUT.length;i++){
+    var B=RISKBESLUT[i],pa=cur===B.v;
+    h+='<button class="rbtn'+(pa?' pa':'')+'"'+(pa?(' style="background:'+B.f+';border-color:'+B.f+';color:#fff"'):'')+' onclick="event.stopPropagation();setRiskbeslut(\''+it.id+'\',\''+B.v+'\')">'+esc(B.n)+'</button>';
+  }
+  return h+'</div>';
+}
+function renderRisk(){
+  var el=document.getElementById('risk-body');if(!el)return;
+  var a=aktiva();
+  if(!a.length){
+    el.innerHTML='<div class="page-h">Riskanalys</div><div class="card-panel"><p class="soft">Ingen aktiv skuld att analysera ännu. Kartlägg eller lägg upp skulder, så räknas risken ut automatiskt här.</p><div class="btn-row"><button class="btn" onclick="go(\'kartlagg\')">Till kartläggningen</button></div></div>';
+    return;
+  }
+  var rp=riskProfil();
+  var h='<div class="page-h">Riskanalys</div>';
+  h+='<div class="page-sub">Räknas ut automatiskt ur påverkan, spridning, risk, ränta och hur säkra ni är. Sannolikhet gånger konsekvens ger en nivå per post.</div>';
+
+  /* Samlad nivå */
+  h+='<div class="card-panel">';
+  h+='<div class="statgrid">'+
+     stat('Samlad risknivå',riskNivaNamn(rp.samlad),rp.antal+' aktiva poster')+
+     stat('Kritiska',String(rp.f[4]),'nivå 4')+
+     stat('Höga',String(rp.f[3]),'nivå 3')+'</div>';
+  h+='<div class="riskbar">';
+  var tot=rp.antal||1;
+  var segs=[[4,'var(--q1)'],[3,'var(--q2)'],[2,'var(--acc)'],[1,'var(--q3)']];
+  for(var si=0;si<segs.length;si++){var w=(rp.f[segs[si][0]]/tot)*100;if(w>0)h+='<span style="width:'+w+'%;background:'+segs[si][1]+'"></span>';}
+  h+='</div>';
+  h+='<div class="soft" style="margin-top:6px">Kritisk '+rp.f[4]+' &middot; Hög '+rp.f[3]+' &middot; Medel '+rp.f[2]+' &middot; Låg '+rp.f[1]+'</div>';
+  var bAcc=0,bTill=0,bEj=0;
+  for(var bi=0;bi<a.length;bi++){var bv=riskbeslutAv(a[bi]);if(bv==='accepterad')bAcc++;else if(bv==='tillfallig')bTill++;else bEj++;}
+  h+='<div class="statgrid" style="margin-top:10px">'+
+     stat('Kräver beslut',String(bEj),'ej accepterade')+
+     stat('Tillfälligt',String(bTill),'ska omprövas')+
+     stat('Accepterade',String(bAcc),'medvetet beslut')+'</div>';
+  h+='</div>';
+
+  /* Riskmatris */
+  h+='<div class="section-title">Riskmatris</div>';
+  h+='<div class="card-panel">'+riskMatrisSvg()+'<div class="soft" style="margin-top:8px;text-align:center">Varje prick är en eller flera poster. Ju längre upp till höger, desto allvarligare.</div></div>';
+
+  /* Systemrisker */
+  var sr=systemrisker();
+  if(sr.length){
+    h+='<div class="section-title">Systemrisker<span class="soft">'+sr.length+'</span></div>';
+    h+='<div class="soft" style="margin-bottom:8px">Mönster som är farligare tillsammans än var för sig, upptäckta automatiskt.</div>';
+    for(var q=0;q<sr.length;q++){
+      var R=sr[q];
+      h+='<div class="card-panel tight" style="margin-bottom:8px">';
+      h+='<div style="display:flex;gap:10px;align-items:flex-start">';
+      h+='<div class="riskik">'+R.ik+'</div>';
+      h+='<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(R.t)+' <span class="chip">'+R.n+'</span></div>';
+      h+='<div class="soft" style="margin-top:4px">'+esc(R.vad)+'</div>';
+      h+='<div class="soft" style="margin-top:5px"><b>Nästa steg:</b> '+esc(R.steg)+'</div>';
+      h+='</div></div></div>';
+    }
+  }
+
+  /* Riskregister */
+  h+='<div class="section-title">Riskregister</div>';
+  h+='<div class="soft" style="margin-bottom:8px">Alla aktiva poster, sorterade efter risk. Markera varje risk som ej accepterad, tillfälligt accepterad eller accepterad. Accepterade hamnar sist.</div>';
+  var lista=riskAktiva().slice().sort(function(x,y){
+    var rank={ej:0,tillfallig:1,accepterad:2};
+    var dx=rank[riskbeslutAv(x)]-rank[riskbeslutAv(y)];
+    if(dx)return dx;
+    return riskpoang(y)-riskpoang(x);
+  });
+  for(var r2=0;r2<lista.length;r2++){
+    var it=lista[r2],nv=risknivaAv(it),ty=TYPMAP[it.typ],rb=riskbeslutAv(it);
+    h+='<div class="riskrad'+(rb!=='ej'?' rbdim':'')+'" onclick="openItem(\''+it.id+'\')">';
+    h+='<div class="rnliv" style="background:'+nv.f+'">'+riskpoang(it)+'</div>';
+    h+='<div style="flex:1;min-width:0">';
+    h+='<div style="font-weight:600">'+esc(it.titel||(ty?ty.namn:'Skuld'))+'</div>';
+    h+='<div class="soft" style="margin-top:2px">'+(ty?esc(ty.namn):'')+' &middot; '+nv.namn+' risk &middot; K'+konsekvensAv(it)+' &times; S'+sannolikhetAv(it)+'</div>';
+    h+='<div class="soft" style="margin-top:3px">'+esc(riskDrivare(it))+'</div>';
+    if(rb!=='ej')h+='<div class="rbmark" style="color:'+riskbeslutFarg(rb)+'">'+esc(riskbeslutNamn(rb))+(rb==='tillfallig'?' &ndash; ompröva':'')+'</div>';
+    h+=riskbeslutRad(it);
+    h+='</div></div>';
+  }
+  el.innerHTML=h;
+}
+
 function renderView(v){
   if(v==='oversikt')renderOversikt();
   else if(v==='matris')renderMatris();
@@ -3692,6 +3997,7 @@ function renderView(v){
   else if(v==='mal')renderMal();
   else if(v==='atgarder')renderAtgarder();
   else if(v==='analys')renderAnalys();
+  else if(v==='risk')renderRisk();
   else if(v==='nyheter')renderChangelog();
   else if(v==='installningar')renderInst();
 }
