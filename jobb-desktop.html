@@ -467,7 +467,7 @@ canvas{display:block;margin:0 auto;background:#fff;border-radius:16px;border:1px
 try{document.documentElement.setAttribute('data-theme',(localStorage.getItem('jobbtheme')==='dark')?'dark':'light');}catch(e){}
 // ── App-info, ändringslogg & Centralen-metadata ───────
 const APPINFO={
-  version:'3.39.0',
+  version:'3.40.0',
   tagline:'Årsplanering för teamet — röda dagar, changestopp, semester och deadlines.',
   audience:'teamet',
   functions:[
@@ -498,6 +498,9 @@ const APPINFO={
     'Arbetsdagsräkning per deadline och beslutspunkter grupperade under sin deadline',
   ],
   changelog:[
+    {v:'3.40.0',d:'2026-07-06',items:[
+      'Deadlines-bladet i exporten visar åter både projekt och deadlines i en samlad lista (som tidigare). Importen är fortsatt säker: projektrader i Deadlines-bladet ignoreras av deadline-importen – projekt redigeras via Projekt-bladet, så inget projekt görs om till deadline.'
+    ]},
     {v:'3.39.0',d:'2026-07-06',items:[
       'Varje blad i Excel-exporten har nu en förklaring överst (rad 1) som säger var i planeraren datan visas/redigeras – t.ex. ”Visas/redigeras i: Roadmap → Projekt & deadlines” – och om bladet kan importeras tillbaka. Rubriker och data börjar på rad 3; importen hittar rubrikraden automatiskt.',
       'Rättat: Deadlines-bladet innehöll tidigare även projekt (märkta Deadline). Nu visar det bara riktiga deadlines/milstolpar, så import inte av misstag gör om projekt till deadlines.'
@@ -2625,7 +2628,7 @@ var rep={p:{a:0,u:0,d:0},d:{a:0,u:0,d:0},pe:{a:0,u:0,d:0}};var ops=[];
 var pj=rows('Projekt');
 if(pj){var seen={};pj.forEach(function(r){var id=str(r['Id']);var nm=str(r['Aktivitet']);if(!id&&!nm)return;var f={name:nm,area:str(r['Område']),subarea:str(r['Delområde']),ptype:str(r['Typ']),status:(SR[str(r['Status'])]||'plan'),plats:str(r['Plats']),prio:str(r['Prioritet']),recur:(RR[str(r['Återkommande'])]||''),role:str(r['Ansvarig roll']),pauseUntil:str(r['Pausad till']),desc:str(r['Beskrivning']),w5:{vem:str(r['Vem']),vad:str(r['Vad']),nar:str(r['När']),varfor:str(r['Varför']),hur:str(r['Hur'])}};var hh=num(r['Uppskattad tid (h)']);if(hh!=null)f.hours=hh;var sp=num(r['Lagd tid (h)']);if(sp!=null)f.spent=sp;var pg=num(r['Framsteg (%)']);if(pg!=null)f.progress=pg;var ow=owns(r['Utförare']);var ex=id?sTl.filter(function(x){return String(x.id)===id;})[0]:null;if(ex){seen[String(ex.id)]=1;rep.p.u++;ops.push({t:'upd',ex:ex,f:f,ow:ow});}else{rep.p.a++;ops.push({t:'addP',f:f,ow:ow});}});sTl.forEach(function(x){if(x&&x.type!=='deadline'&&x.type!=='beslut'&&x.type!=='milestone'&&!seen[String(x.id)]){rep.p.d++;ops.push({t:'delTl',id:x.id});}});}
 var dl=rows('Deadlines');
-if(dl){var seenD={};dl.forEach(function(r){var id=str(r['Id']);var nm=str(r['Namn']);if(!id&&!nm)return;var typ=(str(r['Typ'])==='Milstolpe')?'beslut':'deadline';var f={name:nm,type:typ,dateFrom:str(r['Start']),dateTo:str(r['Slut']),status:(SR[str(r['Status'])]||'plan'),pauseUntil:str(r['Pausad till']),desc:str(r['Not'])};var hh=num(r['Uppskattad tid (h)']);if(hh!=null)f.hours=hh;var sp=num(r['Lagd tid (h)']);if(sp!=null)f.spent=sp;var ow=owns(r['Ansvariga']);var ex=id?sTl.filter(function(x){return String(x.id)===id;})[0]:null;if(ex){seenD[String(ex.id)]=1;rep.d.u++;ops.push({t:'upd',ex:ex,f:f,ow:ow});}else{rep.d.a++;ops.push({t:'addD',f:f,ow:ow});}});sTl.forEach(function(x){if(x&&(x.type==='deadline'||x.type==='beslut'||x.type==='milestone')&&!seenD[String(x.id)]){rep.d.d++;ops.push({t:'delTl',id:x.id});}});}
+if(dl){var seenD={};dl.forEach(function(r){var id=str(r['Id']);var nm=str(r['Namn']);if(!id&&!nm)return;var exg=id?sTl.filter(function(x){return String(x.id)===id;})[0]:null;if(exg&&exg.type!=='deadline'&&exg.type!=='beslut'&&exg.type!=='milestone'){return;}var typ=(str(r['Typ'])==='Milstolpe')?'beslut':'deadline';var f={name:nm,type:typ,dateFrom:str(r['Start']),dateTo:str(r['Slut']),status:(SR[str(r['Status'])]||'plan'),pauseUntil:str(r['Pausad till']),desc:str(r['Not'])};var hh=num(r['Uppskattad tid (h)']);if(hh!=null)f.hours=hh;var sp=num(r['Lagd tid (h)']);if(sp!=null)f.spent=sp;var ow=owns(r['Ansvariga']);var ex=id?sTl.filter(function(x){return String(x.id)===id;})[0]:null;if(ex){seenD[String(ex.id)]=1;rep.d.u++;ops.push({t:'upd',ex:ex,f:f,ow:ow});}else{rep.d.a++;ops.push({t:'addD',f:f,ow:ow});}});sTl.forEach(function(x){if(x&&(x.type==='deadline'||x.type==='beslut'||x.type==='milestone')&&!seenD[String(x.id)]){rep.d.d++;ops.push({t:'delTl',id:x.id});}});}
 var pe=rows('Personer');
 if(pe){var seenP={};pe.forEach(function(r){var id=str(r['Id']);var nm=str(r['Namn']);if(!id&&!nm)return;var roles=str(r['Roller']).split(',').map(function(s){return s.trim();}).filter(Boolean);var ex=id?sPersons.filter(function(x){return String(x.id)===id;})[0]:null;if(ex){seenP[String(ex.id)]=1;rep.pe.u++;ops.push({t:'updP',ex:ex,name:nm,roles:roles});}else{rep.pe.a++;ops.push({t:'addPe',name:nm,roles:roles});}});sPersons.forEach(function(x){if(x&&!seenP[String(x.id)]){rep.pe.d++;ops.push({t:'delP',id:x.id});}});}
 if(!pj&&!dl&&!pe){alert('Hittade inga blad (Projekt/Deadlines/Personer) i filen.');return;}
@@ -3593,7 +3596,7 @@ document.getElementById('pdf-btn').onclick=function(){
   function build(){
     try{
       const X=window.XLSX;const d=data();function _shx(rows,exp){var ws=X.utils.aoa_to_sheet([[exp]]);X.utils.sheet_add_json(ws,rows,{origin:'A3'});return ws;}
-      const dlRows=d.tl.filter(function(it){return it&&(it.type==='deadline'||it.type==='beslut'||it.type==='milestone');}).map(function(it){return {'Id':it.id,'Namn':it.name,'Typ':it.type==='beslut'?'Milstolpe':'Deadline','Start':it.dateFrom,'Slut':it.dateTo,'Status':STAT[it.status]||it.status,'Pausad till':(it.status==='hold'?(it.pauseUntil||''):''),'Uppskattad tid (h)':it.hours||'','Lagd tid (h)':it.spent||'','Ansvariga':(it.owners||[]).map(function(id){return pname(d.persons,id);}).filter(Boolean).join(', '),'Prio tid':it.pri_time||'','Prio kostnad':it.pri_cost||'','Prio kvalitet':it.pri_qual||'','Avvägning':adv(+it.pri_time,+it.pri_cost,+it.pri_qual),'Not':it.desc||''};});
+      const dlRows=d.tl.map(function(it){return {'Id':it.id,'Namn':it.name,'Typ':it.type==='beslut'?'Milstolpe':'Deadline','Start':it.dateFrom,'Slut':it.dateTo,'Status':STAT[it.status]||it.status,'Pausad till':(it.status==='hold'?(it.pauseUntil||''):''),'Uppskattad tid (h)':it.hours||'','Lagd tid (h)':it.spent||'','Ansvariga':(it.owners||[]).map(function(id){return pname(d.persons,id);}).filter(Boolean).join(', '),'Prio tid':it.pri_time||'','Prio kostnad':it.pri_cost||'','Prio kvalitet':it.pri_qual||'','Avvägning':adv(+it.pri_time,+it.pri_cost,+it.pri_qual),'Not':it.desc||''};});
       const iniRows=d.init.map(function(it){return {'Titel':it.title,'Ansvariga':it.owners||'','Status':it.status||'','Prioritering':it.prio||'','Ärendenr':it.ticket||'','Jira':it.jira||'','Beskrivning':it.desc||''};});
       const outRows=d.out.map(function(o){return {'Kategori':o.cat||'','Resultat':o.text||''};});
       const pplRows=d.persons.map(function(p){return {'Id':p.id,'Namn':p.name,'Roller':(p.roles||[]).join(', ')};});
