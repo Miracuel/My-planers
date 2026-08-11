@@ -214,6 +214,9 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .ordber b{font-weight:700}
 .ordfore{background:rgba(120,150,110,.16)}
 .ordefter{background:rgba(181,133,47,.14)}
+.utfsplit{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.utfrad{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0}
+.utfrad.tot{border-top:1px solid var(--line);margin-top:4px;padding-top:6px;font-weight:700}
 .fixlist{margin-top:10px;background:var(--panel2);border-radius:12px;padding:10px}
 .fixlist .fh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .fixlist ul{margin-left:16px;font-size:12px;line-height:1.7}
@@ -440,7 +443,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.21.0',
+version:'1.23.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -453,6 +456,18 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.23.0',d:'2026-08-06',items:[
+  'Välj per skuld vem som gör jobbet: internt, leverantör eller delat.',
+  'Vid delat anger ni leverantörens andel i procent och vilka delar som tar vart, resten görs internt.',
+  'Leverantörstimpris kan sättas per skuld, annars används ett standardpris under Inställningar.',
+  'Kostnaden delas upp i intern kostnad och leverantörskostnad, både i skuldkortet och som total under Åtgärder.',
+  'Utförare och kostnadsuppdelning följer med i Excel-exporten och i synken.'
+ ]},
+ {v:'1.22.0',d:'2026-08-06',items:[
+  'Uppskattad tid att åtgärda per skuld: ett förslag utifrån skuldtypen, skalat efter er storlek, som ni kan skriva över med egna timmar.',
+  'Tiden visas i skuldkortet med kostnad i tkr, som en tidschipp på varje skuldkort i listorna och som en total under Åtgärder.',
+  'Uppskattningen följer med i Excel-exporten med kolumner för timmar, kostnad och om den är ett förslag eller egen siffra.'
+ ]},
  {v:'1.21.0',d:'2026-08-06',items:[
   'Nytt ordningsförslag högst upp under Åtgärder: en numrerad turordning 1, 2, 3 över de aktiva skulderna.',
   'Turordningen sätter måste ha först, sedan det som låser upp flest andra skulder, sedan störst hävstång.',
@@ -1097,6 +1112,78 @@ function tidKlass(tim){
   if(tim<=120)return 3;
   if(tim<=280)return 4;
   return 5;
+}
+function tidForSkuld(it){
+  /* Uppskattad tid att åtgärda skulden. Manuell siffra vinner, annars härledd ur skuldtypen skalad efter storlek. */
+  var man=Number(it.timmar);
+  if(it.timmar!==''&&it.timmar!==undefined&&it.timmar!==null&&!isNaN(man)&&man>0){
+    return {tim:Math.round(man),txt:tidFormat(man),kr:kostnadForTid(man),auto:false};
+  }
+  var T=TIDINFO[it.typ];
+  if(!T)return null;
+  var tim=Math.round(T.atgard*tidFaktor(T.skala));
+  return {tim:tim,txt:tidFormat(tim),kr:kostnadForTid(tim),auto:true};
+}
+var UTFOR=[['internt','Internt'],['leverantor','Leverantör'],['delat','Delat']];
+function utforareMode(it){var m=it&&it.utforare;return (m==='leverantor'||m==='delat')?m:'internt';}
+function levTimpris(it){var v=Number(it&&it.levTim);return (it&&it.levTim!==''&&!isNaN(v)&&v>0)?Math.round(v):(state.levkostnad||1200);}
+function utforareInfo(it){
+  var mode=utforareMode(it);
+  var ts=tidForSkuld(it),tot=ts?ts.tim:0;
+  var levPct=mode==='leverantor'?100:(mode==='internt'?0:Math.max(0,Math.min(100,Number(it.levDel)||50)));
+  var levTim=Math.round(tot*levPct/100),intTim=tot-levTim;
+  var levRate=levTimpris(it),intRate=state.timkostnad||750;
+  var levKr=levTim*levRate,intKr=intTim*intRate;
+  return {mode:mode,tot:tot,levPct:levPct,intPct:100-levPct,levTim:levTim,intTim:intTim,
+    levRate:levRate,intRate:intRate,levKr:levKr,intKr:intKr,totKr:levKr+intKr};
+}
+function utforareNamn(it){
+  var mode=utforareMode(it);
+  if(mode==='internt')return 'Internt';
+  if(mode==='leverantor')return 'Leverantör'+(it.leverantor?' · '+it.leverantor:'');
+  var u=utforareInfo(it);return 'Delat '+u.levPct+'/'+u.intPct+(it.leverantor?' · '+it.leverantor:'');
+}
+function setUtforareMode(id,m){
+  var it=state.items.filter(function(x){return x.id===id;})[0];if(!it)return;
+  it.utforare=m;if(m==='delat'&&(it.levDel===''||it.levDel===undefined))it.levDel=50;
+  it.upd=Date.now();save();persistSoon();
+  var box=document.getElementById('utf-kort');if(box&&curId===id)box.innerHTML=utforareKortHtml(it);
+}
+function setUtfFalt(id,f,v){
+  var it=state.items.filter(function(x){return x.id===id;})[0];if(!it)return;
+  if(f==='levDel'){var n=Math.max(0,Math.min(100,Math.round(Number(v)||0)));it.levDel=n;}
+  else if(f==='levTim'){it.levTim=(String(v).trim()===''?'':Math.max(0,Math.round(Number(v)||0)));}
+  else it[f]=v;
+  it.upd=Date.now();save();persistSoon();
+  var box=document.getElementById('utf-kort');if(box&&curId===id)box.innerHTML=utforareKortHtml(it);
+}
+function utforareKortHtml(it){
+  var mode=utforareMode(it),u=utforareInfo(it);
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Vem gör jobbet</b>';
+  if(u.tot>0)h+='<span class="chip acc">'+nf(u.totKr/1000)+' tkr totalt</span>';
+  h+='</div>';
+  h+='<div class="rbknappar" style="margin-top:8px">';
+  for(var i=0;i<UTFOR.length;i++){var pa=mode===UTFOR[i][0];h+='<button class="rbtn'+(pa?' pa':'')+'"'+(pa?' style="background:var(--accent);border-color:var(--accent);color:#fff"':'')+' onclick="setUtforareMode(\''+it.id+'\',\''+UTFOR[i][0]+'\')">'+UTFOR[i][1]+'</button>';}
+  h+='</div>';
+  if(mode==='leverantor'||mode==='delat'){
+    h+='<label style="margin-top:10px">Leverantör (valfritt)</label><input value="'+esc(it.leverantor||'')+'" placeholder="Namn på leverantören" onchange="setUtfFalt(\''+it.id+'\',\'leverantor\',this.value)">';
+    h+='<label style="margin-top:8px">Leverantörens timpris (kr)</label><input type="number" min="0" value="'+esc(String(it.levTim||''))+'" placeholder="Förslag: '+(state.levkostnad||1200)+'" onchange="setUtfFalt(\''+it.id+'\',\'levTim\',this.value)">';
+  }
+  if(mode==='delat'){
+    h+='<label style="margin-top:8px">Leverantörens andel (%)</label><input type="number" min="0" max="100" value="'+esc(String(u.levPct))+'" onchange="setUtfFalt(\''+it.id+'\',\'levDel\',this.value)">';
+    h+='<div class="soft" style="margin-top:4px">Internt tar resterande '+u.intPct+' %.</div>';
+    h+='<label style="margin-top:8px">Vilka delar tar vem</label><textarea class="kommfalt" rows="2" placeholder="T.ex. leverantören gör migreringen, internt tar konfiguration och test" onchange="setUtfFalt(\''+it.id+'\',\'delning\',this.value)">'+esc(it.delning||'')+'</textarea>';
+  }
+  if(u.tot>0){
+    h+='<div class="utfsplit">';
+    if(u.intTim>0||mode!=='leverantor')h+='<div class="utfrad"><span>Internt</span><span>'+tidFormat(u.intTim)+' &middot; '+nf(u.intKr/1000)+' tkr</span></div>';
+    if(u.levTim>0||mode!=='internt')h+='<div class="utfrad"><span>Leverantör</span><span>'+tidFormat(u.levTim)+' &middot; '+nf(u.levKr/1000)+' tkr <span class="soft">('+u.levRate+' kr/h)</span></span></div>';
+    h+='<div class="utfrad tot"><span>Totalt</span><span>'+tidFormat(u.tot)+' &middot; '+nf(u.totKr/1000)+' tkr</span></div>';
+    h+='</div>';
+  }else{
+    h+='<div class="soft" style="margin-top:8px">Sätt en uppskattad tid ovan så räknas kostnaden ut per part.</div>';
+  }
+  return h;
 }
 
 for(var ri=0;ri<TYPER.length;ri++){
@@ -1750,7 +1837,7 @@ function nf(n){return Math.round(n);}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},1900);}
 
 var KEY='skuldkartan_v1';
-var state={items:[],scan:{},snapshots:[],inventeringar:[],mal:[],bevis:{},bevisUpd:0,kartkomm:{},kommUpd:0,profil:{dim:{},verksamhet:{},krav:{},ambition:{},policy:false,upd:0},theme:'auto',skin:'petrol',timkostnad:750,apiClaude:'',apiGpt:'',ai:'claude',seeded:false};
+var state={items:[],scan:{},snapshots:[],inventeringar:[],mal:[],bevis:{},bevisUpd:0,kartkomm:{},kommUpd:0,profil:{dim:{},verksamhet:{},krav:{},ambition:{},policy:false,upd:0},theme:'auto',skin:'petrol',timkostnad:750,levkostnad:1200,apiClaude:'',apiGpt:'',ai:'claude',seeded:false};
 
 function load(){
   try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);Object.assign(state,d);}}catch(e){}
@@ -1766,6 +1853,7 @@ function load(){
   if(!state.profil.krav)state.profil.krav={};
   if(!state.profil.ambition)state.profil.ambition={};
   if(state.profil.policy===undefined)state.profil.policy=false;
+  if(state.levkostnad===undefined)state.levkostnad=1200;
   if(!state.bevis||typeof state.bevis!=='object')state.bevis={};
   if(!state.kartkomm||typeof state.kartkomm!=='object')state.kartkomm={};
   for(var i=0;i<state.items.length;i++)state.items[i]=normItem(state.items[i]);
@@ -1773,7 +1861,7 @@ function load(){
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 function normItem(o){
-  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',riskbeslut:'',
+  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',riskbeslut:'',timmar:'',utforare:'',levDel:'',delning:'',leverantor:'',levTim:'',
     status:'ny',paverkan:3,risk:3,spridning:2,ranta:3,kostnad:3,skapad:todayKey(),upd:Date.now()};
   var r={};for(var k in d)r[k]=d[k];
   for(var j in o)if(o[j]!==undefined)r[j]=o[j];
@@ -2004,6 +2092,9 @@ function itemCard(it,nr){
   h+='<span class="chip '+behovKlass(it.behov)+'">'+esc(behovNamn(it.behov))+'</span>';
   h+='<span class="chip acc">'+esc(kv.n)+'</span>';
   h+='<span class="chip">Hävstång '+havstang(it)+'</span>';
+  var tsk=tidForSkuld(it);
+  if(tsk)h+='<span class="chip">&#9201; '+esc(tsk.txt)+(tsk.auto?'':' (egen)')+'</span>';
+  if(it.utforare)h+='<span class="chip acc">'+esc(utforareNamn(it))+'</span>';
   h+='<span class="chip'+(it.ranta>=4?' bad':'')+'">Ränta '+it.ranta+'/5</span>';
   h+='<span class="chip'+(kl>=6?' good':(kl<4?' warn':''))+'">Klarhet '+kl+'/7</span>';
   var sk=sakerhet(it);
@@ -2368,7 +2459,14 @@ function ordningHtml(akt){
   if(akt.length<2)return '';
   var pl=planeraOrdning(akt);
   var visa=pl.sorted.slice(0,12);
+  var totTim=0,antalTid=0,intKr=0,levKr=0,levTimSum=0,intTimSum=0;
+  for(var ti=0;ti<akt.length;ti++){var ts=tidForSkuld(akt[ti]);if(ts){totTim+=ts.tim;antalTid++;var u=utforareInfo(akt[ti]);intKr+=u.intKr;levKr+=u.levKr;levTimSum+=u.levTim;intTimSum+=u.intTim;}}
   var h='<div class="section-title">Ordningsförslag<span class="soft">'+akt.length+'</span></div>';
+  if(totTim>0){
+    h+='<div class="card-panel tight" style="margin-bottom:10px"><b>Uppskattad total tid:</b> '+esc(tidFormat(totTim))+' <span class="soft">(ca '+nf((intKr+levKr)/1000)+' tkr, '+antalTid+' skulder med uppskattning)</span>';
+    if(levKr>0)h+='<div class="utfsplit" style="margin-top:8px"><div class="utfrad"><span>Internt</span><span>'+tidFormat(intTimSum)+' &middot; '+nf(intKr/1000)+' tkr</span></div><div class="utfrad"><span>Leverantör</span><span>'+tidFormat(levTimSum)+' &middot; '+nf(levKr/1000)+' tkr</span></div></div>';
+    h+='</div>';
+  }
   h+='<div class="soft" style="margin-bottom:8px">Föreslagen turordning: måste ha först, sedan det som låser upp flest andra skulder, sedan störst hävstång. Beroenden visas som gör den ena innan den andra.</div>';
   var harBeroenden=false;
   for(var i=0;i<visa.length;i++){
@@ -2662,6 +2760,18 @@ function openItem(id){
   h+='<div class="card-panel tight" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b>Allvar '+a+'</b> · Hävstång '+havstang(it)+'</div><span class="chip acc">'+esc(kv.n)+'</span></div><div class="soft" style="margin-top:5px">'+esc(kv.d)+'</div></div>';
   h+='<div class="card-panel tight" id="rb-kort" style="margin-top:10px">'+riskKortHtml(it)+'</div>';
 
+  var tsk=tidForSkuld(it),T=TIDINFO[it.typ];
+  var autoTxt=T?tidFormat(Math.round(T.atgard*tidFaktor(T.skala))):null;
+  h+='<div class="card-panel tight" style="margin-top:10px">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Uppskattad tid att åtgärda</b>';
+  if(tsk)h+='<span class="chip acc">'+esc(tsk.txt)+' &middot; '+nf(tsk.kr/1000)+' tkr</span>';
+  h+='</div>';
+  h+='<label style="margin-top:8px">Egna timmar (lämna tomt för förslag)</label>';
+  h+='<input id="f-timmar" type="number" min="0" step="1" value="'+esc(String(it.timmar||''))+'" placeholder="'+(autoTxt?'Förslag: '+esc(String(Math.round(T.atgard*tidFaktor(T.skala))))+' h':'Timmar')+'" oninput="tidLive()">';
+  h+='<div class="soft" id="tid-hint" style="margin-top:6px">'+(tsk?(tsk.auto?('Förslag utifrån skuldtypen, skalat efter er storlek. Räknar med '+(state.timkostnad||750)+' kr/timme.'):('Egen uppskattning. '+(autoTxt?'Förslag för den här typen: '+esc(autoTxt)+'.':''))):'Ingen tidsschablon för den här typen &ndash; skriv en egen uppskattning.')+'</div>';
+  h+='</div>';
+  h+='<div class="card-panel tight" id="utf-kort" style="margin-top:10px">'+utforareKortHtml(it)+'</div>';
+
   h+='<div class="sub-h">Klargör skulden</div>';
   var ns=nastaSteg(it);
   h+='<div class="soft" style="margin-bottom:6px">'+(ns?'Nästa steg: <b>'+esc(ns.n)+'</b>. '+esc(ns.h):'Alla sju steg ifyllda. Skulden är utredd och beslutad.')+'</div>';
@@ -2731,6 +2841,16 @@ function setScore(key,v){
   var sb=document.getElementById('sak-box');if(sb)sb.innerHTML=sakBoxHtml(it);
   save();persistSoon();
 }
+function tidLive(){
+  var e=document.getElementById('f-timmar');if(!e)return;
+  var v=Number(e.value);
+  var hint=document.getElementById('tid-hint');if(!hint)return;
+  if(e.value.trim()!==''&&!isNaN(v)&&v>0){
+    hint.textContent='Egen uppskattning: '+tidFormat(v)+' \u2013 ca '+nf(kostnadForTid(v)/1000)+' tkr (med '+(state.timkostnad||750)+' kr/timme).';
+  }else{
+    hint.textContent='Tomt fält använder förslaget utifrån skuldtypen, skalat efter er storlek.';
+  }
+}
 function collectItem(){
   var it=state.items.filter(function(x){return x.id===curId;})[0];if(!it)return null;
   it.titel=document.getElementById('f-titel').value.trim();
@@ -2739,6 +2859,7 @@ function collectItem(){
   it.system=document.getElementById('f-system').value.trim();
   var eo=document.getElementById('f-objekt');if(eo)it.objekt=eo.value.trim();
   var ea=document.getElementById('f-antal');if(ea)it.antal=ea.value.trim();
+  var eh=document.getElementById('f-timmar');if(eh)it.timmar=(eh.value.trim()===''?'':Math.max(0,Math.round(Number(eh.value)||0)));
   it.tillit=tillitAv(it);
   var vm=document.querySelectorAll('#mal-chips .chip.on');
   if(document.getElementById('mal-chips')){
@@ -2813,7 +2934,8 @@ function renderInst(){
   h+='</select></div>';
 
   h+='<div class="section-title">Räkna om räntan</div><div class="card-panel">';
-  h+='<label>Timkostnad i kronor</label><input id="i-tim" type="number" value="'+(state.timkostnad||750)+'">';
+  h+='<label>Intern timkostnad i kronor</label><input id="i-tim" type="number" value="'+(state.timkostnad||750)+'">';
+  h+='<label>Leverantörstimpris i kronor</label><input id="i-lev" type="number" value="'+(state.levkostnad||1200)+'">';
   h+='<div class="soft" style="margin-top:8px">Används för att översätta förlorad tid till pengar i analysen.</div></div>';
 
   h+='<div class="section-title">GitHub-synk</div><div class="card-panel">';
@@ -2846,6 +2968,7 @@ function renderInst(){
   document.getElementById('i-theme').onchange=function(){state.theme=this.value;save();applyTheme();};
   document.getElementById('i-skin').onchange=function(){state.skin=this.value;save();applyTheme();};
   document.getElementById('i-tim').onchange=function(){state.timkostnad=parseInt(this.value,10)||750;save();persistSoon();};
+  var ilev=document.getElementById('i-lev');if(ilev)ilev.onchange=function(){state.levkostnad=parseInt(this.value,10)||1200;save();persistSoon();};
   document.getElementById('i-ai').onchange=function(){state.ai=this.value;save();};
   document.getElementById('i-kc').onchange=function(){state.apiClaude=this.value.trim();save();};
   document.getElementById('i-kg').onchange=function(){state.apiGpt=this.value.trim();save();};
@@ -2865,7 +2988,7 @@ function saveSyncUi(){
   }).then(function(){st.textContent='Klart.';}).catch(function(e){st.textContent='Fel: '+e.message;});
 }
 function exportJson(){
-  var blob=new Blob([JSON.stringify({app:'skuldkartan',version:APPINFO.version,items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,kartkomm:state.kartkomm,timkostnad:state.timkostnad,exporterad:new Date().toISOString()},null,1)],{type:'application/json'});
+  var blob=new Blob([JSON.stringify({app:'skuldkartan',version:APPINFO.version,items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,kartkomm:state.kartkomm,timkostnad:state.timkostnad,levkostnad:state.levkostnad,exporterad:new Date().toISOString()},null,1)],{type:'application/json'});
   var u=URL.createObjectURL(blob);
   var a=document.createElement('a');a.href=u;a.download='skuldkartan-'+todayKey()+'.json';a.click();
   setTimeout(function(){URL.revokeObjectURL(u);},1500);
@@ -2885,6 +3008,7 @@ function importJson(e){
       if(d.bevis)Object.assign(state.bevis,d.bevis);
       if(d.kartkomm)Object.assign(state.kartkomm,d.kartkomm);
       if(d.timkostnad)state.timkostnad=d.timkostnad;
+      if(d.levkostnad)state.levkostnad=d.levkostnad;
       save();persist();renderActive();toast('Importerat');
     }catch(err){toast('Filen gick inte att läsa');}
   };
@@ -3705,18 +3829,24 @@ function exportExcel(){
     /* 2. Skulder */
     var sh=[['Titel','Område','Skuldtyp','System','Objekt','Antal','Status','Behov',
       'Påverkan','Risk','Spridning','Ränta','Kostnad','Allvar','Osäkerhetsspann','Hävstång','Kvadrant',
+      'Uppskattad tid (h)','Uppskattad kostnad (tkr)','Tid källa',
+      'Utförare','Leverantör','Leverantörsandel %','Leverantörstimpris','Intern kostnad (tkr)','Leverantörskostnad (tkr)','Vilka delar tar vem',
       'Underlag','Mörkertal','Säkerhet %','Klarhet 0-7','Beskrivning','Symptom','Grundorsak','Konsekvens','Åtgärd','Ägare','Beslut','Mål','Skapad']];
     var lst=state.items.slice().sort(function(a,b){var d=(Number(a.behov)||2)-(Number(b.behov)||2);if(d)return d;return allvar(b)-allvar(a);});
     for(var s=0;s<lst.length;s++){
       var it=lst[s],ty=TYPMAP[it.typ],G=GRUPPMAP[ty.grupp];
       var malnamn=(it.mal||[]).map(function(mid){var m=malById(mid);return m?m.namn:'';}).filter(Boolean).join('; ');
+      var ts=tidForSkuld(it),u=utforareInfo(it);
+      var utfNamn=({internt:'Internt',leverantor:'Leverantör',delat:'Delat'})[utforareMode(it)];
       sh.push([it.titel||'',G?G.namn:'',ty.namn,it.system||'',it.objekt||'',it.antal||'',
         (STATUS.filter(function(x){return x.id===it.status;})[0]||{}).namn||it.status,behovNamn(it.behov),
         it.paverkan,it.risk,it.spridning,it.ranta,it.kostnad,allvar(it),spann(it),havstang(it),KVAD[kvadrant(it)].n,
+        ts?ts.tim:'',ts?Math.round(ts.kr/1000):'',ts?(ts.auto?'Förslag':'Egen'):'',
+        utfNamn,it.leverantor||'',u.levPct,u.levRate,Math.round(u.intKr/1000),Math.round(u.levKr/1000),it.delning||'',
         UNDERLAG[(Number(it.underlag)||3)-1].n,MORKERTAL[(Number(it.morkertal)||3)-1].n,sakerhet(it),klarhet(it),
         it.beskrivning||'',it.symptom||'',it.grundorsak||'',it.konsekvens||'',it.atgard||'',it.agare||'',it.beslut||'',malnamn,it.skapad||'']);
     }
-    X.utils.book_append_sheet(wb,aoaSheet(X,sh,[34,20,22,18,20,7,12,14,9,7,10,7,9,8,9,9,18,16,16,11,11,40,30,30,30,34,16,24,26,12]),'Skulder');
+    X.utils.book_append_sheet(wb,aoaSheet(X,sh,[34,20,22,18,20,7,12,14,9,7,10,7,9,8,9,9,18,14,16,10,12,20,14,14,14,16,40,16,16,11,11,40,30,30,30,34,16,24,26,12]),'Skulder');
 
     /* 3. Kartläggning – komplett med steg, varför, risk, tid och kommentar */
     var ka=[['Område','Skuldtyp','Kontrollfråga','Svar','Er kommentar','Rekommenderat steg',
@@ -3896,6 +4026,7 @@ function ghPull(){
       else if(d.kartkomm)for(var kk in d.kartkomm)if(!state.kartkomm[kk])state.kartkomm[kk]=d.kartkomm[kk];
       else if(d.bevis)for(var bk in d.bevis)if(!state.bevis[bk])state.bevis[bk]=d.bevis[bk];
       if(d.timkostnad)state.timkostnad=d.timkostnad;
+      if(d.levkostnad)state.levkostnad=d.levkostnad;
       save();renderActive();
     }
     setBadge('ok','Synkad');
@@ -3904,7 +4035,7 @@ function ghPull(){
 function ghPush(){
   if(!syncOn())return Promise.resolve();
   setBadge('load','Sparar…');
-  var content=b64enc(JSON.stringify({items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,bevisUpd:state.bevisUpd,kartkomm:state.kartkomm,kommUpd:state.kommUpd,timkostnad:state.timkostnad,updated:new Date().toISOString()}));
+  var content=b64enc(JSON.stringify({items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,bevisUpd:state.bevisUpd,kartkomm:state.kartkomm,kommUpd:state.kommUpd,timkostnad:state.timkostnad,levkostnad:state.levkostnad,updated:new Date().toISOString()}));
   var doPut=function(){
     var body={message:'Uppdatering via Skuldkartan',content:content};
     if(sync.sha)body.sha=sync.sha;
