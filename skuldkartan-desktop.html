@@ -217,6 +217,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .utfsplit{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 .utfrad{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0}
 .utfrad.tot{border-top:1px solid var(--line);margin-top:4px;padding-top:6px;font-weight:700}
+.scard-ny{border-left:3px solid var(--accent)}
+.chip.ny{background:var(--accent);color:#fff;font-weight:700;border-color:var(--accent)}
 .fixlist{margin-top:10px;background:var(--panel2);border-radius:12px;padding:10px}
 .fixlist .fh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .fixlist ul{margin-left:16px;font-size:12px;line-height:1.7}
@@ -485,7 +487,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.23.0',
+version:'1.25.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -498,6 +500,17 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.25.0',d:'2026-08-06',items:[
+  'Ny-markering på skulder som inte öppnats än: en tydlig Ny-etikett och en färgad kant på kortet.',
+  'Markeringen försvinner så fort ni öppnar skulden.',
+  'Nya skulder kan filtreras fram via en egen ruta i översikten, och Excel visar om varje skuld är öppnad eller ny.',
+  'Befintliga skulder räknas som redan sedda vid uppgraderingen, så bara det som verkligen är nytt lyser upp.'
+ ]},
+ {v:'1.24.0',d:'2026-08-06',items:[
+  'Varje skuld visar nu när den senast uppdaterades, både som relativ tid och datum i skuldkortet.',
+  'Skuldkorten i listorna visar en kort uppd-markering, och Skulder-vyn kan sorteras på senast ändrad.',
+  'Senast uppdaterad följer med som en egen kolumn i Excel-exporten.'
+ ]},
  {v:'1.23.0',d:'2026-08-06',items:[
   'Välj per skuld vem som gör jobbet: internt, leverantör eller delat.',
   'Vid delat anger ni leverantörens andel i procent och vilka delar som tar vart, resten görs internt.',
@@ -1875,6 +1888,28 @@ var SKALTEXT={paverkan:'Verksamhetspåverkan',risk:'Sannolikhet och risk',spridn
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
 function esc(s){if(s===null||s===undefined)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function todayKey(){var d=new Date();var m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
+function narDatum(ts){
+  if(!ts)return '';
+  var d=new Date(Number(ts));if(isNaN(d.getTime()))return '';
+  var m=d.getMonth()+1,dd=d.getDate();
+  return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;
+}
+function narRelativ(ts){
+  if(!ts)return '';
+  var nu=Date.now(),diff=nu-Number(ts);
+  if(isNaN(diff))return '';
+  if(diff<0)diff=0;
+  var min=Math.floor(diff/60000),tim=Math.floor(diff/3600000),dag=Math.floor(diff/86400000);
+  if(min<1)return 'nyss';
+  if(min<60)return 'för '+min+' min sedan';
+  if(tim<24)return 'för '+tim+(tim===1?' timme':' timmar')+' sedan';
+  if(dag===1)return 'igår';
+  if(dag<30)return 'för '+dag+' dagar sedan';
+  var man=Math.floor(dag/30);
+  if(man<12)return 'för '+man+(man===1?' månad':' månader')+' sedan';
+  var ar=Math.floor(dag/365);return 'för '+ar+(ar===1?' år':' år')+' sedan';
+}
+function narText(ts){var r=narRelativ(ts),dat=narDatum(ts);return dat?(r+' ('+dat+')'):'';}
 function nf(n){return Math.round(n);}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},1900);}
 
@@ -1899,11 +1934,12 @@ function load(){
   if(!state.bevis||typeof state.bevis!=='object')state.bevis={};
   if(!state.kartkomm||typeof state.kartkomm!=='object')state.kartkomm={};
   for(var i=0;i<state.items.length;i++)state.items[i]=normItem(state.items[i]);
+  if(!state.seddMig){for(var im=0;im<state.items.length;im++){if(!state.items[im].sedd)state.items[im].sedd=state.items[im].upd||Date.now();}state.seddMig=true;save();}
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 function normItem(o){
-  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',riskbeslut:'',timmar:'',utforare:'',levDel:'',delning:'',leverantor:'',levTim:'',
+  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',riskbeslut:'',timmar:'',utforare:'',levDel:'',delning:'',leverantor:'',levTim:'',sedd:'',
     status:'ny',paverkan:3,risk:3,spridning:2,ranta:3,kostnad:3,skapad:todayKey(),upd:Date.now()};
   var r={};for(var k in d)r[k]=d[k];
   for(var j in o)if(o[j]!==undefined)r[j]=o[j];
@@ -1972,6 +2008,7 @@ function renderOversikt(){
      statTap('osaker','Snittsäkerhet',snittSakerhet()+' %','hur väl underbyggt')+
      statTap('ranta','Ränta',rt+' h','uppskattad förlust per månad')+
      statTap('oklara','Oklara',oklara,'saknar utredning')+
+     statTap('nya','Nya',akt.filter(function(x){return !x.sedd;}).length,'ej öppnade än')+
      '</div>';
   var pk=profilKlass();
   if(pk){
@@ -2124,13 +2161,14 @@ function filtKvad(k){kvadFilter=k;typFilter='';gruppFilter='';ovFilter='';go('sk
 function itemCard(it,nr){
   var t=TYPMAP[it.typ],a=allvar(it),kl=klarhet(it),kv=KVAD[kvadrant(it)];
   var acol=a>=75?'var(--red)':(a>=55?'var(--gold)':'var(--ok)');
-  var h='<div class="scard" onclick="openItem(\''+it.id+'\')"><div class="sh">';
+  var h='<div class="scard'+(!it.sedd?' scard-ny':'')+'" onclick="openItem(\''+it.id+'\')"><div class="sh">';
   h+='<div class="sic" style="background:'+t.farg+'22;color:'+t.farg+'">'+(nr?nr:t.ikon)+'</div>';
-  var rad=[t.namn];if(it.system)rad.push(it.system);if(it.objekt)rad.push(it.objekt);if(it.antal)rad.push(it.antal+' st');if(it.agare)rad.push(it.agare);
+  var rad=[t.namn];if(it.system)rad.push(it.system);if(it.objekt)rad.push(it.objekt);if(it.antal)rad.push(it.antal+' st');if(it.agare)rad.push(it.agare);if(it.upd)rad.push('uppd '+narRelativ(it.upd));
   h+='<div class="st"><div class="stn">'+esc(it.titel||'Namnlös skuld')+'</div><div class="sts">'+esc(rad.join(' · '))+'</div></div>';
   var sp=spann(it);
   h+='<div class="ssc"><div class="sv" style="color:'+acol+'">'+a+'</div><div class="sl">'+(sp?'±'+sp:'allvar')+'</div></div>';
   h+='</div><div class="chips">';
+  if(!it.sedd)h+='<span class="chip ny">&#9679; Ny</span>';
   h+='<span class="chip '+behovKlass(it.behov)+'">'+esc(behovNamn(it.behov))+'</span>';
   h+='<span class="chip acc">'+esc(kv.n)+'</span>';
   h+='<span class="chip">Hävstång '+havstang(it)+'</span>';
@@ -2153,6 +2191,8 @@ function itemCard(it,nr){
 /* ── Vy: Skulder ─────────────────────────────────────────── */
 var typFilter='',gruppFilter='',behovFilter='',sokning='';
 var ovFilter='';
+var skSort='allvar';
+function setSkSort(v){skSort=v;renderSkulder();}
 var OVURVAL={
  aktiv:{n:'Aktiva skulder',f:function(x){return aktiva().indexOf(x)>=0;}},
  gornu:{n:'Gör nu',f:function(x){return kvadrant(x)==='gornu'&&aktiva().indexOf(x)>=0;}},
@@ -2160,7 +2200,8 @@ var OVURVAL={
  blinda:{n:'Blinda fläckar',f:function(x){return TYPMAP[x.typ]&&TYPMAP[x.typ].grupp==='okant'&&aktiva().indexOf(x)>=0;}},
  osaker:{n:'Låg säkerhet',f:function(x){return sakerhet(x)<50&&aktiva().indexOf(x)>=0;}},
  ranta:{n:'Växande ränta',f:function(x){return Number(x.ranta||0)>=4&&aktiva().indexOf(x)>=0;}},
- oklara:{n:'Oklara',f:function(x){return klarhet(x)<4&&aktiva().indexOf(x)>=0;}}
+ oklara:{n:'Oklara',f:function(x){return klarhet(x)<4&&aktiva().indexOf(x)>=0;}},
+ nya:{n:'Nya (ej öppnade)',f:function(x){return !x.sedd&&aktiva().indexOf(x)>=0;}}
 };
 function visaSkulder(f){ovFilter=(OVURVAL[f]?f:'');typFilter='';kvadFilter='';gruppFilter='';behovFilter='';go('skulder');}
 function renderSkulder(){
@@ -2178,6 +2219,8 @@ function renderSkulder(){
     if(!gn)continue;
     fh+='<button class="'+(gruppFilter===GRUPPER[g].id?'on':'')+'" onclick="setGrupp(\''+GRUPPER[g].id+'\')">'+GRUPPER[g].ikon+' '+esc(GRUPPER[g].namn)+' '+gn+'</button>';
   }
+  fh+='<button class="'+(skSort==='allvar'?'on':'')+'" onclick="setSkSort(\'allvar\')">Sortera: allvar</button>';
+  fh+='<button class="'+(skSort==='senast'?'on':'')+'" onclick="setSkSort(\'senast\')">Sortera: senast ändrad</button>';
   fb.innerHTML=fh;
   var list=state.items.slice();
   if(ovFilter&&OVURVAL[ovFilter])list=list.filter(OVURVAL[ovFilter].f);
@@ -2186,7 +2229,7 @@ function renderSkulder(){
   if(behovFilter)list=list.filter(function(x){return String(x.behov)===behovFilter;});
   if(kvadFilter)list=list.filter(function(x){return kvadrant(x)===kvadFilter&&x.status!=='atgardad'&&x.status!=='accepterad';});
   if(sokning){var q=sokning.toLowerCase();list=list.filter(function(x){return (x.titel+' '+x.system+' '+x.agare+' '+x.beskrivning).toLowerCase().indexOf(q)>=0;});}
-  list.sort(function(a,b){var d=(Number(a.behov)||2)-(Number(b.behov)||2);if(d)return d;return allvar(b)-allvar(a);});
+  list.sort(function(a,b){if(skSort==='senast')return (Number(b.upd)||0)-(Number(a.upd)||0);var d=(Number(a.behov)||2)-(Number(b.behov)||2);if(d)return d;return allvar(b)-allvar(a);});
   var el=document.getElementById('sk-body');
   if(ovFilter&&OVURVAL[ovFilter]){
     document.getElementById('sk-count').textContent='Urval: '+OVURVAL[ovFilter].n+' – '+list.length+' skulder.';
@@ -2760,6 +2803,7 @@ function openItem(id){
   curId=id;
   var it=id?state.items.filter(function(x){return x.id===id;})[0]:null;
   if(!it){it=normItem({});state.items.push(it);curId=it.id;}
+  if(id&&it&&!it.sedd){it.sedd=Date.now();save();persistSoon();}
   document.getElementById('it-h').textContent=it.titel?it.titel:'Ny skuld';
   var el=document.getElementById('it-body');
   var h='';
@@ -2835,7 +2879,7 @@ function openItem(id){
     h+='</div><div class="scalehint">Tryck för att koppla. Målbilden visar sedan vad som står i vägen.</div>';
   }
   h+='<div class="btn-row"><button class="btn ghost" onclick="aiItem()">AI-analys av skulden</button><button class="btn ghost danger" onclick="delItem()">Ta bort</button></div>';
-  h+='<div class="soft" style="margin-top:10px">Skapad '+esc(it.skapad)+'.</div>';
+  h+='<div class="soft" style="margin-top:10px">Skapad '+esc(it.skapad)+(it.upd?'. Senast uppdaterad '+esc(narText(it.upd)):'')+'.</div>';
   el.innerHTML=h;
   openSheet('sheet-item');
 }
@@ -3873,7 +3917,7 @@ function exportExcel(){
       'Påverkan','Risk','Spridning','Ränta','Kostnad','Allvar','Osäkerhetsspann','Hävstång','Kvadrant',
       'Uppskattad tid (h)','Uppskattad kostnad (tkr)','Tid källa',
       'Utförare','Leverantör','Leverantörsandel %','Leverantörstimpris','Intern kostnad (tkr)','Leverantörskostnad (tkr)','Vilka delar tar vem',
-      'Underlag','Mörkertal','Säkerhet %','Klarhet 0-7','Beskrivning','Symptom','Grundorsak','Konsekvens','Åtgärd','Ägare','Beslut','Mål','Skapad']];
+      'Underlag','Mörkertal','Säkerhet %','Klarhet 0-7','Beskrivning','Symptom','Grundorsak','Konsekvens','Åtgärd','Ägare','Beslut','Mål','Skapad','Senast uppdaterad','Öppnad']];
     var lst=state.items.slice().sort(function(a,b){var d=(Number(a.behov)||2)-(Number(b.behov)||2);if(d)return d;return allvar(b)-allvar(a);});
     for(var s=0;s<lst.length;s++){
       var it=lst[s],ty=TYPMAP[it.typ],G=GRUPPMAP[ty.grupp];
@@ -3886,9 +3930,9 @@ function exportExcel(){
         ts?ts.tim:'',ts?Math.round(ts.kr/1000):'',ts?(ts.auto?'Förslag':'Egen'):'',
         utfNamn,it.leverantor||'',u.levPct,u.levRate,Math.round(u.intKr/1000),Math.round(u.levKr/1000),it.delning||'',
         UNDERLAG[(Number(it.underlag)||3)-1].n,MORKERTAL[(Number(it.morkertal)||3)-1].n,sakerhet(it),klarhet(it),
-        it.beskrivning||'',it.symptom||'',it.grundorsak||'',it.konsekvens||'',it.atgard||'',it.agare||'',it.beslut||'',malnamn,it.skapad||'']);
+        it.beskrivning||'',it.symptom||'',it.grundorsak||'',it.konsekvens||'',it.atgard||'',it.agare||'',it.beslut||'',malnamn,it.skapad||'',it.upd?narDatum(it.upd):'',it.sedd?'Ja':'Ny']);
     }
-    X.utils.book_append_sheet(wb,aoaSheet(X,sh,[34,20,22,18,20,7,12,14,9,7,10,7,9,8,9,9,18,14,16,10,12,20,14,14,14,16,40,16,16,11,11,40,30,30,30,34,16,24,26,12]),'Skulder');
+    X.utils.book_append_sheet(wb,aoaSheet(X,sh,[34,20,22,18,20,7,12,14,9,7,10,7,9,8,9,9,18,14,16,10,12,20,14,14,14,16,40,16,16,11,11,40,30,30,30,34,16,24,26,12,14,8]),'Skulder');
 
     /* 3. Kartläggning – komplett med steg, varför, risk, tid och kommentar */
     var ka=[['Område','Skuldtyp','Kontrollfråga','Svar','Er kommentar','Rekommenderat steg',
