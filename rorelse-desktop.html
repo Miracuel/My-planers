@@ -111,6 +111,8 @@ input,textarea,select{background:var(--panel2);border:1px solid var(--line);bord
 .meal-top b{font-family:Georgia,serif;font-weight:400;font-size:15px}
 .meal-row.done .meal-top b{text-decoration:line-through;color:var(--muted)}
 .meal-sug{margin-top:3px}
+.rec-sleep{display:flex;align-items:center;gap:8px;margin-top:4px}
+.rec-sleep select{width:auto;flex:0 0 auto;margin:0}
 .ovl-row{padding:9px 0;border-bottom:1px solid var(--line)}
 .ovl-name{font-family:Georgia,serif;font-size:15px;color:var(--ink)}
 .ovl-next{font-size:13px;color:var(--accent);margin-top:2px}
@@ -359,6 +361,9 @@ html[data-theme=dark][data-palette=ljung]{--accent:#C58FB6;--accent-soft:#43303D
     <button class="btn" id="open-planner" style="width:100%;margin-top:8px">🎯 Planera pass &amp; mål</button>
     <div class="chips" id="quick-chips"></div>
   </div>
+
+  <div class="section-title">Återhämtning</div>
+  <div class="card-panel" id="recovery"></div>
 
   <div class="section-title">Pepp &amp; framsteg</div>
   <div class="card-panel" id="pepp"></div>
@@ -1155,6 +1160,7 @@ function ensureGym(){
   if(!state.overload)state.overload={repMin:8,repMax:12,inc:2.5,method:'double'};
   if(!state.nutrition)state.nutrition={sex:'kvinna',age:null,height:null,weight:null,activity:'1.375',mode:'underhall',rate:0.75,sleeve:false,meals:4,wake:'07:00',cycle:false,cycleStart:'',cycleLen:28};
   if(state.nutrition){if(!state.nutrition.prefs)state.nutrition.prefs={diet:'allt',exclude:[],bigMeal:'jamnt'};if(!state.nutrition.mealsDone)state.nutrition.mealsDone={};}
+  if(typeof state.sleepTarget!=='number')state.sleepTarget=8;
   if(!state.recurDone||typeof state.recurDone!=='object')state.recurDone={};
   if(!Array.isArray(state.gyms)){
     var old=state.gym||{};
@@ -2447,7 +2453,7 @@ var b64enc=function(s){return btoa(unescape(encodeURIComponent(s)));};
 var b64dec=function(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));};
 function setSyncBadge(stt,msg){var b=document.getElementById('sync-badge');if(!b)return;b.dataset.s=stt;b.textContent=msg;}
 function refreshSyncBadge(){if(syncOn())setSyncBadge('ok','Synkad');else setSyncBadge('off','Lokal');}
-function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,templates:state.templates,someday:state.someday,goals:state.goals,goalNote:state.goalNote,longGoal:state.longGoal,overload:state.overload,nutrition:state.nutrition,gyms:state.gyms,updated:new Date().toISOString()};}
+function pickData(){return {sessions:state.sessions,passTypes:state.passTypes,planned:state.planned,exercises:state.exercises,recurring:state.recurring,templates:state.templates,someday:state.someday,goals:state.goals,goalNote:state.goalNote,longGoal:state.longGoal,overload:state.overload,nutrition:state.nutrition,sleepTarget:state.sleepTarget,gyms:state.gyms,updated:new Date().toISOString()};}
 function mergeById(local,remote){var m={};(local||[]).forEach(function(x){m[x.id]=x;});(remote||[]).forEach(function(x){if(!m[x.id])m[x.id]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergeByName(local,remote){var m={};(local||[]).forEach(function(x){m[x.name]=x;});(remote||[]).forEach(function(x){if(!m[x.name])m[x.name]=x;});return Object.keys(m).map(function(k){return m[k];});}
 function mergePlanned(local,remote){var out=Object.assign({},local);Object.keys(remote||{}).forEach(function(k){var seen={};var arr=[];(out[k]||[]).concat(remote[k]||[]).forEach(function(p){var key=(p.name||'')+'|'+(p.time||'');if(!seen[key]){seen[key]=1;arr.push(p);}});out[k]=arr;});return out;}
@@ -2477,6 +2483,7 @@ function applyData(d){
   if(d.longGoal!==undefined)state.longGoal=d.longGoal;
   if(d.overload)state.overload=d.overload;
   if(d.nutrition)state.nutrition=d.nutrition;
+  if(typeof d.sleepTarget==='number')state.sleepTarget=d.sleepTarget;
   if(d.planned&&typeof d.planned==='object')state.planned=mergePlanned(state.planned,d.planned);
   if(Array.isArray(d.gyms))state.gyms=mergeGyms(state.gyms,d.gyms);
   else if(d.gym&&typeof d.gym==='object'&&Array.isArray(state.gyms)&&state.gyms.length){
@@ -3058,21 +3065,21 @@ document.getElementById('td-done').onclick=closeSheets;
 // ── Import från Strength Log ──────────────────────────
 function parseAmPm(s){
   var m=s.match(/(\d{1,2}):(\d{2})\s*([ap])\.?\s*m/i);
-  if(!m)return '';
-  var hh=+m[1],mm=m[2],ap=m[3].toLowerCase();
-  if(ap==='p'&&hh<12)hh+=12;if(ap==='a'&&hh===12)hh=0;
-  return (hh<10?'0'+hh:hh)+':'+mm;
+  if(m){var hh=+m[1],mm=m[2],ap=m[3].toLowerCase();if(ap==='p'&&hh<12)hh+=12;if(ap==='a'&&hh===12)hh=0;return (hh<10?'0'+hh:hh)+':'+mm;}
+  var m24=s.match(/(\d{1,2}):(\d{2})/);
+  if(m24){var h2=+m24[1];return (h2<10?'0'+h2:h2)+':'+m24[2];}
+  return '';
 }
 function parseWeightNum(s){return parseFloat(String(s).replace(/\s/g,'').replace(',','.'));}
 function parseStrengthLog(text){
   var lines=(text||'').split(/\r?\n/);
   var out=[];var cur=null;
   var skip=/^(Set|Reps|Medelvikt|Volym|Träningstid)\s*:/i;
-  var dateRe=/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2}\s*[ap]\.?\s*m)/i;
+  var dateRe=/^(\d{4}-\d{2}-\d{2})(?:\s+(\d{1,2}:\d{2}\s*(?:[ap]\.?\s*m)?))?/i;
   lines.forEach(function(raw){
     var line=raw.trim();if(!line)return;
     var dm=line.match(dateRe);
-    if(dm){if(cur)out.push(cur);cur={date:dm[1],time:parseAmPm(dm[2]),min:null,items:[]};return;}
+    if(dm){if(cur)out.push(cur);cur={date:dm[1],time:(dm[2]?parseAmPm(dm[2]):''),min:null,items:[]};return;}
     var tm=line.match(/^Träningstid:\s*(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?/i);
     if(tm&&cur){var hh=+(tm[1]||0),mn=+(tm[2]||0);cur.min=(hh*60+mn)||null;return;}
     if(skip.test(line))return;
@@ -3744,8 +3751,8 @@ function openDream(){
   document.querySelectorAll('#dream-sheet .dseg').forEach(function(seg){
     seg.querySelectorAll('button').forEach(function(b){b.onclick=function(){
       seg.dataset.val=b.dataset.y;seg.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');
-      if(seg.dataset.k==='dq-shape')document.getElementById('dq-part-wrap').style.display=(b.dataset.y==='ja')?'':'none';
-      if(seg.dataset.k==='dq-weight')document.getElementById('dq-wdir-wrap').style.display=(b.dataset.y==='ja')?'':'none';
+      if(seg.dataset.k==='dq-shape')document.getElementById('dq-part-wrap').style.display=(b.dataset.y==='ja')?'block':'none';
+      if(seg.dataset.k==='dq-weight')document.getElementById('dq-wdir-wrap').style.display=(b.dataset.y==='ja')?'block':'none';
     };});
   });
 })();
@@ -3875,9 +3882,54 @@ document.getElementById('g-ai').onclick=function(){
   },500);
 };
 
+// ── Vila & sömn ───────────────────────────────────────
+function subTime(hhmm,hours){var p=(hhmm||'07:00').split(':');var m=(parseInt(p[0],10)||7)*60+(parseInt(p[1],10)||0)-Math.round(hours*60);m=((m%1440)+1440)%1440;return two(Math.floor(m/60))+':'+two(m%60);}
+function restDaysAfter(s){var v=itemsVol(s);if((s.min||0)>=60||v>=8000)return 3;if((s.min||0)&&(s.min||0)<=20)return 1;return 2;}
+function musclesReady(){var last={};state.sessions.forEach(function(s){if(!isPass(s))return;(s.items||[]).forEach(function(it){var ex=it.exId?exById(it.exId):exByName(it.name);((ex&&ex.muskler)||[]).forEach(function(m){if(m==='Kondition'||m==='Helkropp')return;if(!last[m]||s.date>last[m])last[m]=s.date;});});});return last;}
+function renderRecovery(){
+  var el=document.getElementById('recovery');if(!el)return;
+  var wake=(state.nutrition&&state.nutrition.wake)||'07:00';
+  var tgt=state.sleepTarget||8;
+  var age=(state.nutrition&&state.nutrition.age)||null;
+  var range=(age&&age>=65)?'7–8':'7–9';
+  var bed=subTime(wake,tgt);
+  var html='';
+  var passes=state.sessions.filter(isPass).sort(function(a,b){return a.date<b.date?1:-1;});
+  if(!passes.length){
+    html+='<div class="soft">Logga ett pass så ger jag förslag på hur många dagars vila dina muskler behöver.</div>';
+  }else{
+    var lp=passes[0];var rd=restDaysAfter(lp);var ready=dateOf(lp.date);ready.setDate(ready.getDate()+rd);
+    var t0=new Date();t0.setHours(0,0,0,0);
+    var daysLeft=Math.ceil((ready-t0)/86400000);
+    var lm={};(lp.items||[]).forEach(function(it){var ex=it.exId?exById(it.exId):exByName(it.name);((ex&&ex.muskler)||[]).forEach(function(m){if(m!=='Kondition'&&m!=='Helkropp')lm[m]=1;});});
+    var lmk=Object.keys(lm);
+    var streak=0;var d=new Date();d.setHours(0,0,0,0);
+    for(var i=0;i<14;i++){var k=isodd(d);var has=state.sessions.some(function(s){return s.date===k&&(isPass(s)||isMovement(s));});var restLogged=state.sessions.some(function(s){return s.date===k&&isRest(s);});if(has&&!restLogged){streak++;d.setDate(d.getDate()-1);}else break;}
+    var trainedToday=state.sessions.some(function(s){return s.date===todayKey()&&(isPass(s)||isMovement(s));});
+    var verdict,vt;
+    if(trainedToday){verdict='Bra jobbat idag 🌿';vt='Ge kroppen vila och sömn — det är då den bygger sig starkare.';}
+    else if(streak>=3){verdict='En vilodag kan göra gott 🛌';vt='Du har rört dig '+streak+' dagar i rad. Vila är en del av träningen.';}
+    else if(daysLeft>0){verdict='Vila eller träna något annat';vt='Musklerna från senaste passet kan behöva mer återhämtning. Lätt rörelse eller en annan kroppsdel funkar fint.';}
+    else{verdict='Bra läge att träna 💪';vt='Musklerna från senaste passet är återhämtade.';}
+    html+='<div class="pepp-head">'+verdict+'</div><div class="soft" style="margin-top:2px">'+vt+'</div>';
+    if(daysLeft>0)html+='<div class="soft" style="margin-top:8px">Efter ditt senaste pass ('+lp.date+(lmk.length?' · '+lmk.join(', '):'')+') räknar vi med ~'+rd+' dagars återhämtning — redo igen '+isodd(ready)+' (om '+daysLeft+' dag'+(daysLeft>1?'ar':'')+').</div>';
+    else html+='<div class="soft" style="margin-top:8px">Musklerna från senaste passet ('+lp.date+') är redo igen. 💪</div>';
+    var lastm=musclesReady();var rec=[],rdy=[];
+    Object.keys(lastm).forEach(function(m){var rday=dateOf(lastm[m]);rday.setDate(rday.getDate()+2);var dl=Math.ceil((rday-t0)/86400000);if(dl>0)rec.push(m+' ('+dl+' d)');else rdy.push(m);});
+    if(rec.length)html+='<div class="soft" style="margin-top:6px">Återhämtar: '+rec.join(', ')+'.</div>';
+    if(rdy.length)html+='<div class="soft">Redo: '+rdy.join(', ')+'.</div>';
+  }
+  html+='<div class="section-sub" style="margin-top:14px">Sömn</div>';
+  html+='<div class="rec-sleep"><label style="margin:0 8px 0 0">Sömnmål</label><select id="rec-sleep">'+[7,7.5,8,8.5,9].map(function(x){return '<option value="'+x+'"'+(x===tgt?' selected':'')+'>'+fmt1(x)+' h</option>';}).join('')+'</select></div>';
+  html+='<div class="soft" style="margin-top:6px">Sikta på '+range+' h sömn. För att vakna '+wake+' utvilad: lägg dig runt <b>'+bed+'</b>.</div>';
+  html+='<div class="soft" style="margin-top:6px">Sömn är återhämtningens motor — extra viktig de dagar du tränat tungt. Regelbundna tider, svalt och mörkt rum och dämpade skärmar sista timmen hjälper.</div>';
+  el.innerHTML=html;
+  var ss=document.getElementById('rec-sleep');if(ss)ss.onchange=function(){state.sleepTarget=parseFloat(ss.value)||8;save();renderRecovery();};
+}
+
 // ── Om, changelog & Centralen-metadata ────────────────
 var APPINFO={
-  version:'1.34.0',
+  version:'1.37.0',
   tagline:'En lugn rörelseapp utan press.',
   audience:'För dig som vill röra på dig i din egen takt — särskilt anpassad för ADHD, autism och utbrändhet. Lågtröskel, förutsägbar, sensoriskt hänsynsfull och fri från streaks, skuld och hetsig peppning.',
   functions:[
@@ -3911,6 +3963,7 @@ var APPINFO={
     'AI-passplanerare som planerar utifrån din målbild, räknar vikter enligt Brzycki och föreslår nästa gång',
     'Målbild för träningen (bygga rumpa/bröst, bli stark, gå ner i vikt, kondition m.m.)',
     'Drömläge: frågeformulär som föreslår mål och väg dit; logga vilodagar',
+    'Återhämtningsförslag (viladagar per muskelgrupp) och sömnförslag med läggdags-tid',
     'Inbyggt övningsbibliotek att lägga till egna övningar från, inklusive Pilates',
     'Plan för progressiv överbelastning (dubbel- eller linjär progression) som visar nästa steg per övning',
     'Flera färgteman + auto/ljust/mörkt',
@@ -3919,6 +3972,17 @@ var APPINFO={
     'Separat desktopversion som delar samma data'
   ],
   changelog:[
+    {v:'1.37.0',d:'2026-07-19',items:[
+      'Fix: Strength Log-import läser nu även pass där datumraden har 24-timmarstid (t.ex. "2026-08-14 17:24 - 17:51") eller saknar klockslag. Tidigare krävdes am/pm, vilket gjorde att inga pass hittades.'
+    ]},
+    {v:'1.36.0',d:'2026-07-19',items:[
+      'Fix: i Drömläget visas nu målvikt-fältet (och riktningen) korrekt när du svarar Ja på "Vill du ändra din vikt?", och kroppsdel-valet när du svarar Ja på att forma en särskild del. De doldes tidigare av en CSS-krock.'
+    ]},
+    {v:'1.35.0',d:'2026-07-19',items:[
+      'Nytt Återhämtning-kort på Idag: förslag på hur många dagars vila dina muskler behöver efter senaste passet, med "redo igen"-datum.',
+      'Per muskelgrupp visas vad som fortfarande återhämtar och vad som är redo, plus en mjuk dagsrekommendation (vila / träna / bra jobbat) utifrån hur många dagar i rad du rört dig.',
+      'Sömnförslag: sätt ditt sömnmål (7–9 h) så räknas en läggdags-tid ut från när du vill vakna, med korta sömnråd.'
+    ]},
     {v:'1.34.0',d:'2026-07-19',items:[
       'Matschemat ger nu förslag på proteinrik, kalorisnål mat per måltid (kvarg, skyr, kyckling, mager fisk, ägg, baljväxter m.m.), inspirerat av tyngre.se.',
       'Kostpreferenser: välj kosthållning (allt/vegetariskt/veganskt), ta bort livsmedel (fisk, skaldjur, kött & fågel, mejeri, ägg, gluten) och välj störst måltid (frukost/lunch/middag) — förslag och fördelning anpassas.',
@@ -4136,7 +4200,7 @@ document.querySelectorAll('.nav button').forEach(function(b){
 });
 
 // ── Render-grupper ────────────────────────────────────
-function renderToday(){renderLast();renderPepp();renderQuickChips();renderPlanToday();renderGymToday();}
+function renderToday(){renderLast();renderPepp();renderQuickChips();renderPlanToday();renderGymToday();renderRecovery();}
 function renderPass(){renderTypeTiles();renderPlanList();renderRecurList();renderTemplates();renderRecent();renderExercises();}
 function renderAll(){renderToday();renderPass();renderGymUI();renderHours();renderHeat();renderCalmHint();renderStats();renderNyheter();renderGoal();renderKost();}
 
