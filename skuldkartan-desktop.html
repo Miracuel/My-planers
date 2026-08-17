@@ -219,6 +219,14 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .utfrad.tot{border-top:1px solid var(--line);margin-top:4px;padding-top:6px;font-weight:700}
 .scard-ny{border-left:3px solid var(--accent)}
 .chip.ny{background:var(--accent);color:#fff;font-weight:700;border-color:var(--accent)}
+.svrad label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.svrad input{width:100%}
+.senast{margin-top:7px;font-size:12px;color:var(--muted)}
+.senast b{color:var(--ink)}
+.histlist{margin-top:6px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.histrad{font-size:12px;color:var(--muted);padding:2px 0}
+.signruta{margin-top:10px;padding:11px;border:1px solid var(--accent);border-radius:10px;background:var(--accent-soft)}
+.signruta input{width:100%;margin-top:6px}
 .fixlist{margin-top:10px;background:var(--panel2);border-radius:12px;padding:10px}
 .fixlist .fh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .fixlist ul{margin-left:16px;font-size:12px;line-height:1.7}
@@ -487,7 +495,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.26.0',
+version:'1.27.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -500,6 +508,13 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.27.0',d:'2026-08-06',items:[
+  'Accepterad och tillfälligt accepterad risk kräver nu en underskrift: den som accepterar skriver sitt namn innan beslutet gäller.',
+  'Vem som accepterat risken och hela historiken av tidigare beslut visas i skuldkortet och i riskregistret.',
+  'Kartläggningen och kravlistan har ett fält Du svarar som, och varje svar eller statusändring stämplas med namn och tid.',
+  'Senast svarad av visas per fråga och per krav, med en historik över vem som svarat eller ändrat.',
+  'Kravlistan kan nu exporteras och importeras som en egen fil, med status, vem som svarat, historik och belägg.'
+ ]},
  {v:'1.26.0',d:'2026-08-06',items:[
   'Excel-exporten täcker nu alla delar med svar: översikt, skulder, kartläggning med svar och kommentarer, profil med storlek, verksamhet, vi vill och åtagande, krav, åtgärder, riskanalys, inventering, målbild, belägg och nu även sparade ögonblicksbilder.',
   'Ny flik Ögonblicksbilder med historiken över skuldindex, antal aktiva skulder och ränta per sparad mätpunkt.'
@@ -1918,7 +1933,7 @@ function nf(n){return Math.round(n);}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},1900);}
 
 var KEY='skuldkartan_v1';
-var state={items:[],scan:{},snapshots:[],inventeringar:[],mal:[],bevis:{},bevisUpd:0,kartkomm:{},kommUpd:0,profil:{dim:{},verksamhet:{},krav:{},ambition:{},policy:false,upd:0},theme:'auto',skin:'petrol',timkostnad:750,levkostnad:1200,apiClaude:'',apiGpt:'',ai:'claude',seeded:false};
+var state={items:[],scan:{},snapshots:[],inventeringar:[],mal:[],bevis:{},bevisUpd:0,kartkomm:{},kommUpd:0,svarare:'',svarAv:{},svarLogg:{},kravAv:{},kravLogg:{},profil:{dim:{},verksamhet:{},krav:{},ambition:{},policy:false,upd:0},theme:'auto',skin:'petrol',timkostnad:750,levkostnad:1200,apiClaude:'',apiGpt:'',ai:'claude',seeded:false};
 
 function load(){
   try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);Object.assign(state,d);}}catch(e){}
@@ -1934,6 +1949,11 @@ function load(){
   if(!state.profil.krav)state.profil.krav={};
   if(!state.profil.ambition)state.profil.ambition={};
   if(state.profil.policy===undefined)state.profil.policy=false;
+  if(typeof state.svarare!=='string')state.svarare='';
+  if(!state.svarAv||typeof state.svarAv!=='object')state.svarAv={};
+  if(!state.svarLogg||typeof state.svarLogg!=='object')state.svarLogg={};
+  if(!state.kravAv||typeof state.kravAv!=='object')state.kravAv={};
+  if(!state.kravLogg||typeof state.kravLogg!=='object')state.kravLogg={};
   if(state.levkostnad===undefined)state.levkostnad=1200;
   if(!state.bevis||typeof state.bevis!=='object')state.bevis={};
   if(!state.kartkomm||typeof state.kartkomm!=='object')state.kartkomm={};
@@ -1943,7 +1963,7 @@ function load(){
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 
 function normItem(o){
-  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',riskbeslut:'',timmar:'',utforare:'',levDel:'',delning:'',leverantor:'',levTim:'',sedd:'',
+  var d={id:uid(),titel:'',typ:'kod',system:'',objekt:'',antal:'',tillit:2,underlag:3,morkertal:3,behov:2,mal:[],beskrivning:'',symptom:'',grundorsak:'',konsekvens:'',atgard:'',agare:'',beslut:'',riskbeslut:'',riskAvNamn:'',riskAvTs:'',riskLogg:[],timmar:'',utforare:'',levDel:'',delning:'',leverantor:'',levTim:'',sedd:'',
     status:'ny',paverkan:3,risk:3,spridning:2,ranta:3,kostnad:3,skapad:todayKey(),upd:Date.now()};
   var r={};for(var k in d)r[k]=d[k];
   for(var j in o)if(o[j]!==undefined)r[j]=o[j];
@@ -2275,6 +2295,7 @@ function renderKartlagg(){
   h+='<div class="card-panel tight" style="margin-bottom:10px"><div class="bar-row" style="margin:0"><div class="bl"><div class="bn">Genomgånget</div><div class="bv">'+besvarade+' av '+tot+' frågor</div></div><div class="bar-track"><div class="bar-fill" style="width:'+(tot?Math.round(besvarade/tot*100):0)+'%"></div></div></div>'+
      '<div class="chips" style="margin-top:9px"><span class="chip bad">Ja '+R.ja+'</span><span class="chip good">Nej '+R.nej+'</span><span class="chip warn">Osäker '+R.osaker+'</span><span class="chip">Kvar '+R.tomt+'</span></div>'+
      '<div class="soft" style="margin-top:8px">Svara <b>Ja</b> om det stämmer hos er, <b>Nej</b> om det inte gör det och <b>Osäker</b> om ni inte vet. Varje svar ger ett förslag på vad som bör göras.</div></div>';
+  h+='<div class="card-panel tight" style="margin-bottom:10px">'+svarareRad()+'</div>';
   h+='<div class="searchbar"><input id="ka-sok" value="'+esc(kaSok)+'" placeholder="Sök bland alla '+tot+' frågor"></div>';
   h+='<div class="filterbar">';
   h+='<button class="'+(kaGrupp?'':'on')+'" onclick="setKaGrupp(\'\')">Alla områden</button>';
@@ -2322,6 +2343,7 @@ function renderKartlagg(){
         for(var sv3=0;sv3<SVAR.length;sv3++)gh+='<button class="'+(sv2===SVAR[sv3].v?'on '+SVAR[sv3].v:'')+'" onclick="svaraQ(\''+ty.id+'\','+q+',\''+SVAR[sv3].v+'\')">'+SVAR[sv3].n+'</button>';
         gh+='</div>';
         gh+=forslagHtml(ty,q,sv2);
+        if(sv2)gh+=senastAvHtml(state.svarAv,state.svarLogg,ty.id+'_'+q,'Senast svarad av');
         gh+='</div>';
       }
       gh+='<div class="fixlist"><div class="fh">Typiska åtgärder</div><ul>';
@@ -2384,13 +2406,44 @@ function setKomm(tid,q,val){var k=tid+'_'+q;val=val.trim();if(val)state.kartkomm
 function kommHtml(tid,q){var v=kommFor(tid,q);
   return '<div class="kommruta"><div class="fh">Er kommentar</div>'+
     '<textarea class="kommfalt" rows="2" placeholder="Egen anteckning: nuläge, ansvarig, beslut, avgränsning…" onchange="setKomm(\''+tid+'\','+q+',this.value)">'+esc(v)+'</textarea></div>';}
+function setSvarare(v){state.svarare=(v||'').trim();save();persistSoon();}
+function stampla(av,logg,key,varde){
+  var namn=(state.svarare||'').trim(),ts=Date.now();
+  av[key]={namn:namn,ts:ts};
+  if(!logg[key])logg[key]=[];
+  logg[key].push({namn:namn,v:varde,ts:ts});
+  if(logg[key].length>50)logg[key]=logg[key].slice(-50);
+}
+function svarareRad(){
+  return '<div class="svrad"><label>Du svarar som</label>'+
+    '<input id="svarare-in" value="'+esc(state.svarare||'')+'" placeholder="Ditt namn" oninput="setSvarare(this.value)">'+
+    '<div class="soft" style="margin-top:4px">Namnet sparas med varje svar du sätter eller ändrar, och historiken bevaras.</div></div>';
+}
+function senastAvHtml(av,logg,key,etikett){
+  var a=av[key];
+  if(!a||(!a.namn&&!a.ts))return '';
+  var namn=a.namn?esc(a.namn):'okänd',nar=a.ts?narDatum(a.ts):'';
+  var h='<div class="senast">'+esc(etikett||'Senast svarad av')+' <b>'+namn+'</b>'+(nar?' &middot; '+nar:'');
+  var lg=logg[key]||[];
+  if(lg.length>1){
+    h+=' <button class="lnk" onclick="this.nextSibling.style.display=this.nextSibling.style.display===\'block\'?\'none\':\'block\'">historik ('+lg.length+')</button>';
+    h+='<div class="histlist" style="display:none">';
+    for(var i=lg.length-1;i>=0;i--){var L=lg[i];h+='<div class="histrad">'+(L.namn?esc(L.namn):'okänd')+' satte <b>'+esc(String(L.v||'&ndash;'))+'</b> '+(L.ts?narDatum(L.ts):'')+'</div>';}
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
 function svaraQ(tid,q,v){
   var k=tid+'_'+q;
-  state.scan[k]=(svarPa(k)===v?'':v);
+  var nyv=(svarPa(k)===v?'':v);
+  state.scan[k]=nyv;
   if(!state.scan[k])delete state.scan[k];
+  if(nyv)stampla(state.svarAv,state.svarLogg,k,SVARNAMN[nyv]||nyv);
   openAcc[tid]=true;
   save();persistSoon();renderKartlagg();
 }
+var SVARNAMN={ja:'Ja',nej:'Nej',osaker:'Osäker'};
 function toggleAcc(id){openAcc[id]=!openAcc[id];renderKartlagg();}
 function tickQ(k){var d=k.lastIndexOf('_');svaraQ(k.slice(0,d),parseInt(k.slice(d+1),10),'ja');}
 function filtTyp(t){typFilter=t;kvadFilter='';gruppFilter='';behovFilter='';ovFilter='';go('skulder');}
@@ -3078,7 +3131,7 @@ function saveSyncUi(){
   }).then(function(){st.textContent='Klart.';}).catch(function(e){st.textContent='Fel: '+e.message;});
 }
 function exportJson(){
-  var blob=new Blob([JSON.stringify({app:'skuldkartan',version:APPINFO.version,items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,kartkomm:state.kartkomm,timkostnad:state.timkostnad,levkostnad:state.levkostnad,exporterad:new Date().toISOString()},null,1)],{type:'application/json'});
+  var blob=new Blob([JSON.stringify({app:'skuldkartan',version:APPINFO.version,items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,kartkomm:state.kartkomm,svarare:state.svarare,svarAv:state.svarAv,svarLogg:state.svarLogg,kravAv:state.kravAv,kravLogg:state.kravLogg,timkostnad:state.timkostnad,levkostnad:state.levkostnad,exporterad:new Date().toISOString()},null,1)],{type:'application/json'});
   var u=URL.createObjectURL(blob);
   var a=document.createElement('a');a.href=u;a.download='skuldkartan-'+todayKey()+'.json';a.click();
   setTimeout(function(){URL.revokeObjectURL(u);},1500);
@@ -3099,11 +3152,66 @@ function importJson(e){
       if(d.kartkomm)Object.assign(state.kartkomm,d.kartkomm);
       if(d.timkostnad)state.timkostnad=d.timkostnad;
       if(d.levkostnad)state.levkostnad=d.levkostnad;
+      if(typeof d.svarare==='string'&&d.svarare&&!state.svarare)state.svarare=d.svarare;
+      if(d.svarAv)for(var sa in d.svarAv){var la=state.svarAv[sa];if(!la||(d.svarAv[sa].ts||0)>=(la.ts||0))state.svarAv[sa]=d.svarAv[sa];}
+      if(d.svarLogg)for(var sl in d.svarLogg){if(!state.svarLogg[sl])state.svarLogg[sl]=[];var ss={};state.svarLogg[sl].forEach(function(x){ss[x.ts+'|'+x.namn]=1;});d.svarLogg[sl].forEach(function(x){if(!ss[x.ts+'|'+x.namn])state.svarLogg[sl].push(x);});state.svarLogg[sl].sort(function(a,b){return (a.ts||0)-(b.ts||0);});}
+      if(d.kravAv)for(var ka in d.kravAv){var lka=state.kravAv[ka];if(!lka||(d.kravAv[ka].ts||0)>=(lka.ts||0))state.kravAv[ka]=d.kravAv[ka];}
+      if(d.kravLogg)for(var kl in d.kravLogg){if(!state.kravLogg[kl])state.kravLogg[kl]=[];var ks={};state.kravLogg[kl].forEach(function(x){ks[x.ts+'|'+x.namn]=1;});d.kravLogg[kl].forEach(function(x){if(!ks[x.ts+'|'+x.namn])state.kravLogg[kl].push(x);});state.kravLogg[kl].sort(function(a,b){return (a.ts||0)-(b.ts||0);});}
+      if(typeof d.svarare==='string'&&d.svarare&&!state.svarare)state.svarare=d.svarare;
+      if(d.svarAv)for(var sa in d.svarAv){var la=state.svarAv[sa];if(!la||(d.svarAv[sa].ts||0)>=(la.ts||0))state.svarAv[sa]=d.svarAv[sa];}
+      if(d.svarLogg)for(var sl in d.svarLogg){if(!state.svarLogg[sl])state.svarLogg[sl]=[];var ss={};state.svarLogg[sl].forEach(function(x){ss[x.ts+'|'+x.namn]=1;});d.svarLogg[sl].forEach(function(x){if(!ss[x.ts+'|'+x.namn])state.svarLogg[sl].push(x);});state.svarLogg[sl].sort(function(a,b){return (a.ts||0)-(b.ts||0);});}
+      if(d.kravAv)for(var ka in d.kravAv){var lka=state.kravAv[ka];if(!lka||(d.kravAv[ka].ts||0)>=(lka.ts||0))state.kravAv[ka]=d.kravAv[ka];}
+      if(d.kravLogg)for(var kl in d.kravLogg){if(!state.kravLogg[kl])state.kravLogg[kl]=[];var ks={};state.kravLogg[kl].forEach(function(x){ks[x.ts+'|'+x.namn]=1;});d.kravLogg[kl].forEach(function(x){if(!ks[x.ts+'|'+x.namn])state.kravLogg[kl].push(x);});state.kravLogg[kl].sort(function(a,b){return (a.ts||0)-(b.ts||0);});}
       save();persist();renderActive();toast('Importerat');
     }catch(err){toast('Filen gick inte att läsa');}
   };
   r.readAsText(f);
   e.target.value='';
+}
+function exportKrav(){
+  var kravBevis={};
+  if(state.bevis)for(var bk in state.bevis){if(bk.indexOf('krav:')===0)kravBevis[bk]=state.bevis[bk];}
+  var payload={app:'skuldkartan',del:'kravlista',version:APPINFO.version,
+    krav:state.profil.krav||{},kravAv:state.kravAv||{},kravLogg:state.kravLogg||{},bevis:kravBevis,
+    exporterad:new Date().toISOString()};
+  var blob=new Blob([JSON.stringify(payload,null,1)],{type:'application/json'});
+  var u=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=u;a.download='kravlista-'+todayKey()+'.json';a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);},1500);
+  toast('Kravlista exporterad');
+}
+function importKrav(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var d=JSON.parse(r.result);
+        if(d.del&&d.del!=='kravlista'&&!d.krav){toast('Filen är inte en kravlista');return;}
+        if(!state.profil.krav)state.profil.krav={};
+        if(d.krav)for(var id in d.krav){
+          var fj=d.krav[id],lok=state.profil.krav[id];
+          /* nyast vinner per krav via kravAv-tidsstämpel */
+          var fjTs=(d.kravAv&&d.kravAv[id]&&d.kravAv[id].ts)||0;
+          var lokTs=(state.kravAv&&state.kravAv[id]&&state.kravAv[id].ts)||0;
+          if(!lok||fjTs>=lokTs)state.profil.krav[id]=fj;
+        }
+        if(d.kravAv)for(var a2 in d.kravAv){var lokA=state.kravAv[a2];if(!lokA||(d.kravAv[a2].ts||0)>=(lokA.ts||0))state.kravAv[a2]=d.kravAv[a2];}
+        if(d.kravLogg)for(var lk in d.kravLogg){
+          if(!state.kravLogg[lk])state.kravLogg[lk]=[];
+          var set={};state.kravLogg[lk].forEach(function(x){set[x.ts+'|'+x.namn]=1;});
+          d.kravLogg[lk].forEach(function(x){if(!set[x.ts+'|'+x.namn])state.kravLogg[lk].push(x);});
+          state.kravLogg[lk].sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+        }
+        if(d.bevis)Object.assign(state.bevis,d.bevis);
+        state.profil.upd=Date.now();
+        save();persist();renderActive();toast('Kravlista importerad');
+      }catch(err){toast('Filen gick inte att läsa');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
 }
 function slaSamman(lokal,fjarr){
   var byId={};
@@ -3126,7 +3234,7 @@ function mergeItems(list){
 }
 function nollstall(){
   if(!confirm('Radera alla skulder, kryss och ögonblicksbilder?'))return;
-  state.items=[];state.scan={};state.snapshots=[];state.inventeringar=[];state.mal=[];state.profil={dim:{},verksamhet:{},krav:{},ambition:{},policy:false,upd:0};state.bevis={};state.bevisUpd=0;state.kartkomm={};state.kommUpd=0;save();persist();renderActive();toast('Nollställt');
+  state.items=[];state.scan={};state.snapshots=[];state.inventeringar=[];state.mal=[];state.profil={dim:{},verksamhet:{},krav:{},ambition:{},policy:false,upd:0};state.bevis={};state.bevisUpd=0;state.kartkomm={};state.kommUpd=0;state.svarAv={};state.svarLogg={};state.kravAv={};state.kravLogg={};save();persist();renderActive();toast('Nollställt');
 }
 function seedDemo(){
   var d=[
@@ -3466,10 +3574,13 @@ var kravFilter='';
 function setKravStatus(id,st){
   if(!state.profil.krav)state.profil.krav={};
   if(!state.profil.krav[id])state.profil.krav[id]={status:'',notering:''};
-  state.profil.krav[id].status=(kravStatus(id)===st?'':st);
+  var nyst=(kravStatus(id)===st?'':st);
+  state.profil.krav[id].status=nyst;
+  if(nyst)stampla(state.kravAv,state.kravLogg,id,KRAVNAMN[nyst]||nyst);
   state.profil.upd=Date.now();
   save();persistSoon();renderKrav();
 }
+var KRAVNAMN={har:'Har vi',delvis:'Delvis',saknas:'Saknas'};
 function kravTillSkuld(id){
   var lista=alltKrav(),K=null;
   for(var i=0;i<lista.length;i++)if(lista[i].id===id)K=lista[i];
@@ -3501,6 +3612,8 @@ function renderKrav(){
      stat('Skulle behöva',raknare[2].tot,raknare[2].saknas+' saknas')+
      stat('Önskar ha',raknare[3].tot,raknare[3].saknas+' saknas')+
      stat('Totalt',lista.length,'krav utifrån er profil')+'</div>';
+  h+='<div class="card-panel tight" style="margin-top:10px">'+svarareRad()+'</div>';
+  h+='<div class="btn-row" style="margin-top:8px"><button class="btn" onclick="exportKrav()">Exportera kravlista</button><button class="btn" onclick="importKrav()">Importera kravlista</button></div>';
   h+='<div class="filterbar" style="margin-top:12px">';
   h+='<button class="'+(kravFilter?'':'on')+'" onclick="setKravFilter(\'\')">Alla</button>';
   for(var b=0;b<BEHOV.length;b++)h+='<button class="'+(kravFilter===String(BEHOV[b].v)?'on':'')+'" onclick="setKravFilter(\''+BEHOV[b].v+'\')">'+esc(BEHOV[b].n)+' '+raknare[BEHOV[b].v].tot+'</button>';
@@ -3528,6 +3641,7 @@ function renderKrav(){
     var lagen=[['har','Har vi'],['delvis','Delvis'],['saknas','Saknas']];
     for(var l=0;l<lagen.length;l++)h+='<button class="'+(st===lagen[l][0]?'on':'')+'" onclick="setKravStatus(\''+K.id+'\',\''+lagen[l][0]+'\')">'+lagen[l][1]+'</button>';
     h+='</div>';
+    if(st)h+=senastAvHtml(state.kravAv,state.kravLogg,K.id,'Senast satt av');
     if(st==='saknas'||st==='delvis'){
       h+='<div class="forslag '+(K.niva===1?'ja':'osaker')+'" style="margin-top:9px"><div class="fh">Rekommenderat steg</div>'+
          '<div class="frek">'+esc(K.steg)+'</div>'+
@@ -4132,7 +4246,7 @@ function ghPull(){
 function ghPush(){
   if(!syncOn())return Promise.resolve();
   setBadge('load','Sparar…');
-  var content=b64enc(JSON.stringify({items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,bevisUpd:state.bevisUpd,kartkomm:state.kartkomm,kommUpd:state.kommUpd,timkostnad:state.timkostnad,levkostnad:state.levkostnad,updated:new Date().toISOString()}));
+  var content=b64enc(JSON.stringify({items:state.items,scan:state.scan,snapshots:state.snapshots,inventeringar:state.inventeringar,mal:state.mal,profil:state.profil,bevis:state.bevis,bevisUpd:state.bevisUpd,kartkomm:state.kartkomm,kommUpd:state.kommUpd,svarare:state.svarare,svarAv:state.svarAv,svarLogg:state.svarLogg,kravAv:state.kravAv,kravLogg:state.kravLogg,timkostnad:state.timkostnad,levkostnad:state.levkostnad,updated:new Date().toISOString()}));
   var doPut=function(){
     var body={message:'Uppdatering via Skuldkartan',content:content};
     if(sync.sha)body.sha=sync.sha;
@@ -4300,16 +4414,49 @@ var RISKBESLUT=[
 function riskbeslutAv(it){var v=it&&it.riskbeslut;return (v==='accepterad'||v==='tillfallig')?v:'ej';}
 function riskbeslutNamn(v){for(var i=0;i<RISKBESLUT.length;i++)if(RISKBESLUT[i].v===v)return RISKBESLUT[i].n;return 'Ej accepterad';}
 function riskbeslutFarg(v){for(var i=0;i<RISKBESLUT.length;i++)if(RISKBESLUT[i].v===v)return RISKBESLUT[i].f;return 'var(--q1)';}
+var rbSign={};/* id -> läge som väntar på signering */
 function setRiskbeslut(id,v){
   var it=state.items.filter(function(x){return x.id===id;})[0];if(!it)return;
-  it.riskbeslut=(riskbeslutAv(it)===v?'ej':v);
+  var cur=riskbeslutAv(it);
+  if(v==='ej'||cur===v){
+    /* Ej accepterad, eller avmarkering: kräver ingen signering */
+    tillampaRiskbeslut(it,cur===v?'ej':v,'');
+    delete rbSign[id];
+    rbUppdatera(id,it);
+    return;
+  }
+  /* Accepterad eller tillfällig kräver underskrift */
+  rbSign[id]=v;
+  rbUppdatera(id,it);
+}
+function avbrytSign(id){delete rbSign[id];var it=state.items.filter(function(x){return x.id===id;})[0];rbUppdatera(id,it);}
+function skrivUnder(id){
+  var it=state.items.filter(function(x){return x.id===id;})[0];if(!it)return;
+  var v=rbSign[id];if(!v)return;
+  var inp=document.getElementById('sign-'+id);
+  var namn=inp?inp.value.trim():'';
+  if(!namn){if(inp){inp.focus();inp.style.borderColor='var(--q1)';}toast('Skriv under med ditt namn först');return;}
+  if(!state.svarare)state.svarare=namn;
+  tillampaRiskbeslut(it,v,namn);
+  delete rbSign[id];
+  rbUppdatera(id,it);
+}
+function tillampaRiskbeslut(it,v,namn){
+  it.riskbeslut=v;
+  if(v==='accepterad'||v==='tillfallig'){it.riskAvNamn=namn;it.riskAvTs=Date.now();}
+  else{it.riskAvNamn='';it.riskAvTs='';}
+  if(!Array.isArray(it.riskLogg))it.riskLogg=[];
+  it.riskLogg.push({namn:namn,beslut:riskbeslutNamn(v),ts:Date.now()});
+  if(it.riskLogg.length>50)it.riskLogg=it.riskLogg.slice(-50);
   it.upd=Date.now();
   save();persistSoon();
+  toast(v==='accepterad'?'Accepterad risk – underskriven':(v==='tillfallig'?'Tillfälligt accepterad – underskriven':'Markerad som ej accepterad'));
+}
+function rbUppdatera(id,it){
   var rv=document.getElementById('view-risk');
   if(rv&&rv.classList.contains('active'))renderRisk();
   var box=document.getElementById('rb-kort');
-  if(box&&curId===id)box.innerHTML=riskKortHtml(it);
-  toast(it.riskbeslut==='accepterad'?'Markerad som accepterad risk':(it.riskbeslut==='tillfallig'?'Tillfälligt accepterad':'Markerad som ej accepterad'));
+  if(box&&curId===id&&it)box.innerHTML=riskKortHtml(it);
 }
 function riskKortHtml(it){
   var rb=riskbeslutAv(it),nv=risknivaAv(it);
@@ -4318,7 +4465,6 @@ function riskKortHtml(it){
   h+='<span class="rbbadge" style="background:'+riskbeslutFarg(rb)+'">'+esc(riskbeslutNamn(rb))+'</span></div>';
   h+='<div class="soft" style="margin-top:5px">Riskbeslut:</div>';
   h+=riskbeslutRad(it);
-  if(rb==='tillfallig')h+='<div class="soft" style="margin-top:6px">Tillfälligt accepterad &ndash; kom ihåg att ompröva.</div>';
   return h;
 }
 function riskbeslutRad(it){
@@ -4327,7 +4473,30 @@ function riskbeslutRad(it){
     var B=RISKBESLUT[i],pa=cur===B.v;
     h+='<button class="rbtn'+(pa?' pa':'')+'"'+(pa?(' style="background:'+B.f+';border-color:'+B.f+';color:#fff"'):'')+' onclick="event.stopPropagation();setRiskbeslut(\''+it.id+'\',\''+B.v+'\')">'+esc(B.n)+'</button>';
   }
-  return h+'</div>';
+  h+='</div>';
+  /* Signeringsruta när accepterad/tillfällig väljs */
+  if(rbSign[it.id]){
+    var namnf=(state.svarare||it.riskAvNamn||'');
+    h+='<div class="signruta" onclick="event.stopPropagation()">';
+    h+='<div class="soft">Skriv under som den som accepterar risken '+esc(riskbeslutNamn(rbSign[it.id]).toLowerCase())+':</div>';
+    h+='<input id="sign-'+it.id+'" value="'+esc(namnf)+'" placeholder="Ditt namn" onclick="event.stopPropagation()">';
+    h+='<div class="btn-row" style="margin-top:8px"><button class="btn fill" onclick="event.stopPropagation();skrivUnder(\''+it.id+'\')">Skriv under</button>';
+    h+='<button class="btn" onclick="event.stopPropagation();avbrytSign(\''+it.id+'\')">Avbryt</button></div>';
+    h+='</div>';
+  }
+  /* Vem som accepterat + historik */
+  if((cur==='accepterad'||cur==='tillfallig')&&it.riskAvNamn){
+    h+='<div class="senast">Accepterad av <b>'+esc(it.riskAvNamn)+'</b>'+(it.riskAvTs?' &middot; '+narDatum(it.riskAvTs):'');
+    var lg=Array.isArray(it.riskLogg)?it.riskLogg:[];
+    if(lg.length>1){
+      h+=' <button class="lnk" onclick="event.stopPropagation();this.nextSibling.style.display=this.nextSibling.style.display===\'block\'?\'none\':\'block\'">historik ('+lg.length+')</button>';
+      h+='<div class="histlist" style="display:none">';
+      for(var j=lg.length-1;j>=0;j--){var L=lg[j];h+='<div class="histrad">'+(L.namn?esc(L.namn):'okänd')+' satte <b>'+esc(L.beslut||'')+'</b> '+(L.ts?narDatum(L.ts):'')+'</div>';}
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  return h;
 }
 var riskFilter='alla';
 function setRiskFilter(f){riskFilter=f;renderRisk();}
