@@ -495,7 +495,7 @@ window.addEventListener('error',function(ev){if(ev&&ev.message)show(ev.message,(
 <script>
 /* ── Skuldkartan ─────────────────────────────────────────── */
 var APPINFO={
-version:'1.27.0',
+version:'1.28.0',
 tagline:'Hitta, mät och klargör IT-skulden – storleksprofil, krav, 40 skuldtyper, inventering och målbild.',
 audience:'IT-ansvariga, förvaltningsledare, utvecklare och verksamhetsstöd',
 functions:[
@@ -508,6 +508,11 @@ functions:[
  {area:'Övrigt',items:['Export till Excel med nio flikar: översikt, skulder, kartläggning, profil, krav, åtgärder, inventering, målbild och belägg','GitHub-synk med sammanslagning per post','AI-hjälp via Claude eller ChatGPT','Export och import som JSON','Fem färgskinn, auto mörkt läge, mobil och desktop']}
 ],
 changelog:[
+ {v:'1.28.0',d:'2026-08-06',items:[
+  'Kravlistan exporteras och importeras nu som en Excel-fil i stället för JSON.',
+  'Exportfilen har en ID-kolumn som gör att status, vem som satt den, datum och notering kan läsas tillbaka vid import.',
+  'Ni kan fylla i status direkt i Excel och importera tillbaka, historiken uppdateras med vem och när.'
+ ]},
  {v:'1.27.0',d:'2026-08-06',items:[
   'Accepterad och tillfälligt accepterad risk kräver nu en underskrift: den som accepterar skriver sitt namn innan beslutet gäller.',
   'Vem som accepterat risken och hela historiken av tidigare beslut visas i skuldkortet och i riskregistret.',
@@ -3169,47 +3174,72 @@ function importJson(e){
   e.target.value='';
 }
 function exportKrav(){
-  var kravBevis={};
-  if(state.bevis)for(var bk in state.bevis){if(bk.indexOf('krav:')===0)kravBevis[bk]=state.bevis[bk];}
-  var payload={app:'skuldkartan',del:'kravlista',version:APPINFO.version,
-    krav:state.profil.krav||{},kravAv:state.kravAv||{},kravLogg:state.kravLogg||{},bevis:kravBevis,
-    exporterad:new Date().toISOString()};
-  var blob=new Blob([JSON.stringify(payload,null,1)],{type:'application/json'});
-  var u=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=u;a.download='kravlista-'+todayKey()+'.json';a.click();
-  setTimeout(function(){URL.revokeObjectURL(u);},1500);
-  toast('Kravlista exporterad');
+  toast('Bygger kravlista…');
+  laddaXLSX().then(function(X){
+    var krav=alltKrav();
+    var rows=[['ID','Krav','Behovsnivå','Källa','Gäller er för att','Referens','Status','Senast satt av','Datum','Notering','Rekommenderat steg']];
+    for(var k=0;k<krav.length;k++){
+      var K=krav[k],st=kravStatus(K.id),av=(state.kravAv&&state.kravAv[K.id])||{};
+      var not=(state.profil.krav&&state.profil.krav[K.id]&&state.profil.krav[K.id].notering)||'';
+      rows.push([K.id,K.n,behovNamn(K.niva),K.kallnamn||'',K.kalla,K.ref||'',
+        (KRAVNAMN[st]||''),av.namn||'',av.ts?narDatum(av.ts):'',not,K.steg||'']);
+    }
+    if(krav.length===0)rows.push(['','Fyll i Profil för att generera krav','','','','','','','','','']);
+    var ws=aoaSheet(X,rows,[16,44,14,12,40,20,10,18,12,30,50]);
+    for(var rc in ws){if(rc[0]==='!')continue;if(ws[rc]&&typeof ws[rc].v==='string'&&ws[rc].v.length>40)ws[rc].s={alignment:{wrapText:true,vertical:'top'}};}
+    var wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,'Kravlista');
+    X.writeFile(wb,'kravlista-'+todayKey()+'.xlsx');
+    toast('Kravlista exporterad');
+  }).catch(function(e){toast(e.message||'Kunde inte bygga kravlistan');});
 }
+var KRAVKOD={'har vi':'har','delvis':'delvis','saknas':'saknas'};
 function importKrav(){
-  var inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  var inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   inp.onchange=function(e){
     var f=e.target.files[0];if(!f)return;
-    var r=new FileReader();
-    r.onload=function(){
-      try{
-        var d=JSON.parse(r.result);
-        if(d.del&&d.del!=='kravlista'&&!d.krav){toast('Filen är inte en kravlista');return;}
-        if(!state.profil.krav)state.profil.krav={};
-        if(d.krav)for(var id in d.krav){
-          var fj=d.krav[id],lok=state.profil.krav[id];
-          /* nyast vinner per krav via kravAv-tidsstämpel */
-          var fjTs=(d.kravAv&&d.kravAv[id]&&d.kravAv[id].ts)||0;
-          var lokTs=(state.kravAv&&state.kravAv[id]&&state.kravAv[id].ts)||0;
-          if(!lok||fjTs>=lokTs)state.profil.krav[id]=fj;
-        }
-        if(d.kravAv)for(var a2 in d.kravAv){var lokA=state.kravAv[a2];if(!lokA||(d.kravAv[a2].ts||0)>=(lokA.ts||0))state.kravAv[a2]=d.kravAv[a2];}
-        if(d.kravLogg)for(var lk in d.kravLogg){
-          if(!state.kravLogg[lk])state.kravLogg[lk]=[];
-          var set={};state.kravLogg[lk].forEach(function(x){set[x.ts+'|'+x.namn]=1;});
-          d.kravLogg[lk].forEach(function(x){if(!set[x.ts+'|'+x.namn])state.kravLogg[lk].push(x);});
-          state.kravLogg[lk].sort(function(a,b){return (a.ts||0)-(b.ts||0);});
-        }
-        if(d.bevis)Object.assign(state.bevis,d.bevis);
-        state.profil.upd=Date.now();
-        save();persist();renderActive();toast('Kravlista importerad');
-      }catch(err){toast('Filen gick inte att läsa');}
-    };
-    r.readAsText(f);
+    toast('Läser kravlista…');
+    laddaXLSX().then(function(X){
+      var r=new FileReader();
+      r.onload=function(){
+        try{
+          var data=new Uint8Array(r.result);
+          var wb=X.read(data,{type:'array'});
+          var ws=wb.Sheets['Kravlista']||wb.Sheets[wb.SheetNames[0]];
+          if(!ws){toast('Ingen flik hittades');return;}
+          var arr=X.utils.sheet_to_json(ws,{header:1,blankrows:false});
+          if(!arr.length){toast('Filen är tom');return;}
+          var head=arr[0].map(function(x){return String(x||'').trim().toLowerCase();});
+          var ci=head.indexOf('id'),cs=head.indexOf('status'),cav=head.indexOf('senast satt av'),cd=head.indexOf('datum'),cn=head.indexOf('notering');
+          if(ci<0||cs<0){toast('Filen saknar kolumnerna ID och Status');return;}
+          if(!state.profil.krav)state.profil.krav={};
+          var giltiga={};var kl=alltKrav();for(var g=0;g<kl.length;g++)giltiga[kl[g].id]=1;
+          var antal=0;
+          for(var i=1;i<arr.length;i++){
+            var row=arr[i];if(!row)continue;
+            var id=String(row[ci]||'').trim();if(!id||!giltiga[id])continue;
+            var stTxt=String(row[cs]||'').trim().toLowerCase();
+            var kod=KRAVKOD[stTxt]||'';
+            var namn=cav>=0?String(row[cav]||'').trim():'';
+            var dat=cd>=0?String(row[cd]||'').trim():'';
+            var ts=Date.now();var pd=Date.parse(dat);if(!isNaN(pd))ts=pd;
+            if(!state.profil.krav[id])state.profil.krav[id]={status:'',notering:''};
+            state.profil.krav[id].status=kod;
+            if(cn>=0)state.profil.krav[id].notering=String(row[cn]||'').trim();
+            if(kod){
+              var lokTs=(state.kravAv&&state.kravAv[id]&&state.kravAv[id].ts)||0;
+              if(ts>=lokTs)state.kravAv[id]={namn:namn,ts:ts};
+              if(!state.kravLogg[id])state.kravLogg[id]=[];
+              var finns=state.kravLogg[id].some(function(x){return x.ts===ts&&x.namn===namn;});
+              if(!finns)state.kravLogg[id].push({namn:namn,v:KRAVNAMN[kod]||kod,ts:ts});
+            }
+            antal++;
+          }
+          state.profil.upd=Date.now();
+          save();persist();renderActive();toast('Kravlista importerad ('+antal+' rader)');
+        }catch(err){toast('Filen gick inte att läsa');}
+      };
+      r.readAsArrayBuffer(f);
+    }).catch(function(e){toast(e.message||'Kunde inte läsa Excel');});
   };
   inp.click();
 }
@@ -3613,7 +3643,7 @@ function renderKrav(){
      stat('Önskar ha',raknare[3].tot,raknare[3].saknas+' saknas')+
      stat('Totalt',lista.length,'krav utifrån er profil')+'</div>';
   h+='<div class="card-panel tight" style="margin-top:10px">'+svarareRad()+'</div>';
-  h+='<div class="btn-row" style="margin-top:8px"><button class="btn" onclick="exportKrav()">Exportera kravlista</button><button class="btn" onclick="importKrav()">Importera kravlista</button></div>';
+  h+='<div class="btn-row" style="margin-top:8px"><button class="btn" onclick="exportKrav()">Exportera kravlista (Excel)</button><button class="btn" onclick="importKrav()">Importera kravlista (Excel)</button></div>';
   h+='<div class="filterbar" style="margin-top:12px">';
   h+='<button class="'+(kravFilter?'':'on')+'" onclick="setKravFilter(\'\')">Alla</button>';
   for(var b=0;b<BEHOV.length;b++)h+='<button class="'+(kravFilter===String(BEHOV[b].v)?'on':'')+'" onclick="setKravFilter(\''+BEHOV[b].v+'\')">'+esc(BEHOV[b].n)+' '+raknare[BEHOV[b].v].tot+'</button>';
