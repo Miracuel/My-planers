@@ -73,6 +73,12 @@ html[data-theme=dark] .hero{background:linear-gradient(145deg,#264634,#152A1F);c
 .searchbar{position:relative;flex:1}
 .searchbar input{padding-left:32px;border-radius:999px;background:var(--panel)}
 .searchbar::before{content:'⌕';position:absolute;left:12px;top:9px;color:var(--muted);font-size:16px}
+.tag.cat{background:var(--panel2);color:var(--ink);border:1px solid var(--line);font-weight:600}
+.groupby{display:flex;gap:3px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px;flex-shrink:0}
+.groupby button{border:none;background:none;font-family:inherit;font-size:12px;color:var(--muted);padding:7px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.groupby button.sel{background:var(--accent);color:var(--panel);font-weight:600}
+.catchips .chip{font-size:12px;padding:5px 10px}
+.catchips .chip.sel{background:var(--copper);border-color:var(--copper);color:#fff}
 .filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:10px;-webkit-overflow-scrolling:touch}
 
 /* Grupper per säljare */
@@ -230,10 +236,11 @@ h1.brand,.brand-sub{display:none}
 .hdr-badge{left:24px;right:auto;top:auto;bottom:30px;z-index:46}
 .icon-btns{left:150px;right:auto;top:auto;bottom:22px;z-index:46}
 #view-lista{display:none}
-#view-lista.active{display:grid;grid-template-columns:340px minmax(0,1fr);grid-template-areas:"hero groups" "tools groups" "filters groups" ". groups";column-gap:24px;align-items:start}
+#view-lista.active{display:grid;grid-template-columns:340px minmax(0,1fr);grid-template-areas:"hero groups" "tools groups" "filters groups" "cats groups" ". groups";column-gap:24px;align-items:start}
 #hero{grid-area:hero;position:sticky;top:20px}
 #view-lista .toolbar{grid-area:tools;margin-top:14px}
 #filters{grid-area:filters;flex-wrap:wrap;overflow:visible}
+#catfilters{grid-area:cats;flex-wrap:wrap;overflow:visible}
 #groups{grid-area:groups;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;align-items:start}
 #groups .group{margin-bottom:0}
 .statgrid{grid-template-columns:repeat(3,1fr)}
@@ -260,9 +267,11 @@ h1.brand,.brand-sub{display:none}
 <div class="view active" id="view-lista">
   <div class="hero" id="hero"></div>
   <div class="toolbar">
-    <div class="searchbar"><input type="search" id="search" placeholder="Sök namn, SKU, säljare…" autocomplete="off"></div>
+    <div class="searchbar"><input type="search" id="search" placeholder="Sök namn, SKU, säljare, kategori…" autocomplete="off"></div>
+    <div class="groupby" id="groupby"></div>
   </div>
   <div class="filters" id="filters"></div>
+  <div class="filters catchips" id="catfilters"></div>
   <div id="groups" class="groups"></div>
 </div>
 
@@ -282,6 +291,8 @@ h1.brand,.brand-sub{display:none}
   <div class="card-panel" id="s-totals"></div>
   <div class="section-title">Per säljare</div>
   <div class="card-panel" id="s-vendors"></div>
+  <div class="section-title">Per kategori</div>
+  <div class="card-panel" id="s-cats"></div>
   <div class="section-title">Kommande släpp</div>
   <div class="card-panel" id="s-releases"></div>
   <div class="soft" id="s-rates" style="margin-top:12px;text-align:center"></div>
@@ -354,6 +365,9 @@ h1.brand,.brand-sub{display:none}
     <div><label>Släppdatum</label><input type="date" id="f-release"></div>
   </div>
   <label>Länk</label><input type="url" id="f-link" placeholder="https://…" autocomplete="off" inputmode="url">
+  <label>Kategori</label><input type="text" id="f-cat" list="f-cat-list" placeholder="T.ex. Kristaller" autocomplete="off">
+  <datalist id="f-cat-list"></datalist>
+  <div class="chips catchips" id="f-cat-chips" style="margin-top:7px"></div>
   <label>Säljare</label><select id="f-vendor"></select>
   <input type="text" id="f-newvendor" placeholder="Namn på ny säljare" style="margin-top:6px;display:none">
   <div class="grid2">
@@ -401,13 +415,13 @@ h1.brand,.brand-sub{display:none}
 
 <script>
 // ── Appinfo & Centralen ────────────────────────────────
-var APPINFO={version:'1.0.0',tagline:'Magishops inköpslista – artiklar, SKU, säljare, förbeställningar och totalsummor i SEK, USD och EUR.',audience:'Magishop – inköp till butik och webbshop',functions:['Artiklar med namn, SKU, länk, pris och antal','Pris i SEK, USD eller EUR','Totalsumma omräknad till valfri valuta','Gruppering per säljare med delsummor','Frakt per säljare','Status per artikel: Måste köpa, Vänta, Överväger, Köpt','Släppdatum och förbeställd-markering','Kommande släpp med nedräkning','Filter per status och förbeställt, med summa per filter','Kopiera beställning per säljare','Dagens växelkurs (ECB) eller egna kurser','CSV-export för Excel','GitHub-synk, export/import','Ljust/mörkt läge, mobil & desktop'],changelog:[{v:'1.0.0',d:'2026-09-20',items:['Första versionen av Kitteln.','Artiklar med namn, SKU, länk, pris per st och antal – totalsumman räknas ut automatiskt.','Tre valutor (SEK, USD, EUR) med omräkning via dagens ECB-kurs eller egna kurser.','Kategorisering per säljare med delsummor, frakt och "Kopiera beställning".','Statusknapp på varje artikel: Måste köpa, Vänta, Överväger och Köpt – med filter och summa per status.','Släppdatum och förbeställd-markering, plus lista över kommande släpp.','Summering, CSV-export, GitHub-synk och desktopläge.']}]};
+var APPINFO={version:'1.1.0',tagline:'Magishops inköpslista – artiklar, SKU, säljare, förbeställningar och totalsummor i SEK, USD och EUR.',audience:'Magishop – inköp till butik och webbshop',functions:['Artiklar med namn, SKU, länk, pris och antal','Pris i SEK, USD eller EUR','Totalsumma omräknad till valfri valuta','Gruppering per säljare eller kategori med delsummor','Kategorier med förslag, filter och summa per kategori','Frakt per säljare','Status per artikel: Måste köpa, Vänta, Överväger, Köpt','Släppdatum och förbeställd-markering','Kommande släpp med nedräkning','Filter per status och förbeställt, med summa per filter','Kopiera beställning per säljare','Dagens växelkurs (ECB) eller egna kurser','CSV-export för Excel','GitHub-synk, export/import','Ljust/mörkt läge, mobil & desktop'],changelog:[{v:'1.1.0',d:'2026-09-20',items:['Kategori på varje artikel – skriv fritt eller välj bland förslag (Kristaller, Örter & kryddor, Rökelse, Tarot & orakel …).','Växla gruppering mellan Säljare och Kategori.','Kategorifilter under statusfiltren.','Summa per kategori i Summering (exklusive frakt) och kategorikolumn i CSV-exporten.']},{v:'1.0.0',d:'2026-09-20',items:['Första versionen av Kitteln.','Artiklar med namn, SKU, länk, pris per st och antal – totalsumman räknas ut automatiskt.','Tre valutor (SEK, USD, EUR) med omräkning via dagens ECB-kurs eller egna kurser.','Kategorisering per säljare med delsummor, frakt och "Kopiera beställning".','Statusknapp på varje artikel: Måste köpa, Vänta, Överväger och Köpt – med filter och summa per status.','Släppdatum och förbeställd-markering, plus lista över kommande släpp.','Summering, CSV-export, GitHub-synk och desktopläge.']}]};
 var CENTRALEN={id:'kitteln',namn:'Kitteln',ikon:'🛒',desc:'Magishops inköpslista – SKU, säljare, förbeställningar och totalsummor i SEK/USD/EUR',mobil:'kitteln.html',desktop:'kitteln-desktop.html',farger:{bg:'#F3ECDD',line:'#DDD1B8',ink:'#26352C',muted:'#7C7663',accent:'#2E5540',iconbg:'#E6DCC6'}};
 
 // ── State ──────────────────────────────────────────────
 var KEY='kitteln_v1';
 var CURS=['SEK','USD','EUR'];
-var state={items:[],vendors:[],rates:{USD:10,EUR:11,date:'',auto:true,updated:''},disp:'SEK',filter:'aktiv',scope:'aktiv',theme:'auto',collapsed:{}};
+var state={items:[],vendors:[],rates:{USD:10,EUR:11,date:'',auto:true,updated:''},disp:'SEK',filter:'aktiv',scope:'aktiv',groupBy:'vendor',catFilter:'',theme:'auto',collapsed:{}};
 try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);state=Object.assign(state,o);}}catch(e){}
 if(!Array.isArray(state.items))state.items=[];
 if(!Array.isArray(state.vendors))state.vendors=[];
@@ -457,9 +471,13 @@ function stInfo(k){for(var i=0;i<STATUS.length;i++)if(STATUS[i][0]===k)return ST
 function itemStatus(it){if(!it.st)it.st=it.done?'kopt':'maste';return it.st;}
 function inScope(it,scope){var st=itemStatus(it);if(scope==='alla')return true;if(scope==='aktiv')return st!=='kopt';if(scope==='pre')return !!it.pre&&st!=='kopt';return st===scope;}
 // Summa för en uppsättning artiklar + frakt för varje säljare som förekommer
-function totalsFor(items){
+var CAT_DEFAULT=['Kristaller','Örter & kryddor','Rökelse','Ljus','Tarot & orakel','Böcker','Smycken','Oljor & salvor','Ritualverktyg','Förpackning'];
+function catOf(it){return (it.cat||'').trim();}
+function usedCats(){var m={};liveItems().forEach(function(it){var c=catOf(it);if(c)m[c]=(m[c]||0)+1;});return m;}
+function allCats(){var m=usedCats();var list=Object.keys(m).sort(function(a,b){return m[b]-m[a]||a.localeCompare(b,'sv');});CAT_DEFAULT.forEach(function(c){if(list.indexOf(c)<0)list.push(c);});return list;}
+function totalsFor(items,noShip){
   var s=emptySum(),seen={};
-  items.forEach(function(it){addSum(s,lineTotal(it),it.cur||'SEK');if(it.vendorId)seen[it.vendorId]=1;});
+  items.forEach(function(it){addSum(s,lineTotal(it),it.cur||'SEK');if(it.vendorId&&!noShip)seen[it.vendorId]=1;});
   Object.keys(seen).forEach(function(vid){var v=findVendor(vid);if(v&&num(v.ship)>0)addSum(s,num(v.ship),v.cur||'SEK');});
   return s;
 }
@@ -495,13 +513,15 @@ function renderFilters(){
   var el=document.getElementById('filters');el.innerHTML=h;
   el.querySelectorAll('button').forEach(function(b){b.onclick=function(){state.filter=b.dataset.f;save();renderList();};});
 }
-function matchQ(it,q){if(!q)return true;var v=findVendor(it.vendorId);return [it.name,it.sku,it.note,it.link,v?v.name:''].join(' ').toLowerCase().indexOf(q)>=0;}
+function matchQ(it,q){if(!q)return true;var v=findVendor(it.vendorId);return [it.name,it.sku,it.note,it.link,it.cat,v?v.name:''].join(' ').toLowerCase().indexOf(q)>=0;}
 function itemRow(it){
   var d=state.disp||'SEK',c=it.cur||'SEK',lt=lineTotal(it);
   var meta=[];
   if(it.sku)meta.push('<span class="sku">'+esc(it.sku)+'</span>');
   meta.push((parseInt(it.qty,10)||0)+' st × '+esc(fmt(num(it.price),c)));
   var tags='';
+  if(state.groupBy==='cat'){var vv=findVendor(it.vendorId);if(vv)meta.push(esc(vv.name));}
+  else if(catOf(it))tags+='<span class="tag cat">🏷 '+esc(catOf(it))+'</span>';
   if(it.pre)tags+='<span class="tag pre">🔖 Förbeställd</span>';
   if(it.release){var du=daysUntil(it.release);var cls='rel';if(du<0)cls+=' past';else if(du<=14)cls='tag soon';
     tags+='<span class="'+(cls.indexOf('tag')===0?cls:'tag '+cls)+'">📅 '+(du<0?'Släpptes ':'Släpps ')+esc(fmtDateShort(it.release))+(du>=0&&du<=14?(du===0?' · idag':' · om '+du+' d'):'')+'</span>';}
@@ -515,26 +535,28 @@ function itemRow(it){
   return h+'</div>';
 }
 function renderList(){
-  renderHero();renderFilters();
+  renderHero();renderFilters();renderGroupBy();renderCatFilters();
   var q=(document.getElementById('search').value||'').toLowerCase().trim();
-  var items=liveItems().filter(function(it){return inScope(it,state.filter)&&matchQ(it,q);});
+  var items=liveItems().filter(function(it){return inScope(it,state.filter)&&matchQ(it,q)&&(!state.catFilter||(state.catFilter==='_'?!catOf(it):catOf(it)===state.catFilter));});
   var el=document.getElementById('groups');
   if(!items.length){
     var none=!liveItems().length;
     el.innerHTML='<div class="card-panel"><div class="empty-msg">'+(none?'🜍 Kitteln är tom.<br>Tryck på + för att lägga till din första artikel.':(q?'Ingen träff på sökningen.':'Inga artiklar i den här vyn.'))+'</div></div>';
     return;
   }
-  var groups={};items.forEach(function(it){var k=findVendor(it.vendorId)?it.vendorId:'_';(groups[k]=groups[k]||[]).push(it);});
-  var order=liveVendors().map(function(v){return v.id;}).filter(function(id){return groups[id];});
+  var byCat=state.groupBy==='cat';
+  var groups={};items.forEach(function(it){var k=byCat?(catOf(it)?'c:'+catOf(it):'_'):(findVendor(it.vendorId)?it.vendorId:'_');(groups[k]=groups[k]||[]).push(it);});
+  var order=byCat?Object.keys(groups).filter(function(k){return k!=='_';}).sort(function(a,b){return a.localeCompare(b,'sv');}):liveVendors().map(function(v){return v.id;}).filter(function(id){return groups[id];});
   if(groups._)order.push('_');
   var d=state.disp||'SEK',h='';
   order.forEach(function(k){
-    var v=k==='_'?null:findVendor(k);var arr=groups[k];
+    var v=(byCat||k==='_')?null:findVendor(k);var arr=groups[k];var cname=byCat&&k!=='_'?k.slice(2):'';
     arr.sort(function(a,b){var sa=ST_ORDER[itemStatus(a)],sb=ST_ORDER[itemStatus(b)];if(sa!==sb)return sa-sb;return (a.name||'').localeCompare(b.name||'','sv');});
-    var s=totalsFor(arr);var col=state.collapsed[k];
+    var s=totalsFor(arr,byCat);var col=state.collapsed[k];
+    var gTitle=byCat?(cname||'Utan kategori'):(v?v.name:'Utan säljare');var gIc=byCat?(cname?cname.charAt(0).toUpperCase():'?'):(v?initials(v.name):'?');
     var nat=sumNative(s);var conv1=fmt(sumTo(s,d),d);
     h+='<div class="group'+(col?' collapsed':'')+'" data-g="'+k+'">';
-    h+='<div class="g-head" data-a="toggle"><div class="g-ic">'+esc(v?initials(v.name):'?')+'</div><div class="g-title"><div class="g-name">'+esc(v?v.name:'Utan säljare')+'</div><div class="g-sub">'+art(arr.length)+' · '+qtyOf(arr)+' st'+(v&&v.url?' · '+esc(hostOf(v.url)):'')+'</div></div>';
+    h+='<div class="g-head" data-a="toggle"><div class="g-ic"'+(byCat?' style="background:var(--accent-soft);color:var(--accent)"':'')+'>'+esc(gIc)+'</div><div class="g-title"><div class="g-name">'+esc(gTitle)+'</div><div class="g-sub">'+art(arr.length)+' · '+qtyOf(arr)+' st'+(v&&v.url?' · '+esc(hostOf(v.url)):'')+'</div></div>';
     h+='<div class="g-tot"><div class="a">'+esc(conv1)+'</div>'+(nat&&nat!==conv1?'<div class="b">'+esc(nat)+'</div>':'')+'</div><span class="g-caret">▼</span></div>';
     h+='<div class="g-body">';arr.forEach(function(it){h+=itemRow(it);});
     h+='<div class="g-foot"><span class="ship">'+(v&&num(v.ship)>0?'🚚 Frakt '+esc(fmt(num(v.ship),v.cur||'SEK'))+' ingår':'')+'</span>';
@@ -546,7 +568,7 @@ function renderList(){
   el.querySelectorAll('.group').forEach(function(g){
     var k=g.dataset.g;
     g.querySelector('[data-a=toggle]').onclick=function(){state.collapsed[k]=!state.collapsed[k];save();g.classList.toggle('collapsed');};
-    g.querySelector('[data-a=copy]').onclick=function(){copyOrder(k,groups[k]);};
+    g.querySelector('[data-a=copy]').onclick=function(){copyOrder(k,groups[k],byCat?(k==='_'?'Utan kategori':k.slice(2)):'');};
   });
   el.querySelectorAll('.it').forEach(function(r){
     var id=r.dataset.id;
@@ -557,6 +579,18 @@ function renderList(){
   });
 }
 document.getElementById('search').oninput=renderList;
+function renderGroupBy(){var el=document.getElementById('groupby');var o=[['vendor','Säljare'],['cat','Kategori']];var h='';o.forEach(function(x){h+='<button data-g="'+x[0]+'"'+((state.groupBy||'vendor')===x[0]?' class="sel"':'')+'>'+x[1]+'</button>';});el.innerHTML=h;el.querySelectorAll('button').forEach(function(b){b.onclick=function(){state.groupBy=b.dataset.g;save();renderList();};});}
+function renderCatFilters(){
+  var el=document.getElementById('catfilters');var m=usedCats();var keys=Object.keys(m).sort(function(a,b){return a.localeCompare(b,'sv');});
+  if(!keys.length){el.innerHTML='';el.style.display='none';if(state.catFilter){state.catFilter='';}return;}
+  el.style.display='';
+  var none=liveItems().filter(function(it){return !catOf(it);}).length;
+  if(state.catFilter&&state.catFilter!=='_'&&!m[state.catFilter])state.catFilter='';
+  var h='<button class="chip'+(!state.catFilter?' sel':'')+'" data-c="">Alla kategorier</button>';
+  keys.forEach(function(k){h+='<button class="chip'+(state.catFilter===k?' sel':'')+'" data-c="'+esc(k)+'">'+esc(k)+'<span class="n">'+m[k]+'</span></button>';});
+  if(none)h+='<button class="chip'+(state.catFilter==='_'?' sel':'')+'" data-c="_">Utan kategori<span class="n">'+none+'</span></button>';
+  el.innerHTML=h;el.querySelectorAll('button').forEach(function(b){b.onclick=function(){state.catFilter=b.dataset.c;save();renderList();};});
+}
 
 function copyText(txt,msg){
   var done=function(){toast(msg||'Kopierat ✓');};
@@ -564,13 +598,13 @@ function copyText(txt,msg){
   else fallbackCopy(txt,done);
 }
 function fallbackCopy(txt,cb){var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');cb();}catch(e){}document.body.removeChild(ta);}
-function copyOrder(k,arr){
-  var v=k==='_'?null:findVendor(k);var L=[];
-  L.push('Beställning'+(v?' – '+v.name:'')+' ('+fmtDate(todayKey())+')');L.push('');
-  arr.forEach(function(it){var c=it.cur||'SEK';
-    L.push('• '+(it.name||'')+(it.sku?' [SKU: '+it.sku+']':'')+' – '+(parseInt(it.qty,10)||0)+' st × '+fmt(num(it.price),c)+' = '+fmt(lineTotal(it),c)+(itemStatus(it)!=='maste'?' ('+stInfo(itemStatus(it))[1].toLowerCase()+')':'')+(it.pre?' (förbeställd)':'')+(it.release?' – släpp '+it.release:''));
+function copyOrder(k,arr,catTitle){
+  var v=(catTitle||k==='_')?null:findVendor(k);var L=[];
+  L.push((catTitle?'Inköp – '+catTitle:'Beställning'+(v?' – '+v.name:''))+' ('+fmtDate(todayKey())+')');L.push('');
+  arr.forEach(function(it){var c=it.cur||'SEK';var iv=catTitle?findVendor(it.vendorId):null;
+    L.push('• '+(it.name||'')+(iv?' ('+iv.name+')':'')+(it.sku?' [SKU: '+it.sku+']':'')+' – '+(parseInt(it.qty,10)||0)+' st × '+fmt(num(it.price),c)+' = '+fmt(lineTotal(it),c)+(itemStatus(it)!=='maste'?' ('+stInfo(itemStatus(it))[1].toLowerCase()+')':'')+(it.pre?' (förbeställd)':'')+(it.release?' – släpp '+it.release:''));
     if(it.link)L.push('  '+normUrl(it.link));});
-  var s=totalsFor(arr);L.push('');
+  var s=totalsFor(arr,!!catTitle);L.push('');
   if(v&&num(v.ship)>0)L.push('Frakt: '+fmt(num(v.ship),v.cur||'SEK'));
   L.push('Summa: '+sumNative(s));
   copyText(L.join('\n'),'Beställningen är kopierad ✓');
@@ -614,14 +648,14 @@ function curChips(elId,getV,setV){
 function setToggle(id,on){document.getElementById(id).classList.toggle('on',!!on);}
 function openItem(id,preset){
   var it=id?findItem(id):null;
-  editItem=it?JSON.parse(JSON.stringify(it)):Object.assign({id:uid(),name:'',sku:'',link:'',price:'',cur:'SEK',qty:1,vendorId:'',note:'',st:(state.filter==='vanta'||state.filter==='overvag'||state.filter==='kopt')?state.filter:'maste',pre:false,release:'',created:nowISO()},preset||{});
+  editItem=it?JSON.parse(JSON.stringify(it)):Object.assign({id:uid(),name:'',sku:'',link:'',price:'',cur:'SEK',qty:1,vendorId:'',note:'',cat:(state.catFilter&&state.catFilter!=='_')?state.catFilter:'',st:(state.filter==='vanta'||state.filter==='overvag'||state.filter==='kopt')?state.filter:'maste',pre:false,release:'',created:nowISO()},preset||{});
   itemStatus(editItem);
   if(!it&&!preset&&state.filter==='pre')editItem.pre=true;
   var g=function(x){return document.getElementById(x);};
   g('f-title').textContent=it?'Redigera artikel':'Ny artikel';
   g('f-name').value=editItem.name||'';g('f-sku').value=editItem.sku||'';g('f-link').value=editItem.link||'';
   g('f-price').value=editItem.price!==''&&editItem.price!=null?String(editItem.price).replace('.',','):'';
-  g('f-qty').value=editItem.qty||1;g('f-note').value=editItem.note||'';g('f-release').value=editItem.release||'';
+  g('f-qty').value=editItem.qty||1;g('f-note').value=editItem.note||'';g('f-cat').value=editItem.cat||'';paintCatChips();g('f-release').value=editItem.release||'';
   fillVendorSelect(g('f-vendor'),findVendor(editItem.vendorId)?editItem.vendorId:'');
   g('f-newvendor').style.display='none';g('f-newvendor').value='';
   paintCur();setToggle('f-pre',editItem.pre);paintFormSt();
@@ -629,6 +663,13 @@ function openItem(id,preset){
   updPreview();openSheet('item-sheet');
   if(!it)setTimeout(function(){try{g('f-name').focus();}catch(e){}},260);
 }
+function paintCatChips(){
+  var list=allCats();var dl=document.getElementById('f-cat-list');var o='';list.forEach(function(c){o+='<option value="'+esc(c)+'">';});dl.innerHTML=o;
+  var cur=document.getElementById('f-cat').value.trim();var h='';list.slice(0,10).forEach(function(c){h+='<button type="button" class="chip'+(cur===c?' sel':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>';});
+  var el=document.getElementById('f-cat-chips');el.innerHTML=h;
+  el.querySelectorAll('button').forEach(function(b){b.onclick=function(){var inp=document.getElementById('f-cat');inp.value=inp.value.trim()===b.dataset.c?'':b.dataset.c;paintCatChips();};});
+}
+document.getElementById('f-cat').oninput=function(){var cur=this.value.trim();document.querySelectorAll('#f-cat-chips button').forEach(function(b){b.classList.toggle('sel',b.dataset.c===cur);});};
 function paintFormSt(){stButtons('f-st',editItem?editItem.st:'maste',function(s){if(editItem){editItem.st=s;paintFormSt();}});}
 function paintCur(){curChips('f-cur',function(){return editItem?editItem.cur:'SEK';},function(c){if(editItem){editItem.cur=c;updPreview();}});}
 function updPreview(){
@@ -663,7 +704,7 @@ document.getElementById('f-save').onclick=function(){
     state.vendors.push(nv);vid=nv.id;}
   editItem.name=name;editItem.sku=g('f-sku').value.trim();editItem.link=g('f-link').value.trim();
   editItem.price=num(g('f-price').value);editItem.qty=Math.max(1,parseInt(g('f-qty').value,10)||1);
-  editItem.vendorId=vid||'';editItem.note=g('f-note').value.trim();editItem.release=g('f-release').value||'';
+  editItem.vendorId=vid||'';editItem.note=g('f-note').value.trim();editItem.release=g('f-release').value||'';editItem.cat=g('f-cat').value.trim().replace(/\s+/g,' ');
   editItem.done=editItem.st==='kopt';editItem.updated=nowISO();
   var ex=findItem(editItem.id);if(ex)Object.assign(ex,editItem);else state.items.push(editItem);
   if(editItem.vendorId)state.collapsed[editItem.vendorId]=false;
@@ -745,6 +786,12 @@ function renderSumma(){
   var vel=document.getElementById('s-vendors');
   if(!rows.length)vel.innerHTML='<div class="empty-msg">Inga artiklar i det här urvalet.</div>';
   else{var max=rows[0].a||1,bh='';rows.forEach(function(r){bh+='<div class="bar-row"><div class="bl"><span>'+esc(r.n)+' <span class="soft">('+r.c+')</span></span><span class="bv">'+esc(fmt(r.a,d))+'</span></div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(2,Math.round(r.a/max*100))+'%"></div></div></div>';});vel.innerHTML=bh;}
+  // per kategori
+  var cg={};items.forEach(function(it){var k=catOf(it)||'Utan kategori';(cg[k]=cg[k]||[]).push(it);});
+  var crow=Object.keys(cg).map(function(k){return {n:k,a:sumTo(totalsFor(cg[k],true),d),c:cg[k].length};}).sort(function(a,b){return b.a-a.a;});
+  var cel=document.getElementById('s-cats');
+  if(!crow.length)cel.innerHTML='<div class="empty-msg">Inga artiklar i det här urvalet.</div>';
+  else{var cmax=crow[0].a||1,ch='';crow.forEach(function(r){ch+='<div class="bar-row"><div class="bl"><span>'+esc(r.n)+' <span class="soft">('+r.c+')</span></span><span class="bv">'+esc(fmt(r.a,d))+'</span></div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(2,Math.round(r.a/cmax*100))+'%;background:linear-gradient(90deg,var(--copper),var(--gold))"></div></div></div>';});ch+='<div class="soft" style="margin-top:6px">Exklusive frakt.</div>';cel.innerHTML=ch;}
   // släpp
   var rel=all.filter(function(it){return it.release&&itemStatus(it)!=='kopt'&&daysUntil(it.release)>=-30;}).sort(function(a,b){return a.release.localeCompare(b.release);});
   var rel_el=document.getElementById('s-releases');
@@ -813,9 +860,9 @@ document.getElementById('export-btn').onclick=function(){download('kitteln-'+tod
 document.getElementById('csv-btn').onclick=function(){
   function q(v){v=String(v==null?'':v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
   var d=state.disp||'SEK';
-  var rows=[['Säljare','Namn','SKU','Länk','Pris/st','Valuta','Antal','Summa','Summa '+d,'Släppdatum','Status','Förbeställd','Anteckning']];
+  var rows=[['Säljare','Kategori','Namn','SKU','Länk','Pris/st','Valuta','Antal','Summa','Summa '+d,'Släppdatum','Status','Förbeställd','Anteckning']];
   liveItems().forEach(function(it){var v=findVendor(it.vendorId);var c=it.cur||'SEK';var lt=lineTotal(it);
-    rows.push([v?v.name:'',it.name,it.sku,normUrl(it.link),fmtNum(num(it.price),2),c,parseInt(it.qty,10)||0,fmtNum(lt,2),fmtNum(conv(lt,c,d),2),it.release||'',stInfo(itemStatus(it))[1],it.pre?'Ja':'Nej',it.note]);});
+    rows.push([v?v.name:'',catOf(it),it.name,it.sku,normUrl(it.link),fmtNum(num(it.price),2),c,parseInt(it.qty,10)||0,fmtNum(lt,2),fmtNum(conv(lt,c,d),2),it.release||'',stInfo(itemStatus(it))[1],it.pre?'Ja':'Nej',it.note]);});
   download('kitteln-'+todayKey()+'.csv','﻿'+rows.map(function(r){return r.map(q).join(';');}).join('\r\n'),'text/csv;charset=utf-8');
 };
 document.getElementById('import-btn').onclick=function(){document.getElementById('import-file').click();};
