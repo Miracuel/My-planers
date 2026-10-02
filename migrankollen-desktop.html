@@ -54,6 +54,18 @@ textarea{resize:vertical;min-height:54px}
 .chip.type{flex:1;text-align:center}
 .chip-add{border-style:dashed;color:var(--muted);background:transparent}
 .chip-add-input{width:auto;max-width:130px;padding:7px 10px;font-size:13px;border:1.5px solid var(--accent);border-radius:12px;background:var(--panel2)}
+.rd-list{margin-top:6px}
+.rd-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.rd-item:first-child{border-top:none}
+.rd-dot{width:26px;height:26px;border-radius:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.rd-t{color:var(--muted);width:46px}
+.rd-x{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px}
+.rd-add{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.rd-add input[type=time],.rd-add select{width:auto;flex:0 0 auto}
+.rd-add .rd-add-btn{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap}
+.rd-chain{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:6px}
+.rd-pt{width:24px;height:24px;border-radius:7px;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.rd-ar{color:var(--muted);font-size:12px}
 
 /* Attack rows */
 .att-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
@@ -288,8 +300,29 @@ h1.brand{display:none}
   <label>Anteckning</label>
   <textarea id="f-note" placeholder="Något du vill minnas …"></textarea>
 
+  <label>Förlopp</label>
+  <div class="soft" style="margin-top:-2px">Startnivån loggas vid starttiden. Lägg till hur värken ändrats — du behöver inte ha tagit medicin.</div>
+  <div class="rd-list" id="rd-list"></div>
+  <div class="rd-add">
+    <input type="time" id="rd-add-time">
+    <select id="rd-add-sev"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select>
+    <button type="button" class="rd-add-btn" id="rd-add-btn">+ Avläsning</button>
+  </div>
+  <div class="soft" id="rd-summary" style="margin-top:8px"></div>
+
   <button class="sheet-close" id="log-save">Spara</button>
   <button class="sheet-del" id="log-del" style="display:none">Ta bort den här noteringen</button>
+</div>
+
+<div class="sheet" id="reading-sheet">
+  <h3>Uppdatera värk</h3>
+  <div class="soft">Hur är värken just nu? Du behöver inte ha tagit medicin för att uppdatera.</div>
+  <label>Nivå just nu <span class="sev-word" id="rd-word"></span></label>
+  <div style="display:flex;align-items:center;gap:6px"><span class="sev-val" id="rd-val">5</span><span class="soft">/ 10</span></div>
+  <input type="range" id="rd-sev" min="1" max="10" step="1" value="5">
+  <label>Tid</label>
+  <input type="time" id="rd-time">
+  <button class="sheet-close" id="rd-save">Spara avläsning</button>
 </div>
 
 <div class="sheet" id="custom-sheet">
@@ -353,7 +386,7 @@ function typeLabel(t){return t==='migran'?'Migrän':'Huvudvärk';}
 
 // ── App-info / changelog (visas i vyn Nyheter) ─────────
 var APPINFO={
-  version:'1.3.0',
+  version:'1.4.0',
   tagline:'Lugn dagbok för huvudvärk och migrän.',
   audience:'För dig som vill förstå dina huvudvärks- och migränmönster över tid.',
   functions:[
@@ -368,6 +401,10 @@ var APPINFO={
     'Auto/ljust/mörkt tema'
   ],
   changelog:[
+    {v:'1.4.0',d:'2026-10-02',items:[
+      'Följ förloppet under en huvudvärk: tryck Uppdatera nivå medan den pågår och lägg till nya nivåer över tid.',
+      'Appen visar t.ex. efter 2 h gick värken ner från 6 till 1 — och fungerar lika bra när värken går upp. Kräver inte att du tagit medicin.'
+    ]},
     {v:'1.3.0',d:'2026-06-18',items:[
       'Lägg till egna symtom och utlösare direkt i loggen via knappen ＋ Egen — de sparas och kan väljas igen.'
     ]},
@@ -536,7 +573,7 @@ function renderEditableChips(containerId,listName,selected){
 // ── Logg-formulär ──────────────────────────────────────
 var form=null;
 function blankForm(){
-  return {id:null,date:todayKey(),start:nowHM(),end:'',type:'huvudvark',intensity:5,locations:[],symptoms:[],triggers:[],med:'',medHelped:'',note:''};
+  return {id:null,date:todayKey(),start:nowHM(),end:'',type:'huvudvark',intensity:5,locations:[],symptoms:[],triggers:[],med:'',medHelped:'',note:'',readings:[]};
 }
 function setType(t){
   form.type=t;
@@ -561,7 +598,7 @@ function renderHelp(){
 }
 function openLog(att){
   form=att?JSON.parse(JSON.stringify(att)):blankForm();
-  form.locations=form.locations||[];form.symptoms=form.symptoms||[];form.triggers=form.triggers||[];
+  form.locations=form.locations||[];form.symptoms=form.symptoms||[];form.triggers=form.triggers||[];form.readings=form.readings||[];
   document.getElementById('log-h').textContent=att?'Redigera notering':'Logga huvudvärk';
   setType(form.type);setSev(form.intensity);
   document.getElementById('f-date').value=form.date;
@@ -573,6 +610,9 @@ function openLog(att){
   renderEditableChips('sym-chips','symptoms',form.symptoms);
   renderEditableChips('trg-chips','triggers',form.triggers);
   renderHelp();
+  document.getElementById('rd-add-time').value=nowHM();
+  document.getElementById('rd-add-sev').value=String(form.intensity);
+  renderReadings();
   document.getElementById('log-del').style.display=att?'block':'none';
   openSheet('log-sheet');
 }
@@ -599,6 +639,46 @@ document.getElementById('log-del').onclick=function(){
   persist();renderAll();closeSheets();
 };
 
+// ── Förlopp / avläsningar ──────────────────────────────
+function renderReadings(){
+  var list=document.getElementById('rd-list');list.innerHTML='';
+  form.readings=(form.readings||[]).slice().sort(function(x,y){return minsBetween(form.start,x.t)-minsBetween(form.start,y.t);});
+  if(form.readings.length===0){list.innerHTML='<div class="soft" style="padding:4px 0">Inga avläsningar än. Lägg till en när värken ändras.</div>';}
+  else form.readings.forEach(function(r,idx){
+    var row=document.createElement('div');row.className='rd-item';
+    row.innerHTML='<span class="rd-dot" style="background:'+sevColor(r.v)+'">'+r.v+'</span>'+
+      '<span class="rd-t">'+esc(r.t)+'</span>'+
+      '<span class="soft">'+esc(fmtDur(minsBetween(form.start,r.t)))+' efter start</span>';
+    var x=document.createElement('button');x.className='rd-x';x.textContent='✕';x.type='button';
+    x.onclick=function(){form.readings.splice(idx,1);renderReadings();};
+    row.appendChild(x);list.appendChild(row);
+  });
+  document.getElementById('rd-summary').textContent=progressText(form);
+}
+document.getElementById('rd-add-btn').onclick=function(){
+  form.readings=form.readings||[];
+  form.readings.push({t:document.getElementById('rd-add-time').value||nowHM(),v:+document.getElementById('rd-add-sev').value});
+  renderReadings();
+};
+
+// Snabb uppdatering av pågående värk (från Idag-vyn)
+var readingTargetId=null;
+function setRdSev(v){document.getElementById('rd-sev').value=v;document.getElementById('rd-val').textContent=v;document.getElementById('rd-val').style.color=sevColor(v);document.getElementById('rd-word').textContent=sevWord(v);}
+function findAttack(id){for(var i=0;i<state.attacks.length;i++)if(state.attacks[i].id===id)return state.attacks[i];return null;}
+function openReading(id){
+  readingTargetId=id;var a=findAttack(id);
+  setRdSev(a?currentLevel(a):5);
+  document.getElementById('rd-time').value=nowHM();
+  openSheet('reading-sheet');
+}
+document.getElementById('rd-sev').oninput=function(){setRdSev(+this.value);};
+document.getElementById('rd-save').onclick=function(){
+  var a=findAttack(readingTargetId);if(!a){closeSheets();return;}
+  a.readings=a.readings||[];
+  a.readings.push({t:document.getElementById('rd-time').value||nowHM(),v:+document.getElementById('rd-sev').value});
+  persist();renderAll();closeSheets();
+};
+
 // ── Rendering: rader ───────────────────────────────────
 function durationTxt(a){
   if(!a.end)return '';
@@ -609,11 +689,18 @@ function durationTxt(a){
   var h=Math.floor(mins/60),m=mins%60;
   return (h?h+'h ':'')+(m?m+'min':(h?'':'0min'));
 }
+function minsBetween(t1,t2){var p=function(t){var x=t.split(':');return (+x[0])*60+(+x[1]);};var m=p(t2)-p(t1);if(m<0)m+=1440;return m;}
+function fmtDur(mins){if(mins<=0)return '0 min';var hh=Math.floor(mins/60),mm=mins%60;return (hh?hh+' h ':'')+(mm?mm+' min':(hh?'':'0 min'));}
+function readingPoints(a){var rs=(a.readings||[]).slice().sort(function(x,y){return minsBetween(a.start,x.t)-minsBetween(a.start,y.t);});var pts=[{t:a.start,v:a.intensity}];rs.forEach(function(r){pts.push({t:r.t,v:r.v});});return pts;}
+function currentLevel(a){var p=readingPoints(a);return p[p.length-1].v;}
+function progressText(a){var pts=readingPoints(a);if(pts.length<2)return '';var f=pts[0],l=pts[pts.length-1];var dur=fmtDur(minsBetween(f.t,l.t));if(l.v===f.v)return 'efter '+dur+' låg värken kvar på '+l.v;return 'efter '+dur+' gick värken '+(l.v<f.v?'ner':'upp')+' från '+f.v+' till '+l.v;}
+function chainHtml(a){var pts=readingPoints(a);var s='';pts.forEach(function(p,i){if(i>0)s+='<span class="rd-ar">→</span>';s+='<span class="rd-pt" style="background:'+sevColor(p.v)+'" title="'+esc(p.t)+'">'+p.v+'</span>';});return s;}
 function summaryLine(a){
   var parts=[];
   if(a.symptoms&&a.symptoms.length)parts.push(a.symptoms.slice(0,3).join(', '));
   if(a.triggers&&a.triggers.length)parts.push('→ '+a.triggers.slice(0,2).join(', '));
-  return parts.join('  ');
+  var pr=progressText(a);if(pr)parts.push(pr);
+  return parts.join('  ·  ');
 }
 function attackRow(a){
   var row=document.createElement('div');row.className='att-row';
@@ -645,9 +732,16 @@ function renderToday(){
     ongoing.forEach(function(a){
       var wrap=document.createElement('div');wrap.style.padding='4px 0';
       wrap.appendChild(attackRow(a));
-      var btn=document.createElement('button');btn.className='btn ghost block';btn.style.marginTop='8px';btn.textContent='Avsluta nu ('+nowHM()+')';
+      if((a.readings||[]).length){
+        var ch=document.createElement('div');ch.className='rd-chain';ch.innerHTML=chainHtml(a);wrap.appendChild(ch);
+        var pt=document.createElement('div');pt.className='soft';pt.style.marginTop='2px';pt.textContent=progressText(a);wrap.appendChild(pt);
+      }
+      var row2=document.createElement('div');row2.className='btn-row';row2.style.marginTop='8px';
+      var up=document.createElement('button');up.className='btn ghost';up.textContent='Uppdatera nivå';
+      up.onclick=function(ev){ev.stopPropagation();openReading(a.id);};
+      var btn=document.createElement('button');btn.className='btn ghost';btn.textContent='Avsluta nu ('+nowHM()+')';
       btn.onclick=function(ev){ev.stopPropagation();a.end=nowHM();persist();renderAll();};
-      wrap.appendChild(btn);
+      row2.appendChild(up);row2.appendChild(btn);wrap.appendChild(row2);
       oc.appendChild(wrap);
     });
   }else{ot.style.display='none';oc.style.display='none';}
